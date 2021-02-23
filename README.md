@@ -23,8 +23,14 @@ npm install
 
 ## Deploy on Coston Testnet
 
+Create an `.env` file at the project root with the following contents:
+
 ```
-$ PRIVATE_KEY=<PRIVATE_KEY> npm run deploy
+PRIVATE_KEY=<INSERT_TESTNET_PK_HERE>
+```
+
+```
+$ npm run deploy
 
 > @trustline/stablecoin@1.0.0 deploy
 > npx hardhat run ./scripts/deploy.ts
