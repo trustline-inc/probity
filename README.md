@@ -21,12 +21,10 @@ Install dependencies:
 npm install
 ```
 
-Set up a testnet wallet. Use [keystore-gen](https://github.com/trustline-inc/keystore-gen) to create a keystore file in the project root.
-
 ## Deploy on Coston Testnet
 
 ```
-$ npm run deploy
+$ PRIVATE_KEY=<PRIVATE_KEY> npm run deploy
 
 > @trustline/stablecoin@1.0.0 deploy
 > npx hardhat run ./scripts/deploy.ts
