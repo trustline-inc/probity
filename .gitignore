@@ -1,4 +1,8 @@
+# Node.js
 node_modules
+
+# Keystore file
+keystore.json
 
 # Hardhat files
 cache
