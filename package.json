@@ -2,7 +2,6 @@
   "name": "@trustline/stablecoin",
   "version": "1.0.0",
   "description": "A stablecoin secured by bank balances",
-  "main": "truffle-config.js",
   "scripts": {
     "compile": "npx hardhat compile",
     "deploy": "npx hardhat run ./scripts/deploy.ts",
