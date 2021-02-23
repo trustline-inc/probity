@@ -1,0 +1,14 @@
+{
+  "name": "@trustline/stablecoin",
+  "version": "1.0.0",
+  "description": "A stablecoin secured by bank balances",
+  "main": "truffle-config.js",
+  "scripts": {
+    "compile": "npx hardhat compile",
+    "test": "npx hardhat test"
+  },
+  "author": "Matthew Rosendin <matt@trustline.co>",
+  "devDependencies": {
+    "hardhat": "^2.0.10"
+  }
+}

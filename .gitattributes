@@ -1,0 +1,5 @@
+# Solidity language support
+*.sol linguist-language=Solidity
+
+# Prevent github actions to checkout files with crlf line endings
+* -text
