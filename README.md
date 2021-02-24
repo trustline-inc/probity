@@ -12,6 +12,8 @@ Make sure the Solidity compiler is installed.
 $ npm install -g solc
 ```
 
+The compiler version must be >= `0.8.0`.
+
 ```
 $ solcjs --version
 0.8.0+commit.c7dfd78e.Emscripten.clang
