@@ -1,8 +1,10 @@
 # Stablecoin
 
-A stablecoin secured by USD balances
+Aurei crypto stablecoin
 
 ## Quickstart
+
+Install Node.js. The recommended way to install Node with macOS is with [Homebrew](https://nodejs.org/en/download/package-manager/#macos).
 
 Make sure the Solidity compiler is installed.
 
