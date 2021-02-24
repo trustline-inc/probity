@@ -6,10 +6,6 @@ describe("Aurei contract", function() {
   it("It should work", async function() {
     const AureiFactory = await ethers.getContractFactory("Aurei");
 
-		const vaultManagerAddress = "";
-		const stabilityPoolAddress = "";
-		const borrowerOperationsAddress = "";
-
-    const Aurei = await AureiFactory.deploy(vaultManagerAddress, stabilityPoolAddress, borrowerOperationsAddress);
+    const Aurei = await AureiFactory.deploy();
   });
 });

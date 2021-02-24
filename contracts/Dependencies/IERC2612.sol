@@ -57,5 +57,5 @@ interface IERC2612 {
   /**
    * @dev Returns the domain separator used in the encoding of the signature for `permit`, as defined by {EIP712}.
    */
-  function domainSeparator() external view returns (bytes32);
+  function DOMAIN_SEPARATOR() external view returns (bytes32);
 }
