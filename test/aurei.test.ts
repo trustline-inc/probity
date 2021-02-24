@@ -5,6 +5,11 @@ import { expect } from "chai";
 describe("Aurei contract", function() {
   it("It should work", async function() {
     const AureiFactory = await ethers.getContractFactory("Aurei");
-    const Aurei = await AureiFactory.deploy();
+
+		const vaultManagerAddress = "";
+		const stabilityPoolAddress = "";
+		const borrowerOperationsAddress = "";
+
+    const Aurei = await AureiFactory.deploy(vaultManagerAddress, stabilityPoolAddress, borrowerOperationsAddress);
   });
 });
