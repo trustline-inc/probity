@@ -1,7 +1,7 @@
 {
   "name": "@trustline/stablecoin",
   "version": "1.0.0",
-  "description": "A stablecoin secured by bank balances",
+  "description": "A stablecoin secured by crypto balances",
   "scripts": {
     "compile": "npx hardhat compile",
     "deploy": "npx hardhat run ./scripts/deploy.ts",
