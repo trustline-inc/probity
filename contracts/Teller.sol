@@ -13,6 +13,9 @@ contract Teller is ITeller, Ownable {
   enum State { Waiting, Ready, Active }
   State public state = State.Waiting;
 
+  constructor() Ownable(msg.sender) {
+  }
+  
   function isActive() view public returns(bool) {
     return state == State.Active;
   }

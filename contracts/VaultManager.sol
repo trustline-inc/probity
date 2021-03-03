@@ -34,7 +34,7 @@ contract VaultManager is IVaultManager, Ownable {
 
   // --- Constructor ---
 
-  constructor() {
+  constructor() Ownable(msg.sender) {
     
   }
 

@@ -11,4 +11,7 @@ import "./Dependencies/Ownable.sol";
  */
 contract MarketFactory is IMarketFactory, Ownable {
 
+  constructor() Ownable(msg.sender) {
+    
+  }
 }

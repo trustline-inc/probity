@@ -22,6 +22,8 @@ describe("Aurie contract", function() {
 
   let Teller;
   let teller;
+  let Treasury;
+  let treasury;
   let Aurei;
   let aurei;
   let owner;
@@ -32,16 +34,22 @@ describe("Aurie contract", function() {
   
   before(async function () {
     // Get the ContractFactory and Signers here.
+    [owner, addr1, addr2, ...addrs] = await ethers.getSigners();
+    
     Teller = await ethers.getContractFactory("Teller");
     teller = await Teller.deploy();
     await teller.deployed();
 
     Aurei = await ethers.getContractFactory("Aurei");
-    [owner, addr1, addr2, ...addrs] = await ethers.getSigners();
     //aureiTokenOwnerAddress = teller.address;
     aureiTokenOwnerAddress = owner.address;
     aurei = await Aurei.deploy(aureiTokenOwnerAddress);
     await aurei.deployed();
+    
+    Treasury = await ethers.getContractFactory("Treasury");
+    treasury = await Treasury.deploy(aurei.address);
+    await treasury.deployed();
+    
   });
   describe("Deployment", function () {
     // `it` is another Mocha function. This is the one you use to define your
@@ -66,13 +74,13 @@ describe("Aurie contract", function() {
   
   describe("Transactions", function () {
     it("Minting new tokens and verify owner balance and token supply", async function () {
-      await aurei.mint(100);
+      await treasury.mint(100);
       const ownerBalance = await aurei.balanceOf(aureiTokenOwnerAddress);
       expect(ownerBalance).to.equal(100);
       expect(await aurei.totalSupply()).to.equal(100);
     });
     it("Burning Tokens and verify owner balance and token supply", async function () {
-      await aurei.burn(20);
+      await treasury.burn(20);
       const ownerBalance = await aurei.balanceOf(aureiTokenOwnerAddress);
       expect(ownerBalance).to.equal(80);
       expect(await aurei.totalSupply()).to.equal(80);

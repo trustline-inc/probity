@@ -9,4 +9,7 @@ interface ITreasury {
 
   // --- Events ---
 
+  function mint(uint256 _amount) external;
+
+  function burn(uint256 _amount) external;
 }

@@ -15,10 +15,9 @@ contract ContractRegistry is IContractRegistry, Ownable {
 
   // --- Constructor ---
 
-  constructor() {
+  constructor() Ownable(msg.sender) {
 
   }
-
   // --- External Functions ---
 
   function registerContract(string memory name, address addr, uint16 ver) external override {

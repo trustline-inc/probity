@@ -10,4 +10,7 @@ import "./Dependencies/Ownable.sol";
  */
 contract Liquidation is ILiquidation, Ownable {
 
+  constructor() Ownable(msg.sender) {
+
+  }
 }

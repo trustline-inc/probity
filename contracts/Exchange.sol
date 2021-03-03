@@ -10,4 +10,7 @@ import "./Dependencies/Ownable.sol";
  */
 contract Exchange is IExchange, Ownable {
 
+  constructor() Ownable(msg.sender) {
+
+  }
 }

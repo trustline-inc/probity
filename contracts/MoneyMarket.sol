@@ -14,7 +14,7 @@ contract MoneyMarket is IMoneyMarket, Ownable {
 
   // --- Constructor ---
 
-  constructor() {
+  constructor() Ownable(msg.sender) {
     
   }
 

@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-import "./Interfaces/IAurei.sol";
+import "./Interfaces/ITreasury.sol";
 import "./Interfaces/IProbity.sol";
 import "./Interfaces/IVaultManager.sol";
 import "./Dependencies/ProbityBase.sol";
@@ -15,16 +15,16 @@ contract Probity is IProbity, Ownable, ProbityBase {
 
   // --- Data ---
 
-  IAurei public aurei;
+  ITreasury public treasury;
   IVaultManager public vaultManager;
 
-  // --- Contructor ---
+  // --- Constructor ---
 
   /**
    * @notice Sets the addresses of deployed modules.
    */
-  constructor(address _aurei, address _vaultManager) {
-    aurei = IAurei(_aurei);
+  constructor(address _treasury, address _vaultManager) Ownable(msg.sender) {
+    treasury = ITreasury(_treasury);
     vaultManager = IVaultManager(_vaultManager);
   }
 
@@ -38,7 +38,7 @@ contract Probity is IProbity, Ownable, ProbityBase {
    */
   function openVault(uint amount) external payable override hasSufficientCollateral(amount) returns (uint vaultId) {
     vaultId = vaultManager.openVault(msg.sender, msg.value);
-    aurei.mint(amount); // Perhaps a treasury contract should implement mint() and burn() instead of the Aurei contract.
+    treasury.mint(amount); // Perhaps a treasury contract should implement mint() and burn() instead of the Aurei contract.
     return vaultId;
   }
 
