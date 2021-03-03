@@ -38,7 +38,7 @@ contract Probity is IProbity, Ownable, ProbityBase {
    */
   function openVault(uint amount) external payable override hasSufficientCollateral(amount) returns (uint vaultId) {
     vaultId = vaultManager.openVault(msg.sender, msg.value);
-    treasury.mint(amount, vaultId);
+    treasury.addToTreasury(amount, vaultId);
     return vaultId;
   }
 
