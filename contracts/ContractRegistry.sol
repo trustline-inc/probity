@@ -11,6 +11,8 @@ import "./Dependencies/Ownable.sol";
  */
 contract ContractRegistry is IContractRegistry, Ownable {
 
+  // --- Data ---
+
   // --- Constructor ---
 
   constructor() {

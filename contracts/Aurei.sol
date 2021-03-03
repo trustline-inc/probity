@@ -3,6 +3,7 @@
 pragma solidity ^0.8.0;
 
 import "./Interfaces/IAurei.sol";
+import "./Interfaces/ITeller.sol";
 import "./Dependencies/SafeMath.sol";
 
 /**
@@ -15,7 +16,8 @@ import "./Dependencies/SafeMath.sol";
 contract Aurei is IAurei {
 	using SafeMath for uint256;
 
-	// --- ERC20 Data ---
+	// --- Data ---
+
 	uint256 private _totalSupply;
 	string constant internal _NAME 		= "Aurei Stablecoin";
 	string constant internal _SYMBOL 	= "AUR";
@@ -24,6 +26,8 @@ contract Aurei is IAurei {
 
 	mapping (address => uint256) private _balances;
 	mapping (address => mapping (address => uint256)) private _allowed;
+
+	address teller;
 
 	// --- ERC2612 Data ---
 
@@ -35,7 +39,9 @@ contract Aurei is IAurei {
 	/**
 	 * @dev Builds the domain separator
 	 */
-	constructor() {
+	constructor(address _teller) {
+		teller = _teller;
+
 		uint256 chainId;
 		assembly { chainId := chainid() }
 		_DOMAIN_SEPARATOR = keccak256(
@@ -71,8 +77,8 @@ contract Aurei is IAurei {
 		return _balances[account];
 	}
 
-	function burn(address _account, uint256 _amount) external override {
-		_burn(_account, _amount);
+	function burn(uint256 _amount) external override {
+		_burn(_amount);
 	}
 
 	function decimals() external pure override returns (uint8) {
@@ -89,8 +95,12 @@ contract Aurei is IAurei {
 		return true;
 	}
 
-	function mint(address _account, uint256 _amount) external override {
-		_mint(_account, _amount);
+	/**
+	 * @dev We need to ensure that this is only callable by the Probity contract.
+	 * We can use a modifier to ensure this.
+	 */
+	function mint(uint256 _amount) external override onlyProbity {
+		_mint(_amount);
 	}
 
 	function name() external pure override returns (string memory) {
@@ -181,7 +191,8 @@ contract Aurei is IAurei {
 		emit Approval(owner, spender, amount);
 	}
 
-	function _burn(address account, uint256 amount) internal {
+	function _burn(uint256 amount) internal {
+		address account = teller;
 		assert(account != address(0));
 
 		_balances[account] = _balances[account].sub(amount, "ERC20: burn amount exceeds balance");
@@ -189,7 +200,8 @@ contract Aurei is IAurei {
 		emit Transfer(account, address(0), amount);
 	}
 
-	function _mint(address account, uint256 amount) internal {
+	function _mint(uint256 amount) internal {
+		address account = teller;
 		assert(account != address(0));
 
 		_totalSupply = _totalSupply.add(amount);
@@ -204,6 +216,16 @@ contract Aurei is IAurei {
 		_balances[sender] = _balances[sender].sub(amount, "ERC20: transfer amount exceeds balance");
 		_balances[recipient] = _balances[recipient].add(amount);
 		emit Transfer(sender, recipient, amount);
+	}
+
+	// --- Modifiers ---
+
+	/**
+	 * @dev Ensure that msg.sender === Probity contract address.
+	 */
+	modifier onlyProbity {
+		// require();
+		_;
 	}
 
 	// --- 'require' functions ---

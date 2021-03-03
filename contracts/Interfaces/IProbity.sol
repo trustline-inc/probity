@@ -15,7 +15,7 @@ interface IProbity {
    * @notice Call this to open a vault for an account for the first time. Adds `msg.value` of inital collateral.
    * @return vaultId - a numerical nonce representing the vault ID.
    */
-  function openVault() external payable returns (uint vaultId);
+  function openVault(uint amount) external payable returns (uint vaultId);
 
   /**
    * @notice Call this to open a vault for an account for the first time. Adds `msg.value` of inital collateral.
