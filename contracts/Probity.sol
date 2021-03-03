@@ -42,23 +42,45 @@ contract Probity is IProbity, Ownable, ProbityBase {
     return vaultId;
   }
 
-  function grantVaultAccess(uint _vaultId, address _grantee) external override returns (bool result) {
+  /**
+   * @notice Grants `grantee` access to the vault.
+   * @param vaultId - The vault to grant access to.
+   * @param grantee - Address of the grantee.
+   */
+  function grantVaultAccess(uint vaultId, address grantee) external override returns (bool result) {
 
   }
 
-  function addCollateral(uint _vaultId) external payable override {
+  /**
+   * @notice Adds collateral to an existing vault and adds Aurei to the treasury.
+   * @param vaultId - The vault to add collateral to.
+   * @dev Caller MUST be the owner of the vault.
+   */
+  function addCollateral(uint vaultId) external payable override {
 
   }
 
-  function withdrawCollateral(uint _vaultId, uint _amount) external override {
+  /**
+   * @notice Transfers collateral from the vault to the caller.
+   * @param vaultId - The vault to withdraw from.
+   * @param amount - The amount of collateral to withdraw.
+   * @dev Caller MUST be the owner of the vault. New collateral ratio MUST be
+   * greater than the minimum collateral ratio.
+   */
+  function withdrawCollateral(uint vaultId, uint amount) external override {
 
   }
 
-  function closeVault(uint _vaultId) external override {
+  /**
+   * @notice Closes a vault, transferring all collateral to the caller.
+   * @param vaultId - The vault to withdraw from.
+   */
+  function closeVault(uint vaultId) external override {
 
   }
 
   // --- Modifiers ---
+
   modifier hasSufficientCollateral(uint amount) {
     uint collateralRatio = msg.value / amount;
     require(collateralRatio > MIN_COLLATERAL_RATIO);
