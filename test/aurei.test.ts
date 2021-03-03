@@ -2,7 +2,7 @@ import "@nomiclabs/hardhat-waffle";
 import { ethers } from "hardhat";
 import { expect } from "chai";
 
-describe("Aurei contract", function() {
+describe("Aurei", function() {
 
   // Contracts
   let Aurei;
