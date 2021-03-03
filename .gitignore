@@ -3,7 +3,7 @@ node_modules
 
 # Keystore file
 keystore.json
-
+.idea
 # Hardhat files
 cache
 artifacts
