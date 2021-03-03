@@ -19,6 +19,9 @@ describe("Aurei contract", function() {
   let addr1;
   let addr2;
   let addrs;
+
+  // Contract Owners
+  let aureiOwnerAddress;
   
   before(async function () {
     // Get the ContractFactory and Signers here.
@@ -29,8 +32,8 @@ describe("Aurei contract", function() {
     await teller.deployed();
 
     Aurei = await ethers.getContractFactory("Aurei");
-    // const aureiOwnerAddress = teller.address;
-    const aureiOwnerAddress = owner.address;
+    // aureiOwnerAddress = teller.address;
+    aureiOwnerAddress = owner.address;
     aurei = await Aurei.deploy(aureiOwnerAddress);
     await aurei.deployed();
     
@@ -43,7 +46,7 @@ describe("Aurei contract", function() {
   describe("Deployment", function () {
 
     it("Should set the right owner", async function () {
-      expect(await aurei.owner()).to.equal(aureiTokenOwnerAddress);
+      expect(await aurei.owner()).to.equal(aureiOwnerAddress);
     });
 
     it("Total supply of the token must be 0", async function () {
@@ -51,7 +54,7 @@ describe("Aurei contract", function() {
     });
     
     it("Owner Balance of the token must be equal to total supply", async function () {
-      const ownerBalance = await aurei.balanceOf(aureiTokenOwnerAddress);
+      const ownerBalance = await aurei.balanceOf(aureiOwnerAddress);
       expect(await aurei.totalSupply()).to.equal(ownerBalance);
     });
   });
@@ -60,14 +63,14 @@ describe("Aurei contract", function() {
 
     it("Minting new tokens and verify owner balance and token supply", async function () {
       await treasury.mint(100);
-      const ownerBalance = await aurei.balanceOf(aureiTokenOwnerAddress);
+      const ownerBalance = await aurei.balanceOf(aureiOwnerAddress);
       expect(ownerBalance).to.equal(100);
       expect(await aurei.totalSupply()).to.equal(100);
     });
 
     it("Burning Tokens and verify owner balance and token supply", async function () {
       await treasury.burn(20);
-      const ownerBalance = await aurei.balanceOf(aureiTokenOwnerAddress);
+      const ownerBalance = await aurei.balanceOf(aureiOwnerAddress);
       expect(ownerBalance).to.equal(80);
       expect(await aurei.totalSupply()).to.equal(80);
     });
