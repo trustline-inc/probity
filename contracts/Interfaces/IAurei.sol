@@ -15,6 +15,6 @@ interface IAurei is IERC20, IERC2612 {
 
   // --- Functions ---
 
-  function mint(uint256 _amount) external;
-  function burn(uint256 _amount) external;
+  function mint(address _account, uint256 _amount) external;
+  function burn(address _account, uint256 _amount) external;
 }

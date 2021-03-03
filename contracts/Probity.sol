@@ -38,7 +38,7 @@ contract Probity is IProbity, Ownable, ProbityBase {
    */
   function openVault(uint amount) external payable override hasSufficientCollateral(amount) returns (uint vaultId) {
     vaultId = vaultManager.openVault(msg.sender, msg.value);
-    treasury.mint(amount); // Perhaps a treasury contract should implement mint() and burn() instead of the Aurei contract.
+    treasury.mint(amount, vaultId);
     return vaultId;
   }
 

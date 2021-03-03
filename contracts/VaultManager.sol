@@ -8,6 +8,8 @@ import "./Dependencies/Ownable.sol";
 import "./Dependencies/SafeMath.sol";
 
 /**
+ * @notice A vault is used to store collateral.
+ *
  * Adapted from https://github.com/liquity/beta/blob/main/contracts/Interfaces/ITroveManager.sol
  */
 contract VaultManager is IVaultManager, Ownable {

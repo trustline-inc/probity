@@ -2,10 +2,10 @@
 
 pragma solidity ^0.8.0;
 
+import "./Dependencies/Ownable.sol";
+import "./Dependencies/SafeMath.sol";
 import "./Interfaces/IAurei.sol";
 import "./Interfaces/ITeller.sol";
-import "./Dependencies/SafeMath.sol";
-import "./Dependencies/Ownable.sol";
 
 /**
  * Based upon OpenZeppelin's ERC20 contract:
@@ -38,7 +38,7 @@ contract Aurei is IAurei, Ownable {
 	/**
 	 * @dev Builds the domain separator
 	 */
-	constructor(address _owner) Ownable(_owner) {
+	constructor(address owner) Ownable(owner) {
 		uint256 chainId;
 		assembly { chainId := chainid() }
 		_DOMAIN_SEPARATOR = keccak256(
@@ -106,19 +106,17 @@ contract Aurei is IAurei, Ownable {
 		return true;
 	}
 
-  function mint(uint256 amount) external override {
-    address account = owner();
+  function mint(address account, uint256 amount) external override {
     assert(account != address(0));
-    
+
     _totalSupply = _totalSupply.add(amount);
     _balances[account] = _balances[account].add(amount);
     emit Transfer(address(0), account, amount);
   }
 
-  function burn(uint256 amount) external override {
-    address account = owner();
+  function burn(address account, uint256 amount) external override {
     assert(account != address(0));
-    
+
     _balances[account] = _balances[account].sub(amount, "ERC20: burn amount exceeds balance");
     _totalSupply = _totalSupply.sub(amount);
     emit Transfer(account, address(0), amount);

@@ -9,7 +9,9 @@ interface ITreasury {
 
   // --- Events ---
 
-  function mint(uint256 _amount) external;
+  function balanceOf(uint vaultId) external view returns (uint256);
 
-  function burn(uint256 _amount) external;
+  function mint(uint256 amount, uint vaultId) external;
+
+  function burn(uint256 amount, uint vaultId) external;
 }
