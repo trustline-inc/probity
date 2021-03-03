@@ -2,14 +2,17 @@
 
 pragma solidity ^0.8.0;
 
-import "./Interfaces/ITreasury.sol";
-import "./Interfaces/IAurei.sol";
 import "./Dependencies/Ownable.sol";
+import "./Dependencies/ProbityBase.sol";
+import "./Dependencies/SafeMath.sol";
+import "./Interfaces/IAurei.sol";
+import "./Interfaces/ITreasury.sol";
 
 /**
  * @notice Manages debts for all vaults.
  */
 contract Treasury is ITreasury, Ownable {
+  using SafeMath for uint256;
 
   // --- Data ---
 
@@ -33,21 +36,23 @@ contract Treasury is ITreasury, Ownable {
 	}
 
   /**
-   * @notice Mint tokens to the treasury.
+   * @notice Adds Aurei to the treasury.
 	 * @dev Only callable by Probity
 	 */
-  function mint(uint256 amount, uint vaultId) external override onlyOwner {
+  function addToTreasury(uint256 amount, uint vaultId) external override onlyOwner {
     aurei.mint(address(this), amount);
-    balances[vaultId] = balances[vaultId] + amount;
+    balances[vaultId] = balances[vaultId].add(amount);
+    emit TreasuryIncrease(vaultId, amount);
   }
 
   /**
-   * @notice Burn tokens from the treasury.
+   * @notice Removes Aurei from the treasury.
 	 * @dev Only callable by Probity
 	 */
-  function burn(uint256 amount, uint vaultId) external override onlyOwner {
+  function removeFromTreasury(uint256 amount, uint vaultId) external override onlyOwner {
     aurei.burn(address(this), amount);
-    balances[vaultId] = balances[vaultId] - amount;
+    balances[vaultId] = balances[vaultId].sub(amount);
+    emit TreasuryDecrease(vaultId, amount);
   }
 
 }
