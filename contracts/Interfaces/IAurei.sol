@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 
 import "../Dependencies/IERC20.sol";
 import "../Dependencies/IERC2612.sol";
-
 /**
  * @notice Common interface for the Aurei token.
  */

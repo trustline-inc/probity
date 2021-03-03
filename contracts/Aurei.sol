@@ -5,6 +5,7 @@ pragma solidity ^0.8.0;
 import "./Interfaces/IAurei.sol";
 import "./Interfaces/ITeller.sol";
 import "./Dependencies/SafeMath.sol";
+import "./Dependencies/NewOwnable.sol";
 
 /**
  * Based upon OpenZeppelin's ERC20 contract:
@@ -13,7 +14,7 @@ import "./Dependencies/SafeMath.sol";
  * and their EIP2612 (ERC20Permit / ERC712) functionality:
  * https://github.com/OpenZeppelin/openzeppelin-contracts/blob/53516bc555a454862470e7860a9b5254db4d00f5/contracts/token/ERC20/ERC20Permit.sol
  */
-contract Aurei is IAurei {
+contract Aurei is IAurei, NewOwnable {
 	using SafeMath for uint256;
 
 	// --- Data ---
@@ -39,9 +40,8 @@ contract Aurei is IAurei {
 	/**
 	 * @dev Builds the domain separator
 	 */
-	constructor(address _teller) {
+	constructor(address _teller) NewOwnable(_teller) {
 		teller = _teller;
-
 		uint256 chainId;
 		assembly { chainId := chainid() }
 		_DOMAIN_SEPARATOR = keccak256(
@@ -77,7 +77,7 @@ contract Aurei is IAurei {
 		return _balances[account];
 	}
 
-	function burn(uint256 _amount) external override {
+	function burn(uint256 _amount) external override onlyOwner {
 		_burn(_amount);
 	}
 
@@ -97,9 +97,9 @@ contract Aurei is IAurei {
 
 	/**
 	 * @dev We need to ensure that this is only callable by the Probity contract.
-	 * We can use a modifier to ensure this.
+	 * We can use a onlyOwner modifier to ensure this.
 	 */
-	function mint(uint256 _amount) external override onlyProbity {
+	function mint(uint256 _amount) external override onlyOwner {
 		_mint(_amount);
 	}
 
@@ -192,7 +192,7 @@ contract Aurei is IAurei {
 	}
 
 	function _burn(uint256 amount) internal {
-		address account = teller;
+		address account = owner();
 		assert(account != address(0));
 
 		_balances[account] = _balances[account].sub(amount, "ERC20: burn amount exceeds balance");
@@ -201,7 +201,7 @@ contract Aurei is IAurei {
 	}
 
 	function _mint(uint256 amount) internal {
-		address account = teller;
+    address account = owner();
 		assert(account != address(0));
 
 		_totalSupply = _totalSupply.add(amount);

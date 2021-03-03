@@ -59,7 +59,6 @@ contract Probity is IProbity, Ownable, ProbityBase {
   }
 
   // --- Modifiers ---
-
   modifier hasSufficientCollateral(uint amount) {
     uint collateralRatio = msg.value / amount;
     require(collateralRatio > MIN_COLLATERAL_RATIO);
