@@ -2,30 +2,33 @@
 
 pragma solidity ^0.8.0;
 
+import "./Interfaces/ITeller.sol";
 import "./Interfaces/ITreasury.sol";
 import "./Interfaces/IProbity.sol";
 import "./Interfaces/IVaultManager.sol";
 import "./Dependencies/ProbityBase.sol";
 import "./Dependencies/Ownable.sol";
+import "hardhat/console.sol";
 
 /**
  * @notice This is the main contract which calls other contracts for specific sets of business logic.
  */
 contract Probity is IProbity, Ownable, ProbityBase {
+  using SafeMath for uint;
 
   // --- Data ---
 
+  ITeller public teller;
   ITreasury public treasury;
   IVaultManager public vaultManager;
 
+  enum Contract { Teller, Treasury, VaultManager }
+  mapping (Contract => address) private contracts;
+
   // --- Constructor ---
 
-  /**
-   * @notice Sets the addresses of deployed modules.
-   */
-  constructor(address _treasury, address _vaultManager) Ownable(msg.sender) {
-    treasury = ITreasury(_treasury);
-    vaultManager = IVaultManager(_vaultManager);
+  constructor() Ownable(msg.sender) {
+
   }
 
   // --- External Functions ---
@@ -37,11 +40,10 @@ contract Probity is IProbity, Ownable, ProbityBase {
    * @return vaultId
    * @dev Requires sufficient collateralization before opening vault.
    */
-  function openVault(uint debt, uint equity) external payable override hasSufficientCollateral(debt, equity) returns (uint vaultId) {
+  function openVault(uint debt, uint equity) external payable override hasSufficientCollateral(debt, equity) returns (uint256 vaultId) {
     vaultId = vaultManager.createVault(msg.sender, msg.value);
 
     if (equity > 0) treasury.increase(equity, vaultId);
-    // TODO:
     // if (debt > 0) teller.createLoan(debt, vaultId);
 
     return vaultId;
@@ -84,11 +86,34 @@ contract Probity is IProbity, Ownable, ProbityBase {
 
   }
 
+  // --- Helpers ---
+
+  /**
+   * @notice Set the address of a dependent contract.
+   * @dev Should probably make this inheritable.
+   */
+  function setAddress(Contract name, address addr) public onlyOwner {
+    if (name == Contract.Teller) teller = ITeller(addr);
+    if (name == Contract.Treasury) treasury = ITreasury(addr);
+    if (name == Contract.VaultManager) vaultManager = IVaultManager(addr);
+    contracts[name] = addr;
+  }
+
   // --- Modifiers ---
 
+  /**
+   * @param debt - The amount of Aurei to be borrowed.
+   * @param equity - The amount of Aurei to lend.
+   * @dev Solidity does not have floating point division.
+   *
+   * EXAMPLE:
+   *   msg.value = 150 x 10^18
+   *   debt + equity = 1 x 10^2
+   *   150 x 10^18 / 100 = 150 * 10^16 = 1.5
+   */
   modifier hasSufficientCollateral(uint debt, uint equity) {
-    uint collateralRatio = msg.value / (debt + equity);
-    require(collateralRatio > MIN_COLLATERAL_RATIO);
+    uint collateralRatio = msg.value.div((debt + equity));
+    require((collateralRatio) >= MIN_COLLATERAL_RATIO, "PRO: Insufficient collateral provided");
     _;
   }
 

@@ -38,7 +38,7 @@ contract Aurei is IAurei, Ownable {
 	/**
 	 * @dev Builds the domain separator
 	 */
-	constructor(address owner) Ownable(owner) {
+	constructor() Ownable(msg.sender) {
 		uint256 chainId;
 		assembly { chainId := chainid() }
 		_DOMAIN_SEPARATOR = keccak256(

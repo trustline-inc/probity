@@ -6,6 +6,7 @@ import "./Dependencies/Ownable.sol";
 import "./Dependencies/ProbityBase.sol";
 import "./Dependencies/SafeMath.sol";
 import "./Interfaces/IAurei.sol";
+import "./Interfaces/IProbity.sol";
 import "./Interfaces/ITreasury.sol";
 
 /**
@@ -19,11 +20,15 @@ contract Treasury is ITreasury, Ownable {
   mapping (uint => uint) public balances;
 
   IAurei public aurei;
+  IProbity public probity;
+
+  enum Contract { Aurei, Probity }
+  mapping (Contract => address) private contracts;
 
   // --- Constructor ---
 
-  constructor(address _aurei) Ownable(msg.sender) {
-    aurei = IAurei(_aurei);
+  constructor() Ownable(msg.sender) {
+
   }
 
   // --- External Functions ---
@@ -39,7 +44,7 @@ contract Treasury is ITreasury, Ownable {
    * @notice Adds Aurei to the treasury.
 	 * @dev Only callable by Probity
 	 */
-  function increase(uint256 amount, uint vaultId) external override onlyOwner {
+  function increase(uint256 amount, uint vaultId) external override onlyProbity {
     aurei.mint(address(this), amount);
     balances[vaultId] = balances[vaultId].add(amount);
     emit TreasuryIncrease(vaultId, amount);
@@ -49,10 +54,32 @@ contract Treasury is ITreasury, Ownable {
    * @notice Removes Aurei from the treasury.
 	 * @dev Only callable by Probity
 	 */
-  function decrease(uint256 amount, uint vaultId) external override onlyOwner {
+  function decrease(uint256 amount, uint vaultId) external override onlyProbity {
     aurei.burn(address(this), amount);
     balances[vaultId] = balances[vaultId].sub(amount);
     emit TreasuryDecrease(vaultId, amount);
   }
+
+  // --- Helpers ---
+
+  /**
+   * @notice Set the address of a dependent contract.
+   * @dev Should probably make this inheritable.
+   */
+  function setAddress(Contract name, address addr) public onlyOwner {
+    if (name == Contract.Aurei) aurei = IAurei(addr);
+    if (name == Contract.Probity) probity = IProbity(addr);
+    contracts[name] = addr;
+  }
+
+  // --- Modifiers ---
+
+  /**
+	 * @dev Ensure that msg.sender === Probity contract address.
+	 */
+	modifier onlyProbity {
+		require(msg.sender == contracts[Contract.Probity]);
+		_;
+	}
 
 }

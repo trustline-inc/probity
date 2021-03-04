@@ -1,7 +1,8 @@
 require('dotenv').config()
 import "@nomiclabs/hardhat-ethers";
+import "@nomiclabs/hardhat-web3";
+import "@nomiclabs/hardhat-waffle";
 import { HardhatUserConfig } from "hardhat/config";
-require("@nomiclabs/hardhat-waffle");
 
 const config: HardhatUserConfig = {
   defaultNetwork: "coston",
