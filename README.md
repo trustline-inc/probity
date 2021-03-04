@@ -61,3 +61,11 @@ Required reading: https://blog.openzeppelin.com/the-state-of-smart-contract-upgr
 ### Upgrade Governance
 
 For development, we will use EOAs (externally-owned accounts) as contract owners. For mainnet upgrades, we will adopt a voting process similar to MakerDAO and Compound.
+
+## System Design
+
+This is the main equation:
+
+```
+EQUITY + EARNED_INTEREST - DEBT - CHARGED_INTEREST <= COLLATERAL * COLLATERAL_PRICE / MIN_COLLATERAL_RATIO
+```
