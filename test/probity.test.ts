@@ -6,32 +6,13 @@ import { expect } from "chai";
 describe("Probity", function() {
 
   // Contracts
-  let Registry;
-  let Aurei;
-  let Probity;
-  let Teller;
-  let Treasury;
-  let VaultManager;
+  let Aurei, Probity, Registry, Teller, Treasury, VaultManager;
 
   // Instances
-  let aurei;
-  let probity;
-  let teller;
-  let treasury;
-  let vaultManager;
-  let registry;
+  let aurei, probity, registry, teller, treasury, vaultManager;
 
   // Wallets
-  let owner;
-  let user;
-  let addrs;
-
-  enum Contract { Teller, Treasury, VaultManager, Aurei, Probity };
-  enum Status {
-    Active,
-    Closed,
-    NonExistent
-  };
+  let addrs, owner, user;
 
   before(async function () {
     // Get the ContractFactory and Signers here.
@@ -68,11 +49,13 @@ describe("Probity", function() {
      * SET CONTRACT ADDRESSES
      */
 
+    enum Contract { Aurei, Probity, Teller, Treasury, VaultManager };
+
+    await registry.setupContractAddress(Contract.Aurei, aurei.address);
+    await registry.setupContractAddress(Contract.Probity, probity.address);
     await registry.setupContractAddress(Contract.Teller, teller.address);
     await registry.setupContractAddress(Contract.Treasury, treasury.address);
     await registry.setupContractAddress(Contract.VaultManager, vaultManager.address);
-    await registry.setupContractAddress(Contract.Aurei, aurei.address);
-    await registry.setupContractAddress(Contract.Probity, probity.address);
 
     await probity.initializeContract();
     await treasury.initializeContract();
@@ -88,7 +71,7 @@ describe("Probity", function() {
       const txResponse = await probity.openVault(debt, equity, tx);
       const result = await txResponse.wait();
 
-      const [index,collateral, status]  = await probity.getCollateralDetails(owner.address);
+      const [index, collateral, status]  = await probity.getVault();
       expect(collateral).to.equal(web3.utils.toWei(coll.toString()));
       expect(index).to.equal(0);
 
@@ -102,7 +85,7 @@ describe("Probity", function() {
       const txResponse = await probity.openVault(debt, equity, tx);
       const result = await txResponse.wait();
 
-      const [index,collateral, status] = await probity.getCollateralDetails(owner.address);
+      const [index, collateral, status] = await probity.getVault();
       expect(collateral).to.equal(web3.utils.toWei(coll.toString()));
       expect(index).to.equal(1);
 
@@ -116,7 +99,7 @@ describe("Probity", function() {
       const txResponse = await probity.openVault(debt, equity, tx);
       const result = await txResponse.wait();
 
-      const [index,collateral, status] = await probity.getCollateralDetails(owner.address);
+      const [index, collateral, status] = await probity.getVault();
       expect(collateral).to.equal(web3.utils.toWei(coll.toString()));
       expect(index).to.equal(2);
     });
@@ -129,7 +112,7 @@ describe("Probity", function() {
       const txResponse = await probity.openVault(debt, equity, tx);
       const result = await txResponse.wait();
 
-      const [index,collateral, status] = await probity.getCollateralDetails(owner.address);
+      const [index, collateral, status] = await probity.getVault();
       expect(collateral).to.equal(web3.utils.toWei(coll.toString()));
       expect(index).to.equal(3);
     });

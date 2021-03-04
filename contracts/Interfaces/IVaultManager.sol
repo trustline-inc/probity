@@ -20,5 +20,5 @@ interface IVaultManager {
 
   function createVault(address owner, uint initialCollateral) external returns (uint vaultId);
 
-  function getVaultOwnerDetails(address _owner) external view returns (ProbityBase.Vault memory);
+  function getVaultByOwner(address _owner) external view returns (ProbityBase.Vault memory);
 }

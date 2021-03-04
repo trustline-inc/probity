@@ -10,6 +10,7 @@ import "../Dependencies/ProbityBase.sol";
 interface IRegistry {
   
   // --- Functions --
+
   function setupContractAddress(ProbityBase.Contract name, address _addr) external;
 
   function getContractAddress(ProbityBase.Contract name) external view returns (address);

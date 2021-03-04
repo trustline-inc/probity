@@ -9,11 +9,19 @@ import "./ProbityMath.sol";
  */
 contract ProbityBase {
   using SafeMath for uint;
+
+  // --- Vault data structure ---
+
   /**
    * index: the index of the vault in the vaultOwners array. Used as the vault ID.
    * collateral: the amount of collateral securing the borrowing or issuance of Aurei.
    * status: The status of the vault. 
    */
+  struct Vault {
+    uint index;
+    uint collateral;
+    Status status;
+  }
 
   enum Status {
     Active,
@@ -21,13 +29,18 @@ contract ProbityBase {
     NonExistent
   }
   
-  struct Vault {
-    uint index;
-    uint collateral;
-    Status status;
+  // --- Registered contracts ---
+
+  enum Contract {
+    Aurei,
+    Probity,
+    Teller,
+    Treasury,
+    VaultManager
   }
-  
-  enum Contract { Teller, Treasury, VaultManager, Aurei, Probity }
+
+  // --- Math constants ---
+
   // One hundred percent expressed as 1 x 10^18 or 1e18
   uint constant public ONE_HUNDRED_PERCENT = 1000000000000000000; // 100%
 

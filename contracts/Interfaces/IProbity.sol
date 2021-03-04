@@ -10,7 +10,9 @@ import "../Dependencies/ProbityBase.sol";
 interface IProbity {
 
   // --- Events ---
+
   event VaultCreated(address indexed owner, uint vaultId);
+
   // --- Functions ---
 
   /**
@@ -57,9 +59,8 @@ interface IProbity {
   function closeVault(uint _vaultId) external;
 
   /**
-  * @notice Fetches collateral details from the vault
-  * @param owner - Vault owner address
-  * Returns collateral amount, vaultIndex.
+  * @notice Fetches details about the message sender's vault.
+  * @return Vault details.
   */
-  function getCollateralDetails(address owner) external view returns (ProbityBase.Vault memory);
+  function getVault() external view returns (ProbityBase.Vault memory);
 }

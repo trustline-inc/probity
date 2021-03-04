@@ -25,6 +25,7 @@ contract Probity is IProbity, Ownable, ProbityBase {
   IRegistry public registry;
 
   // --- Constructor ---
+
   constructor(address _registry) Ownable(msg.sender) {
     registry = IRegistry(_registry);
   }
@@ -75,12 +76,11 @@ contract Probity is IProbity, Ownable, ProbityBase {
   }
 
   /**
-   * @notice Gets collateral details from the vault
-   * @param _owner - Vault owner address
-   * Returns collateral amount, vaultIndex.
+   * @notice Gets the vault details.
+   * @return The user's vault.
    */
-  function getCollateralDetails(address _owner) external view override returns (Vault memory) {
-      return vaultManager.getVaultOwnerDetails(_owner);
+  function getVault() external view override returns (Vault memory) {
+    return vaultManager.getVaultByOwner(msg.sender);
   }
 
   /**
@@ -107,16 +107,18 @@ contract Probity is IProbity, Ownable, ProbityBase {
    * @param debt - The amount of Aurei to be borrowed.
    * @param equity - The amount of Aurei to lend.
    * @dev Solidity does not have floating point division.
-   * Scenario: If user doesn't want lending or borrowing. Just doing collateral, is allowed?
+   *
    * EXAMPLE:
-   *   msg.value = 150 x 10^18
-   *   debt + equity = 1 x 10^2
-   *   150 x 10^18 / 100 = 150 * 10^16 = 1.5
+   *   msg.value = 150 x 10^18 (assume price = $1)
+   *   debt + equity = 1 x 10^2 (e.g. $100 of debt and/or equity)
+   *   150 x 10^18 / 100 = 150 * 10^16
+   *   (150 * 10^16) / 1 x 10^18 = 1.5 or 150%
    */
   modifier hasSufficientCollateral(uint debt, uint equity) {
-    //Check for infinity division 
+    // Check for infinity division - E.G., if user doesn't want lending or borrowing.
+    // User may open vault with collateral without utilizing the position.
     if ((debt + equity) > 0)  { 
-       uint collateralRatio = msg.value.div((debt + equity));
+      uint collateralRatio = msg.value.div((debt + equity));
       require((collateralRatio) >= MIN_COLLATERAL_RATIO, "PRO: Insufficient collateral provided");
     }  
     _;

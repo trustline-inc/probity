@@ -16,6 +16,7 @@ contract VaultManager is IVaultManager, ProbityBase, Ownable {
   using SafeMath for uint256;
 
   // --- Data ---
+
   mapping (address => Vault) public vaults;
 
   address[] public vaultOwners;
@@ -42,11 +43,11 @@ contract VaultManager is IVaultManager, ProbityBase, Ownable {
   }
 
   /**
-   * @notice Fetches collateral details from the vault
-   * @param _owner - Vault owner address
-   * Returns collateral amount, vaultIndex.
+   * @notice Fetches vault details.
+   * @param _owner - Vault owner address.
+   * @return The vault data structure.
    */
-  function getVaultOwnerDetails(address _owner) external view override returns (Vault memory) {
+  function getVaultByOwner(address _owner) external view override returns (Vault memory) {
     return (vaults[_owner]);
   }
 
