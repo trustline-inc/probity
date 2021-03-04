@@ -1,6 +1,6 @@
-# Stablecoin
+# Probity
 
-Aurei crypto stablecoin
+Smart contract system for the Aurei crypto stablecoin
 
 ## Quickstart
 
