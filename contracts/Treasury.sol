@@ -8,11 +8,12 @@ import "./Dependencies/SafeMath.sol";
 import "./Interfaces/IAurei.sol";
 import "./Interfaces/IProbity.sol";
 import "./Interfaces/ITreasury.sol";
+import "./Interfaces/IRegistry.sol";
 
 /**
  * @notice Manages debts for all vaults.
  */
-contract Treasury is ITreasury, Ownable {
+contract Treasury is ITreasury, Ownable, ProbityBase {
   using SafeMath for uint256;
 
   // --- Data ---
@@ -21,16 +22,23 @@ contract Treasury is ITreasury, Ownable {
 
   IAurei public aurei;
   IProbity public probity;
-
-  enum Contract { Aurei, Probity }
-  mapping (Contract => address) private contracts;
-
+  IRegistry public registry;
+  
   // --- Constructor ---
 
-  constructor() Ownable(msg.sender) {
-
+  constructor(address _registry) Ownable(msg.sender) {
+    registry = IRegistry(_registry);
   }
 
+  /**
+   * @notice Initialize dependent contract.
+   * @dev Should probably make this inheritable.
+   */
+  function initializeContract() external onlyOwner {
+    aurei = IAurei(registry.getContractAddress(Contract.Aurei));
+    probity = IProbity(registry.getContractAddress(Contract.Treasury));
+  }
+  
   // --- External Functions ---
 
   /**
@@ -60,25 +68,13 @@ contract Treasury is ITreasury, Ownable {
     emit TreasuryDecrease(vaultId, amount);
   }
 
-  // --- Helpers ---
-
-  /**
-   * @notice Set the address of a dependent contract.
-   * @dev Should probably make this inheritable.
-   */
-  function setAddress(Contract name, address addr) public onlyOwner {
-    if (name == Contract.Aurei) aurei = IAurei(addr);
-    if (name == Contract.Probity) probity = IProbity(addr);
-    contracts[name] = addr;
-  }
-
   // --- Modifiers ---
 
   /**
 	 * @dev Ensure that msg.sender === Probity contract address.
 	 */
 	modifier onlyProbity {
-		require(msg.sender == contracts[Contract.Probity]);
+		require(msg.sender == registry.getContractAddress(Contract.Probity));
 		_;
 	}
 

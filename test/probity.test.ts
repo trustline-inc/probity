@@ -6,6 +6,7 @@ import { expect } from "chai";
 describe("Probity", function() {
 
   // Contracts
+  let Registry;
   let Aurei;
   let Probity;
   let Teller;
@@ -18,19 +19,30 @@ describe("Probity", function() {
   let teller;
   let treasury;
   let vaultManager;
-  
+  let registry;
+
   // Wallets
   let owner;
   let user;
   let addrs;
-  
+
+  enum Contract { Teller, Treasury, VaultManager, Aurei, Probity };
+  enum Status {
+    Active,
+    Closed,
+    NonExistent
+  };
+
   before(async function () {
     // Get the ContractFactory and Signers here.
     [owner, user, ...addrs] = await ethers.getSigners();
 
-    /** 
+    /**
      * DEPLOY CONTRACTS
      */
+    Registry = await ethers.getContractFactory("Registry");
+    registry = await Registry.deploy();
+    await registry.deployed();
 
     Aurei = await ethers.getContractFactory("Aurei");
     aurei = await Aurei.deploy();
@@ -41,7 +53,7 @@ describe("Probity", function() {
     await teller.deployed();
 
     Treasury = await ethers.getContractFactory("Treasury");
-    treasury = await Treasury.deploy();
+    treasury = await Treasury.deploy(registry.address);
     await treasury.deployed();
 
     VaultManager = await ethers.getContractFactory("VaultManager");
@@ -49,68 +61,88 @@ describe("Probity", function() {
     await vaultManager.deployed();
 
     Probity = await ethers.getContractFactory("Probity");
-    probity = await Probity.deploy();
+    probity = await Probity.deploy(registry.address);
     await probity.deployed();
 
     /**
      * SET CONTRACT ADDRESSES
      */
 
-    // 0 = Aurei, 1 = Probity
-    await treasury.setAddress(0, aurei.address);
-    await treasury.setAddress(1, probity.address);
+    await registry.setupContractAddress(Contract.Teller, teller.address);
+    await registry.setupContractAddress(Contract.Treasury, treasury.address);
+    await registry.setupContractAddress(Contract.VaultManager, vaultManager.address);
+    await registry.setupContractAddress(Contract.Aurei, aurei.address);
+    await registry.setupContractAddress(Contract.Probity, probity.address);
 
-    // 0 = Teller, 1 = Treasury, 2 = VaultManager
-    await probity.setAddress(0, teller.address);
-    await probity.setAddress(1, treasury.address);
-    await probity.setAddress(2, vaultManager.address);
+    await probity.initializeContract();
+    await treasury.initializeContract();
+
   });
+  describe("Vault Opening", function () {
+    it('Opens a vault with equity', async () => {
+      const coll = 150;
+      const debt = 0;
+      const equity = 1;
 
-  it('Opens a vault with equity', async () => {
-    const coll = 150;
-    const debt = 0;
-    const equity = 100;
-    const tx = { from: owner.address, value: web3.utils.toWei(coll.toString()) };
+      const tx = {from: owner.address, value: web3.utils.toWei(coll.toString())};
+      const txResponse = await probity.openVault(debt, equity, tx);
+      const result = await txResponse.wait();
 
-    const result = await probity.openVault(debt, equity, tx);
+      const [index,collateral, status]  = await probity.getCollateralDetails(owner.address);
+      expect(collateral).to.equal(web3.utils.toWei(coll.toString()));
+      expect(index).to.equal(0);
 
-    console.log("Result:", result);
+    });
 
-    // expect(result).to.equal(0);
-  });
+    it('Opens a vault with debt', async () => {
+      const coll = 150;
+      const debt = 100;
+      const equity = 0;
+      const tx = {from: owner.address, value: web3.utils.toWei(coll.toString())};
+      const txResponse = await probity.openVault(debt, equity, tx);
+      const result = await txResponse.wait();
 
-  it('Opens a vault with debt', async () => {
-    const coll = 150;
-    const debt = 100;
-    const equity = 0;
-    const tx = { from: owner.address, value: web3.utils.toWei(coll.toString()) };
+      const [index,collateral, status] = await probity.getCollateralDetails(owner.address);
+      expect(collateral).to.equal(web3.utils.toWei(coll.toString()));
+      expect(index).to.equal(1);
 
-    // HOW TO CAPTURE EVENT?
+    });
 
-    // await expect(token.transfer(walletTo.address, 7))
-    //   .to.emit(token, 'Transfer')
-    //   .withArgs(wallet.address, walletTo.address, 7);
+    it('Opens a vault with equity and debt', async () => {
+      const coll = 150;
+      const debt = 50;
+      const equity = 50;
+      const tx = {from: owner.address, value: web3.utils.toWei(coll.toString())};
+      const txResponse = await probity.openVault(debt, equity, tx);
+      const result = await txResponse.wait();
 
-    expect(await probity.openVault(debt, equity, tx)).to.equal(1);
-  });
+      const [index,collateral, status] = await probity.getCollateralDetails(owner.address);
+      expect(collateral).to.equal(web3.utils.toWei(coll.toString()));
+      expect(index).to.equal(2);
+    });
 
-  it('Opens a vault with equity and debt', async () => {
-    const coll = 150;
-    const debt = 50;
-    const equity = 50;
-    const tx = { from: owner.address, value: web3.utils.toWei(coll.toString()) };
-    expect(await probity.openVault(debt, equity, tx)).to.equal(2);
-  });
+    it('Opens a vault with zero equity and zero debt', async () => {
+      const coll = 150;
+      const debt = 0;
+      const equity = 0;
+      const tx = {from: owner.address, value: web3.utils.toWei(coll.toString())};
+      const txResponse = await probity.openVault(debt, equity, tx);
+      const result = await txResponse.wait();
 
-  it('Fails to open with insufficient collateral', async () => {
-    const coll = 150;
-    const debt = 100;
-    const equity = 100;
-    const tx = { from: owner.address, value: web3.utils.toWei(coll.toString()) };
+      const [index,collateral, status] = await probity.getCollateralDetails(owner.address);
+      expect(collateral).to.equal(web3.utils.toWei(coll.toString()));
+      expect(index).to.equal(3);
+    });
     
-    await expect(
-      probity.openVault(debt, equity, tx)
-    ).to.be.revertedWith("PRO: Insufficient collateral provided");
+    it('Fails to open with insufficient collateral', async () => {
+      const coll = 150;
+      const debt = 100;
+      const equity = 100;
+      const tx = {from: owner.address, value: web3.utils.toWei(coll.toString())};
+
+      await expect(
+        probity.openVault(debt, equity, tx)
+      ).to.be.revertedWith("PRO: Insufficient collateral provided");
+    });
   });
-  
 });

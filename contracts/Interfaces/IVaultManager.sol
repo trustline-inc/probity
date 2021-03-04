@@ -2,6 +2,8 @@
 
 pragma solidity ^0.8.0;
 
+import "../Dependencies/ProbityBase.sol";
+
 /**
  * @notice The vault manager contains logic for vault operations, including lifecycle management
  * and providing or withdrawing collateral.
@@ -16,5 +18,7 @@ interface IVaultManager {
 
   // --- Functions ---
 
-  function createVault(address owner, uint initialCollateral) external payable returns (uint vaultId);
+  function createVault(address owner, uint initialCollateral) external returns (uint vaultId);
+
+  function getVaultOwnerDetails(address _owner) external view returns (ProbityBase.Vault memory);
 }

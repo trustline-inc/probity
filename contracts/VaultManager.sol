@@ -12,28 +12,10 @@ import "./Dependencies/SafeMath.sol";
  *
  * Adapted from https://github.com/liquity/beta/blob/main/contracts/Interfaces/ITroveManager.sol
  */
-contract VaultManager is IVaultManager, Ownable {
+contract VaultManager is IVaultManager, ProbityBase, Ownable {
   using SafeMath for uint256;
 
   // --- Data ---
-
-  enum Status {
-    Active,
-    Closed,
-    NonExistent
-  }
-
-  /**
-   * index: the index of the vault in the vaultOwners array. Used as the vault ID.
-   * collateral: the amount of collateral securing the borrowing or issuance of Aurei.
-   * status: The status of the vault. 
-   */
-  struct Vault {
-    uint index;
-    uint collateral;
-    Status status;
-  }
-
   mapping (address => Vault) public vaults;
 
   address[] public vaultOwners;
@@ -51,12 +33,21 @@ contract VaultManager is IVaultManager, Ownable {
    * @param owner - Address of the vault owner.
    * @param initialCollateral - Initial collateral amount.
    */
-  function createVault(address owner, uint initialCollateral) external payable override returns (uint index) {
+  function createVault(address owner, uint initialCollateral) external override returns (uint index) {
     vaults[owner].collateral = initialCollateral;
     setVaultStatus(owner, Status.Active);
     index = addVaultOwnerToArray(owner);
     emit VaultCreated(owner, index);
     return index;
+  }
+
+  /**
+   * @notice Fetches collateral details from the vault
+   * @param _owner - Vault owner address
+   * Returns collateral amount, vaultIndex.
+   */
+  function getVaultOwnerDetails(address _owner) external view override returns (Vault memory) {
+    return (vaults[_owner]);
   }
 
   // --- Internal Functions ---
@@ -71,4 +62,5 @@ contract VaultManager is IVaultManager, Ownable {
   function setVaultStatus(address owner, Status status) internal {
     vaults[owner].status = status;
   }
+  
 }

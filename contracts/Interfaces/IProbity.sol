@@ -2,13 +2,15 @@
 
 pragma solidity ^0.8.0;
 
+import "../Dependencies/ProbityBase.sol";
+
 /**
  * @notice This is the main contract which calls other contracts for specific sets of business logic.
  */
 interface IProbity {
 
   // --- Events ---
-
+  event VaultCreated(address indexed owner, uint vaultId);
   // --- Functions ---
 
   /**
@@ -53,4 +55,11 @@ interface IProbity {
    * @dev This method can only be called by the vault owner or an address that was granted access.
    */
   function closeVault(uint _vaultId) external;
+
+  /**
+  * @notice Fetches collateral details from the vault
+  * @param owner - Vault owner address
+  * Returns collateral amount, vaultIndex.
+  */
+  function getCollateralDetails(address owner) external view returns (ProbityBase.Vault memory);
 }

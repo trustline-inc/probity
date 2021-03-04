@@ -6,6 +6,7 @@ import "./Interfaces/ITeller.sol";
 import "./Interfaces/ITreasury.sol";
 import "./Interfaces/IProbity.sol";
 import "./Interfaces/IVaultManager.sol";
+import "./Interfaces/IRegistry.sol";
 import "./Dependencies/ProbityBase.sol";
 import "./Dependencies/Ownable.sol";
 import "hardhat/console.sol";
@@ -21,16 +22,22 @@ contract Probity is IProbity, Ownable, ProbityBase {
   ITeller public teller;
   ITreasury public treasury;
   IVaultManager public vaultManager;
-
-  enum Contract { Teller, Treasury, VaultManager }
-  mapping (Contract => address) private contracts;
+  IRegistry public registry;
 
   // --- Constructor ---
-
-  constructor() Ownable(msg.sender) {
-
+  constructor(address _registry) Ownable(msg.sender) {
+    registry = IRegistry(_registry);
   }
 
+  /**
+   * @notice Set the address of a dependent contract.
+   * @dev Should probably make this inheritable.
+   */
+  function initializeContract() external onlyOwner {
+    teller = ITeller(registry.getContractAddress(Contract.Teller));
+    treasury = ITreasury(registry.getContractAddress(Contract.Treasury));
+    vaultManager = IVaultManager(registry.getContractAddress(Contract.VaultManager));
+  }
   // --- External Functions ---
 
   /**
@@ -45,7 +52,7 @@ contract Probity is IProbity, Ownable, ProbityBase {
 
     if (equity > 0) treasury.increase(equity, vaultId);
     // if (debt > 0) teller.createLoan(debt, vaultId);
-
+    emit VaultCreated(msg.sender, vaultId);
     return vaultId;
   }
 
@@ -68,6 +75,15 @@ contract Probity is IProbity, Ownable, ProbityBase {
   }
 
   /**
+   * @notice Gets collateral details from the vault
+   * @param _owner - Vault owner address
+   * Returns collateral amount, vaultIndex.
+   */
+  function getCollateralDetails(address _owner) external view override returns (Vault memory) {
+      return vaultManager.getVaultOwnerDetails(_owner);
+  }
+
+  /**
    * @notice Transfers collateral from the vault to the caller.
    * @param vaultId - The vault to withdraw from.
    * @param amount - The amount of collateral to withdraw.
@@ -75,7 +91,6 @@ contract Probity is IProbity, Ownable, ProbityBase {
    * greater than the minimum collateral ratio.
    */
   function withdrawCollateral(uint vaultId, uint amount) external override {
-
   }
 
   /**
@@ -86,35 +101,24 @@ contract Probity is IProbity, Ownable, ProbityBase {
 
   }
 
-  // --- Helpers ---
-
-  /**
-   * @notice Set the address of a dependent contract.
-   * @dev Should probably make this inheritable.
-   */
-  function setAddress(Contract name, address addr) public onlyOwner {
-    if (name == Contract.Teller) teller = ITeller(addr);
-    if (name == Contract.Treasury) treasury = ITreasury(addr);
-    if (name == Contract.VaultManager) vaultManager = IVaultManager(addr);
-    contracts[name] = addr;
-  }
-
   // --- Modifiers ---
 
   /**
    * @param debt - The amount of Aurei to be borrowed.
    * @param equity - The amount of Aurei to lend.
    * @dev Solidity does not have floating point division.
-   *
+   * Scenario: If user doesn't want lending or borrowing. Just doing collateral, is allowed?
    * EXAMPLE:
    *   msg.value = 150 x 10^18
    *   debt + equity = 1 x 10^2
    *   150 x 10^18 / 100 = 150 * 10^16 = 1.5
    */
   modifier hasSufficientCollateral(uint debt, uint equity) {
-    uint collateralRatio = msg.value.div((debt + equity));
-    require((collateralRatio) >= MIN_COLLATERAL_RATIO, "PRO: Insufficient collateral provided");
+    //Check for infinity division 
+    if ((debt + equity) > 0)  { 
+       uint collateralRatio = msg.value.div((debt + equity));
+      require((collateralRatio) >= MIN_COLLATERAL_RATIO, "PRO: Insufficient collateral provided");
+    }  
     _;
   }
-
 }
