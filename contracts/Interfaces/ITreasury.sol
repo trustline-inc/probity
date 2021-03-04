@@ -16,7 +16,7 @@ interface ITreasury {
 
   function balanceOf(uint vaultId) external view returns (uint256);
 
-  function addToTreasury(uint256 amount, uint vaultId) external;
+  function increase(uint256 amount, uint vaultId) external;
 
-  function removeFromTreasury(uint256 amount, uint vaultId) external;
+  function decrease(uint256 amount, uint vaultId) external;
 }

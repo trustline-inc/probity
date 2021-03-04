@@ -16,5 +16,5 @@ interface IVaultManager {
 
   // --- Functions ---
 
-  function openVault(address owner, uint initialCollateral) external payable returns (uint vaultId);
+  function createVault(address owner, uint initialCollateral) external payable returns (uint vaultId);
 }

@@ -39,7 +39,7 @@ contract Treasury is ITreasury, Ownable {
    * @notice Adds Aurei to the treasury.
 	 * @dev Only callable by Probity
 	 */
-  function addToTreasury(uint256 amount, uint vaultId) external override onlyOwner {
+  function increase(uint256 amount, uint vaultId) external override onlyOwner {
     aurei.mint(address(this), amount);
     balances[vaultId] = balances[vaultId].add(amount);
     emit TreasuryIncrease(vaultId, amount);
@@ -49,7 +49,7 @@ contract Treasury is ITreasury, Ownable {
    * @notice Removes Aurei from the treasury.
 	 * @dev Only callable by Probity
 	 */
-  function removeFromTreasury(uint256 amount, uint vaultId) external override onlyOwner {
+  function decrease(uint256 amount, uint vaultId) external override onlyOwner {
     aurei.burn(address(this), amount);
     balances[vaultId] = balances[vaultId].sub(amount);
     emit TreasuryDecrease(vaultId, amount);

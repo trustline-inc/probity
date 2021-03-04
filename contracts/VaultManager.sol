@@ -23,10 +23,14 @@ contract VaultManager is IVaultManager, Ownable {
     NonExistent
   }
 
+  /**
+   * index: the index of the vault in the vaultOwners array. Used as the vault ID.
+   * collateral: the amount of collateral securing the borrowing or issuance of Aurei.
+   * status: The status of the vault. 
+   */
   struct Vault {
-    uint debt;
+    uint index;
     uint collateral;
-    uint arrayIndex;
     Status status;
   }
 
@@ -42,29 +46,29 @@ contract VaultManager is IVaultManager, Ownable {
 
   // --- External Functions ---
 
-  function openVault(address owner, uint initalCollateral) external payable override returns (uint index) {
-    vaults[owner].debt = 0;
-    vaults[owner].collateral = initalCollateral;
-
-    _setVaultStatus(owner, Status.Active);
-
-    index = _addVaultOwnerToArray(owner);
-
+  /**
+   * @notice Creates a new vault to store collateral.
+   * @param owner - Address of the vault owner.
+   * @param initialCollateral - Initial collateral amount.
+   */
+  function createVault(address owner, uint initialCollateral) external payable override returns (uint index) {
+    vaults[owner].collateral = initialCollateral;
+    setVaultStatus(owner, Status.Active);
+    index = addVaultOwnerToArray(owner);
     emit VaultCreated(owner, index);
-
     return index;
   }
 
   // --- Internal Functions ---
 
-  function _addVaultOwnerToArray(address _owner) internal returns (uint _index) {
-    vaultOwners.push(_owner);
-    _index = vaultOwners.length.sub(1);
-    vaults[_owner].arrayIndex = _index;
-    return _index;    
+  function addVaultOwnerToArray(address owner) internal returns (uint index) {
+    vaultOwners.push(owner);
+    index = vaultOwners.length.sub(1);
+    vaults[owner].index = index;
+    return index;    
   }
 
-  function _setVaultStatus(address owner, Status status) internal {
+  function setVaultStatus(address owner, Status status) internal {
     vaults[owner].status = status;
   }
 }

@@ -32,13 +32,18 @@ contract Probity is IProbity, Ownable, ProbityBase {
 
   /**
    * @notice Opens a vault, deposits collateral, and mints Aurei for lending. 
-   * @param amount - The desired amount of Aurei to mint.
+   * @param debt - The amount of Aurei to borrow.
+   * @param equity - The amount of Aurei to mint for lending.
    * @return vaultId
    * @dev Requires sufficient collateralization before opening vault.
    */
-  function openVault(uint amount) external payable override hasSufficientCollateral(amount) returns (uint vaultId) {
-    vaultId = vaultManager.openVault(msg.sender, msg.value);
-    treasury.addToTreasury(amount, vaultId);
+  function openVault(uint debt, uint equity) external payable override hasSufficientCollateral(debt, equity) returns (uint vaultId) {
+    vaultId = vaultManager.createVault(msg.sender, msg.value);
+
+    if (equity > 0) treasury.increase(equity, vaultId);
+    // TODO:
+    // if (debt > 0) teller.createLoan(debt, vaultId);
+
     return vaultId;
   }
 
@@ -81,8 +86,8 @@ contract Probity is IProbity, Ownable, ProbityBase {
 
   // --- Modifiers ---
 
-  modifier hasSufficientCollateral(uint amount) {
-    uint collateralRatio = msg.value / amount;
+  modifier hasSufficientCollateral(uint debt, uint equity) {
+    uint collateralRatio = msg.value / (debt + equity);
     require(collateralRatio > MIN_COLLATERAL_RATIO);
     _;
   }

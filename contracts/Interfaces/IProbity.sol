@@ -12,13 +12,16 @@ interface IProbity {
   // --- Functions ---
 
   /**
-   * @notice Call this to open a vault for an account for the first time. Adds `msg.value` of inital collateral.
+   * @notice Call this to open a vault for the first time. Adds `msg.value` of inital collateral.
+   * @param debt - The amount of Aurei to borrow from the treasury.
+   * @param equity - The amount of Aurei to mint for lending.
    * @return vaultId - a numerical nonce representing the vault ID.
+   * @dev Requires sufficient collateralization before opening vault.
    */
-  function openVault(uint amount) external payable returns (uint vaultId);
+  function openVault(uint debt, uint equity) external payable returns (uint vaultId);
 
   /**
-   * @notice Call this to open a vault for an account for the first time. Adds `msg.value` of inital collateral.
+   * @notice Call this to grant vault access to a third party.
    * @param _vaultId - The vault ID.
    * @param _grantee - Address of the grantee
    * @dev This method can only be called by the vault owner or an address that was granted access.
