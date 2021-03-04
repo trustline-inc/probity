@@ -4,6 +4,9 @@ node_modules
 # Keystore file
 keystore.json
 
+# IDE config
+.idea
+
 # Hardhat files
 cache
 artifacts

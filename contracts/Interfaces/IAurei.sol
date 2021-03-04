@@ -9,10 +9,10 @@ import "../Dependencies/IERC2612.sol";
  * @notice Common interface for the Aurei token.
  */
 interface IAurei is IERC20, IERC2612 {
+
   // --- Events ---
 
   event AureiBalanceUpdated(address _user, uint _amount);
-  event VaultManagerAddressChanged(address _vaultManagerAddress);
 
   // --- Functions ---
 

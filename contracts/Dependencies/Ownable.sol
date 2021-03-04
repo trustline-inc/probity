@@ -22,11 +22,11 @@ contract Ownable {
   /**
     * @dev Initializes the contract setting the deployer as the initial owner.
     */
-  constructor () {
-    _owner = msg.sender;
-    emit OwnershipTransferred(address(0), msg.sender);
+  constructor (address _address) {
+    _owner =  _address;
+    emit OwnershipTransferred(address(0),  _address);
   }
-
+  
   /**
     * @dev Returns the address of the current owner.
     */

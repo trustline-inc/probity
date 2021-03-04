@@ -2,8 +2,10 @@
 
 pragma solidity ^0.8.0;
 
-import "./Interfaces/IAurei.sol";
+import "./Dependencies/Ownable.sol";
 import "./Dependencies/SafeMath.sol";
+import "./Interfaces/IAurei.sol";
+import "./Interfaces/ITeller.sol";
 
 /**
  * Based upon OpenZeppelin's ERC20 contract:
@@ -12,10 +14,11 @@ import "./Dependencies/SafeMath.sol";
  * and their EIP2612 (ERC20Permit / ERC712) functionality:
  * https://github.com/OpenZeppelin/openzeppelin-contracts/blob/53516bc555a454862470e7860a9b5254db4d00f5/contracts/token/ERC20/ERC20Permit.sol
  */
-contract Aurei is IAurei {
+contract Aurei is IAurei, Ownable {
 	using SafeMath for uint256;
 
-	// --- ERC20 Data ---
+	// --- Data ---
+
 	uint256 private _totalSupply;
 	string constant internal _NAME 		= "Aurei Stablecoin";
 	string constant internal _SYMBOL 	= "AUR";
@@ -35,7 +38,7 @@ contract Aurei is IAurei {
 	/**
 	 * @dev Builds the domain separator
 	 */
-	constructor() {
+	constructor() Ownable(msg.sender) {
 		uint256 chainId;
 		assembly { chainId := chainid() }
 		_DOMAIN_SEPARATOR = keccak256(
@@ -71,10 +74,6 @@ contract Aurei is IAurei {
 		return _balances[account];
 	}
 
-	function burn(address _account, uint256 _amount) external override {
-		_burn(_account, _amount);
-	}
-
 	function decimals() external pure override returns (uint8) {
 		return _DECIMALS;
 	}
@@ -87,10 +86,6 @@ contract Aurei is IAurei {
 	function increaseAllowance(address spender, uint256 addedValue) external override returns (bool) {
 		_approve(msg.sender, spender, _allowed[msg.sender][spender].add(addedValue));
 		return true;
-	}
-
-	function mint(address _account, uint256 _amount) external override {
-		_mint(_account, _amount);
 	}
 
 	function name() external pure override returns (string memory) {
@@ -110,6 +105,22 @@ contract Aurei is IAurei {
 		_transfer(msg.sender, recipient, amount);
 		return true;
 	}
+
+  function mint(address account, uint256 amount) external override {
+    assert(account != address(0));
+
+    _totalSupply = _totalSupply.add(amount);
+    _balances[account] = _balances[account].add(amount);
+    emit Transfer(address(0), account, amount);
+  }
+
+  function burn(address account, uint256 amount) external override {
+    assert(account != address(0));
+
+    _balances[account] = _balances[account].sub(amount, "ERC20: burn amount exceeds balance");
+    _totalSupply = _totalSupply.sub(amount);
+    emit Transfer(account, address(0), amount);
+  }
 
 	function transferFrom(address sender, address recipient, uint256 amount) external override returns (bool) {
 		_requireValidRecipient(recipient);
@@ -181,22 +192,6 @@ contract Aurei is IAurei {
 		emit Approval(owner, spender, amount);
 	}
 
-	function _burn(address account, uint256 amount) internal {
-		assert(account != address(0));
-
-		_balances[account] = _balances[account].sub(amount, "ERC20: burn amount exceeds balance");
-		_totalSupply = _totalSupply.sub(amount);
-		emit Transfer(account, address(0), amount);
-	}
-
-	function _mint(address account, uint256 amount) internal {
-		assert(account != address(0));
-
-		_totalSupply = _totalSupply.add(amount);
-		_balances[account] = _balances[account].add(amount);
-		emit Transfer(address(0), account, amount);
-	}
-
 	function _transfer(address sender, address recipient, uint256 amount) internal {
 		assert(sender != address(0));
 		assert(recipient != address(0));
@@ -204,6 +199,16 @@ contract Aurei is IAurei {
 		_balances[sender] = _balances[sender].sub(amount, "ERC20: transfer amount exceeds balance");
 		_balances[recipient] = _balances[recipient].add(amount);
 		emit Transfer(sender, recipient, amount);
+	}
+
+	// --- Modifiers ---
+
+	/**
+	 * @dev Ensure that msg.sender === Probity contract address.
+	 */
+	modifier onlyProbity {
+		// require();
+		_;
 	}
 
 	// --- 'require' functions ---

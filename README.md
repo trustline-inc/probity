@@ -51,3 +51,21 @@ $ npm run deploy
 
 SimpleStorage deployed to: 0xB1F59e4B1099F47f6515fa55B909a4502D2bd30D
 ```
+
+## Upgrades
+
+Required reading: https://blog.openzeppelin.com/the-state-of-smart-contract-upgrades/
+
+[https://github.com/dharma-eng/dharma-smart-wallet](Use the same patterns as Dharma Smart Wallet).
+
+### Upgrade Governance
+
+For development, we will use EOAs (externally-owned accounts) as contract owners. For mainnet upgrades, we will adopt a voting process similar to MakerDAO and Compound.
+
+## System Design
+
+This is the main equation:
+
+```
+EQUITY + EARNED_INTEREST - DEBT - CHARGED_INTEREST <= COLLATERAL * COLLATERAL_PRICE / MIN_COLLATERAL_RATIO
+```
