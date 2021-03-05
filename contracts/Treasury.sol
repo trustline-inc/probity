@@ -18,7 +18,7 @@ contract Treasury is ITreasury, Ownable, ProbityBase {
 
   // --- Data ---
 
-  mapping (uint => uint) public balances;
+  mapping (address => uint) public balances;
 
   IAurei public aurei;
   IProbity public probity;
@@ -44,28 +44,36 @@ contract Treasury is ITreasury, Ownable, ProbityBase {
   /**
    * @notice Returns the treasury balance of a vault.
    */
-	function balanceOf(uint vaultId) external view override returns (uint256) {
-		return balances[vaultId];
+	function balanceOf(address owner) external view override returns (uint256) {
+		return balances[owner];
 	}
 
   /**
    * @notice Adds Aurei to the treasury.
 	 * @dev Only callable by Probity
 	 */
-  function increase(uint256 amount, uint vaultId) external override onlyProbity {
+  function increase(uint256 amount, address owner) external override onlyProbity {
     aurei.mint(address(this), amount);
-    balances[vaultId] = balances[vaultId].add(amount);
-    emit TreasuryIncrease(vaultId, amount);
+    balances[owner] = balances[owner].add(amount);
+    emit TreasuryIncrease(owner, amount);
   }
 
   /**
    * @notice Removes Aurei from the treasury.
 	 * @dev Only callable by Probity
 	 */
-  function decrease(uint256 amount, uint vaultId) external override onlyProbity {
+  function decrease(uint256 amount, address owner) external override onlyProbity {
     aurei.burn(address(this), amount);
-    balances[vaultId] = balances[vaultId].sub(amount);
-    emit TreasuryDecrease(vaultId, amount);
+    balances[owner] = balances[owner].sub(amount);
+    emit TreasuryDecrease(owner, amount);
+  }
+
+  /**
+   * @notice Transfers Aurei owned by the treasury to the borrower.
+   * @param borrower - The address of the borrower.
+   */
+  function transfer(address borrower, uint amount) external override onlyTeller {
+    aurei.transfer(borrower, amount);
   }
 
   // --- Modifiers ---
@@ -75,6 +83,14 @@ contract Treasury is ITreasury, Ownable, ProbityBase {
 	 */
 	modifier onlyProbity {
 		require(msg.sender == registry.getContractAddress(Contract.Probity));
+		_;
+	}
+
+  /**
+	 * @dev Ensure that msg.sender === Teller contract address.
+	 */
+	modifier onlyTeller {
+		require(msg.sender == registry.getContractAddress(Contract.Teller));
 		_;
 	}
 

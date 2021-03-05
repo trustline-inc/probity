@@ -64,7 +64,7 @@ For development, we will use EOAs (externally-owned accounts) as contract owners
 
 ## System Design
 
-This is the main equation:
+This is the solvency equation:
 
 ```
 EQUITY + EARNED_INTEREST - DEBT - CHARGED_INTEREST <= COLLATERAL * COLLATERAL_PRICE / MIN_COLLATERAL_RATIO

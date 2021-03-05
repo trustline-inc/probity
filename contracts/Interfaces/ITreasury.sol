@@ -9,14 +9,16 @@ interface ITreasury {
 
   // --- Events ---
 
-  event TreasuryIncrease(uint vaultId, uint amount);
-  event TreasuryDecrease(uint vaultId, uint amount);
+  event TreasuryIncrease(address owner, uint amount);
+  event TreasuryDecrease(address owner, uint amount);
 
   // --- Functions ---
 
-  function balanceOf(uint vaultId) external view returns (uint256);
+  function balanceOf(address owner) external view returns (uint256);
 
-  function increase(uint256 amount, uint vaultId) external;
+  function increase(uint256 amount, address owner) external;
 
-  function decrease(uint256 amount, uint vaultId) external;
+  function decrease(uint256 amount, address owner) external;
+
+  function transfer(address borrower, uint amount) external;
 }

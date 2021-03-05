@@ -39,6 +39,7 @@ contract Probity is IProbity, Ownable, ProbityBase {
     treasury = ITreasury(registry.getContractAddress(Contract.Treasury));
     vaultManager = IVaultManager(registry.getContractAddress(Contract.VaultManager));
   }
+
   // --- External Functions ---
 
   /**
@@ -50,28 +51,16 @@ contract Probity is IProbity, Ownable, ProbityBase {
    */
   function openVault(uint debt, uint equity) external payable override hasSufficientCollateral(debt, equity) returns (uint256 vaultId) {
     vaultId = vaultManager.createVault(msg.sender, msg.value);
-
-    if (equity > 0) treasury.increase(equity, vaultId);
-    // if (debt > 0) teller.createLoan(debt, vaultId);
+    if (equity > 0) treasury.increase(equity, msg.sender);
     emit VaultCreated(msg.sender, vaultId);
     return vaultId;
   }
 
   /**
-   * @notice Grants `grantee` access to the vault.
-   * @param vaultId - The vault to grant access to.
-   * @param grantee - Address of the grantee.
-   */
-  function grantVaultAccess(uint vaultId, address grantee) external override returns (bool result) {
-
-  }
-
-  /**
    * @notice Adds collateral to an existing vault and adds Aurei to the treasury.
-   * @param vaultId - The vault to add collateral to.
    * @dev Caller MUST be the owner of the vault.
    */
-  function addCollateral(uint vaultId) external payable override {
+  function addCollateral() external payable override {
 
   }
 
@@ -85,19 +74,22 @@ contract Probity is IProbity, Ownable, ProbityBase {
 
   /**
    * @notice Transfers collateral from the vault to the caller.
-   * @param vaultId - The vault to withdraw from.
    * @param amount - The amount of collateral to withdraw.
    * @dev Caller MUST be the owner of the vault. New collateral ratio MUST be
    * greater than the minimum collateral ratio.
    */
-  function withdrawCollateral(uint vaultId, uint amount) external override {
+  function withdrawCollateral(uint amount) external override {
+    // 1. Check if the collateral ratio is maintained
+    // TODO: Check interest
+    ProbityBase.Vault memory vault = vaultManager.getVaultByOwner(msg.sender);
+
+    uint equity = treasury.balanceOf(msg.sender);
   }
 
   /**
    * @notice Closes a vault, transferring all collateral to the caller.
-   * @param vaultId - The vault to withdraw from.
    */
-  function closeVault(uint vaultId) external override {
+  function closeVault() external override {
 
   }
 
