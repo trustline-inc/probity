@@ -68,9 +68,9 @@ SimpleStorage deployed to: 0xB1F59e4B1099F47f6515fa55B909a4502D2bd30D
 
 ## Upgrades
 
-Required reading: https://blog.openzeppelin.com/the-state-of-smart-contract-upgrades/
+Required reading: [The State of Smart Contract Upgrades](https://blog.openzeppelin.com/the-state-of-smart-contract-upgrades/)
 
-[https://github.com/dharma-eng/dharma-smart-wallet](Use the same patterns as Dharma Smart Wallet).
+[Use the same patterns as Dharma Smart Wallet](https://github.com/dharma-eng/dharma-smart-wallet).
 
 ### Upgrade Governance
 
@@ -78,8 +78,34 @@ For development, we will use EOAs (externally-owned accounts) as contract owners
 
 ## System Design
 
-This is the solvency equation:
+### Solvency Condition
+
+We modify the Accounting Equation definition of `Assets - Liabilities = Equity` to formulate a solvency inequality.
 
 ```
-EQUITY + EARNED_INTEREST - DEBT - CHARGED_INTEREST <= COLLATERAL * COLLATERAL_PRICE / MIN_COLLATERAL_RATIO
+RESERVES + LOANS + YIELD - DEBT - INTEREST <= COLLATERAL_PRICE * COLLATERAL / MIN_COLLATERAL_RATIO
 ```
+
+The value of the collateral must maintain a ratio w.r.t. the stablecoin and must be greater than the left-hand side to remain solvent.
+
+Take the following variables at time `t = 0`:
+
+**Left-hand side**
+
+| RESERVES   | LOANS      | YIELD | DEBT        | INTEREST |
+| ---------- | ---------- | ----- | ----------- | -------- |
+| $1,000,000 | $9,000,000 | 0     | $9,000,0000 | 0        |
+
+**Right-hand side**
+
+| COLLATERAL | COLLATERAL_PRICE | MIN_COLLATERAL_RATIO |
+| ---------- | ---------------- | -------------------- |
+| 15,000,000 | $1               | 150%                 |
+
+This gives us the starting inequality:
+
+```
+$1,000,000 + $9,000,000 + 0 - $9,000,000 - 0 <= $10,000,000
+```
+
+This system is solvent but unhealthy, because if the collateral price drops, the system will be insolvent. If the price drops, collateral (equity on the balance sheet) is liquidated and sold for Aurei to pay off debt, reducing the left-hand side, and maintaining the solvency condition.
