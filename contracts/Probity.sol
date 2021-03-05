@@ -57,7 +57,7 @@ contract Probity is IProbity, Ownable, ProbityBase {
   {
     vaultId = custodian.createVault(msg.sender, msg.value);
     if (equity > 0) {
-      hasSufficientCollateral(debt, equity, msg.value);
+      requireSufficientCollateral(debt, equity, msg.value);
       treasury.increase(equity, msg.sender);
     }
     emit VaultCreated(msg.sender, vaultId);
@@ -100,12 +100,6 @@ contract Probity is IProbity, Ownable, ProbityBase {
   /**
    * @param debt - The amount of Aurei borrowed.
    * @param borrower - Address of the borrower.
-   * @dev Solidity does not have floating point division.
-   * EXAMPLE:
-   *   msg.value = 150 x 10^18 (assume price = $1)
-   *   debt + equity = 1 x 10^2 (e.g. $100 of debt and/or equity)
-   *   150 x 10^18 / 100 = 150 * 10^16
-   *   (150 * 10^16) / 1 x 10^18 = 1.5 or 150%
    */
   function checkBorrowerEligibility(uint256 debt, address borrower)
     external
@@ -114,10 +108,8 @@ contract Probity is IProbity, Ownable, ProbityBase {
   {
     Vault memory vault = custodian.getVaultByOwner(borrower);
     uint256 equity = treasury.balanceOf(borrower);
-    hasSufficientCollateral(debt, equity, vault.collateral);
+    requireSufficientCollateral(debt, equity, vault.collateral);
   }
-
-  // --- Modifiers ---
 
   /**
    * @param debt - The amount of Aurei to be borrowed.
@@ -131,7 +123,7 @@ contract Probity is IProbity, Ownable, ProbityBase {
    *   150 x 10^18 / 100 = 150 * 10^16
    *   (150 * 10^16) / 1 x 10^18 = 1.5 or 150%
    */
-  function hasSufficientCollateral(
+  function requireSufficientCollateral(
     uint256 debt,
     uint256 equity,
     uint256 collateral
@@ -141,7 +133,7 @@ contract Probity is IProbity, Ownable, ProbityBase {
     if ((debt + equity) > 0) {
       uint256 collateralRatio = collateral.div((debt + equity));
       require(
-        (collateralRatio) >= MIN_COLLATERAL_RATIO,
+        collateralRatio >= MIN_COLLATERAL_RATIO,
         "PRO: Insufficient collateral provided"
       );
     }

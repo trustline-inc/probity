@@ -91,12 +91,12 @@ contract Treasury is ITreasury, Ownable, ProbityBase {
   }
 
   /**
-   * @notice Reduces equity balance for lender and Transfers Aurei owned by the treasury to the borrower.
+   * @notice Converts lender's equity to a loan asset and transfers Aurei owned by the treasury to the borrower.
    * @param lender - The address of the lender.
    * @param borrower - The address of the borrower.
    * @param amount - Amount to transfer.
    */
-  function transferEquity(
+  function convertLenderEquityToLoan(
     address lender,
     address borrower,
     uint256 amount
@@ -124,8 +124,8 @@ contract Treasury is ITreasury, Ownable, ProbityBase {
     _;
   }
 
-  /*
-   * @dev Check if user has enough balances
+  /**
+   * @notice Checks if user has enough equity to issue a loan.
    * @param amount - Amount to lend
    * @param lender - Address of lender
    */

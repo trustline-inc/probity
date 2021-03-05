@@ -21,7 +21,7 @@ interface ITreasury {
 
   function transfer(address borrower, uint256 amount) external;
 
-  function transferEquity(
+  function convertLenderEquityToLoan(
     address lender,
     address borrower,
     uint256 amount
