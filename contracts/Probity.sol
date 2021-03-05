@@ -15,7 +15,7 @@ import "hardhat/console.sol";
  * @notice This is the main contract which calls other contracts for specific sets of business logic.
  */
 contract Probity is IProbity, Ownable, ProbityBase {
-  using SafeMath for uint;
+  using SafeMath for uint256;
 
   // --- Data ---
 
@@ -43,13 +43,18 @@ contract Probity is IProbity, Ownable, ProbityBase {
   // --- External Functions ---
 
   /**
-   * @notice Opens a vault, deposits collateral, and mints Aurei for lending. 
+   * @notice Opens a vault, deposits collateral, and mints Aurei for lending.
    * @param debt - The amount of Aurei to borrow.
    * @param equity - The amount of Aurei to mint for lending.
    * @return vaultId
    * @dev Requires sufficient collateralization before opening vault.
    */
-  function openVault(uint debt, uint equity) external payable override returns (uint256 vaultId) {
+  function openVault(uint256 debt, uint256 equity)
+    external
+    payable
+    override
+    returns (uint256 vaultId)
+  {
     vaultId = custodian.createVault(msg.sender, msg.value);
     if (equity > 0) {
       hasSufficientCollateral(debt, equity, msg.value);
@@ -63,9 +68,7 @@ contract Probity is IProbity, Ownable, ProbityBase {
    * @notice Adds collateral to an existing vault and adds Aurei to the treasury.
    * @dev Caller MUST be the owner of the vault.
    */
-  function addCollateral() external payable override {
-
-  }
+  function addCollateral() external payable override {}
 
   /**
    * @notice Gets the vault details.
@@ -81,20 +84,18 @@ contract Probity is IProbity, Ownable, ProbityBase {
    * @dev Caller MUST be the owner of the vault. New collateral ratio MUST be
    * greater than the minimum collateral ratio.
    */
-  function withdrawCollateral(uint amount) external override {
+  function withdrawCollateral(uint256 amount) external override {
     // 1. Check if the collateral ratio is maintained
     // TODO: Check interest
     ProbityBase.Vault memory vault = custodian.getVaultByOwner(msg.sender);
 
-    uint equity = treasury.balanceOf(msg.sender);
+    uint256 equity = treasury.balanceOf(msg.sender);
   }
 
   /**
    * @notice Closes a vault, transferring all collateral to the caller.
    */
-  function closeVault() external override {
-
-  }
+  function closeVault() external override {}
 
   /**
    * @param debt - The amount of Aurei borrowed.
@@ -106,12 +107,16 @@ contract Probity is IProbity, Ownable, ProbityBase {
    *   150 x 10^18 / 100 = 150 * 10^16
    *   (150 * 10^16) / 1 x 10^18 = 1.5 or 150%
    */
-  function checkBorrowerEligibility(uint debt, address borrower) external view override {
+  function checkBorrowerEligibility(uint256 debt, address borrower)
+    external
+    view
+    override
+  {
     Vault memory vault = custodian.getVaultByOwner(borrower);
-    uint equity = treasury.balanceOf(borrower);
-    hasSufficientCollateral(debt, equity,vault.collateral);
+    uint256 equity = treasury.balanceOf(borrower);
+    hasSufficientCollateral(debt, equity, vault.collateral);
   }
-  
+
   // --- Modifiers ---
 
   /**
@@ -126,12 +131,19 @@ contract Probity is IProbity, Ownable, ProbityBase {
    *   150 x 10^18 / 100 = 150 * 10^16
    *   (150 * 10^16) / 1 x 10^18 = 1.5 or 150%
    */
-  function hasSufficientCollateral(uint debt, uint equity, uint collateral) internal pure {
+  function hasSufficientCollateral(
+    uint256 debt,
+    uint256 equity,
+    uint256 collateral
+  ) internal pure {
     // Check for infinity division - E.G., if user doesn't want lending or borrowing.
     // User may open vault with collateral without utilizing the position.
-    if ((debt + equity) > 0)  {
-      uint collateralRatio = collateral.div((debt + equity));
-      require((collateralRatio) >= MIN_COLLATERAL_RATIO, "PRO: Insufficient collateral provided");
+    if ((debt + equity) > 0) {
+      uint256 collateralRatio = collateral.div((debt + equity));
+      require(
+        (collateralRatio) >= MIN_COLLATERAL_RATIO,
+        "PRO: Insufficient collateral provided"
+      );
     }
   }
 }

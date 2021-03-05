@@ -18,12 +18,12 @@ contract Treasury is ITreasury, Ownable, ProbityBase {
 
   // --- Data ---
 
-  mapping (address => uint) public balances;
+  mapping(address => uint256) public balances;
 
   IAurei public aurei;
   IProbity public probity;
   IRegistry public registry;
-  
+
   // --- Constructor ---
 
   constructor(address _registry) Ownable(msg.sender) {
@@ -38,21 +38,25 @@ contract Treasury is ITreasury, Ownable, ProbityBase {
     aurei = IAurei(registry.getContractAddress(Contract.Aurei));
     probity = IProbity(registry.getContractAddress(Contract.Treasury));
   }
-  
+
   // --- External Functions ---
 
   /**
    * @notice Returns the treasury balance of a vault.
    */
-	function balanceOf(address owner) external view override returns (uint256) {
-		return balances[owner];
-	}
+  function balanceOf(address owner) external view override returns (uint256) {
+    return balances[owner];
+  }
 
   /**
    * @notice Adds Aurei to the treasury.
-	 * @dev Only callable by Probity
-	 */
-  function increase(uint256 amount, address owner) external override onlyProbity {
+   * @dev Only callable by Probity
+   */
+  function increase(uint256 amount, address owner)
+    external
+    override
+    onlyProbity
+  {
     aurei.mint(address(this), amount);
     balances[owner] = balances[owner].add(amount);
     emit TreasuryIncrease(owner, amount);
@@ -60,10 +64,15 @@ contract Treasury is ITreasury, Ownable, ProbityBase {
 
   /**
    * @notice Removes Aurei from the treasury.
-	 * @dev Only callable by Probity
-	 * check if owner has enough balances. 
-	 */
-  function decrease(uint256 amount, address owner) external override onlyProbity checkBalance(amount, owner) {
+   * @dev Only callable by Probity
+   * check if owner has enough balances.
+   */
+  function decrease(uint256 amount, address owner)
+    external
+    override
+    onlyProbity
+    checkBalance(amount, owner)
+  {
     aurei.burn(address(this), amount);
     balances[owner] = balances[owner].sub(amount);
     emit TreasuryDecrease(owner, amount);
@@ -73,17 +82,25 @@ contract Treasury is ITreasury, Ownable, ProbityBase {
    * @notice Transfers Aurei owned by the treasury to the borrower.
    * @param borrower - The address of the borrower.
    */
-  function transfer(address borrower, uint amount) external override onlyTeller {
+  function transfer(address borrower, uint256 amount)
+    external
+    override
+    onlyTeller
+  {
     aurei.transfer(borrower, amount);
   }
 
   /**
-  * @notice Reduces equity balance for lender and Transfers Aurei owned by the treasury to the borrower.
-  * @param lender - The address of the lender.
-  * @param borrower - The address of the borrower.
-  * @param amount - Amount to transfer.
-  */
-  function transferEquity(address lender, address borrower, uint amount) external override onlyTeller checkBalance(amount, lender) {
+   * @notice Reduces equity balance for lender and Transfers Aurei owned by the treasury to the borrower.
+   * @param lender - The address of the lender.
+   * @param borrower - The address of the borrower.
+   * @param amount - Amount to transfer.
+   */
+  function transferEquity(
+    address lender,
+    address borrower,
+    uint256 amount
+  ) external override onlyTeller checkBalance(amount, lender) {
     balances[lender] = balances[lender].sub(amount);
     aurei.transfer(borrower, amount);
     emit TreasuryDecrease(lender, amount);
@@ -92,28 +109,28 @@ contract Treasury is ITreasury, Ownable, ProbityBase {
   // --- Modifiers ---
 
   /**
-	 * @dev Ensure that msg.sender === Probity contract address.
-	 */
-	modifier onlyProbity {
-		require(msg.sender == registry.getContractAddress(Contract.Probity));
-		_;
-	}
+   * @dev Ensure that msg.sender === Probity contract address.
+   */
+  modifier onlyProbity {
+    require(msg.sender == registry.getContractAddress(Contract.Probity));
+    _;
+  }
 
   /**
-	 * @dev Ensure that msg.sender === Teller contract address.
-	 */
-	modifier onlyTeller {
-		require(msg.sender == registry.getContractAddress(Contract.Teller));
-		_;
-	}
-  
+   * @dev Ensure that msg.sender === Teller contract address.
+   */
+  modifier onlyTeller {
+    require(msg.sender == registry.getContractAddress(Contract.Teller));
+    _;
+  }
+
   /*
-  * @dev Check if user has enough balances
-  * @param amount - Amount to lend
-  * @param lender - Address of lender
-  */
-   modifier checkBalance(uint amount, address lender) {
-     require(balances[lender] >= amount, "TREASURY: Insufficient balance.");
-     _;
-   }
+   * @dev Check if user has enough balances
+   * @param amount - Amount to lend
+   * @param lender - Address of lender
+   */
+  modifier checkBalance(uint256 amount, address lender) {
+    require(balances[lender] >= amount, "TREASURY: Insufficient balance.");
+    _;
+  }
 }

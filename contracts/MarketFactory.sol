@@ -10,8 +10,5 @@ import "./Interfaces/IMarketFactory.sol";
  * @dev Adapted from "Factory" pattern described at https://medium.com/@i6mi6/solidty-smart-contracts-design-patterns-ecfa3b1e9784
  */
 contract MarketFactory is IMarketFactory, Ownable {
-
-  constructor() Ownable(msg.sender) {
-    
-  }
+  constructor() Ownable(msg.sender) {}
 }

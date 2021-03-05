@@ -17,19 +17,19 @@ contract Teller is ITeller, Ownable, ProbityBase {
 
   // --- Data ---
   /*
-  * Borrower can have multiple loans running at the same time from same or different lenders.
+   * Borrower can have multiple loans running at the same time from same or different lenders.
    * For every loan, Loan-id is created against details such as rate, principal, duration, startDate and lender.
-  */
+   */
   struct Loan {
-    uint interestRate;
-    uint principal;
-    uint duration;
+    uint256 interestRate;
+    uint256 principal;
+    uint256 duration;
     uint256 startDate;
     address lender;
   }
-  uint private _index;
-  mapping (address => uint) public balances;
-  mapping (address => mapping (uint => Loan)) public loanBalances;
+  uint256 private _index;
+  mapping(address => uint256) public balances;
+  mapping(address => mapping(uint256 => Loan)) public loanBalances;
 
   ITreasury public treasury;
   IRegistry public registry;
@@ -59,45 +59,49 @@ contract Teller is ITeller, Ownable, ProbityBase {
    * a. Teller requests Treasury for borrower eligibility against loan amount
    * b. Teller adds loan details to the loanBalances mapping.
    * c. Teller asks Treasury for transferring equity to borrower
-   * d. Loan Granted. 
+   * d. Loan Granted.
    * @param lender - The address of the lender.
    * @param borrower - The address of the borrower.
    * @param principal - The initial amount of the loan.
    *Todo: List below:
-   * 1. Take loan duration as input 
+   * 1. Take loan duration as input
    * 2. Check solidity behaviour if last step of function execution fails (assuming all storage updates must be reverted). Write test to verify same.
-   * 3. Function sharing shared variable are thread safe. If multiple calls to function at same time, it must be handled by solidity. 
+   * 3. Function sharing shared variable are thread safe. If multiple calls to function at same time, it must be handled by solidity.
    */
-  function createLoan(address lender, address borrower, uint principal, uint rate) external override onlyExchange {
+  function createLoan(
+    address lender,
+    address borrower,
+    uint256 principal,
+    uint256 rate
+  ) external override onlyExchange {
     //Update total loan balance
     balances[borrower] = balances[borrower].add(principal);
-    
+
     //Check borrower eligibility
     probity.checkBorrowerEligibility(balances[borrower], borrower);
-    
-    //Setup loan 
-    loanBalances[borrower][_index].interestRate = rate; 
+
+    //Setup loan
+    loanBalances[borrower][_index].interestRate = rate;
     loanBalances[borrower][_index].principal = principal;
     loanBalances[borrower][_index].duration = 90; //take as input
     loanBalances[borrower][_index].lender = lender;
     loanBalances[borrower][_index].startDate = block.timestamp;
-    
+
     //Execute Equity transfer to borrower
     treasury.transferEquity(lender, borrower, principal);
-    
+
     //Increment loan Index
-    _index = _index +1;
+    _index = _index + 1;
     emit LoanCreated(lender, borrower, principal, rate, block.timestamp);
   }
 
   // --- Modifiers ---
 
   /**
-	 * @dev Ensure that msg.sender === Exchange contract address.
-	 */
-	modifier onlyExchange {
-		require(msg.sender == registry.getContractAddress(Contract.Exchange));
-		_;
-	}
-
+   * @dev Ensure that msg.sender === Exchange contract address.
+   */
+  modifier onlyExchange {
+    require(msg.sender == registry.getContractAddress(Contract.Exchange));
+    _;
+  }
 }

@@ -6,11 +6,10 @@ pragma solidity ^0.8.0;
  * @notice Manages a treasury of Aurei.
  */
 interface ITreasury {
-
   // --- Events ---
 
-  event TreasuryIncrease(address owner, uint amount);
-  event TreasuryDecrease(address owner, uint amount);
+  event TreasuryIncrease(address owner, uint256 amount);
+  event TreasuryDecrease(address owner, uint256 amount);
 
   // --- Functions ---
 
@@ -20,7 +19,11 @@ interface ITreasury {
 
   function decrease(uint256 amount, address owner) external;
 
-  function transfer(address borrower, uint amount) external;
+  function transfer(address borrower, uint256 amount) external;
 
-  function transferEquity(address lender, address borrower, uint amount) external;
+  function transferEquity(
+    address lender,
+    address borrower,
+    uint256 amount
+  ) external;
 }

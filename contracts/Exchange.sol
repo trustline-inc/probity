@@ -11,9 +11,8 @@ import "./Interfaces/ITeller.sol";
  * @notice Executes signed loan orders.
  */
 contract Exchange is IExchange, Ownable, ProbityBase {
-
   // --- Data ---
-  
+
   ITeller public teller;
   IRegistry public registry;
 
@@ -36,7 +35,12 @@ contract Exchange is IExchange, Ownable, ProbityBase {
   /**
    * @notice Executes an off-chain order at the specified rate.
    */
-  function executeOrder(address lender, address borrower, uint amount, uint rate) external override {
+  function executeOrder(
+    address lender,
+    address borrower,
+    uint256 amount,
+    uint256 rate
+  ) external override {
     teller.createLoan(lender, borrower, amount, rate);
   }
 }

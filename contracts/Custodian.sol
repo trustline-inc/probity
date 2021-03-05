@@ -17,15 +17,13 @@ contract Custodian is ICustodian, ProbityBase, Ownable {
 
   // --- Data ---
 
-  mapping (address => Vault) public vaults;
+  mapping(address => Vault) public vaults;
 
   address[] public vaultOwners;
 
   // --- Constructor ---
 
-  constructor() Ownable(msg.sender) {
-    
-  }
+  constructor() Ownable(msg.sender) {}
 
   // --- External Functions ---
 
@@ -34,7 +32,11 @@ contract Custodian is ICustodian, ProbityBase, Ownable {
    * @param owner - Address of the vault owner.
    * @param initialCollateral - Initial collateral amount.
    */
-  function createVault(address owner, uint initialCollateral) external override returns (uint index) {
+  function createVault(address owner, uint256 initialCollateral)
+    external
+    override
+    returns (uint256 index)
+  {
     vaults[owner].collateral = initialCollateral;
     setVaultStatus(owner, Status.Active);
     index = addVaultOwnerToArray(owner);
@@ -47,21 +49,28 @@ contract Custodian is ICustodian, ProbityBase, Ownable {
    * @param _owner - Vault owner address.
    * @return The vault data structure.
    */
-  function getVaultByOwner(address _owner) external view override returns (Vault memory) {
+  function getVaultByOwner(address _owner)
+    external
+    view
+    override
+    returns (Vault memory)
+  {
     return (vaults[_owner]);
   }
 
   // --- Internal Functions ---
 
-  function addVaultOwnerToArray(address owner) internal returns (uint index) {
+  function addVaultOwnerToArray(address owner)
+    internal
+    returns (uint256 index)
+  {
     vaultOwners.push(owner);
     index = vaultOwners.length.sub(1);
     vaults[owner].index = index;
-    return index;    
+    return index;
   }
 
   function setVaultStatus(address owner, Status status) internal {
     vaults[owner].status = status;
   }
-  
 }

@@ -25,6 +25,20 @@ Install dependencies:
 npm install
 ```
 
+## IDE
+
+[Visual Studio Code](https://code.visualstudio.com/) is the recommended IDE. Here's how to install Solidity language support:
+
+```
+code --install-extension JuanBlanco.solidity
+```
+
+Also, get the Prettier VSCode plugin:
+
+```
+code --install-extension esbenp.prettier-vscode
+```
+
 ## Testing
 
 Use the npm command to run tests on the local Hardhat network:

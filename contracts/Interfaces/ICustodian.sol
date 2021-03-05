@@ -9,16 +9,20 @@ import "../Dependencies/ProbityBase.sol";
  * and providing or withdrawing collateral.
  */
 interface ICustodian {
-
   // --- Events ---
 
-  event VaultCreated(address indexed owner, uint vaultId);
-  event VaultUpdated(address indexed owner, uint vaultId);
-  event VaultDeleted(address indexed owner, uint vaultId);
+  event VaultCreated(address indexed owner, uint256 vaultId);
+  event VaultUpdated(address indexed owner, uint256 vaultId);
+  event VaultDeleted(address indexed owner, uint256 vaultId);
 
   // --- Functions ---
 
-  function createVault(address owner, uint initialCollateral) external returns (uint vaultId);
+  function createVault(address owner, uint256 initialCollateral)
+    external
+    returns (uint256 vaultId);
 
-  function getVaultByOwner(address _owner) external view returns (ProbityBase.Vault memory);
+  function getVaultByOwner(address _owner)
+    external
+    view
+    returns (ProbityBase.Vault memory);
 }

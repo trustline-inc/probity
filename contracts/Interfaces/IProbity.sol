@@ -8,10 +8,9 @@ import "../Dependencies/ProbityBase.sol";
  * @notice This is the main contract which calls other contracts for specific sets of business logic.
  */
 interface IProbity {
-
   // --- Events ---
 
-  event VaultCreated(address indexed owner, uint vaultId);
+  event VaultCreated(address indexed owner, uint256 vaultId);
 
   // --- Functions ---
 
@@ -22,7 +21,10 @@ interface IProbity {
    * @return vaultId - a numerical nonce representing the vault ID.
    * @dev Requires sufficient collateralization before opening vault.
    */
-  function openVault(uint debt, uint equity) external payable returns (uint vaultId);
+  function openVault(uint256 debt, uint256 equity)
+    external
+    payable
+    returns (uint256 vaultId);
 
   /**
    * @notice Call this to add collateral to an existing vault.
@@ -39,7 +41,7 @@ interface IProbity {
    * the amount must not be more than allowed by the collateralization ratio.
    * @dev This method can only be called by the vault owner or an address that was granted access.
    */
-  function withdrawCollateral(uint _amount) external;
+  function withdrawCollateral(uint256 _amount) external;
 
   /**
    * @notice Call this to permanently close a vault.
@@ -48,14 +50,14 @@ interface IProbity {
   function closeVault() external;
 
   /**
-  * @notice Fetches details about the message sender's vault.
-  * @return Vault details.
-  */
+   * @notice Fetches details about the message sender's vault.
+   * @return Vault details.
+   */
   function getVault() external view returns (ProbityBase.Vault memory);
 
   /**
- * @notice This function checks borrower credibility for new loan request.
- * @dev This method is called by Teller for loan credibility.
- */
-  function checkBorrowerEligibility(uint debt, address borrower) external;
+   * @notice This function checks borrower credibility for new loan request.
+   * @dev This method is called by Teller for loan credibility.
+   */
+  function checkBorrowerEligibility(uint256 debt, address borrower) external;
 }
