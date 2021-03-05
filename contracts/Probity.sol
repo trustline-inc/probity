@@ -49,9 +49,12 @@ contract Probity is IProbity, Ownable, ProbityBase {
    * @return vaultId
    * @dev Requires sufficient collateralization before opening vault.
    */
-  function openVault(uint debt, uint equity) external payable override hasSufficientCollateral(debt, equity) returns (uint256 vaultId) {
+  function openVault(uint debt, uint equity) external payable override returns (uint256 vaultId) {
     vaultId = vaultManager.createVault(msg.sender, msg.value);
-    if (equity > 0) treasury.increase(equity, msg.sender);
+    if (equity > 0) {
+      hasSufficientCollateral(debt, equity, msg.value);
+      treasury.increase(equity, msg.sender);
+    }
     emit VaultCreated(msg.sender, vaultId);
     return vaultId;
   }
@@ -93,11 +96,28 @@ contract Probity is IProbity, Ownable, ProbityBase {
 
   }
 
+  /**
+   * @param debt - The amount of Aurei borrowed.
+   * @param borrower - Address of the borrower.
+   * @dev Solidity does not have floating point division.
+   * EXAMPLE:
+   *   msg.value = 150 x 10^18 (assume price = $1)
+   *   debt + equity = 1 x 10^2 (e.g. $100 of debt and/or equity)
+   *   150 x 10^18 / 100 = 150 * 10^16
+   *   (150 * 10^16) / 1 x 10^18 = 1.5 or 150%
+   */
+  function checkBorrowerEligibility(uint debt, address borrower) external view override {
+    Vault memory vault = vaultManager.getVaultByOwner(borrower);
+    uint equity = treasury.balanceOf(borrower);
+    hasSufficientCollateral(debt, equity,vault.collateral);
+  }
+  
   // --- Modifiers ---
 
   /**
    * @param debt - The amount of Aurei to be borrowed.
    * @param equity - The amount of Aurei to lend.
+   * @param collateral - Amount for collateral.
    * @dev Solidity does not have floating point division.
    *
    * EXAMPLE:
@@ -106,13 +126,12 @@ contract Probity is IProbity, Ownable, ProbityBase {
    *   150 x 10^18 / 100 = 150 * 10^16
    *   (150 * 10^16) / 1 x 10^18 = 1.5 or 150%
    */
-  modifier hasSufficientCollateral(uint debt, uint equity) {
+  function hasSufficientCollateral(uint debt, uint equity, uint collateral) internal pure {
     // Check for infinity division - E.G., if user doesn't want lending or borrowing.
     // User may open vault with collateral without utilizing the position.
-    if ((debt + equity) > 0)  { 
-      uint collateralRatio = msg.value.div((debt + equity));
+    if ((debt + equity) > 0)  {
+      uint collateralRatio = collateral.div((debt + equity));
       require((collateralRatio) >= MIN_COLLATERAL_RATIO, "PRO: Insufficient collateral provided");
-    }  
-    _;
+    }
   }
 }

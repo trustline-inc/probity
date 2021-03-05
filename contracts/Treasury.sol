@@ -61,8 +61,9 @@ contract Treasury is ITreasury, Ownable, ProbityBase {
   /**
    * @notice Removes Aurei from the treasury.
 	 * @dev Only callable by Probity
+	 * check if owner has enough balances. 
 	 */
-  function decrease(uint256 amount, address owner) external override onlyProbity {
+  function decrease(uint256 amount, address owner) external override onlyProbity checkBalance(amount, owner) {
     aurei.burn(address(this), amount);
     balances[owner] = balances[owner].sub(amount);
     emit TreasuryDecrease(owner, amount);
@@ -74,6 +75,18 @@ contract Treasury is ITreasury, Ownable, ProbityBase {
    */
   function transfer(address borrower, uint amount) external override onlyTeller {
     aurei.transfer(borrower, amount);
+  }
+
+  /**
+  * @notice Reduces equity balance for lender and Transfers Aurei owned by the treasury to the borrower.
+  * @param lender - The address of the lender.
+  * @param borrower - The address of the borrower.
+  * @param amount - Amount to transfer.
+  */
+  function transferEquity(address lender, address borrower, uint amount) external override onlyTeller checkBalance(amount, lender) {
+    balances[lender] = balances[lender].sub(amount);
+    aurei.transfer(borrower, amount);
+    emit TreasuryDecrease(lender, amount);
   }
 
   // --- Modifiers ---
@@ -93,5 +106,14 @@ contract Treasury is ITreasury, Ownable, ProbityBase {
 		require(msg.sender == registry.getContractAddress(Contract.Teller));
 		_;
 	}
-
+  
+  /*
+  * @dev Check if user has enough balances
+  * @param amount - Amount to lend
+  * @param lender - Address of lender
+  */
+   modifier checkBalance(uint amount, address lender) {
+     require(balances[lender] >= amount, "TREASURY: Insufficient balance.");
+     _;
+   }
 }

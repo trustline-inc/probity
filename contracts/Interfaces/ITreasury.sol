@@ -21,4 +21,6 @@ interface ITreasury {
   function decrease(uint256 amount, address owner) external;
 
   function transfer(address borrower, uint amount) external;
+
+  function transferEquity(address lender, address borrower, uint amount) external;
 }

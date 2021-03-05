@@ -6,10 +6,10 @@ import { expect } from "chai";
 describe("Probity", function() {
 
   // Contracts
-  let Aurei, Probity, Registry, Teller, Treasury, VaultManager;
+  let Aurei, Probity, Registry, Teller, Treasury, VaultManager, Exchange;
 
   // Instances
-  let aurei, probity, registry, teller, treasury, vaultManager;
+  let aurei, probity, registry, teller, treasury, vaultManager, exchange;
 
   // Wallets
   let addrs, owner, user;
@@ -30,8 +30,12 @@ describe("Probity", function() {
     await aurei.deployed();
 
     Teller = await ethers.getContractFactory("Teller");
-    teller = await Teller.deploy();
+    teller = await Teller.deploy(registry.address);
     await teller.deployed();
+
+    Exchange = await ethers.getContractFactory("Exchange");
+    exchange = await Exchange.deploy(registry.address);
+    await exchange.deployed();
 
     Treasury = await ethers.getContractFactory("Treasury");
     treasury = await Treasury.deploy(registry.address);
@@ -49,9 +53,10 @@ describe("Probity", function() {
      * SET CONTRACT ADDRESSES
      */
 
-    enum Contract { Aurei, Probity, Teller, Treasury, VaultManager };
+    enum Contract { Aurei,Exchange, Probity, Teller, Treasury, VaultManager}
 
     await registry.setupContractAddress(Contract.Aurei, aurei.address);
+    await registry.setupContractAddress(Contract.Exchange, exchange.address);
     await registry.setupContractAddress(Contract.Probity, probity.address);
     await registry.setupContractAddress(Contract.Teller, teller.address);
     await registry.setupContractAddress(Contract.Treasury, treasury.address);
@@ -59,6 +64,8 @@ describe("Probity", function() {
 
     await probity.initializeContract();
     await treasury.initializeContract();
+    await exchange.initializeContract();
+    await teller.initializeContract();
 
   });
   describe("Vault Opening", function () {
@@ -128,4 +135,45 @@ describe("Probity", function() {
       ).to.be.revertedWith("PRO: Insufficient collateral provided");
     });
   });
+  describe("Exchange", function () {
+    it('Fails to create loan without collateral from borrower', async () => {
+      //Creating Vault for lender
+      const coll = 150;
+      const debt = 0;
+      const equity = 0;
+
+      const txLender = {from: owner.address, value: web3.utils.toWei(coll.toString())};
+      const txLenderResponse = await probity.openVault(debt, equity, txLender);
+      await txLenderResponse.wait();
+      
+      const loanAmount = 50;
+      const rate = 3;
+      await expect(
+        exchange.executeOrder(owner.address,user.address, loanAmount, rate)
+      ).to.be.revertedWith("PRO: Insufficient collateral provided");
+    });
+
+    it('Create loan with sufficient collateral from borrower', async () => {
+      //Creating Vault for lender
+      const coll = 150;
+      const debt = 0;
+      const equity = 0;
+
+      const txLender = {from: owner.address, value: web3.utils.toWei(coll.toString())};
+      const txLenderResponse = await probity.openVault(debt, equity, txLender);
+      await txLenderResponse.wait();
+
+      
+      //Creating Vault for borrower
+      const txBorrower = {from: user.address, value: web3.utils.toWei(coll.toString())};
+      const txBorrowerResponse = await probity.connect(user).openVault(debt, equity, txBorrower);
+      await txBorrowerResponse.wait();
+      
+      const loanAmount = 50;
+      const rate = 3;
+      await exchange.executeOrder(owner.address,user.address, loanAmount, rate);
+      
+       
+    });
+  });  
 });

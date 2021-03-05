@@ -33,6 +33,7 @@ contract ProbityBase {
 
   enum Contract {
     Aurei,
+    Exchange,
     Probity,
     Teller,
     Treasury,

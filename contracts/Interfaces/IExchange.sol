@@ -6,4 +6,5 @@ interface IExchange {
   
   // --- Events ---
 
+  function executeOrder(address lender, address borrower, uint amount, uint rate) external;
 }

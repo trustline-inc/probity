@@ -52,4 +52,10 @@ interface IProbity {
   * @return Vault details.
   */
   function getVault() external view returns (ProbityBase.Vault memory);
+
+  /**
+ * @notice This function checks borrower credibility for new loan request.
+ * @dev This method is called by Teller for loan credibility.
+ */
+  function checkBorrowerEligibility(uint debt, address borrower) external;
 }
