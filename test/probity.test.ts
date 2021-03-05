@@ -6,10 +6,10 @@ import { expect } from "chai";
 describe("Probity", function() {
 
   // Contracts
-  let Aurei, Probity, Registry, Teller, Treasury, VaultManager, Exchange;
+  let Aurei, Custodian, Probity, Registry, Teller, Treasury, Exchange;
 
   // Instances
-  let aurei, probity, registry, teller, treasury, vaultManager, exchange;
+  let aurei, custodian, probity, registry, teller, treasury, exchange;
 
   // Wallets
   let addrs, owner, user;
@@ -29,43 +29,43 @@ describe("Probity", function() {
     aurei = await Aurei.deploy();
     await aurei.deployed();
 
-    Teller = await ethers.getContractFactory("Teller");
-    teller = await Teller.deploy(registry.address);
-    await teller.deployed();
+    Custodian = await ethers.getContractFactory("Custodian");
+    custodian = await Custodian.deploy();
+    await custodian.deployed();
 
     Exchange = await ethers.getContractFactory("Exchange");
     exchange = await Exchange.deploy(registry.address);
     await exchange.deployed();
 
-    Treasury = await ethers.getContractFactory("Treasury");
-    treasury = await Treasury.deploy(registry.address);
-    await treasury.deployed();
-
-    VaultManager = await ethers.getContractFactory("VaultManager");
-    vaultManager = await VaultManager.deploy();
-    await vaultManager.deployed();
-
     Probity = await ethers.getContractFactory("Probity");
     probity = await Probity.deploy(registry.address);
     await probity.deployed();
+
+    Teller = await ethers.getContractFactory("Teller");
+    teller = await Teller.deploy(registry.address);
+    await teller.deployed();
+
+    Treasury = await ethers.getContractFactory("Treasury");
+    treasury = await Treasury.deploy(registry.address);
+    await treasury.deployed();
 
     /**
      * SET CONTRACT ADDRESSES
      */
 
-    enum Contract { Aurei,Exchange, Probity, Teller, Treasury, VaultManager}
+    enum Contract { Aurei, Custodian, Exchange, Probity, Teller, Treasury }
 
     await registry.setupContractAddress(Contract.Aurei, aurei.address);
+    await registry.setupContractAddress(Contract.Custodian, custodian.address);
     await registry.setupContractAddress(Contract.Exchange, exchange.address);
     await registry.setupContractAddress(Contract.Probity, probity.address);
     await registry.setupContractAddress(Contract.Teller, teller.address);
     await registry.setupContractAddress(Contract.Treasury, treasury.address);
-    await registry.setupContractAddress(Contract.VaultManager, vaultManager.address);
 
-    await probity.initializeContract();
-    await treasury.initializeContract();
     await exchange.initializeContract();
+    await probity.initializeContract();
     await teller.initializeContract();
+    await treasury.initializeContract();
 
   });
   describe("Vault Opening", function () {
@@ -163,17 +163,15 @@ describe("Probity", function() {
       const txLenderResponse = await probity.openVault(debt, equity, txLender);
       await txLenderResponse.wait();
 
-      
       //Creating Vault for borrower
       const txBorrower = {from: user.address, value: web3.utils.toWei(coll.toString())};
       const txBorrowerResponse = await probity.connect(user).openVault(debt, equity, txBorrower);
       await txBorrowerResponse.wait();
-      
+
       const loanAmount = 50;
       const rate = 3;
-      await exchange.executeOrder(owner.address,user.address, loanAmount, rate);
-      
-       
+      await exchange.executeOrder(owner.address, user.address, loanAmount, rate);
+
     });
-  });  
+  });
 });

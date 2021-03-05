@@ -33,11 +33,11 @@ contract ProbityBase {
 
   enum Contract {
     Aurei,
+    Custodian,
     Exchange,
     Probity,
     Teller,
-    Treasury,
-    VaultManager
+    Treasury
   }
 
   // --- Math constants ---

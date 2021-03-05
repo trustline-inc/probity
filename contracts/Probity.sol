@@ -2,10 +2,10 @@
 
 pragma solidity ^0.8.0;
 
+import "./Interfaces/ICustodian.sol";
 import "./Interfaces/ITeller.sol";
 import "./Interfaces/ITreasury.sol";
 import "./Interfaces/IProbity.sol";
-import "./Interfaces/IVaultManager.sol";
 import "./Interfaces/IRegistry.sol";
 import "./Dependencies/ProbityBase.sol";
 import "./Dependencies/Ownable.sol";
@@ -19,9 +19,9 @@ contract Probity is IProbity, Ownable, ProbityBase {
 
   // --- Data ---
 
+  ICustodian public custodian;
   ITeller public teller;
   ITreasury public treasury;
-  IVaultManager public vaultManager;
   IRegistry public registry;
 
   // --- Constructor ---
@@ -35,9 +35,9 @@ contract Probity is IProbity, Ownable, ProbityBase {
    * @dev Should probably make this inheritable.
    */
   function initializeContract() external onlyOwner {
+    custodian = ICustodian(registry.getContractAddress(Contract.Custodian));
     teller = ITeller(registry.getContractAddress(Contract.Teller));
     treasury = ITreasury(registry.getContractAddress(Contract.Treasury));
-    vaultManager = IVaultManager(registry.getContractAddress(Contract.VaultManager));
   }
 
   // --- External Functions ---
@@ -50,7 +50,7 @@ contract Probity is IProbity, Ownable, ProbityBase {
    * @dev Requires sufficient collateralization before opening vault.
    */
   function openVault(uint debt, uint equity) external payable override returns (uint256 vaultId) {
-    vaultId = vaultManager.createVault(msg.sender, msg.value);
+    vaultId = custodian.createVault(msg.sender, msg.value);
     if (equity > 0) {
       hasSufficientCollateral(debt, equity, msg.value);
       treasury.increase(equity, msg.sender);
@@ -72,7 +72,7 @@ contract Probity is IProbity, Ownable, ProbityBase {
    * @return The user's vault.
    */
   function getVault() external view override returns (Vault memory) {
-    return vaultManager.getVaultByOwner(msg.sender);
+    return custodian.getVaultByOwner(msg.sender);
   }
 
   /**
@@ -84,7 +84,7 @@ contract Probity is IProbity, Ownable, ProbityBase {
   function withdrawCollateral(uint amount) external override {
     // 1. Check if the collateral ratio is maintained
     // TODO: Check interest
-    ProbityBase.Vault memory vault = vaultManager.getVaultByOwner(msg.sender);
+    ProbityBase.Vault memory vault = custodian.getVaultByOwner(msg.sender);
 
     uint equity = treasury.balanceOf(msg.sender);
   }
@@ -107,7 +107,7 @@ contract Probity is IProbity, Ownable, ProbityBase {
    *   (150 * 10^16) / 1 x 10^18 = 1.5 or 150%
    */
   function checkBorrowerEligibility(uint debt, address borrower) external view override {
-    Vault memory vault = vaultManager.getVaultByOwner(borrower);
+    Vault memory vault = custodian.getVaultByOwner(borrower);
     uint equity = treasury.balanceOf(borrower);
     hasSufficientCollateral(debt, equity,vault.collateral);
   }

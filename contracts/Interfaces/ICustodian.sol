@@ -5,10 +5,10 @@ pragma solidity ^0.8.0;
 import "../Dependencies/ProbityBase.sol";
 
 /**
- * @notice The vault manager contains logic for vault operations, including lifecycle management
+ * @notice The custodian contains logic for vault operations, including lifecycle management
  * and providing or withdrawing collateral.
  */
-interface IVaultManager {
+interface ICustodian {
 
   // --- Events ---
 

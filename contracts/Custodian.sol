@@ -2,8 +2,8 @@
 
 pragma solidity ^0.8.0;
 
-import "./Interfaces/IVaultManager.sol";
 import "./Interfaces/IAurei.sol";
+import "./Interfaces/ICustodian.sol";
 import "./Dependencies/Ownable.sol";
 import "./Dependencies/SafeMath.sol";
 
@@ -12,7 +12,7 @@ import "./Dependencies/SafeMath.sol";
  *
  * Adapted from https://github.com/liquity/beta/blob/main/contracts/Interfaces/ITroveManager.sol
  */
-contract VaultManager is IVaultManager, ProbityBase, Ownable {
+contract Custodian is ICustodian, ProbityBase, Ownable {
   using SafeMath for uint256;
 
   // --- Data ---

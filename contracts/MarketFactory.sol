@@ -2,8 +2,8 @@
 
 pragma solidity ^0.8.0;
 
-import "./Interfaces/IMarketFactory.sol";
 import "./Dependencies/Ownable.sol";
+import "./Interfaces/IMarketFactory.sol";
 
 /**
  * @notice Factory contract that deploys child market contracts.

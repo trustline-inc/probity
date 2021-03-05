@@ -2,8 +2,8 @@
 
 pragma solidity ^0.8.0;
 
-import "./Interfaces/ILiquidation.sol";
 import "./Dependencies/Ownable.sol";
+import "./Interfaces/ILiquidation.sol";
 
 /**
  * @notice Facilitates liquidation of under-collateralized vaults.

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "./Dependencies/Ownable.sol";
 import "./Dependencies/ProbityBase.sol";
 import "./Interfaces/IRegistry.sol";
-import "./Dependencies/Ownable.sol";
 
 /**
  * @notice Stores contract addresses.
