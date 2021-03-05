@@ -4,10 +4,10 @@ pragma solidity ^0.8.0;
 
 import "./Dependencies/Ownable.sol";
 import "./Dependencies/ProbityBase.sol";
+import "./Interfaces/IProbity.sol";
 import "./Interfaces/IRegistry.sol";
 import "./Interfaces/ITeller.sol";
 import "./Interfaces/ITreasury.sol";
-import "./Interfaces/IProbity.sol";
 
 /**
  * @notice Manages debts for all vaults.
@@ -16,9 +16,10 @@ contract Teller is ITeller, Ownable, ProbityBase {
   using SafeMath for uint256;
 
   // --- Data ---
-  /*
+
+  /**
    * Borrower can have multiple loans running at the same time from same or different lenders.
-   * For every loan, Loan-id is created against details such as rate, principal, duration, startDate and lender.
+   * For every loan, a loan ID is created against details such as rate, principal, duration, startDate and lender.
    */
   struct Loan {
     uint256 interestRate;
@@ -27,19 +28,19 @@ contract Teller is ITeller, Ownable, ProbityBase {
     uint256 startDate;
     address lender;
   }
-  uint256 private _index;
+
   mapping(address => uint256) public balances;
   mapping(address => mapping(uint256 => Loan)) public loanBalances;
+  mapping(address => uint256) private nonces;
 
-  ITreasury public treasury;
-  IRegistry public registry;
   IProbity public probity;
+  IRegistry public registry;
+  ITreasury public treasury;
 
   // --- Constructor ---
 
   constructor(address _registry) Ownable(msg.sender) {
     registry = IRegistry(_registry);
-    _index = 0;
   }
 
   /**
@@ -74,24 +75,25 @@ contract Teller is ITeller, Ownable, ProbityBase {
     uint256 principal,
     uint256 rate
   ) external override onlyExchange {
-    //Update total loan balance
+    // Update total loan balance
     balances[borrower] = balances[borrower].add(principal);
 
-    //Check borrower eligibility
+    // Check borrower eligibility
     probity.checkBorrowerEligibility(balances[borrower], borrower);
 
-    //Setup loan
-    loanBalances[borrower][_index].interestRate = rate;
-    loanBalances[borrower][_index].principal = principal;
-    loanBalances[borrower][_index].duration = 90; //take as input
-    loanBalances[borrower][_index].lender = lender;
-    loanBalances[borrower][_index].startDate = block.timestamp;
+    // Set loan ID
+    uint256 index = nonces[borrower] + 1;
 
-    //Execute Equity transfer to borrower
-    treasury.transferEquity(lender, borrower, principal);
+    // Setup loan
+    loanBalances[borrower][index].interestRate = rate;
+    loanBalances[borrower][index].principal = principal;
+    loanBalances[borrower][index].duration = 90; // Take as input
+    loanBalances[borrower][index].lender = lender;
+    loanBalances[borrower][index].startDate = block.timestamp;
 
-    //Increment loan Index
-    _index = _index + 1;
+    // Convert lender equity to loan asset
+    treasury.convertLenderEquityToLoan(lender, borrower, principal);
+
     emit LoanCreated(lender, borrower, principal, rate, block.timestamp);
   }
 
