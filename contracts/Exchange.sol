@@ -34,6 +34,7 @@ contract Exchange is IExchange, Ownable, ProbityBase {
 
   /**
    * @notice Executes an off-chain order at the specified rate.
+   * @dev TODO: Verify payload was signed by lender and borrower
    */
   function executeOrder(
     address lender,

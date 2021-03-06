@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 
 import "./Dependencies/Ownable.sol";
 import "./Dependencies/ProbityBase.sol";
+import "./Interfaces/ICustodian.sol";
 import "./Interfaces/IProbity.sol";
 import "./Interfaces/IRegistry.sol";
 import "./Interfaces/ITeller.sol";
@@ -33,6 +34,7 @@ contract Teller is ITeller, Ownable, ProbityBase {
   mapping(address => mapping(uint256 => Loan)) public loanBalances;
   mapping(address => uint256) private nonces;
 
+  ICustodian public custodian;
   IProbity public probity;
   IRegistry public registry;
   ITreasury public treasury;
@@ -48,6 +50,7 @@ contract Teller is ITeller, Ownable, ProbityBase {
    * @dev Should probably make this inheritable.
    */
   function initializeContract() external onlyOwner {
+    custodian = ICustodian(registry.getContractAddress(Contract.Custodian));
     treasury = ITreasury(registry.getContractAddress(Contract.Treasury));
     probity = IProbity(registry.getContractAddress(Contract.Probity));
   }
@@ -55,11 +58,11 @@ contract Teller is ITeller, Ownable, ProbityBase {
   /**
    * @notice Creates a loan by decrease the equity balance of the lender,
    * increasing the debt balance of the borrower, and sending the Aurei
-   * to the borrower.
+   * to the borrower thereby creating a loan asset for the lender.
    * Steps for loan grant:
    * a. Teller requests Treasury for borrower eligibility against loan amount
    * b. Teller adds loan details to the loanBalances mapping.
-   * c. Teller asks Treasury for transferring equity to borrower
+   * c. Teller asks Treasury to create loan by transferring Aurei to borrower
    * d. Loan Granted.
    * @param lender - The address of the lender.
    * @param borrower - The address of the borrower.
@@ -75,19 +78,22 @@ contract Teller is ITeller, Ownable, ProbityBase {
     uint256 principal,
     uint256 rate
   ) external override onlyExchange {
+    uint256 newDebtBalance = balances[borrower].add(principal);
+
+    // Check borrower eligibility
+    custodian.checkBorrowerEligibility(newDebtBalance, borrower);
+
     // Update total loan balance
     balances[borrower] = balances[borrower].add(principal);
 
-    // Check borrower eligibility
-    probity.checkBorrowerEligibility(balances[borrower], borrower);
-
     // Set loan ID
-    uint256 index = nonces[borrower] + 1;
+    nonces[borrower] = nonces[borrower] + 1;
+    uint256 index = nonces[borrower];
 
     // Setup loan
     loanBalances[borrower][index].interestRate = rate;
     loanBalances[borrower][index].principal = principal;
-    loanBalances[borrower][index].duration = 90; // Take as input
+    loanBalances[borrower][index].duration = 0; // 0 indicates on-demand loan.
     loanBalances[borrower][index].lender = lender;
     loanBalances[borrower][index].startDate = block.timestamp;
 
@@ -96,6 +102,11 @@ contract Teller is ITeller, Ownable, ProbityBase {
 
     emit LoanCreated(lender, borrower, principal, rate, block.timestamp);
   }
+
+  /**
+   * @notice Calculates interest owed at time of call.
+   */
+  function calculateInterest() external {}
 
   // --- Modifiers ---
 

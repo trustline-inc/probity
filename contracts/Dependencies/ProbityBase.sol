@@ -20,6 +20,8 @@ contract ProbityBase {
   struct Vault {
     uint256 index;
     uint256 collateral;
+    uint256 equity;
+    uint256 debt;
     Status status;
   }
 

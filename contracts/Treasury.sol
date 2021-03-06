@@ -6,9 +6,11 @@ import "./Dependencies/Ownable.sol";
 import "./Dependencies/ProbityBase.sol";
 import "./Dependencies/SafeMath.sol";
 import "./Interfaces/IAurei.sol";
+import "./Interfaces/ICustodian.sol";
 import "./Interfaces/IProbity.sol";
 import "./Interfaces/ITreasury.sol";
 import "./Interfaces/IRegistry.sol";
+import "hardhat/console.sol";
 
 /**
  * @notice Manages debts for all vaults.
@@ -21,6 +23,7 @@ contract Treasury is ITreasury, Ownable, ProbityBase {
   mapping(address => uint256) public balances;
 
   IAurei public aurei;
+  ICustodian public custodian;
   IProbity public probity;
   IRegistry public registry;
 
@@ -36,6 +39,7 @@ contract Treasury is ITreasury, Ownable, ProbityBase {
    */
   function initializeContract() external onlyOwner {
     aurei = IAurei(registry.getContractAddress(Contract.Aurei));
+    custodian = ICustodian(registry.getContractAddress(Contract.Custodian));
     probity = IProbity(registry.getContractAddress(Contract.Treasury));
   }
 
@@ -63,15 +67,14 @@ contract Treasury is ITreasury, Ownable, ProbityBase {
   }
 
   /**
-   * @notice Removes Aurei from the treasury.
+   * @notice Removes Aurei from the treasury when a loan is repaid.
    * @dev Only callable by Probity
-   * check if owner has enough balances.
    */
   function decrease(uint256 amount, address owner)
     external
     override
     onlyProbity
-    checkBalance(amount, owner)
+    requireSufficientEquity(amount, owner)
   {
     aurei.burn(address(this), amount);
     balances[owner] = balances[owner].sub(amount);
@@ -100,10 +103,24 @@ contract Treasury is ITreasury, Ownable, ProbityBase {
     address lender,
     address borrower,
     uint256 amount
-  ) external override onlyTeller checkBalance(amount, lender) {
+  ) external override onlyTeller requireSufficientEquity(amount, lender) {
     balances[lender] = balances[lender].sub(amount);
     aurei.transfer(borrower, amount);
     emit TreasuryDecrease(lender, amount);
+  }
+
+  /**
+   * @notice Burns Aurei from reserves and unlocks lender collateral.
+   */
+  function withdrawEquity(address owner, uint256 amount)
+    external
+    override
+    onlyProbity
+    requireSufficientEquity(amount, owner)
+  {
+    balances[owner] = balances[owner].sub(amount);
+    aurei.burn(address(this), amount);
+    emit TreasuryDecrease(owner, amount);
   }
 
   // --- Modifiers ---
@@ -129,7 +146,7 @@ contract Treasury is ITreasury, Ownable, ProbityBase {
    * @param amount - Amount to lend
    * @param lender - Address of lender
    */
-  modifier checkBalance(uint256 amount, address lender) {
+  modifier requireSufficientEquity(uint256 amount, address lender) {
     require(balances[lender] >= amount, "TREASURY: Insufficient balance.");
     _;
   }

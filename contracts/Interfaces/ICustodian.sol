@@ -25,4 +25,16 @@ interface ICustodian {
     external
     view
     returns (ProbityBase.Vault memory);
+
+  /**
+   * @notice This function checks borrower credibility for new loan request.
+   * @dev This method is called by Teller for loan credibility.
+   */
+  function checkBorrowerEligibility(uint256 debt, address borrower) external;
+
+  function requireSufficientCollateral(
+    uint256 debt,
+    uint256 equity,
+    uint256 collateral
+  ) external pure;
 }

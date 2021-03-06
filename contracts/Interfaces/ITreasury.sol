@@ -26,4 +26,6 @@ interface ITreasury {
     address borrower,
     uint256 amount
   ) external;
+
+  function withdrawEquity(address owner, uint256 amount) external;
 }
