@@ -1,6 +1,6 @@
-# Stablecoin
+# Probity
 
-Aurei crypto stablecoin
+Smart contract system for the Aurei crypto stablecoin
 
 ## Quickstart
 
@@ -90,17 +90,17 @@ The value of the collateral must maintain a ratio w.r.t. the stablecoin and must
 
 Take the following variables at time `t = 0`:
 
-**Left-hand side**
-
-| RESERVES   | LOANS      | YIELD | DEBT        | INTEREST |
-| ---------- | ---------- | ----- | ----------- | -------- |
-| $1,000,000 | $9,000,000 | 0     | $9,000,0000 | 0        |
-
 **Right-hand side**
 
 | COLLATERAL | COLLATERAL_PRICE | MIN_COLLATERAL_RATIO |
 | ---------- | ---------------- | -------------------- |
 | 15,000,000 | $1               | 150%                 |
+
+**Left-hand side**
+
+| RESERVES   | LOANS      | YIELD | DEBT        | INTEREST |
+| ---------- | ---------- | ----- | ----------- | -------- |
+| $1,000,000 | $9,000,000 | 0     | $9,000,0000 | 0        |
 
 This gives us the starting inequality:
 
