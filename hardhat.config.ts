@@ -1,4 +1,5 @@
-require('dotenv').config()
+require("dotenv").config();
+import "hardhat-typechain";
 import "@nomiclabs/hardhat-ethers";
 import "@nomiclabs/hardhat-web3";
 import "@nomiclabs/hardhat-waffle";
@@ -9,10 +10,10 @@ const config: HardhatUserConfig = {
   networks: {
     coston: {
       url: "https://costone.flare.network/ext/bc/C/rpc",
-      accounts: [process.env.PRIVATE_KEY]
-    }
+      accounts: [process.env.PRIVATE_KEY],
+    },
   },
-  solidity: "0.8.0"
+  solidity: "0.8.0",
 };
 
 export default config;

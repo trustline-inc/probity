@@ -8,10 +8,9 @@ import "../Dependencies/ProbityBase.sol";
  * @notice This is the main contract which calls other contracts for specific sets of business logic.
  */
 interface IProbity {
-
   // --- Events ---
 
-  event VaultCreated(address indexed owner, uint vaultId);
+  event VaultCreated(address indexed owner, uint256 vaultId);
 
   // --- Functions ---
 
@@ -22,45 +21,37 @@ interface IProbity {
    * @return vaultId - a numerical nonce representing the vault ID.
    * @dev Requires sufficient collateralization before opening vault.
    */
-  function openVault(uint debt, uint equity) external payable returns (uint vaultId);
-
-  /**
-   * @notice Call this to grant vault access to a third party.
-   * @param _vaultId - The vault ID.
-   * @param _grantee - Address of the grantee
-   * @dev This method can only be called by the vault owner or an address that was granted access.
-   */
-  function grantVaultAccess(uint _vaultId, address _grantee) external returns (bool result);
+  function openVault(uint256 debt, uint256 equity)
+    external
+    payable
+    returns (uint256 vaultId);
 
   /**
    * @notice Call this to add collateral to an existing vault.
-   * @param _vaultId - The vault ID.
    * @dev This method can only be called by the vault owner or an address that was granted access.
    */
-  function addCollateral(uint _vaultId) external payable;
+  function addCollateral() external payable;
 
   /**
    * @notice Call this to withdraw collateral from a vault. Borrower's debt must be paid
    * back in order for withdrawal. Lenders can only withdraw collateral on-demand from the
    * variable rate market. Withdrawing collateral from a fixed rate market requires loan
    * maturity.
-   * @param _vaultId - The vault ID.
    * @param _amount - The amount of collateral to withdraw. If there is outstanding debt,
    * the amount must not be more than allowed by the collateralization ratio.
    * @dev This method can only be called by the vault owner or an address that was granted access.
    */
-  function withdrawCollateral(uint _vaultId, uint _amount) external;
+  function withdrawCollateral(uint256 _amount) external;
 
   /**
    * @notice Call this to permanently close a vault.
-   * @param _vaultId - The vault ID.
    * @dev This method can only be called by the vault owner or an address that was granted access.
    */
-  function closeVault(uint _vaultId) external;
+  function closeVault() external;
 
   /**
-  * @notice Fetches details about the message sender's vault.
-  * @return Vault details.
-  */
+   * @notice Fetches details about the message sender's vault.
+   * @return Vault details.
+   */
   function getVault() external view returns (ProbityBase.Vault memory);
 }

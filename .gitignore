@@ -10,6 +10,7 @@ keystore.json
 # Hardhat files
 cache
 artifacts
+typechain
 
 # Dotenv file
 .env
