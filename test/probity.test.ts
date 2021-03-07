@@ -224,6 +224,11 @@ describe("Probity", function () {
       expect(await teller.balanceOf(borrower.address)).to.equal(
         loanAmount.toString()
       );
+
+      // Borrower Aurei balance changed
+      expect(await aurei.balanceOf(borrower.address)).to.equal(
+        loanAmount.toString()
+      );
     });
   });
 });
