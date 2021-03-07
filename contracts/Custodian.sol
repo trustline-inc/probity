@@ -28,7 +28,9 @@ contract Custodian is ICustodian, ProbityBase, Ownable {
 
   // --- Constructor ---
 
-  constructor() Ownable(msg.sender) {}
+  constructor(address _registry) Ownable(msg.sender) {
+    registry = IRegistry(_registry);
+  }
 
   /**
    * @notice Set the address of a dependent contract.
@@ -88,7 +90,7 @@ contract Custodian is ICustodian, ProbityBase, Ownable {
     view
     override
   {
-    Vault memory vault = this.getVaultByOwner(borrower);
+    Vault memory vault = vaults[borrower];
     uint256 equity = treasury.balanceOf(borrower);
     this.requireSufficientCollateral(debt, equity, vault.collateral);
   }

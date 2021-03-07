@@ -31,8 +31,8 @@ import {
 describe("Probity", function () {
   // Contracts
   let aurei: Aurei;
-  let exchange: Exchange;
   let custodian: Custodian;
+  let exchange: Exchange;
   let probity: Probity;
   let registry: Registry;
   let teller: Teller;
@@ -71,7 +71,7 @@ describe("Probity", function () {
       "Custodian",
       owner
     )) as CustodianFactory;
-    custodian = await custodianFactory.deploy();
+    custodian = await custodianFactory.deploy(registry.address);
     await custodian.deployed();
 
     const exchangeFactory = (await ethers.getContractFactory(
@@ -122,6 +122,7 @@ describe("Probity", function () {
     await registry.setupContractAddress(Contract.Teller, teller.address);
     await registry.setupContractAddress(Contract.Treasury, treasury.address);
 
+    await custodian.initializeContract();
     await exchange.initializeContract();
     await probity.initializeContract();
     await teller.initializeContract();
@@ -166,7 +167,18 @@ describe("Probity", function () {
     });
 
     it("Fails to create loan without equity from lender", async () => {
-      // TODO: Provide borrower collateral
+      const initialCollateral = 1000;
+      const initialDebt = 0;
+      const initialEquity = 0;
+
+      // Creating Borrower's vault
+      const txBorrower = {
+        from: borrower.address,
+        value: web3.utils.toWei(initialCollateral.toString()),
+      };
+      const txBorrowerResponse = await probity
+        .connect(borrower)
+        .openVault(initialDebt, initialEquity, txBorrower);
 
       const loanAmount = 50;
       const rate = 3;
@@ -180,7 +192,21 @@ describe("Probity", function () {
       ).to.be.revertedWith("TREASURY: Insufficient balance.");
     });
 
-    it("Creates a loan with sufficient collateral from borrower", async () => {
+    it("Creates a loan with sufficient lender equity and borrower collateral", async () => {
+      // Create equity on lender vault
+      const debt = 0;
+      const equity = 1000;
+      const collateral = 3000;
+
+      const txLender = {
+        from: lender.address,
+        value: web3.utils.toWei(collateral.toString()),
+      };
+      const txLenderResponse = await probity
+        .connect(lender)
+        .openVault(debt, equity, txLender);
+
+      // Match borrower with lender's equity to generate loan.
       const loanAmount = 50;
       const rate = 3;
       const txLoanResponse = await exchange.executeOrder(

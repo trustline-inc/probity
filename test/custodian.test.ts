@@ -73,7 +73,7 @@ describe("Custodian", function () {
       "Custodian",
       owner
     )) as CustodianFactory;
-    custodian = await custodianFactory.deploy();
+    custodian = await custodianFactory.deploy(registry.address);
     await custodian.deployed();
 
     const exchangeFactory = (await ethers.getContractFactory(
