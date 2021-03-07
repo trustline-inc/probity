@@ -18,6 +18,8 @@ interface ITeller {
 
   // --- Functions ---
 
+  function balanceOf(address borrower) external view returns (uint256);
+
   function createLoan(
     address lender,
     address borrower,

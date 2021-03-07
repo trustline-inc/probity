@@ -51,12 +51,13 @@ contract Custodian is ICustodian, ProbityBase, Ownable {
     override
     returns (uint256 index)
   {
-    vaults[owner].collateral = initialCollateral;
-    vaults[owner].status = Status.Active;
-
     // Set vault ID
     index = nonce + 1;
     nonce = index;
+    vaults[owner].index = index;
+
+    vaults[owner].collateral = initialCollateral;
+    vaults[owner].status = Status.Active;
 
     emit VaultCreated(owner, index);
     return index;

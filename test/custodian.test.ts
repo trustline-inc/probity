@@ -153,7 +153,7 @@ describe("Custodian", function () {
 
         // Check Alice's vault details
         const vault = await probity.connect(alice).getVault();
-        expect(vault[0]).to.equal(0);
+        expect(vault[0]).to.equal(1);
         expect(web3.utils.fromWei(vault[1].toString())).to.equal(
           coll.toString()
         );
@@ -186,7 +186,7 @@ describe("Custodian", function () {
 
         // Check Bob's vault details
         const vault = await probity.connect(bob).getVault();
-        expect(vault[0]).to.equal(1);
+        expect(vault[0]).to.equal(2);
         expect(web3.utils.fromWei(vault[1].toString())).to.equal(
           coll.toString()
         );
@@ -219,7 +219,7 @@ describe("Custodian", function () {
 
         // Check Charlie's collateral
         const vault = await probity.connect(charlie).getVault();
-        expect(vault[0]).to.equal(2);
+        expect(vault[0]).to.equal(3);
         expect(web3.utils.fromWei(vault[1].toString())).to.equal(
           coll.toString()
         );

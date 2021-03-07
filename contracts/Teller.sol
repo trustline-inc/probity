@@ -55,6 +55,20 @@ contract Teller is ITeller, Ownable, ProbityBase {
     probity = IProbity(registry.getContractAddress(Contract.Probity));
   }
 
+  // --- Functions ---
+
+  /**
+   * @notice Returns the debt balance of a borrower.
+   */
+  function balanceOf(address borrower)
+    external
+    view
+    override
+    returns (uint256)
+  {
+    return balances[borrower];
+  }
+
   /**
    * @notice Creates a loan by decrease the equity balance of the lender,
    * increasing the debt balance of the borrower, and sending the Aurei
