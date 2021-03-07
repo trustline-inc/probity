@@ -194,17 +194,17 @@ describe("Probity", function () {
 
     it("Creates a loan with sufficient lender equity and borrower collateral", async () => {
       // Create equity on lender vault
-      const debt = 0;
-      const equity = 1000;
-      const collateral = 3000;
+      const initialDebt = 0;
+      const initialEquity = 1000;
+      const coll = 3000;
 
       const txLender = {
         from: lender.address,
-        value: web3.utils.toWei(collateral.toString()),
+        value: web3.utils.toWei(coll.toString()),
       };
       const txLenderResponse = await probity
         .connect(lender)
-        .openVault(debt, equity, txLender);
+        .openVault(initialDebt, initialEquity, txLender);
 
       // Match borrower with lender's equity to generate loan.
       const loanAmount = 50;
@@ -220,9 +220,10 @@ describe("Probity", function () {
       // LoanCreated event was emitted
       expect(result.events.length).to.equal(3);
 
-      // Borrower vault balance changed
-      const vault = await probity.connect(borrower).getVault();
-      // TODO: Assert that details are correct
+      // Borrower loan balance changed
+      expect(await teller.balanceOf(borrower.address)).to.equal(
+        loanAmount.toString()
+      );
     });
   });
 });
