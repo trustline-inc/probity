@@ -25,11 +25,15 @@ contract Teller is ITeller, Ownable, ProbityBase {
   struct Loan {
     uint256 interestRate;
     uint256 principal;
+    uint256 totalDebt;
     uint256 duration;
     uint256 startDate;
+    uint256 lastUpdateTime;
+    uint256 interestDebt;
     address lender;
   }
 
+  uint256 variableRate;
   mapping(address => uint256) public balances;
   mapping(address => mapping(uint256 => Loan)) public loanBalances;
   mapping(address => uint256) private nonces;
@@ -107,9 +111,11 @@ contract Teller is ITeller, Ownable, ProbityBase {
     // Setup loan
     loanBalances[borrower][index].interestRate = rate;
     loanBalances[borrower][index].principal = principal;
+    loanBalances[borrower][index].totalDebt = principal * TOKEN_MULTIPLIER; //total debt is fixed point notation
     loanBalances[borrower][index].duration = 0; // 0 indicates on-demand loan.
     loanBalances[borrower][index].lender = lender;
     loanBalances[borrower][index].startDate = block.timestamp;
+    loanBalances[borrower][index].lastUpdateTime = block.timestamp;
 
     // Convert lender equity to loan asset
     treasury.convertLenderEquityToLoan(lender, borrower, principal);
@@ -117,12 +123,48 @@ contract Teller is ITeller, Ownable, ProbityBase {
     emit LoanCreated(lender, borrower, principal, rate, block.timestamp);
   }
 
-  /**
-   * @notice Calculates interest owed at time of call.
-   */
-  function calculateInterest() external {}
+  /*
+    @notice Trigger interest rate calculation for all borrowers in system
+    1. Iterate the list of all borrowers. For now, just taking input parameter for borrower and rate.
+  */
+  function executeLoanInterest(uint256 rate) external {
+    //Iterate the list of all loans and calculateInterest for all borrowers.
+  }
 
-  // --- Modifiers ---
+  /**
+   * @notice Update interest rate and total debt for all borrowers in system for specified rate.
+   * 1. Calculate compounding interest for the time elapsed in seconds.
+   * 2. After calculating interest, check borrowers eligibility against collateral.
+   * 3. Transferring interest benefit to lender.
+   */
+  function calculateInterest(
+    address borrower,
+    uint256 index,
+    uint256 rate
+  ) external {
+    Loan memory loan = loanBalances[borrower][index];
+    uint256 prevInterestRate = loan.interestRate;
+    uint256 timeElapsed = block.timestamp - loan.lastUpdateTime; //calculate timeElapsed in seconds
+    if (timeElapsed > 0) {
+      uint256 interestDebt =
+        (
+          (loan.totalDebt.mul(prevInterestRate)).div(
+            APY_SECONDS_MULTIPLIER * 100
+          )
+        )
+          .mul(timeElapsed);
+      loanBalances[borrower][index].interestDebt =
+        loanBalances[borrower][index].interestDebt +
+        interestDebt;
+      loanBalances[borrower][index].totalDebt =
+        loanBalances[borrower][index].totalDebt +
+        interestDebt;
+      loanBalances[borrower][index].interestRate = rate;
+    }
+    //call check collateral balance - Below function needs to support debt amount in 1e18 format and
+    //liquidate collateral.
+    //custodian.checkCollateral(loanBalances[borrower][index].totalDebt, borrower);
+  }
 
   /**
    * @dev Ensure that msg.sender === Exchange contract address.
