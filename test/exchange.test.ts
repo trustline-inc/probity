@@ -54,7 +54,7 @@ describe("Exchange", function () {
 
       // Match borrower with lender's equity to generate loan.
       const loanAmount = 50;
-      const rate = web3.utils.toWei(Math.pow(1.03, 1 / 31536000).toString());
+      const rate = web3.utils.toWei(Math.pow(1.03, 1 / 31536000).toString()); //MPR
       const txLoanResponse = await exchange
         .connect(borrower)
         .executeOrder(lender.address, borrower.address, loanAmount, rate);

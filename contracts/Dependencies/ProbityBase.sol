@@ -42,5 +42,10 @@ contract ProbityBase {
   uint256 public constant MIN_COLLATERAL_RATIO = 1500000000000000000;
 
   //Seconds in year for APY calulcation
-  uint256 public constant APY_SECONDS_MULTIPLIER = 31536000; //Seconds in year: 365*24*3600;
+  uint256 public constant MPR_MULTIPLIER = 31536000; //Seconds in year: 365*24*3600;
+
+  //Todo: Define unit system for aurei
+  function ray(uint256 wad) internal pure returns (uint256) {
+    return wad * 10**9;
+  }
 }

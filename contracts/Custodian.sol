@@ -18,7 +18,7 @@ contract Custodian is ICustodian, ProbityBase, Ownable {
   using SafeMath for uint256;
 
   // --- Data ---
-
+  uint256 private price;
   ITreasury public treasury;
   IRegistry public registry;
 
@@ -30,6 +30,7 @@ contract Custodian is ICustodian, ProbityBase, Ownable {
 
   constructor(address _registry) Ownable(msg.sender) {
     registry = IRegistry(_registry);
+    price = 1; //Assuming ether price 1$ = 1 AUREI
   }
 
   /**
@@ -80,6 +81,15 @@ contract Custodian is ICustodian, ProbityBase, Ownable {
   }
 
   /**
+   * @notice update the collateral amount in vault
+   * @param _owner vault owner address
+   * @param amount collateral amount
+   */
+  function updateCollateral(address _owner, uint256 amount) external override {
+    vaults[_owner].collateral = vaults[_owner].collateral + amount;
+  }
+
+  /**
    * @notice Ensuring that the borrower has sufficient collateral for a new loan.
    * @param debt - The amount of Aurei borrowed.
    * @param borrower - Address of the borrower.
@@ -103,19 +113,21 @@ contract Custodian is ICustodian, ProbityBase, Ownable {
    *
    * EXAMPLE:
    *   msg.value = 150 x 10^18 (assume price = $1)
-   *   debt + equity = 1 x 10^2 (e.g. $100 of debt and/or equity)
-   *   150 x 10^18 / 100 = 150 * 10^16
-   *   (150 * 10^16) / 1 x 10^18 = 1.5 or 150%
+   *   collateral = 150 x 10^18 x 10^9 (ray) = 150 x 10^27
+   *   debt + equity = 0 + 100 (e.g. $100 of equity) = 100 x 10^18 => 10^20
+   *   150 x 10^27 / 100 * 10^18 = (150/100) x 10^9 => 1.5 x 10^9 = 1500000000
+   *   ray(1.5 X 10^9) = 1.5 x 10^18 (MIN_COLLATERAL_RATIO)
    */
   function requireSufficientCollateral(
     uint256 debt,
     uint256 equity,
     uint256 collateral
-  ) external pure override {
+  ) external view override {
     // Check for infinity division - E.G., if user doesn't want lending or borrowing.
     // User may open vault with collateral without utilizing the position.
     if ((debt + equity) > 0) {
-      uint256 collateralRatio = collateral.div((debt + equity));
+      uint256 collateralRatio =
+        (ray(collateral).mul(price)).div((debt + equity));
       require(
         collateralRatio >= MIN_COLLATERAL_RATIO,
         "PRO: Insufficient collateral provided"

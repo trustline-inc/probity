@@ -60,7 +60,7 @@ contract Exchange is IExchange, Ownable, ProbityBase {
       rmul(rpow(rate, block.timestamp - lastUpdate, ONE), cumulativeRate);
 
     // Create loan
-    teller.createLoan(lender, borrower, amount, rate);
+    teller.createLoan(lender, borrower, amount, tmp);
 
     // Set new rates
     cumulativeRate = tmp;

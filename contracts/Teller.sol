@@ -9,6 +9,7 @@ import "./Interfaces/IProbity.sol";
 import "./Interfaces/IRegistry.sol";
 import "./Interfaces/ITeller.sol";
 import "./Interfaces/ITreasury.sol";
+import "hardhat/console.sol";
 
 /**
  * @notice Manages debts for all vaults.
@@ -26,10 +27,8 @@ contract Teller is ITeller, Ownable, ProbityBase {
     uint256 normalizedDebt;
   }
 
-  uint256 variableRate;
-  uint256 cumulativeRate;
   mapping(address => uint256) public balances;
-  mapping(address => mapping(uint256 => Loan)) public loanBalances;
+  mapping(address => Loan) public normalizedDebtBalances;
   mapping(address => uint256) private nonces;
 
   ICustodian public custodian;
@@ -73,7 +72,7 @@ contract Teller is ITeller, Ownable, ProbityBase {
    * to the borrower thereby creating a loan asset for the lender.
    * Steps for loan grant:
    * a. Teller requests Treasury for borrower eligibility against loan amount
-   * b. Teller adds loan details to the loanBalances mapping.
+   * b. Teller adds loan details to the normalizedDebtBalances mapping.
    * c. Teller asks Treasury to create loan by transferring Aurei to borrower
    * d. Loan Granted.
    * @param lender - The address of the lender.
@@ -87,7 +86,7 @@ contract Teller is ITeller, Ownable, ProbityBase {
     address lender,
     address borrower,
     uint256 principal,
-    uint256 cumlativeRate
+    uint256 cumulativeRate
   ) external override onlyExchange {
     uint256 newDebtBalance = balances[borrower].add(principal);
 
@@ -96,16 +95,14 @@ contract Teller is ITeller, Ownable, ProbityBase {
 
     // Update total loan balance
     balances[borrower] = newDebtBalance;
-
     // Set loan ID
     nonces[borrower] = nonces[borrower] + 1;
     uint256 index = nonces[borrower];
 
     // All we are storing with the loan is the normalized debt, for now.
-    loanBalances[borrower][index].normalizedDebt = principal.div(
-      cumulativeRate
-    );
-
+    normalizedDebtBalances[borrower].normalizedDebt =
+      principal.div(cumulativeRate) +
+      normalizedDebtBalances[borrower].normalizedDebt;
     // Convert lender equity to loan asset
     treasury.convertLenderEquityToLoan(lender, borrower, principal);
 

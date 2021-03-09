@@ -61,7 +61,12 @@ describe("Probity", function () {
       await expect(
         exchange
           .connect(borrower)
-          .executeOrder(lender.address, borrower.address, loanAmount, rate)
+          .executeOrder(
+            lender.address,
+            borrower.address,
+            web3.utils.toWei(loanAmount.toString()),
+            rate
+          )
       ).to.be.revertedWith("PRO: Insufficient collateral provided");
     });
 
@@ -85,7 +90,7 @@ describe("Probity", function () {
         exchange.executeOrder(
           lender.address,
           borrower.address,
-          loanAmount,
+          web3.utils.toWei(loanAmount.toString()),
           rate
         )
       ).to.be.revertedWith("TREASURY: Insufficient balance.");
@@ -111,7 +116,7 @@ describe("Probity", function () {
       const txLoanResponse = await exchange.executeOrder(
         lender.address,
         borrower.address,
-        loanAmount,
+        web3.utils.toWei(loanAmount.toString()),
         rate
       );
       const result = await txLoanResponse.wait();
@@ -121,12 +126,12 @@ describe("Probity", function () {
 
       // Borrower loan balance changed
       expect(await teller.balanceOf(borrower.address)).to.equal(
-        loanAmount.toString()
+        web3.utils.toWei(loanAmount.toString())
       );
 
       // Borrower Aurei balance changed
       expect(await aurei.balanceOf(borrower.address)).to.equal(
-        loanAmount.toString()
+        web3.utils.toWei(loanAmount.toString())
       );
     });
   });
