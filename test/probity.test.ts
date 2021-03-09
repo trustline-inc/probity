@@ -3,14 +3,29 @@ import "@nomiclabs/hardhat-web3";
 import { web3 } from "hardhat";
 import { expect } from "chai";
 
-import { contracts, deploy, signers } from "./helpers";
+// See https://github.com/nomiclabs/hardhat/issues/1001
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
 
-const { lender, borrower } = signers;
-const { aurei, exchange, probity, teller } = contracts;
+import { Aurei, Exchange, Probity, Teller } from "../typechain";
+import deploy from "./helpers";
+
+// Declare in global scope
+let lender: SignerWithAddress, borrower: SignerWithAddress;
+let aurei: Aurei, exchange: Exchange, probity: Probity, teller: Teller;
 
 describe("Probity", function () {
   before(async function () {
-    await deploy();
+    const { contracts, signers } = await deploy();
+
+    // Set contracts
+    aurei = contracts.aurei;
+    exchange = contracts.exchange;
+    probity = contracts.probity;
+    teller = contracts.teller;
+
+    // Set signers
+    lender = signers.lender;
+    borrower = signers.borrower;
 
     /**
      * VAULT SETUP

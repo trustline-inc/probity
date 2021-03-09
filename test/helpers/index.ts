@@ -1,4 +1,4 @@
-import { ethers, web3 } from "hardhat";
+import { ethers } from "hardhat";
 
 // Import contract factory types
 import {
@@ -178,6 +178,8 @@ const deploy = async () => {
   await contracts.probity.initializeContract();
   await contracts.teller.initializeContract();
   await contracts.treasury.initializeContract();
+
+  return { contracts, signers };
 };
 
-export { contracts, deploy, signers };
+export default deploy;

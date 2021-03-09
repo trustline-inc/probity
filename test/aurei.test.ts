@@ -1,14 +1,28 @@
 import "@nomiclabs/hardhat-waffle";
 import { expect } from "chai";
 
-import { contracts, deploy, signers } from "./helpers";
+// See https://github.com/nomiclabs/hardhat/issues/1001
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
 
-const { owner, alice } = signers;
-const { aurei } = contracts;
+import { Aurei } from "../typechain";
+
+import deploy from "./helpers";
+
+// Declare in global scope
+let owner: SignerWithAddress;
+let alice: SignerWithAddress;
+let aurei: Aurei;
 
 describe("Aurei", function () {
   before(async function () {
-    await deploy();
+    const { contracts, signers } = await deploy();
+
+    // Set contracts
+    aurei = contracts.aurei;
+
+    // Set signers
+    alice = signers.alice;
+    owner = signers.owner;
   });
 
   describe("Deployment", function () {
