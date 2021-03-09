@@ -14,7 +14,7 @@ import deploy from "./helpers";
 let lender: SignerWithAddress, borrower: SignerWithAddress;
 let exchange: Exchange, probity: Probity;
 
-describe("Custodian", function () {
+describe("Exchange", function () {
   before(async function () {
     const { contracts, signers } = await deploy();
 
