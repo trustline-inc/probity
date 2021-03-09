@@ -1,18 +1,18 @@
 import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-web3";
-import { web3 } from "hardhat";
+import { network, web3 } from "hardhat";
 import { expect } from "chai";
 
 // See https://github.com/nomiclabs/hardhat/issues/1001
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
 
-import { Probity, Exchange } from "../typechain";
+import { Probity, Exchange, Teller } from "../typechain";
 
 import deploy from "./helpers";
 
 // Declare in global scope
 let lender: SignerWithAddress, borrower: SignerWithAddress;
-let exchange: Exchange, probity: Probity;
+let exchange: Exchange, probity: Probity, teller: Teller;
 
 describe("Exchange", function () {
   before(async function () {
@@ -21,6 +21,7 @@ describe("Exchange", function () {
     // Set contracts
     exchange = contracts.exchange;
     probity = contracts.probity;
+    teller = contracts.teller;
 
     // Set signers
     lender = signers.lender;
@@ -53,7 +54,7 @@ describe("Exchange", function () {
 
       // Match borrower with lender's equity to generate loan.
       const loanAmount = 50;
-      const rate = 3;
+      const rate = web3.utils.toWei(Math.pow(1.03, 1 / 31536000).toString());
       const txLoanResponse = await exchange
         .connect(borrower)
         .executeOrder(lender.address, borrower.address, loanAmount, rate);
@@ -62,6 +63,12 @@ describe("Exchange", function () {
       const variableRate = await exchange.getVariableRate();
 
       expect(variableRate).to.equal(rate);
+
+      // Warp time by an hour
+      await network.provider.send("evm_increaseTime", [3600]);
+
+      // Check total debt
+      // const txTellerResponse = await teller.connect(borrower).getTotalDebt();
     });
   });
 });
