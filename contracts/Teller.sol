@@ -5,6 +5,7 @@ pragma solidity ^0.8.0;
 import "./Dependencies/Ownable.sol";
 import "./Dependencies/ProbityBase.sol";
 import "./Interfaces/ICustodian.sol";
+import "./Interfaces/IExchange.sol";
 import "./Interfaces/IProbity.sol";
 import "./Interfaces/IRegistry.sol";
 import "./Interfaces/ITeller.sol";
@@ -32,6 +33,7 @@ contract Teller is ITeller, Ownable, ProbityBase {
   mapping(address => uint256) private nonces;
 
   ICustodian public custodian;
+  IExchange public exchange;
   IProbity public probity;
   IRegistry public registry;
   ITreasury public treasury;
@@ -48,8 +50,9 @@ contract Teller is ITeller, Ownable, ProbityBase {
    */
   function initializeContract() external onlyOwner {
     custodian = ICustodian(registry.getContractAddress(Contract.Custodian));
-    treasury = ITreasury(registry.getContractAddress(Contract.Treasury));
+    exchange = IExchange(registry.getContractAddress(Contract.Exchange));
     probity = IProbity(registry.getContractAddress(Contract.Probity));
+    treasury = ITreasury(registry.getContractAddress(Contract.Treasury));
   }
 
   // --- Functions ---
@@ -119,7 +122,9 @@ contract Teller is ITeller, Ownable, ProbityBase {
    * @notice Calculates the total debt of a borrower
    */
   function getTotalDebt() external view {
-    // Loan loan = loanBalances[msg.sender][];
+    return
+      normalizedDebtBalances[msg.sender].normalizedDebt *
+      exchange.getCumulativeRate();
   }
 
   /**

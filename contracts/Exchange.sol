@@ -71,6 +71,10 @@ contract Exchange is IExchange, Ownable, ProbityBase {
     return variableRate;
   }
 
+  function getCumulativeRate() public view returns (uint256) {
+    return cumulativeRate;
+  }
+
   // --- Internal Functions ---
 
   // https://github.com/makerdao/dss/blob/master/src/jug.sol#L92
