@@ -65,14 +65,14 @@ contract Probity is IProbity, Ownable, ProbityBase {
 
   /**
    * @notice Adds collateral to an existing vault and adds Aurei to the treasury.
-   * @dev Caller MUST be the owner of the vault.
-   * Steps:
-   * a. Get the msg.value as collateral amount
-   * b. update the balance in vault
-   * c. if equity > 0,increase treasury balance
+   * @param equity - Amount of Aurei to place in reserves for lending.
    */
   function addCollateral(uint256 equity) external payable override {
-    // msg.value
+    custodian.increaseCollateral(msg.sender, msg.value);
+    if (equity > 0) {
+      custodian.requireSufficientCollateral(0, equity, msg.value);
+      treasury.increase(equity, msg.sender);
+    }
   }
 
   /**
