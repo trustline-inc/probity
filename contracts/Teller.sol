@@ -121,7 +121,7 @@ contract Teller is ITeller, Ownable, ProbityBase {
   /**
    * @notice Calculates the total debt of a borrower
    */
-  function getTotalDebt() external view {
+  function getTotalDebt() external view override returns (uint256) {
     return
       normalizedDebtBalances[msg.sender].normalizedDebt *
       exchange.getCumulativeRate();
