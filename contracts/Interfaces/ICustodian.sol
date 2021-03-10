@@ -36,7 +36,7 @@ interface ICustodian {
     uint256 debt,
     uint256 equity,
     uint256 collateral
-  ) external view;
+  ) external pure;
 
   function increaseCollateral(address _owner, uint256 amount) external;
 
