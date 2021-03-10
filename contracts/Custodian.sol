@@ -18,7 +18,7 @@ contract Custodian is ICustodian, ProbityBase, Ownable {
   using SafeMath for uint256;
 
   // --- Data ---
-  uint256 private price;
+
   ITreasury public treasury;
   IRegistry public registry;
 
@@ -30,7 +30,6 @@ contract Custodian is ICustodian, ProbityBase, Ownable {
 
   constructor(address _registry) Ownable(msg.sender) {
     registry = IRegistry(_registry);
-    price = 1; //Assuming ether price 1$ = 1 AUREI
   }
 
   /**
@@ -81,12 +80,27 @@ contract Custodian is ICustodian, ProbityBase, Ownable {
   }
 
   /**
-   * @notice update the collateral amount in vault
+   * @notice Increases the collateral amount in vault
    * @param _owner vault owner address
    * @param amount collateral amount
    */
-  function updateCollateral(address _owner, uint256 amount) external override {
-    vaults[_owner].collateral = vaults[_owner].collateral + amount;
+  function increaseCollateral(address _owner, uint256 amount)
+    external
+    override
+  {
+    vaults[_owner].collateral = vaults[_owner].collateral.add(amount);
+  }
+
+  /**
+   * @notice Decreases the collateral amount in vault
+   * @param _owner vault owner address
+   * @param amount collateral amount
+   */
+  function decreaseCollateral(address _owner, uint256 amount)
+    external
+    override
+  {
+    vaults[_owner].collateral = vaults[_owner].collateral.sub(amount);
   }
 
   /**
@@ -126,8 +140,7 @@ contract Custodian is ICustodian, ProbityBase, Ownable {
     // Check for infinity division - E.G., if user doesn't want lending or borrowing.
     // User may open vault with collateral without utilizing the position.
     if ((debt + equity) > 0) {
-      uint256 collateralRatio =
-        (ray(collateral).mul(price)).div((debt + equity));
+      uint256 collateralRatio = (ray(collateral).mul(1)).div((debt + equity));
       require(
         collateralRatio >= MIN_COLLATERAL_RATIO,
         "PRO: Insufficient collateral provided"
