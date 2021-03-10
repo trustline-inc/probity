@@ -30,7 +30,7 @@ interface IProbity {
    * @notice Call this to add collateral to an existing vault.
    * @dev This method can only be called by the vault owner or an address that was granted access.
    */
-  function addCollateral() external payable;
+  function addCollateral(uint256 equity) external payable;
 
   /**
    * @notice Call this to withdraw collateral from a vault. Borrower's debt must be paid

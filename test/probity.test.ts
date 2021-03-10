@@ -1,132 +1,31 @@
 import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-web3";
-import { ethers, web3 } from "hardhat";
+import { web3 } from "hardhat";
 import { expect } from "chai";
 
 // See https://github.com/nomiclabs/hardhat/issues/1001
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
 
-// Import contract factory types
-import {
-  AureiFactory,
-  CustodianFactory,
-  ProbityFactory,
-  RegistryFactory,
-  TellerFactory,
-  TreasuryFactory,
-  ExchangeFactory,
-} from "../typechain";
+import { Aurei, Exchange, Probity, Teller } from "../typechain";
+import deploy from "./helpers";
 
-// Import contract types
-import {
-  Aurei,
-  Custodian,
-  Probity,
-  Registry,
-  Teller,
-  Treasury,
-  Exchange,
-} from "../typechain";
+// Declare in global scope
+let lender: SignerWithAddress, borrower: SignerWithAddress;
+let aurei: Aurei, exchange: Exchange, probity: Probity, teller: Teller;
 
 describe("Probity", function () {
-  // Contracts
-  let aurei: Aurei;
-  let custodian: Custodian;
-  let exchange: Exchange;
-  let probity: Probity;
-  let registry: Registry;
-  let teller: Teller;
-  let treasury: Treasury;
-
-  /**
-   * Signers
-   */
-  let owner: SignerWithAddress;
-  let lender: SignerWithAddress;
-  let borrower: SignerWithAddress;
-  let addrs: SignerWithAddress[];
-
   before(async function () {
-    // Get the signers here.
-    [owner, lender, borrower, ...addrs] = await ethers.getSigners();
+    const { contracts, signers } = await deploy();
 
-    /**
-     * DEPLOY CONTRACTS
-     */
-    const registryFactory = (await ethers.getContractFactory(
-      "Registry",
-      owner
-    )) as RegistryFactory;
-    registry = await registryFactory.deploy();
-    await registry.deployed();
+    // Set contracts
+    aurei = contracts.aurei;
+    exchange = contracts.exchange;
+    probity = contracts.probity;
+    teller = contracts.teller;
 
-    const aureiFactory = (await ethers.getContractFactory(
-      "Aurei",
-      owner
-    )) as AureiFactory;
-    aurei = await aureiFactory.deploy();
-    await aurei.deployed();
-
-    const custodianFactory = (await ethers.getContractFactory(
-      "Custodian",
-      owner
-    )) as CustodianFactory;
-    custodian = await custodianFactory.deploy(registry.address);
-    await custodian.deployed();
-
-    const exchangeFactory = (await ethers.getContractFactory(
-      "Exchange",
-      owner
-    )) as ExchangeFactory;
-    exchange = await exchangeFactory.deploy(registry.address);
-    await exchange.deployed();
-
-    const probityFactory = (await ethers.getContractFactory(
-      "Probity",
-      owner
-    )) as ProbityFactory;
-    probity = await probityFactory.deploy(registry.address);
-    await probity.deployed();
-
-    const tellerFactory = (await ethers.getContractFactory(
-      "Teller",
-      owner
-    )) as TellerFactory;
-    teller = await tellerFactory.deploy(registry.address);
-    await teller.deployed();
-
-    const treasuryFactory = (await ethers.getContractFactory(
-      "Treasury",
-      owner
-    )) as TreasuryFactory;
-    treasury = await treasuryFactory.deploy(registry.address);
-    await treasury.deployed();
-
-    /**
-     * SET CONTRACT ADDRESSES
-     */
-
-    enum Contract {
-      Aurei,
-      Custodian,
-      Exchange,
-      Probity,
-      Teller,
-      Treasury,
-    }
-
-    await registry.setupContractAddress(Contract.Aurei, aurei.address);
-    await registry.setupContractAddress(Contract.Custodian, custodian.address);
-    await registry.setupContractAddress(Contract.Exchange, exchange.address);
-    await registry.setupContractAddress(Contract.Probity, probity.address);
-    await registry.setupContractAddress(Contract.Teller, teller.address);
-    await registry.setupContractAddress(Contract.Treasury, treasury.address);
-
-    await custodian.initializeContract();
-    await exchange.initializeContract();
-    await probity.initializeContract();
-    await teller.initializeContract();
-    await treasury.initializeContract();
+    // Set signers
+    lender = signers.lender;
+    borrower = signers.borrower;
 
     /**
      * VAULT SETUP
@@ -162,23 +61,49 @@ describe("Probity", function () {
       await expect(
         exchange
           .connect(borrower)
-          .executeOrder(lender.address, borrower.address, loanAmount, rate)
+          .executeOrder(
+            lender.address,
+            borrower.address,
+            web3.utils.toWei(loanAmount.toString()),
+            rate
+          )
       ).to.be.revertedWith("PRO: Insufficient collateral provided");
     });
 
     it("Fails to create loan without equity from lender", async () => {
-      const initialCollateral = 1000;
+      const collateral = 1000;
       const initialDebt = 0;
       const initialEquity = 0;
 
-      // Creating Borrower's vault
+      // Add collateral to lender's vault
+      const txLender = {
+        from: lender.address,
+        value: web3.utils.toWei(collateral.toString()),
+      };
+      const txLenderResponse = await probity
+        .connect(lender)
+        .addCollateral(initialEquity, txLender);
+
+      // Assert collateral was added
+      const lenderVault = await probity.connect(lender).getVault();
+      expect(web3.utils.fromWei(lenderVault[1].toString())).to.equal(
+        collateral.toString()
+      );
+
+      // Add collateral to borrower's vault
       const txBorrower = {
         from: borrower.address,
-        value: web3.utils.toWei(initialCollateral.toString()),
+        value: web3.utils.toWei(collateral.toString()),
       };
       const txBorrowerResponse = await probity
         .connect(borrower)
-        .openVault(initialDebt, initialEquity, txBorrower);
+        .addCollateral(initialEquity, txBorrower);
+
+      // Assert collateral was added
+      const borrowerVault = await probity.connect(lender).getVault();
+      expect(web3.utils.fromWei(borrowerVault[1].toString())).to.equal(
+        collateral.toString()
+      );
 
       const loanAmount = 50;
       const rate = 3;
@@ -186,25 +111,19 @@ describe("Probity", function () {
         exchange.executeOrder(
           lender.address,
           borrower.address,
-          loanAmount,
-          rate
+          web3.utils.toWei(loanAmount.toString()),
+          web3.utils.toWei(rate.toString())
         )
       ).to.be.revertedWith("TREASURY: Insufficient balance.");
     });
 
     it("Creates a loan with sufficient lender equity and borrower collateral", async () => {
       // Create equity on lender vault
-      const initialDebt = 0;
-      const initialEquity = 1000;
-      const coll = 3000;
+      const equity = 100;
 
-      const txLender = {
-        from: lender.address,
-        value: web3.utils.toWei(coll.toString()),
-      };
       const txLenderResponse = await probity
         .connect(lender)
-        .openVault(initialDebt, initialEquity, txLender);
+        .increaseEquity(web3.utils.toWei(equity.toString()));
 
       // Match borrower with lender's equity to generate loan.
       const loanAmount = 50;
@@ -212,8 +131,8 @@ describe("Probity", function () {
       const txLoanResponse = await exchange.executeOrder(
         lender.address,
         borrower.address,
-        loanAmount,
-        rate
+        web3.utils.toWei(loanAmount.toString()),
+        web3.utils.toWei(rate.toString())
       );
       const result = await txLoanResponse.wait();
 
@@ -222,12 +141,12 @@ describe("Probity", function () {
 
       // Borrower loan balance changed
       expect(await teller.balanceOf(borrower.address)).to.equal(
-        loanAmount.toString()
+        web3.utils.toWei(loanAmount.toString())
       );
 
       // Borrower Aurei balance changed
       expect(await aurei.balanceOf(borrower.address)).to.equal(
-        loanAmount.toString()
+        web3.utils.toWei(loanAmount.toString())
       );
     });
   });

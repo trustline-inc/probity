@@ -33,9 +33,17 @@ contract ProbityBase {
 
   // --- Math constants ---
 
-  // One hundred percent expressed as 1 x 10^18 or 1e18
-  uint256 public constant ONE_HUNDRED_PERCENT = 1000000000000000000; // 100%
+  // One as 1e18, or as 100%
+  uint256 constant ONE = 10**18;
 
-  // Minimum collateral ratio for individual vaults
-  uint256 public constant MIN_COLLATERAL_RATIO = 1500000000000000000; // 150%
+  // Minimum collateral ratio for individual vaults (150%)
+  uint256 public constant MIN_COLLATERAL_RATIO = 1500000000000000000;
+
+  // Seconds in year: 365 * 24 * 3600;
+  uint256 public constant SECONDS_IN_YEAR = 31536000;
+
+  // TODO: Define unit system for Aurei
+  function ray(uint256 wad) internal pure returns (uint256) {
+    return wad * 10**9;
+  }
 }

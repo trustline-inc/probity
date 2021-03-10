@@ -8,6 +8,7 @@ import "./Interfaces/ITreasury.sol";
 import "./Interfaces/IRegistry.sol";
 import "./Dependencies/Ownable.sol";
 import "./Dependencies/SafeMath.sol";
+import "hardhat/console.sol";
 
 /**
  * @notice The custodian manages collateral vaults.
@@ -80,6 +81,30 @@ contract Custodian is ICustodian, ProbityBase, Ownable {
   }
 
   /**
+   * @notice Increases the collateral amount in vault
+   * @param _owner vault owner address
+   * @param amount collateral amount
+   */
+  function increaseCollateral(address _owner, uint256 amount)
+    external
+    override
+  {
+    vaults[_owner].collateral = vaults[_owner].collateral.add(amount);
+  }
+
+  /**
+   * @notice Decreases the collateral amount in vault
+   * @param _owner vault owner address
+   * @param amount collateral amount
+   */
+  function decreaseCollateral(address _owner, uint256 amount)
+    external
+    override
+  {
+    vaults[_owner].collateral = vaults[_owner].collateral.sub(amount);
+  }
+
+  /**
    * @notice Ensuring that the borrower has sufficient collateral for a new loan.
    * @param debt - The amount of Aurei borrowed.
    * @param borrower - Address of the borrower.
@@ -102,10 +127,11 @@ contract Custodian is ICustodian, ProbityBase, Ownable {
    * @dev Solidity does not have floating point division.
    *
    * EXAMPLE:
-   *   msg.value = 150 x 10^18 (assume price = $1)
-   *   debt + equity = 1 x 10^2 (e.g. $100 of debt and/or equity)
-   *   150 x 10^18 / 100 = 150 * 10^16
-   *   (150 * 10^16) / 1 x 10^18 = 1.5 or 150%
+   *   msg.value = 150 * 10^18 (in wei, assume price = $1)
+   *   collateral = 150 * 10^18 * 10^9 (ray) = 150 * 10^27 (ray)
+   *   debt + equity = 0 + 100 (e.g. $100 of equity) = 100 * 10^18 (wad)
+   *   150 * 10^27 / 100 * 10^18 = (150/100) * 10^9 => 1.5 * 10^9 = 1500000000 (wei)
+   *   ray(1.5 * 10^9) = 1.5 * 10^18 (MIN_COLLATERAL_RATIO)
    */
   function requireSufficientCollateral(
     uint256 debt,
@@ -115,7 +141,8 @@ contract Custodian is ICustodian, ProbityBase, Ownable {
     // Check for infinity division - E.G., if user doesn't want lending or borrowing.
     // User may open vault with collateral without utilizing the position.
     if ((debt + equity) > 0) {
-      uint256 collateralRatio = collateral.div((debt + equity));
+      uint256 collateralRatio =
+        ray((ray(collateral).mul(1)).div((debt + equity)));
       require(
         collateralRatio >= MIN_COLLATERAL_RATIO,
         "PRO: Insufficient collateral provided"

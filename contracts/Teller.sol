@@ -5,10 +5,12 @@ pragma solidity ^0.8.0;
 import "./Dependencies/Ownable.sol";
 import "./Dependencies/ProbityBase.sol";
 import "./Interfaces/ICustodian.sol";
+import "./Interfaces/IExchange.sol";
 import "./Interfaces/IProbity.sol";
 import "./Interfaces/IRegistry.sol";
 import "./Interfaces/ITeller.sol";
 import "./Interfaces/ITreasury.sol";
+import "hardhat/console.sol";
 
 /**
  * @notice Manages debts for all vaults.
@@ -23,18 +25,15 @@ contract Teller is ITeller, Ownable, ProbityBase {
    * For every loan, a loan ID is created against details such as rate, principal, duration, startDate and lender.
    */
   struct Loan {
-    uint256 interestRate;
-    uint256 principal;
-    uint256 duration;
-    uint256 startDate;
-    address lender;
+    uint256 normalizedDebt;
   }
 
-  mapping(address => uint256) public balances;
-  mapping(address => mapping(uint256 => Loan)) public loanBalances;
+  mapping(address => uint256) public balances; // Debt
+  mapping(address => Loan) public normalizedDebtBalances;
   mapping(address => uint256) private nonces;
 
   ICustodian public custodian;
+  IExchange public exchange;
   IProbity public probity;
   IRegistry public registry;
   ITreasury public treasury;
@@ -51,8 +50,9 @@ contract Teller is ITeller, Ownable, ProbityBase {
    */
   function initializeContract() external onlyOwner {
     custodian = ICustodian(registry.getContractAddress(Contract.Custodian));
-    treasury = ITreasury(registry.getContractAddress(Contract.Treasury));
+    exchange = IExchange(registry.getContractAddress(Contract.Exchange));
     probity = IProbity(registry.getContractAddress(Contract.Probity));
+    treasury = ITreasury(registry.getContractAddress(Contract.Treasury));
   }
 
   // --- Functions ---
@@ -70,27 +70,26 @@ contract Teller is ITeller, Ownable, ProbityBase {
   }
 
   /**
-   * @notice Creates a loan by decrease the equity balance of the lender,
+   * @notice Creates a loan by decreasing the equity balance of the lender,
    * increasing the debt balance of the borrower, and sending the Aurei
    * to the borrower thereby creating a loan asset for the lender.
    * Steps for loan grant:
    * a. Teller requests Treasury for borrower eligibility against loan amount
-   * b. Teller adds loan details to the loanBalances mapping.
+   * b. Teller adds loan details to the normalizedDebtBalances mapping.
    * c. Teller asks Treasury to create loan by transferring Aurei to borrower
    * d. Loan Granted.
    * @param lender - The address of the lender.
    * @param borrower - The address of the borrower.
    * @param principal - The initial amount of the loan.
    *Todo: List below:
-   * 1. Take loan duration as input
-   * 2. Check solidity behaviour if last step of function execution fails (assuming all storage updates must be reverted). Write test to verify same.
-   * 3. Function sharing shared variable are thread safe. If multiple calls to function at same time, it must be handled by solidity.
+   * 1. Check solidity behaviour if last step of function execution fails (assuming all storage updates must be reverted). Write test to verify same.
+   * 2. Function sharing shared variable are thread safe. If multiple calls to function at same time, it must be handled by solidity.
    */
   function createLoan(
     address lender,
     address borrower,
     uint256 principal,
-    uint256 rate
+    uint256 cumulativeRate
   ) external override onlyExchange {
     uint256 newDebtBalance = balances[borrower].add(principal);
 
@@ -98,31 +97,38 @@ contract Teller is ITeller, Ownable, ProbityBase {
     custodian.checkBorrowerEligibility(newDebtBalance, borrower);
 
     // Update total loan balance
-    balances[borrower] = balances[borrower].add(principal);
+    balances[borrower] = newDebtBalance;
 
     // Set loan ID
     nonces[borrower] = nonces[borrower] + 1;
-    uint256 index = nonces[borrower];
 
-    // Setup loan
-    loanBalances[borrower][index].interestRate = rate;
-    loanBalances[borrower][index].principal = principal;
-    loanBalances[borrower][index].duration = 0; // 0 indicates on-demand loan.
-    loanBalances[borrower][index].lender = lender;
-    loanBalances[borrower][index].startDate = block.timestamp;
+    // TODO: This needs to be tested!
+    // All we are storing with the loan is the normalized debt, for now.
+    normalizedDebtBalances[borrower].normalizedDebt = (ray(ray(principal)).div(
+      cumulativeRate
+    ) + normalizedDebtBalances[borrower].normalizedDebt);
 
     // Convert lender equity to loan asset
     treasury.convertLenderEquityToLoan(lender, borrower, principal);
 
-    emit LoanCreated(lender, borrower, principal, rate, block.timestamp);
+    emit LoanCreated(
+      lender,
+      borrower,
+      principal,
+      cumulativeRate,
+      block.timestamp
+    );
   }
 
   /**
-   * @notice Calculates interest owed at time of call.
+   * @notice Calculates the total debt of a borrower
    */
-  function calculateInterest() external {}
-
-  // --- Modifiers ---
+  function getTotalDebt() external view override returns (uint256) {
+    return
+      normalizedDebtBalances[msg.sender].normalizedDebt.mul(
+        exchange.getCumulativeRate()
+      );
+  }
 
   /**
    * @dev Ensure that msg.sender === Exchange contract address.

@@ -1,33 +1,31 @@
 import "@nomiclabs/hardhat-waffle";
-import { ethers } from "hardhat";
 import { expect } from "chai";
 
-describe("Aurei", function() {
+// See https://github.com/nomiclabs/hardhat/issues/1001
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
 
-  // Contracts
-  let Aurei;
+import { Aurei } from "../typechain";
 
-  // Instances
-  let aurei;
-  
-  // Wallets
-  let owner;
-  let addr1;
-  let addr2;
-  let addrs;
-  
+import deploy from "./helpers";
+
+// Declare in global scope
+let owner: SignerWithAddress;
+let alice: SignerWithAddress;
+let aurei: Aurei;
+
+describe("Aurei", function () {
   before(async function () {
-    // Get the ContractFactory and Signers here.
-    [owner, addr1, addr2, ...addrs] = await ethers.getSigners();
+    const { contracts, signers } = await deploy();
 
-    // Deploy the contract
-    Aurei = await ethers.getContractFactory("Aurei");
-    aurei = await Aurei.deploy();
-    await aurei.deployed();
+    // Set contracts
+    aurei = contracts.aurei;
+
+    // Set signers
+    alice = signers.alice;
+    owner = signers.owner;
   });
 
   describe("Deployment", function () {
-
     it("Should set the right owner", async function () {
       expect(await aurei.owner()).to.equal(owner.address);
     });
@@ -35,15 +33,14 @@ describe("Aurei", function() {
     it("Total supply of the token must be 0", async function () {
       expect(await aurei.totalSupply()).to.equal(0);
     });
-    
+
     it("Owner Balance of the token must be equal to total supply", async function () {
       const ownerBalance = await aurei.balanceOf(owner.address);
       expect(await aurei.totalSupply()).to.equal(ownerBalance);
     });
   });
-  
-  describe("Transactions", function () {
 
+  describe("Transactions", function () {
     it("Minting new tokens and verify owner balance and token supply", async function () {
       await aurei.mint(owner.address, 100);
       const ownerBalance = await aurei.balanceOf(owner.address);
@@ -59,9 +56,8 @@ describe("Aurei", function() {
     });
 
     it("Transfer tokens to another address", async function () {
-      await aurei.transfer(addr1.address, 20);
-      expect(await aurei.balanceOf(addr1.address)).to.equal(20);
+      await aurei.transfer(alice.address, 20);
+      expect(await aurei.balanceOf(alice.address)).to.equal(20);
     });
-
-  });   
+  });
 });

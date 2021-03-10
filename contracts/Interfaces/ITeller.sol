@@ -26,4 +26,6 @@ interface ITeller {
     uint256 principal,
     uint256 rate
   ) external;
+
+  function getTotalDebt() external returns (uint256);
 }
