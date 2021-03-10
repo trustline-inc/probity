@@ -8,6 +8,7 @@ import "./Interfaces/ITreasury.sol";
 import "./Interfaces/IRegistry.sol";
 import "./Dependencies/Ownable.sol";
 import "./Dependencies/SafeMath.sol";
+import "hardhat/console.sol";
 
 /**
  * @notice The custodian manages collateral vaults.
@@ -140,7 +141,8 @@ contract Custodian is ICustodian, ProbityBase, Ownable {
     // Check for infinity division - E.G., if user doesn't want lending or borrowing.
     // User may open vault with collateral without utilizing the position.
     if ((debt + equity) > 0) {
-      uint256 collateralRatio = (ray(collateral).mul(1)).div((debt + equity));
+      uint256 collateralRatio =
+        ray((ray(collateral).mul(1)).div((debt + equity)));
       require(
         collateralRatio >= MIN_COLLATERAL_RATIO,
         "PRO: Insufficient collateral provided"

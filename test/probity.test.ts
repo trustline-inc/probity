@@ -71,18 +71,39 @@ describe("Probity", function () {
     });
 
     it("Fails to create loan without equity from lender", async () => {
-      const initialCollateral = 1000;
+      const collateral = 1000;
       const initialDebt = 0;
       const initialEquity = 0;
 
-      // Creating Borrower's vault
+      // Add collateral to lender's vault
+      const txLender = {
+        from: lender.address,
+        value: web3.utils.toWei(collateral.toString()),
+      };
+      const txLenderResponse = await probity
+        .connect(lender)
+        .addCollateral(initialEquity, txLender);
+
+      // Assert collateral was added
+      const lenderVault = await probity.connect(lender).getVault();
+      expect(web3.utils.fromWei(lenderVault[1].toString())).to.equal(
+        collateral.toString()
+      );
+
+      // Add collateral to borrower's vault
       const txBorrower = {
         from: borrower.address,
-        value: web3.utils.toWei(initialCollateral.toString()),
+        value: web3.utils.toWei(collateral.toString()),
       };
       const txBorrowerResponse = await probity
         .connect(borrower)
-        .openVault(initialDebt, initialEquity, txBorrower);
+        .addCollateral(initialEquity, txBorrower);
+
+      // Assert collateral was added
+      const borrowerVault = await probity.connect(lender).getVault();
+      expect(web3.utils.fromWei(borrowerVault[1].toString())).to.equal(
+        collateral.toString()
+      );
 
       const loanAmount = 50;
       const rate = 3;
@@ -91,24 +112,18 @@ describe("Probity", function () {
           lender.address,
           borrower.address,
           web3.utils.toWei(loanAmount.toString()),
-          rate
+          web3.utils.toWei(rate.toString())
         )
       ).to.be.revertedWith("TREASURY: Insufficient balance.");
     });
 
     it("Creates a loan with sufficient lender equity and borrower collateral", async () => {
       // Create equity on lender vault
-      const initialDebt = 0;
-      const initialEquity = 1000;
-      const coll = 3000;
+      const equity = 100;
 
-      const txLender = {
-        from: lender.address,
-        value: web3.utils.toWei(coll.toString()),
-      };
       const txLenderResponse = await probity
         .connect(lender)
-        .openVault(initialDebt, initialEquity, txLender);
+        .increaseEquity(web3.utils.toWei(equity.toString()));
 
       // Match borrower with lender's equity to generate loan.
       const loanAmount = 50;
@@ -117,7 +132,7 @@ describe("Probity", function () {
         lender.address,
         borrower.address,
         web3.utils.toWei(loanAmount.toString()),
-        rate
+        web3.utils.toWei(rate.toString())
       );
       const result = await txLoanResponse.wait();
 

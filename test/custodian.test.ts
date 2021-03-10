@@ -153,6 +153,24 @@ describe("Custodian", function () {
     });
 
     describe("Managing a vault", function () {
+      it("Allows the user to add collateral", async () => {
+        // Add 1000 collateral to Alice's vault (new total of 1150)
+        const collateral = 1000;
+        const equity = 0;
+        const tx = {
+          from: alice.address,
+          value: web3.utils.toWei(collateral.toString()),
+        };
+        const txResponse = await probity
+          .connect(alice)
+          .addCollateral(equity, tx);
+        const result = await txResponse.wait();
+
+        // Check Alice's vault details
+        const vault = await probity.connect(alice).getVault();
+        expect(web3.utils.fromWei(vault[1].toString())).to.equal("1150");
+      });
+
       it("Allows the user to withdraw equity", async () => {
         // TODO
       });
