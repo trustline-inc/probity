@@ -67,11 +67,11 @@ contract Exchange is IExchange, Ownable, ProbityBase {
     variableRate = rate;
   }
 
-  function getVariableRate() public view returns (uint256) {
+  function getVariableRate() external view returns (uint256) {
     return variableRate;
   }
 
-  function getCumulativeRate() public view returns (uint256) {
+  function getCumulativeRate() external view returns (uint256) {
     return cumulativeRate;
   }
 
