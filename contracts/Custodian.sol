@@ -126,17 +126,17 @@ contract Custodian is ICustodian, ProbityBase, Ownable {
    * @dev Solidity does not have floating point division.
    *
    * EXAMPLE:
-   *   msg.value = 150 x 10^18 (assume price = $1)
-   *   collateral = 150 x 10^18 x 10^9 (ray) = 150 x 10^27
-   *   debt + equity = 0 + 100 (e.g. $100 of equity) = 100 x 10^18 => 10^20
-   *   150 x 10^27 / 100 * 10^18 = (150/100) x 10^9 => 1.5 x 10^9 = 1500000000
-   *   ray(1.5 X 10^9) = 1.5 x 10^18 (MIN_COLLATERAL_RATIO)
+   *   msg.value = 150 * 10^18 (in wei, assume price = $1)
+   *   collateral = 150 * 10^18 * 10^9 (ray) = 150 * 10^27 (ray)
+   *   debt + equity = 0 + 100 (e.g. $100 of equity) = 100 * 10^18 (wad)
+   *   150 * 10^27 / 100 * 10^18 = (150/100) * 10^9 => 1.5 * 10^9 = 1500000000 (wei)
+   *   ray(1.5 * 10^9) = 1.5 * 10^18 (MIN_COLLATERAL_RATIO)
    */
   function requireSufficientCollateral(
     uint256 debt,
     uint256 equity,
     uint256 collateral
-  ) external view override {
+  ) external pure override {
     // Check for infinity division - E.G., if user doesn't want lending or borrowing.
     // User may open vault with collateral without utilizing the position.
     if ((debt + equity) > 0) {
