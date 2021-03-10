@@ -72,7 +72,12 @@ contract Exchange is IExchange, Ownable, ProbityBase {
   }
 
   function getCumulativeRate() external view override returns (uint256) {
-    return cumulativeRate;
+    uint256 tmp =
+      rmul(
+        rpow(variableRate, block.timestamp - lastUpdate, ONE),
+        cumulativeRate
+      );
+    return tmp;
   }
 
   // --- Internal Functions ---

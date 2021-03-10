@@ -27,5 +27,5 @@ interface ITeller {
     uint256 rate
   ) external;
 
-  function getTotalDebt() external view returns (uint256);
+  function getTotalDebt() external returns (uint256);
 }

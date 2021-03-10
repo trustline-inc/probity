@@ -28,7 +28,7 @@ contract Teller is ITeller, Ownable, ProbityBase {
     uint256 normalizedDebt;
   }
 
-  mapping(address => uint256) public balances;
+  mapping(address => uint256) public balances; // Debt
   mapping(address => Loan) public normalizedDebtBalances;
   mapping(address => uint256) private nonces;
 
@@ -98,14 +98,16 @@ contract Teller is ITeller, Ownable, ProbityBase {
 
     // Update total loan balance
     balances[borrower] = newDebtBalance;
+
     // Set loan ID
     nonces[borrower] = nonces[borrower] + 1;
-    uint256 index = nonces[borrower];
 
+    // TODO: This needs to be tested!
     // All we are storing with the loan is the normalized debt, for now.
-    normalizedDebtBalances[borrower].normalizedDebt =
-      principal.div(cumulativeRate) +
-      normalizedDebtBalances[borrower].normalizedDebt;
+    normalizedDebtBalances[borrower].normalizedDebt = (ray(ray(principal)).div(
+      cumulativeRate
+    ) + normalizedDebtBalances[borrower].normalizedDebt);
+
     // Convert lender equity to loan asset
     treasury.convertLenderEquityToLoan(lender, borrower, principal);
 
@@ -123,8 +125,9 @@ contract Teller is ITeller, Ownable, ProbityBase {
    */
   function getTotalDebt() external view override returns (uint256) {
     return
-      normalizedDebtBalances[msg.sender].normalizedDebt *
-      exchange.getCumulativeRate();
+      normalizedDebtBalances[msg.sender].normalizedDebt.mul(
+        exchange.getCumulativeRate()
+      );
   }
 
   /**
