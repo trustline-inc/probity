@@ -8,7 +8,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-wit
 
 import { Probity, Exchange, Teller } from "../typechain";
 
-import deploy from "./helpers";
+import deploy from "../lib/deploy";
 
 // Declare in global scope
 let lender: SignerWithAddress, borrower: SignerWithAddress;
@@ -30,8 +30,8 @@ describe("Exchange", function () {
     borrower = signers.borrower;
   });
 
-  describe("Interest Rates", async function () {
-    it("uses the right unit system", async () => {
+  describe("Rates", async function () {
+    it("Uses the right unit system", async () => {
       // Convert to MPR by taking the n-th root
       const APR = 1.03; // 3%
       const MPR = Math.pow(APR, 1 / SECONDS_IN_YEAR);
@@ -45,30 +45,15 @@ describe("Exchange", function () {
       expect(web3.utils.toWei(MPR.toString())).to.equal("1000000000937303600");
     });
 
-    it("calculates interest", async () => {
-      // Convert to MPR by taking the n-th root
-      const APR = 1.03; // 3%
-      const MPR = Math.pow(APR, 1 / SECONDS_IN_YEAR);
-      const principal = 100;
-
-      // Calculate debt after 1 hour
-      let debt = principal * Math.exp((MPR - 1) * 3600);
-      expect(debt).to.equal(100.00033742985381);
-
-      // Calculate debt after 1 year
-      debt = principal * Math.exp((MPR - 1) * SECONDS_IN_YEAR);
-      expect(debt.toFixed(2).toString()).to.equal("103.00");
-    });
-
-    it("sets the normalized debt", async () => {
+    it("Sets the vault's normalized debt", async () => {
       // TODO
     });
 
-    it("updates the cumulative rate", async () => {
+    it("Updates the cumulative rate", async () => {
       // TODO
     });
 
-    it("it updates when a loan is created", async () => {
+    it("Compounds continuously", async () => {
       // Create equity on lender vault
       const initialDebt = 0;
       const initialEquity = 1000;

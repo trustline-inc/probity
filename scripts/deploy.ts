@@ -1,27 +1,14 @@
 import "@nomiclabs/hardhat-ethers";
-
-// We require the Hardhat Runtime Environment explicitly here. This is optional 
-// but useful for running the script in a standalone fashion through `node <script>`.
-//
-// When running the script with `hardhat run <script>` you'll find the Hardhat
-// Runtime Environment's members available in the global scope.
-import * as hre from "hardhat";
+import deploy from "../lib/deploy";
 
 async function main() {
-  // Hardhat always runs the compile task when running scripts with its command
-  // line interface.
-  //
-  // If this script is run directly using `node` you may want to call compile 
-  // manually to make sure everything is compiled
-  // await hre.run('compile');
+  const { contracts, signers } = await deploy();
+  console.log("Contracts deployed!");
+  console.log("===================");
 
-  // We get the contract to deploy
-  const Storage = await hre.ethers.getContractFactory("SimpleStorage");
-  const storage = await Storage.deploy();
-
-  await storage.deployed();
-
-  console.log("SimpleStorage deployed to:", storage.address);
+  for (let contract in contracts) {
+    console.log(contract, contracts[contract].address);
+  }
 }
 
 // We recommend this pattern to be able to use async/await everywhere

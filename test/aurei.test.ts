@@ -5,8 +5,7 @@ import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
 
 import { Aurei } from "../typechain";
-
-import deploy from "./helpers";
+import deploy from "../lib/deploy";
 
 // Declare in global scope
 let owner: SignerWithAddress;
