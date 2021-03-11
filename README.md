@@ -47,7 +47,25 @@ Use the npm command to run tests on the local Hardhat network:
 npm run test
 ```
 
-## Deploy on Coston Testnet
+## Deployment
+
+### Local Deployment
+
+You can deploy in the localhost network following these steps:
+
+Start a local node
+
+```
+npm run flare
+```
+
+Open a new terminal and deploy the smart contract in the localhost network
+
+```
+npm run deploy:local
+```
+
+### Deploy on Coston Testnet
 
 Create an `.env` file at the project root with the following contents:
 
@@ -58,7 +76,7 @@ PRIVATE_KEY=<INSERT_TESTNET_PK_HERE>
 Generate an Ethereum account and place the private key in the file. Request for your testnet account funded with `FLR` so you can deploy the contract.
 
 ```
-$ npm run deploy
+$ npm run deploy:prod
 
 > @trustline/stablecoin@1.0.0 deploy
 > npx hardhat run ./scripts/deploy.ts
