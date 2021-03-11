@@ -1,6 +1,7 @@
 {
   "name": "@trustline/probity",
   "version": "1.0.0",
+  "license": "MIT",
   "description": "Aurei stablecoin and the Probity stablecoin system",
   "scripts": {
     "flare": "npx hardhat node",
@@ -13,6 +14,9 @@
     "coverage": "npm run build && npx hardhat coverage --temp artifacts --network coverage"
   },
   "author": "Matthew Rosendin <matt@trustline.co>",
+  "files": [
+    "artifacts"
+  ],
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.1",
     "@nomiclabs/hardhat-waffle": "^2.0.1",

@@ -47,6 +47,14 @@ Use the npm command to run tests on the local Hardhat network:
 npm run test
 ```
 
+## Publishing
+
+You can publish the `@trustline/probity` npm package containing the contract ABIs using this command:
+
+```
+npm publish
+```
+
 ## Deployment
 
 ### Local Deployment
