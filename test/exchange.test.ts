@@ -109,22 +109,7 @@ describe("Exchange", function () {
 
       // Check total debt. Precision limited by native JavaScript Math
       const txTellerResponse = await teller.connect(borrower).getTotalDebt();
-      console.log("txTellerResponse:", txTellerResponse.toString());
-      console.log(
-        "parsed * 1e18:   ",
-        txTellerResponse
-          .div(ethers.utils.parseUnits("1", 18).toString())
-          .toString()
-      );
-      console.log(
-        "fromWei:         ",
-        web3.utils.fromWei(
-          txTellerResponse
-            .div(ethers.utils.parseUnits("1", 18).toString())
-            .toString()
-        )
-      );
-      console.log("expectedDebt:", expectedDebt.toString().slice(0, 8));
+
       expect(
         web3.utils
           .fromWei(
