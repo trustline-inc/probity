@@ -4,10 +4,11 @@
   "license": "MIT",
   "description": "Aurei stablecoin and the Probity stablecoin system",
   "scripts": {
-    "flare": "npx hardhat node",
+    "node": "npx hardhat node",
     "build": "npm run clean && npm run compile",
     "clean": "npx hardhat clean",
     "compile": "npx hardhat compile",
+    "fund:local": "npx hardhat --network localhost run ./scripts/fund.ts",
     "deploy:local": "npx hardhat --network localhost run ./scripts/deploy.ts",
     "deploy:prod": "npx hardhat run ./scripts/deploy.ts",
     "test": "npx hardhat test --network hardhat",
