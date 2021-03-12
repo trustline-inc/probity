@@ -54,6 +54,8 @@ contract Custodian is ICustodian, ProbityBase, Ownable {
     override
     returns (uint256 index)
   {
+    require(vaults[owner].index == 0, "CUST: Vault already exists");
+
     // Set vault ID
     index = nonce + 1;
     nonce = index;

@@ -135,6 +135,21 @@ describe("Custodian", function () {
         );
       });
 
+      it("Fails to open if signer already has a vault", async () => {
+        const coll = 0;
+        const debt = 0;
+        const equity = 0;
+
+        // Attempt to create a second vault
+        const tx = {
+          from: charlie.address,
+          value: web3.utils.toWei(coll.toString()),
+        };
+        await expect(
+          probity.connect(charlie).openVault(debt, equity, tx)
+        ).to.be.revertedWith("CUST: Vault already exists");
+      });
+
       it("Fails to open with insufficient collateral", async () => {
         const coll = 0;
         const debt = 100;
