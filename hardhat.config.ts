@@ -12,6 +12,9 @@ const config: HardhatUserConfig = {
       url: "https://costone.flare.network/ext/bc/C/rpc",
       accounts: [process.env.PRIVATE_KEY],
     },
+    hardhat: {
+      chainId: 1337,
+    },
   },
   solidity: "0.8.0",
 };
