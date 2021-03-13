@@ -57,6 +57,7 @@ contract Probity is IProbity, Ownable, ProbityBase {
     vaultId = custodian.createVault(msg.sender, msg.value);
     if (equity > 0) {
       custodian.requireSufficientCollateral(debt, equity, msg.value);
+      custodian.lockCollateral(msg.value, msg.sender); // TODO: TEST THIS.
       treasury.increase(equity, msg.sender);
     }
     emit VaultCreated(msg.sender, vaultId, msg.value);
@@ -77,14 +78,16 @@ contract Probity is IProbity, Ownable, ProbityBase {
 
   /**
    * @notice Increases a vault's equity balance
-   * @param amount - Amount of Aurei to place in reserves for lending.
+   * @param _collateral - The amount of collateral backing the Aurei.
+   * @param equity - Amount of Aurei to place in reserves for lending.
    */
-  function increaseEquity(uint256 amount) external {
-    require(amount > 0);
+  function increaseEquity(uint256 _collateral, uint256 equity) external {
+    require(equity > 0);
     ProbityBase.Vault memory vault = custodian.getVaultByOwner(msg.sender);
-    uint256 collateral = vault.collateral;
-    custodian.requireSufficientCollateral(0, amount, collateral);
-    treasury.increase(amount, msg.sender);
+    uint256 unencumbered = vault.collateral.sub(vault.encumbered);
+    custodian.requireSufficientCollateral(0, equity, unencumbered);
+    custodian.lockCollateral(_collateral, msg.sender);
+    treasury.increase(equity, msg.sender);
   }
 
   /**
@@ -100,13 +103,14 @@ contract Probity is IProbity, Ownable, ProbityBase {
    * @param amount - The amount of collateral to withdraw.
    * @dev Caller MUST be the owner of the vault. New collateral ratio MUST be
    * greater than the minimum collateral ratio.
+   * @dev https://docs.soliditylang.org/en/v0.4.24/common-patterns.html#withdrawal-from-contracts
    */
   function withdrawCollateral(uint256 amount) external override {
-    // 1. Check if the collateral ratio is maintained
-    // TODO: Check interest
-    ProbityBase.Vault memory vault = custodian.getVaultByOwner(msg.sender);
-
-    uint256 equity = treasury.balanceOf(msg.sender);
+    // TODO: Check if the collateral ratio is maintained
+    // TODO: Check interest due
+    // TODO: Check encumbered collateral
+    // ProbityBase.Vault memory vault = custodian.getVaultByOwner(msg.sender);
+    payable(msg.sender).transfer(amount);
   }
 
   /**

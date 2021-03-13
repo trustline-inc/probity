@@ -37,6 +37,8 @@ interface ICustodian {
     uint256 collateral
   ) external pure;
 
+  function lockCollateral(uint256 amount, address owner) external;
+
   function increaseCollateral(address _owner, uint256 amount) external;
 
   function decreaseCollateral(address _owner, uint256 amount) external;

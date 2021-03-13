@@ -119,11 +119,15 @@ describe("Probity", function () {
 
     it("Creates a loan with sufficient lender equity and borrower collateral", async () => {
       // Create equity on lender vault
+      const encumber = 200;
       const equity = 100;
 
       const txLenderResponse = await probity
         .connect(lender)
-        .increaseEquity(web3.utils.toWei(equity.toString()));
+        .increaseEquity(
+          web3.utils.toWei(encumber.toString()),
+          web3.utils.toWei(equity.toString())
+        );
 
       // Match borrower with lender's equity to generate loan.
       const loanAmount = 50;

@@ -62,6 +62,7 @@ contract Custodian is ICustodian, ProbityBase, Ownable {
     vaults[owner].index = index;
 
     vaults[owner].collateral = initialCollateral;
+    vaults[owner].encumbered = 0;
     vaults[owner].status = Status.Active;
 
     return index;
@@ -121,10 +122,14 @@ contract Custodian is ICustodian, ProbityBase, Ownable {
     this.requireSufficientCollateral(debt, equity, vault.collateral);
   }
 
+  function lockCollateral(uint256 amount, address owner) external override {
+    vaults[owner].encumbered = vaults[owner].encumbered.add(amount);
+  }
+
   /**
    * @param debt - The amount of Aurei to be borrowed.
    * @param equity - The amount of Aurei to lend.
-   * @param collateral - Amount for collateral.
+   * @param unencumbered - The amount of unencumbered collateral.
    * @dev Solidity does not have floating point division.
    *
    * EXAMPLE:
@@ -137,13 +142,13 @@ contract Custodian is ICustodian, ProbityBase, Ownable {
   function requireSufficientCollateral(
     uint256 debt,
     uint256 equity,
-    uint256 collateral
+    uint256 unencumbered
   ) external pure override {
     // Check for infinity division - E.G., if user doesn't want lending or borrowing.
     // User may open vault with collateral without utilizing the position.
     if ((debt + equity) > 0) {
       uint256 collateralRatio =
-        ray((ray(collateral).mul(1)).div((debt + equity)));
+        ray((ray(unencumbered).mul(1)).div((debt + equity)));
       require(
         collateralRatio >= MIN_COLLATERAL_RATIO,
         "PRO: Insufficient collateral provided"

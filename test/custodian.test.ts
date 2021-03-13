@@ -98,6 +98,11 @@ describe("Custodian", function () {
           equity.toString()
         );
         expect(await teller.balanceOf(bob.address)).to.equal(debt.toString());
+
+        // Ensure that used collateral is encumbered
+        expect(web3.utils.fromWei(vault[2].toString())).to.equal(
+          coll.toString()
+        );
       });
 
       it("Opens a vault without collateral", async () => {
@@ -183,6 +188,9 @@ describe("Custodian", function () {
         // Check Alice's vault details
         const vault = await probity.connect(alice).getVault();
         expect(web3.utils.fromWei(vault[1].toString())).to.equal("1150");
+
+        // Check that no collateral is encumbered
+        expect(vault[2].toString()).to.equal("0");
       });
 
       it("Allows the user to withdraw equity", async () => {
