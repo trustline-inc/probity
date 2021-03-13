@@ -110,6 +110,7 @@ contract Probity is IProbity, Ownable, ProbityBase {
     // TODO: Check interest due
     // TODO: Check encumbered collateral
     // ProbityBase.Vault memory vault = custodian.getVaultByOwner(msg.sender);
+    custodian.decreaseCollateral(msg.sender, amount);
     payable(msg.sender).transfer(amount);
   }
 

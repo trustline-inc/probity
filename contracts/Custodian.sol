@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 
 import "./Interfaces/IAurei.sol";
 import "./Interfaces/ICustodian.sol";
+import "./Interfaces/ITeller.sol";
 import "./Interfaces/ITreasury.sol";
 import "./Interfaces/IRegistry.sol";
 import "./Dependencies/Ownable.sol";
@@ -20,6 +21,7 @@ contract Custodian is ICustodian, ProbityBase, Ownable {
 
   // --- Data ---
 
+  ITeller public teller;
   ITreasury public treasury;
   IRegistry public registry;
 
@@ -38,6 +40,7 @@ contract Custodian is ICustodian, ProbityBase, Ownable {
    * @dev Should probably make this inheritable.
    */
   function initializeContract() external onlyOwner {
+    teller = ITeller(registry.getContractAddress(Contract.Teller));
     treasury = ITreasury(registry.getContractAddress(Contract.Treasury));
   }
 
@@ -103,6 +106,9 @@ contract Custodian is ICustodian, ProbityBase, Ownable {
     external
     override
   {
+    uint256 debt = teller.balanceOf(_owner);
+    uint256 equity = treasury.balanceOf(_owner);
+    this.requireSufficientCollateral(debt, equity, vaults[_owner].collateral);
     vaults[_owner].collateral = vaults[_owner].collateral.sub(amount);
   }
 
