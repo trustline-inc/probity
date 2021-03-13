@@ -59,7 +59,7 @@ contract Probity is IProbity, Ownable, ProbityBase {
       custodian.requireSufficientCollateral(debt, equity, msg.value);
       treasury.increase(equity, msg.sender);
     }
-    emit VaultCreated(msg.sender, vaultId);
+    emit VaultCreated(msg.sender, vaultId, msg.value);
     return vaultId;
   }
 

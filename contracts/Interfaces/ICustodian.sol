@@ -11,9 +11,8 @@ import "../Dependencies/ProbityBase.sol";
 interface ICustodian {
   // --- Events ---
 
-  event VaultCreated(address indexed owner, uint256 vaultId);
-  event VaultUpdated(address indexed owner, uint256 vaultId);
-  event VaultDeleted(address indexed owner, uint256 vaultId);
+  event VaultUpdated(address indexed owner, uint256 indexed vaultId);
+  event VaultDeleted(address indexed owner, uint256 indexed vaultId);
 
   // --- Functions ---
 

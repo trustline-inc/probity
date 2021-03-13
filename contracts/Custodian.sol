@@ -64,7 +64,6 @@ contract Custodian is ICustodian, ProbityBase, Ownable {
     vaults[owner].collateral = initialCollateral;
     vaults[owner].status = Status.Active;
 
-    emit VaultCreated(owner, index);
     return index;
   }
 

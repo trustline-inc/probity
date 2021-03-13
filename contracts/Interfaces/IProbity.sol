@@ -10,7 +10,11 @@ import "../Dependencies/ProbityBase.sol";
 interface IProbity {
   // --- Events ---
 
-  event VaultCreated(address indexed owner, uint256 vaultId);
+  event VaultCreated(
+    address indexed owner,
+    uint256 indexed vaultId,
+    uint256 indexed initialCollateral
+  );
 
   // --- Functions ---
 
