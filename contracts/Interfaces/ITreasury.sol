@@ -8,8 +8,8 @@ pragma solidity ^0.8.0;
 interface ITreasury {
   // --- Events ---
 
-  event TreasuryIncrease(address owner, uint256 amount);
-  event TreasuryDecrease(address owner, uint256 amount);
+  event TreasuryIncrease(address indexed owner, uint256 amount);
+  event TreasuryDecrease(address indexed owner, uint256 amount);
 
   // --- Functions ---
 
