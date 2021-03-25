@@ -7,14 +7,5 @@ interface IExchange {
 
   // --- Functions ---
 
-  function executeOrder(
-    address lender,
-    address borrower,
-    uint256 amount,
-    uint256 rate
-  ) external;
-
-  function getVariableRate() external view returns (uint256);
-
-  function getCumulativeRate() external view returns (uint256);
+  function executeOrder(uint256 collateral, uint256 principal) external;
 }

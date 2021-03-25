@@ -1,15 +1,15 @@
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import "@nomiclabs/hardhat-waffle";
 import { expect } from "chai";
-
-// See https://github.com/nomiclabs/hardhat/issues/1001
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
 
 import { Aurei } from "../typechain";
 import deploy from "../lib/deploy";
 
-// Declare in global scope
+// Wallets
 let owner: SignerWithAddress;
 let alice: SignerWithAddress;
+
+// Contracts
 let aurei: Aurei;
 
 describe("Aurei", function () {

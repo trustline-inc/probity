@@ -1,17 +1,25 @@
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-web3";
 import { web3 } from "hardhat";
 import { expect } from "chai";
 
-// See https://github.com/nomiclabs/hardhat/issues/1001
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
+import { Aurei, Teller, Treasury, Vault } from "../typechain";
 
-import { Aurei, Exchange, Probity, Teller } from "../typechain";
 import deploy from "../lib/deploy";
 
-// Declare in global scope
-let lender: SignerWithAddress, borrower: SignerWithAddress;
-let aurei: Aurei, exchange: Exchange, probity: Probity, teller: Teller;
+// Wallets
+let lender: SignerWithAddress;
+let bootstrapper: SignerWithAddress;
+let borrower: SignerWithAddress;
+
+// Contracts
+let aurei: Aurei;
+let teller: Teller;
+let treasury: Treasury;
+let vault: Vault;
+
+const SECONDS_IN_YEAR = 31536000;
 
 describe("Probity", function () {
   before(async function () {
@@ -19,139 +27,101 @@ describe("Probity", function () {
 
     // Set contracts
     aurei = contracts.aurei;
-    exchange = contracts.exchange;
-    probity = contracts.probity;
     teller = contracts.teller;
+    treasury = contracts.treasury;
+    vault = contracts.vault;
 
     // Set signers
     lender = signers.lender;
+    bootstrapper = signers.bootstrapper;
     borrower = signers.borrower;
 
-    /**
-     * VAULT SETUP
-     */
+    // Set up initial collateral of 2,000 FLR
+    const bootstrapperCollateral = 2000;
 
-    const initialCollateral = 0;
-    const initialDebt = 0;
-    const initialEquity = 0;
-
-    // Create Lender's vault
-    const txLender = {
-      from: lender.address,
-      value: web3.utils.toWei(initialCollateral.toString()),
+    const txBootstrapper = {
+      from: bootstrapper.address,
+      value: web3.utils.toWei(bootstrapperCollateral.toString()),
     };
-    const txResponse = await probity
-      .connect(lender)
-      .openVault(initialDebt, initialEquity, txLender);
+    let txBootstrapperResponse = await vault
+      .connect(bootstrapper)
+      .deposit(txBootstrapper);
 
-    // Creating Borrower's vault
-    const txBorrower = {
-      from: borrower.address,
-      value: web3.utils.toWei(initialCollateral.toString()),
-    };
-    const txBorrowerResponse = await probity
-      .connect(borrower)
-      .openVault(initialDebt, initialEquity, txBorrower);
+    // Issue 1,000 AUR from 2,000 FLR
+    const borrow = 1000;
+    const encumberedCollateral = 2000;
+
+    txBootstrapperResponse = await treasury
+      .connect(bootstrapper)
+      .issue(
+        web3.utils.toWei(encumberedCollateral.toString()),
+        web3.utils.toWei(borrow.toString())
+      );
   });
 
-  describe("Lending", function () {
-    it("Fails to create loan without collateral from borrower", async () => {
-      const loanAmount = 50;
-      const rate = 3;
-      await expect(
-        exchange
-          .connect(borrower)
-          .executeOrder(
-            lender.address,
-            borrower.address,
-            web3.utils.toWei(loanAmount.toString()),
-            rate
-          )
-      ).to.be.revertedWith("PRO: Insufficient collateral provided");
+  describe("Rates", async function () {
+    it("Uses the right unit system", async () => {
+      // Convert to MPR by taking the n-th root
+      const APR = 1.03; // 3%
+      const MPR = Math.pow(APR, 1 / SECONDS_IN_YEAR);
+      expect(MPR).to.equal(1.0000000009373036);
+      expect(Math.pow(MPR, SECONDS_IN_YEAR).toFixed(2)).to.equal(
+        APR.toString()
+      );
+
+      // Calculations in Wei
+      expect(web3.utils.toWei(MPR.toString()).length).to.equal(19); // e.g., 1e18
+      expect(web3.utils.toWei(MPR.toString())).to.equal("1000000000937303600");
     });
 
-    it("Fails to create loan without equity from lender", async () => {
-      const collateral = 1000;
-      const initialDebt = 0;
-      const initialEquity = 0;
+    it("Sets the vault's normalized debt", async () => {
+      // TODO
+    });
 
-      // Add collateral to lender's vault
+    it("Updates the cumulative rate", async () => {
+      // TODO
+    });
+
+    it("Allows a user to borrow", async () => {
+      // Create lender vault
+      const lenderCollateral = 3000;
+
       const txLender = {
         from: lender.address,
-        value: web3.utils.toWei(collateral.toString()),
+        value: web3.utils.toWei(lenderCollateral.toString()),
       };
-      const txLenderResponse = await probity
+      let txLenderResponse = await vault.connect(lender).deposit(txLender);
+
+      // Issue equity
+      const lenderEquity = 1000;
+      txLenderResponse = await treasury
         .connect(lender)
-        .addCollateral(initialEquity, txLender);
-
-      // Assert collateral was added
-      const lenderVault = await probity.connect(lender).getVault();
-      expect(web3.utils.fromWei(lenderVault[1].toString())).to.equal(
-        collateral.toString()
-      );
-
-      // Add collateral to borrower's vault
-      const txBorrower = {
-        from: borrower.address,
-        value: web3.utils.toWei(collateral.toString()),
-      };
-      const txBorrowerResponse = await probity
-        .connect(borrower)
-        .addCollateral(initialEquity, txBorrower);
-
-      // Assert collateral was added
-      const borrowerVault = await probity.connect(lender).getVault();
-      expect(web3.utils.fromWei(borrowerVault[1].toString())).to.equal(
-        collateral.toString()
-      );
-
-      const loanAmount = 50;
-      const rate = 3;
-      await expect(
-        exchange.executeOrder(
-          lender.address,
-          borrower.address,
-          web3.utils.toWei(loanAmount.toString()),
-          web3.utils.toWei(rate.toString())
-        )
-      ).to.be.revertedWith("TREASURY: Insufficient balance.");
-    });
-
-    it("Creates a loan with sufficient lender equity and borrower collateral", async () => {
-      // Create equity on lender vault
-      const encumber = 200;
-      const equity = 100;
-
-      const txLenderResponse = await probity
-        .connect(lender)
-        .increaseEquity(
-          web3.utils.toWei(encumber.toString()),
-          web3.utils.toWei(equity.toString())
+        .issue(
+          web3.utils.toWei(lenderCollateral.toString()),
+          web3.utils.toWei(lenderEquity.toString())
         );
 
-      // Match borrower with lender's equity to generate loan.
-      const loanAmount = 50;
-      const rate = 3;
-      const txLoanResponse = await exchange.executeOrder(
-        lender.address,
-        borrower.address,
-        web3.utils.toWei(loanAmount.toString()),
-        web3.utils.toWei(rate.toString())
-      );
-      const result = await txLoanResponse.wait();
+      // Creating borrower vault
+      let borrowerCollateral = 3000;
 
-      // LoanCreated event was emitted
-      expect(result.events.length).to.equal(3);
+      const txBorrower = {
+        from: borrower.address,
+        value: web3.utils.toWei(borrowerCollateral.toString()),
+      };
+      const txBorrowerResponse = await vault
+        .connect(borrower)
+        .deposit(txBorrower);
 
-      // Borrower loan balance changed
-      expect(await teller.balanceOf(borrower.address)).to.equal(
-        web3.utils.toWei(loanAmount.toString())
-      );
-
-      // Borrower Aurei balance changed
-      expect(await aurei.balanceOf(borrower.address)).to.equal(
-        web3.utils.toWei(loanAmount.toString())
-      );
+      // Borrow Aurei
+      const principal = 500;
+      borrowerCollateral = 3000;
+      const txLoanResponse = await teller
+        .connect(borrower)
+        .createLoan(
+          web3.utils.toWei(borrowerCollateral.toString()),
+          web3.utils.toWei(principal.toString())
+        );
+      let result = await txLoanResponse.wait();
     });
   });
 });

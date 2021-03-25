@@ -64,7 +64,7 @@ You can deploy in the localhost network following these steps:
 Start a local node
 
 ```
-npm run flare
+npm run node
 ```
 
 Open a new terminal and deploy the smart contract in the localhost network

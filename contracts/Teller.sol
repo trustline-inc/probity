@@ -3,40 +3,31 @@
 pragma solidity ^0.8.0;
 
 import "./Dependencies/Ownable.sol";
+import "./Dependencies/DSMath.sol";
 import "./Dependencies/ProbityBase.sol";
-import "./Interfaces/ICustodian.sol";
-import "./Interfaces/IExchange.sol";
-import "./Interfaces/IProbity.sol";
+import "./Interfaces/IAurei.sol";
 import "./Interfaces/IRegistry.sol";
 import "./Interfaces/ITeller.sol";
 import "./Interfaces/ITreasury.sol";
+import "./Interfaces/IVault.sol";
 import "hardhat/console.sol";
 
 /**
- * @notice Manages debts for all vaults.
+ * @notice Creates loans and manages vault debt.
  */
-contract Teller is ITeller, Ownable, ProbityBase {
-  using SafeMath for uint256;
-
+contract Teller is ITeller, Ownable, ProbityBase, DSMath {
   // --- Data ---
 
-  /**
-   * Borrower can have multiple loans running at the same time from same or different lenders.
-   * For every loan, a loan ID is created against details such as rate, principal, duration, startDate and lender.
-   */
-  struct Loan {
-    uint256 normalizedDebt;
-  }
+  uint256 public utilization;
+  uint256 public rate;
 
-  mapping(address => uint256) public balances; // Debt
-  mapping(address => Loan) public normalizedDebtBalances;
-  mapping(address => uint256) private nonces;
+  uint256 public debt; // Aggregate Normalized Debt
+  mapping(address => uint256) public debts; // Individual Normalized Debt
 
-  ICustodian public custodian;
-  IExchange public exchange;
-  IProbity public probity;
+  IAurei public aurei;
   IRegistry public registry;
   ITreasury public treasury;
+  IVault public vault;
 
   // --- Constructor ---
 
@@ -49,92 +40,96 @@ contract Teller is ITeller, Ownable, ProbityBase {
    * @dev Should probably make this inheritable.
    */
   function initializeContract() external onlyOwner {
-    custodian = ICustodian(registry.getContractAddress(Contract.Custodian));
-    exchange = IExchange(registry.getContractAddress(Contract.Exchange));
-    probity = IProbity(registry.getContractAddress(Contract.Probity));
+    aurei = IAurei(registry.getContractAddress(Contract.Aurei));
+    // exchange = IExchange(registry.getContractAddress(Contract.Exchange));
     treasury = ITreasury(registry.getContractAddress(Contract.Treasury));
+    vault = IVault(registry.getContractAddress(Contract.Vault));
   }
 
   // --- Functions ---
 
   /**
-   * @notice Returns the debt balance of a borrower.
+   * @notice Returns the total debt balance of a borrower.
    */
-  function balanceOf(address borrower)
-    external
-    view
-    override
-    returns (uint256)
-  {
-    return balances[borrower];
+  function balanceOf(address owner) external view override returns (uint256) {
+    // uint256 rate = exchange.getCumulativeRate();
+    // return debts[owner].mul(rate);
+    // return debts[owner].mul(exchange.getCumulativeRate());
+    return debts[owner];
+  }
+
+  function getRate() external view override returns (uint256) {
+    return rate;
   }
 
   /**
-   * @notice Creates a loan by decreasing the equity balance of the lender,
-   * increasing the debt balance of the borrower, and sending the Aurei
-   * to the borrower thereby creating a loan asset for the lender.
-   * Steps for loan grant:
-   * a. Teller requests Treasury for borrower eligibility against loan amount
-   * b. Teller adds loan details to the normalizedDebtBalances mapping.
-   * c. Teller asks Treasury to create loan by transferring Aurei to borrower
-   * d. Loan Granted.
-   * @param lender - The address of the lender.
-   * @param borrower - The address of the borrower.
+   * @notice Creates a loan.
+   * @param collateral - Amount of collateral used to secure the loan.
    * @param principal - The initial amount of the loan.
-   *Todo: List below:
-   * 1. Check solidity behaviour if last step of function execution fails (assuming all storage updates must be reverted). Write test to verify same.
-   * 2. Function sharing shared variable are thread safe. If multiple calls to function at same time, it must be handled by solidity.
    */
-  function createLoan(
-    address lender,
-    address borrower,
-    uint256 principal,
-    uint256 cumulativeRate
-  ) external override onlyExchange {
-    uint256 newDebtBalance = balances[borrower].add(principal);
+  function createLoan(uint256 collateral, uint256 principal)
+    external
+    override
+    checkEligibility(collateral, principal)
+  {
+    // Lock borrower collateral
+    vault.lock(msg.sender, collateral);
 
-    // Check borrower eligibility
-    custodian.checkBorrowerEligibility(newDebtBalance, borrower);
+    // Check Treasury's Aurei balance
+    uint256 pool = aurei.balanceOf(address(treasury));
+    console.log("Pool:  ", pool);
 
-    // Update total loan balance
-    balances[borrower] = newDebtBalance;
+    // Increase individual debt
+    debts[msg.sender] = add(debts[msg.sender], principal);
 
-    // Set loan ID
-    nonces[borrower] = nonces[borrower] + 1;
+    // Increase aggregate debt
+    debt = add(debt, principal);
 
-    // TODO: This needs to be tested!
-    // All we are storing with the loan is the normalized debt, for now.
-    normalizedDebtBalances[borrower].normalizedDebt = (ray(ray(principal)).div(
-      cumulativeRate
-    ) + normalizedDebtBalances[borrower].normalizedDebt);
+    // Calculate new rate
+    uint256 ONE = 1e18;
+    uint256 equity = treasury.totalEquity();
+    console.log("Debt:  ", debt);
+    console.log("Equity:", equity);
+    rate = wdiv(ONE, sub(ONE, wdiv(debt, equity)));
+    console.log("Rate:  ", rate);
 
-    // Convert lender equity to loan asset
-    treasury.convertLenderEquityToLoan(lender, borrower, principal);
+    // Send Aurei to borrower
+    aurei.transfer(msg.sender, principal);
 
-    emit LoanCreated(
-      lender,
-      borrower,
-      principal,
-      cumulativeRate,
-      block.timestamp
+    emit LoanCreated(msg.sender, collateral, principal, rate, block.timestamp);
+  }
+
+  function totalDebt() external view override returns (uint256) {
+    return debt;
+  }
+
+  // --- Modifiers ---
+
+  /**
+   * @notice Ensures that the borrower has sufficient collateral to secure a loan,
+   * and that it meets the minimum collateral ratio requirement.
+   * @param collateral - The amount of collateral securing the loan.
+   * @param principal - The principal amount of Aurei.
+   */
+  modifier checkEligibility(uint256 collateral, uint256 principal) {
+    (uint256 total, uint256 encumbered, uint256 unencumbered) =
+      vault.get(msg.sender);
+    require(unencumbered >= collateral, "TELL: Collateral not available.");
+
+    // TODO: Hook in collateral price
+    uint256 ratio = wdiv(wmul(collateral, 1 ether), principal);
+    require(
+      ratio >= MIN_COLLATERAL_RATIO,
+      "PRO: Insufficient collateral provided"
     );
+    _;
   }
 
   /**
-   * @notice Calculates the total debt of a borrower
+   * @dev Ensure that msg.sender === Treasury contract address.
    */
-  function getTotalDebt() external view override returns (uint256) {
-    return
-      normalizedDebtBalances[msg.sender].normalizedDebt.mul(
-        exchange.getCumulativeRate()
-      );
-  }
-
-  /**
-   * @dev Ensure that msg.sender === Exchange contract address.
-   */
-  modifier onlyExchange {
-    require(msg.sender == registry.getContractAddress(Contract.Exchange));
+  modifier onlyTreasury {
+    require(msg.sender == registry.getContractAddress(Contract.Treasury));
     _;
   }
 }

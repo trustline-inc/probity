@@ -9,9 +9,15 @@ import "./Interfaces/IRegistry.sol";
  * @notice Stores contract addresses.
  */
 contract Registry is IRegistry, Ownable {
+  // --- Data ---
+
   mapping(ProbityBase.Contract => address) private contracts;
 
+  // --- Constructor ---
+
   constructor() Ownable(msg.sender) {}
+
+  // --- External Functions ---
 
   function setupContractAddress(ProbityBase.Contract name, address _addr)
     external

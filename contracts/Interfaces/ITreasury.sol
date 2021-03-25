@@ -8,24 +8,17 @@ pragma solidity ^0.8.0;
 interface ITreasury {
   // --- Events ---
 
-  event TreasuryIncrease(address indexed owner, uint256 amount);
-  event TreasuryDecrease(address indexed owner, uint256 amount);
+  event TreasuryUpdated(address indexed owner, uint256 equity);
 
   // --- Functions ---
 
   function balanceOf(address owner) external view returns (uint256);
 
-  function increase(uint256 amount, address owner) external;
+  function totalEquity() external view returns (uint256);
 
-  function decrease(uint256 amount, address owner) external;
+  function issue(uint256 collateral, uint256 equity) external;
 
-  function transfer(address borrower, uint256 amount) external;
+  function redeem(uint256 collateral, uint256 equity) external;
 
-  function convertLenderEquityToLoan(
-    address lender,
-    address borrower,
-    uint256 amount
-  ) external;
-
-  function withdrawEquity(address owner, uint256 amount) external;
+  function fundLoan(uint256 principal, address borrower) external;
 }

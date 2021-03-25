@@ -4,23 +4,21 @@ import { ethers } from "hardhat";
 // Import contract factory types
 import {
   AureiFactory,
-  CustodianFactory,
-  ProbityFactory,
+  ExchangeFactory,
   RegistryFactory,
   TellerFactory,
   TreasuryFactory,
-  ExchangeFactory,
+  VaultFactory,
 } from "../typechain";
 
 // Import contract types
 import {
   Aurei,
-  Custodian,
-  Probity,
+  Exchange,
   Registry,
   Teller,
   Treasury,
-  Exchange,
+  Vault,
 } from "../typechain";
 
 // See https://github.com/nomiclabs/hardhat/issues/1001
@@ -32,30 +30,28 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-wit
 interface Contracts {
   aurei: Aurei;
   exchange: Exchange;
-  custodian: Custodian;
-  probity: Probity;
   registry: Registry;
   teller: Teller;
   treasury: Treasury;
+  vault: Vault;
 }
 
 const contracts: Contracts = {
   aurei: null,
   exchange: null,
-  custodian: null,
-  probity: null,
   registry: null,
   teller: null,
   treasury: null,
+  vault: null,
 };
 
 enum Contract {
   Aurei,
-  Custodian,
   Exchange,
-  Probity,
+  Registry,
   Teller,
   Treasury,
+  Vault,
 }
 
 interface Signers {
@@ -66,6 +62,7 @@ interface Signers {
   don: SignerWithAddress;
   lender: SignerWithAddress;
   borrower: SignerWithAddress;
+  bootstrapper: SignerWithAddress;
   addrs: SignerWithAddress[];
 }
 
@@ -77,6 +74,7 @@ const signers: Signers = {
   don: null,
   lender: null,
   borrower: null,
+  bootstrapper: null,
   addrs: null,
 };
 
@@ -93,6 +91,7 @@ const deploy = async () => {
     signers.don,
     signers.lender,
     signers.borrower,
+    signers.bootstrapper,
     ...signers.addrs
   ] = await ethers.getSigners();
 
@@ -112,14 +111,12 @@ const deploy = async () => {
   contracts.aurei = await aureiFactory.deploy();
   await contracts.aurei.deployed();
 
-  const custodianFactory = (await ethers.getContractFactory(
-    "Custodian",
+  const vaultFactory = (await ethers.getContractFactory(
+    "Vault",
     signers.owner
-  )) as CustodianFactory;
-  contracts.custodian = await custodianFactory.deploy(
-    contracts.registry.address
-  );
-  await contracts.custodian.deployed();
+  )) as VaultFactory;
+  contracts.vault = await vaultFactory.deploy(contracts.registry.address);
+  await contracts.vault.deployed();
 
   const exchangeFactory = (await ethers.getContractFactory(
     "Exchange",
@@ -127,13 +124,6 @@ const deploy = async () => {
   )) as ExchangeFactory;
   contracts.exchange = await exchangeFactory.deploy(contracts.registry.address);
   await contracts.exchange.deployed();
-
-  const probityFactory = (await ethers.getContractFactory(
-    "Probity",
-    signers.owner
-  )) as ProbityFactory;
-  contracts.probity = await probityFactory.deploy(contracts.registry.address);
-  await contracts.probity.deployed();
 
   const tellerFactory = (await ethers.getContractFactory(
     "Teller",
@@ -154,16 +144,8 @@ const deploy = async () => {
     contracts.aurei.address
   );
   await contracts.registry.setupContractAddress(
-    Contract.Custodian,
-    contracts.custodian.address
-  );
-  await contracts.registry.setupContractAddress(
     Contract.Exchange,
     contracts.exchange.address
-  );
-  await contracts.registry.setupContractAddress(
-    Contract.Probity,
-    contracts.probity.address
   );
   await contracts.registry.setupContractAddress(
     Contract.Teller,
@@ -173,12 +155,15 @@ const deploy = async () => {
     Contract.Treasury,
     contracts.treasury.address
   );
+  await contracts.registry.setupContractAddress(
+    Contract.Vault,
+    contracts.vault.address
+  );
 
-  await contracts.custodian.initializeContract();
   await contracts.exchange.initializeContract();
-  await contracts.probity.initializeContract();
   await contracts.teller.initializeContract();
   await contracts.treasury.initializeContract();
+  await contracts.vault.initializeContract();
 
   return { contracts, signers };
 };

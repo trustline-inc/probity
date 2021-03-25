@@ -9,23 +9,20 @@ interface ITeller {
   // --- Events ---
 
   event LoanCreated(
-    address lender,
     address borrower,
+    uint256 collateral,
     uint256 principal,
     uint256 rate,
-    uint256 _now
+    uint256 timestamp
   );
 
   // --- Functions ---
 
   function balanceOf(address borrower) external view returns (uint256);
 
-  function createLoan(
-    address lender,
-    address borrower,
-    uint256 principal,
-    uint256 rate
-  ) external;
+  function createLoan(uint256 collateral, uint256 principal) external;
 
-  function getTotalDebt() external returns (uint256);
+  function getRate() external view returns (uint256);
+
+  function totalDebt() external view returns (uint256);
 }

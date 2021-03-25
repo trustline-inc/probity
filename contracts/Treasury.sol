@@ -3,29 +3,33 @@
 pragma solidity ^0.8.0;
 
 import "./Dependencies/Ownable.sol";
+import "./Dependencies/DSMath.sol";
 import "./Dependencies/ProbityBase.sol";
 import "./Dependencies/SafeMath.sol";
 import "./Interfaces/IAurei.sol";
-import "./Interfaces/ICustodian.sol";
-import "./Interfaces/IProbity.sol";
-import "./Interfaces/ITreasury.sol";
+import "./Interfaces/IExchange.sol";
 import "./Interfaces/IRegistry.sol";
+import "./Interfaces/ITreasury.sol";
+import "./Interfaces/ITeller.sol";
+import "./Interfaces/IVault.sol";
 import "hardhat/console.sol";
 
 /**
- * @notice Manages debts for all vaults.
+ * @notice Manages equity for all vaults.
  */
-contract Treasury is ITreasury, Ownable, ProbityBase {
+contract Treasury is ITreasury, Ownable, ProbityBase, DSMath {
   using SafeMath for uint256;
 
   // --- Data ---
 
-  mapping(address => uint256) public balances;
+  uint256 public _totalEquity;
+  mapping(address => uint256) public balances; // Normalized Equity
 
   IAurei public aurei;
-  ICustodian public custodian;
-  IProbity public probity;
+  IExchange public exchange;
   IRegistry public registry;
+  ITeller public teller;
+  IVault public vault;
 
   // --- Constructor ---
 
@@ -39,8 +43,9 @@ contract Treasury is ITreasury, Ownable, ProbityBase {
    */
   function initializeContract() external onlyOwner {
     aurei = IAurei(registry.getContractAddress(Contract.Aurei));
-    custodian = ICustodian(registry.getContractAddress(Contract.Custodian));
-    probity = IProbity(registry.getContractAddress(Contract.Treasury));
+    exchange = IExchange(registry.getContractAddress(Contract.Exchange));
+    teller = ITeller(registry.getContractAddress(Contract.Teller));
+    vault = IVault(registry.getContractAddress(Contract.Vault));
   }
 
   // --- External Functions ---
@@ -49,87 +54,76 @@ contract Treasury is ITreasury, Ownable, ProbityBase {
    * @notice Returns the treasury balance of a vault.
    */
   function balanceOf(address owner) external view override returns (uint256) {
+    // uint256 rate = exchange.getCumulativeRate();
+    // return balances[owner].mul(rate);
     return balances[owner];
   }
 
-  /**
-   * @notice Adds Aurei to the treasury.
-   * @dev Only callable by Probity
-   */
-  function increase(uint256 amount, address owner)
-    external
-    override
-    onlyProbity
-  {
-    aurei.mint(address(this), amount);
-    balances[owner] = balances[owner].add(amount);
-    emit TreasuryIncrease(owner, amount);
+  function totalEquity() external view override returns (uint256) {
+    return _totalEquity;
   }
 
   /**
-   * @notice Removes Aurei from the treasury when a loan is repaid.
-   * @dev Only callable by Probity
+   * @notice Issues equity to caller and adds Aurei to the treasury.
+   * @param collateral - Amount of collateral backing the Aurei.
+   * @param equity - Amount of Aurei to mint.
    */
-  function decrease(uint256 amount, address owner)
+  function issue(uint256 collateral, uint256 equity)
     external
     override
-    onlyProbity
-    requireSufficientEquity(amount, owner)
+    checkEligibility(collateral, equity)
   {
-    aurei.burn(address(this), amount);
-    balances[owner] = balances[owner].sub(amount);
-    emit TreasuryDecrease(owner, amount);
+    vault.lock(msg.sender, collateral);
+    aurei.mint(address(this), equity);
+    balances[msg.sender] = balances[msg.sender].add(equity);
+    _totalEquity = _totalEquity.add(equity);
+    emit TreasuryUpdated(msg.sender, balances[msg.sender]);
   }
 
   /**
-   * @notice Transfers Aurei owned by the treasury to the borrower.
+   * @notice Redeems equity from the treasury, decreasing the Aurei reserves.
+   */
+  function redeem(uint256 collateral, uint256 equity) external override {
+    aurei.burn(address(this), equity);
+    balances[msg.sender] = balances[msg.sender].sub(equity);
+    _totalEquity = _totalEquity.sub(equity);
+    // TODO: Unencumber collateral
+    console.log("collateral:", collateral);
+    emit TreasuryUpdated(msg.sender, balances[msg.sender]);
+  }
+
+  /**
+   * @notice Funds a loan using Aurei from the treasury.
+   * @param principal - Principal amount of the loan.
    * @param borrower - The address of the borrower.
    */
-  function transfer(address borrower, uint256 amount)
+  function fundLoan(uint256 principal, address borrower)
     external
     override
     onlyTeller
   {
-    aurei.transfer(borrower, amount);
-  }
-
-  /**
-   * @notice Converts lender's equity to a loan asset and transfers Aurei owned by the treasury to the borrower.
-   * @param lender - The address of the lender.
-   * @param borrower - The address of the borrower.
-   * @param amount - Amount to transfer.
-   */
-  function convertLenderEquityToLoan(
-    address lender,
-    address borrower,
-    uint256 amount
-  ) external override onlyTeller requireSufficientEquity(amount, lender) {
-    balances[lender] = balances[lender].sub(amount);
-    aurei.transfer(borrower, amount);
-    emit TreasuryDecrease(lender, amount);
-  }
-
-  /**
-   * @notice Burns Aurei from reserves and unlocks lender collateral.
-   */
-  function withdrawEquity(address owner, uint256 amount)
-    external
-    override
-    onlyProbity
-    requireSufficientEquity(amount, owner)
-  {
-    balances[owner] = balances[owner].sub(amount);
-    aurei.burn(address(this), amount);
-    emit TreasuryDecrease(owner, amount);
+    aurei.transfer(borrower, principal);
   }
 
   // --- Modifiers ---
 
   /**
-   * @dev Ensure that msg.sender === Probity contract address.
+   * @notice Ensures that the owner has sufficient collateral to mint Aurei,
+   * and that it meets the minimum collateral ratio requirement.
+   * @param collateral - The amount of collateral used to mint Aurei.
+   * @param equity - The amount of Aurei.
    */
-  modifier onlyProbity {
-    require(msg.sender == registry.getContractAddress(Contract.Probity));
+  modifier checkEligibility(uint256 collateral, uint256 equity) {
+    (uint256 total, uint256 encumbered, uint256 unencumbered) =
+      vault.get(msg.sender);
+    require(unencumbered >= collateral, "TELL: Collateral not available.");
+
+    // TODO: Hook in collateral price
+    uint256 ratio = wdiv(wmul(collateral, 1 ether), equity);
+    require(
+      ratio >= MIN_COLLATERAL_RATIO,
+      "PRO: Insufficient collateral provided"
+    );
     _;
   }
 
@@ -138,16 +132,6 @@ contract Treasury is ITreasury, Ownable, ProbityBase {
    */
   modifier onlyTeller {
     require(msg.sender == registry.getContractAddress(Contract.Teller));
-    _;
-  }
-
-  /**
-   * @notice Checks if user has enough equity to issue a loan.
-   * @param amount - Amount to lend
-   * @param lender - Address of lender
-   */
-  modifier requireSufficientEquity(uint256 amount, address lender) {
-    require(balances[lender] >= amount, "TREASURY: Insufficient balance.");
     _;
   }
 }
