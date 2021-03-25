@@ -8,7 +8,7 @@ pragma solidity ^0.8.0;
 contract ProbityBase {
   // --- Registered contracts ---
 
-  enum Contract {Aurei, Exchange, Probity, Teller, Treasury, Vault}
+  enum Contract {Aurei, Teller, Treasury, Vault}
 
   // --- Math constants ---
 

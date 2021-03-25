@@ -7,7 +7,6 @@ import "./Dependencies/DSMath.sol";
 import "./Dependencies/ProbityBase.sol";
 import "./Dependencies/SafeMath.sol";
 import "./Interfaces/IAurei.sol";
-import "./Interfaces/IExchange.sol";
 import "./Interfaces/IRegistry.sol";
 import "./Interfaces/ITreasury.sol";
 import "./Interfaces/ITeller.sol";
@@ -26,7 +25,6 @@ contract Treasury is ITreasury, Ownable, ProbityBase, DSMath {
   mapping(address => uint256) public balances; // Normalized Equity
 
   IAurei public aurei;
-  IExchange public exchange;
   IRegistry public registry;
   ITeller public teller;
   IVault public vault;
@@ -43,7 +41,6 @@ contract Treasury is ITreasury, Ownable, ProbityBase, DSMath {
    */
   function initializeContract() external onlyOwner {
     aurei = IAurei(registry.getContractAddress(Contract.Aurei));
-    exchange = IExchange(registry.getContractAddress(Contract.Exchange));
     teller = ITeller(registry.getContractAddress(Contract.Teller));
     vault = IVault(registry.getContractAddress(Contract.Vault));
   }

@@ -18,6 +18,8 @@ import "hardhat/console.sol";
 contract Teller is ITeller, Ownable, ProbityBase, DSMath {
   // --- Data ---
 
+  uint256 public accumulator;
+  uint256 public lastUpdate;
   uint256 public utilization;
   uint256 public rate;
 
@@ -33,6 +35,10 @@ contract Teller is ITeller, Ownable, ProbityBase, DSMath {
 
   constructor(address _registry) Ownable(msg.sender) {
     registry = IRegistry(_registry);
+
+    lastUpdate = block.timestamp;
+    accumulator = RAY;
+    rate = RAY;
   }
 
   /**
@@ -41,7 +47,6 @@ contract Teller is ITeller, Ownable, ProbityBase, DSMath {
    */
   function initializeContract() external onlyOwner {
     aurei = IAurei(registry.getContractAddress(Contract.Aurei));
-    // exchange = IExchange(registry.getContractAddress(Contract.Exchange));
     treasury = ITreasury(registry.getContractAddress(Contract.Treasury));
     vault = IVault(registry.getContractAddress(Contract.Vault));
   }
@@ -52,10 +57,7 @@ contract Teller is ITeller, Ownable, ProbityBase, DSMath {
    * @notice Returns the total debt balance of a borrower.
    */
   function balanceOf(address owner) external view override returns (uint256) {
-    // uint256 rate = exchange.getCumulativeRate();
-    // return debts[owner].mul(rate);
-    // return debts[owner].mul(exchange.getCumulativeRate());
-    return debts[owner];
+    return wmul(debts[owner], accumulator);
   }
 
   function getRate() external view override returns (uint256) {
@@ -77,7 +79,7 @@ contract Teller is ITeller, Ownable, ProbityBase, DSMath {
 
     // Check Treasury's Aurei balance
     uint256 pool = aurei.balanceOf(address(treasury));
-    console.log("Pool:  ", pool);
+    console.log("Pool:        ", pool);
 
     // Increase individual debt
     debts[msg.sender] = add(debts[msg.sender], principal);
@@ -85,13 +87,25 @@ contract Teller is ITeller, Ownable, ProbityBase, DSMath {
     // Increase aggregate debt
     debt = add(debt, principal);
 
-    // Calculate new rate
-    uint256 ONE = 1e18;
+    // Calculate new interest rate
     uint256 equity = treasury.totalEquity();
-    console.log("Debt:  ", debt);
-    console.log("Equity:", equity);
-    rate = wdiv(ONE, sub(ONE, wdiv(debt, equity)));
-    console.log("Rate:  ", rate);
+    uint256 apr = rdiv(RAY, sub(RAY, rdiv(debt * 1e9, equity * 1e9)));
+    uint256 mpr = RAY + (RAY / SECONDS_IN_YEAR);
+    uint256 tmp = accumulator;
+    rate = apr; // Maybe should store this as MPR.
+
+    // Calculate new rate accumulator
+    accumulator = rmul(rpow(mpr, (block.timestamp - lastUpdate)), accumulator);
+
+    // View values
+    console.log("Debt:        ", debt);
+    console.log("Equity:      ", equity);
+    console.log("APR:         ", apr);
+    console.log("MPR:         ", mpr);
+    console.log("Accumulator: ", tmp);
+    console.log("Last Update: ", lastUpdate);
+    console.log("Timestamp:   ", block.timestamp);
+    console.log("New Accum.:  ", accumulator);
 
     // Send Aurei to borrower
     treasury.fundLoan(msg.sender, principal);

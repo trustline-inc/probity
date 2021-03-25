@@ -75,8 +75,8 @@ describe("Teller", function () {
           web3.utils.toWei(principal.toString())
         );
 
-      // Rate should equal 2% APR
-      expect(await teller.getRate()).to.equal(web3.utils.toWei("2"));
+      // Rate should equal 2% APR (RAY)
+      expect(await teller.getRate()).to.equal(web3.utils.toWei("2000000000"));
     });
   });
 });

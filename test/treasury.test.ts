@@ -4,7 +4,7 @@ import "@nomiclabs/hardhat-web3";
 import { web3 } from "hardhat";
 import { expect } from "chai";
 
-import { Exchange, Teller, Treasury, Vault } from "../typechain";
+import { Teller, Treasury, Vault } from "../typechain";
 
 import deploy from "../lib/deploy";
 
@@ -14,7 +14,6 @@ let bootstrapper: SignerWithAddress;
 let borrower: SignerWithAddress;
 
 // Contracts
-let exchange: Exchange;
 let teller: Teller;
 let treasury: Treasury;
 let vault: Vault;
@@ -26,7 +25,6 @@ describe("Treasury", function () {
     const { contracts, signers } = await deploy();
 
     // Set contracts
-    exchange = contracts.exchange;
     teller = contracts.teller;
     treasury = contracts.treasury;
     vault = contracts.vault;

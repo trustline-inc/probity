@@ -1,10 +1,10 @@
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import "@nomiclabs/hardhat-waffle";
 import { ethers } from "hardhat";
 
 // Import contract factory types
 import {
   AureiFactory,
-  ExchangeFactory,
   RegistryFactory,
   TellerFactory,
   TreasuryFactory,
@@ -12,24 +12,13 @@ import {
 } from "../typechain";
 
 // Import contract types
-import {
-  Aurei,
-  Exchange,
-  Registry,
-  Teller,
-  Treasury,
-  Vault,
-} from "../typechain";
-
-// See https://github.com/nomiclabs/hardhat/issues/1001
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
+import { Aurei, Registry, Teller, Treasury, Vault } from "../typechain";
 
 /**
  * Contracts
  */
 interface Contracts {
   aurei: Aurei;
-  exchange: Exchange;
   registry: Registry;
   teller: Teller;
   treasury: Treasury;
@@ -38,7 +27,6 @@ interface Contracts {
 
 const contracts: Contracts = {
   aurei: null,
-  exchange: null,
   registry: null,
   teller: null,
   treasury: null,
@@ -47,8 +35,6 @@ const contracts: Contracts = {
 
 enum Contract {
   Aurei,
-  Exchange,
-  Registry,
   Teller,
   Treasury,
   Vault,
@@ -118,13 +104,6 @@ const deploy = async () => {
   contracts.vault = await vaultFactory.deploy(contracts.registry.address);
   await contracts.vault.deployed();
 
-  const exchangeFactory = (await ethers.getContractFactory(
-    "Exchange",
-    signers.owner
-  )) as ExchangeFactory;
-  contracts.exchange = await exchangeFactory.deploy(contracts.registry.address);
-  await contracts.exchange.deployed();
-
   const tellerFactory = (await ethers.getContractFactory(
     "Teller",
     signers.owner
@@ -144,10 +123,6 @@ const deploy = async () => {
     contracts.aurei.address
   );
   await contracts.registry.setupContractAddress(
-    Contract.Exchange,
-    contracts.exchange.address
-  );
-  await contracts.registry.setupContractAddress(
     Contract.Teller,
     contracts.teller.address
   );
@@ -160,7 +135,6 @@ const deploy = async () => {
     contracts.vault.address
   );
 
-  await contracts.exchange.initializeContract();
   await contracts.teller.initializeContract();
   await contracts.treasury.initializeContract();
   await contracts.vault.initializeContract();
