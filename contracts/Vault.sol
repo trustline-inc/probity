@@ -21,7 +21,7 @@ contract Vault is IVault, ProbityBase, Ownable {
   // --- Data ---
 
   struct State {
-    uint256 collateral;
+    uint256 total;
     uint256 encumbered;
     uint256 unencumbered;
   }
@@ -67,7 +67,7 @@ contract Vault is IVault, ProbityBase, Ownable {
     )
   {
     State memory vault = vaults[owner];
-    return (vault.collateral, vault.encumbered, vault.unencumbered);
+    return (vault.total, vault.encumbered, vault.unencumbered);
   }
 
   /**
@@ -87,15 +87,15 @@ contract Vault is IVault, ProbityBase, Ownable {
   }
 
   /**
-   * @notice Deposits collateral to an existing vault.
+   * @notice Deposits collateral to a vault.
    */
   function deposit() external payable override {
     State storage vault = vaults[msg.sender];
-    vault.collateral = vaults[msg.sender].collateral.add(msg.value);
-    vault.unencumbered = vault.collateral;
+    vault.total = vaults[msg.sender].total.add(msg.value);
+    vault.unencumbered = vault.unencumbered.add(msg.value);
     emit VaultUpdated(
       msg.sender,
-      vault.collateral,
+      vault.total,
       vault.encumbered,
       vault.encumbered
     );
@@ -109,14 +109,15 @@ contract Vault is IVault, ProbityBase, Ownable {
   function withdraw(uint256 amount) external override {
     State storage vault = vaults[msg.sender];
     require(
-      amount <= vault.collateral - vault.encumbered,
+      amount <= vault.total - vault.encumbered,
       "CUST: Overdraft not allowed."
     );
-    vault.collateral = vault.collateral.sub(amount);
+    vault.total = vault.total.sub(amount);
+    vault.unencumbered = vault.unencumbered.sub(amount);
     payable(msg.sender).transfer(amount);
     emit VaultUpdated(
       msg.sender,
-      vault.collateral,
+      vault.total,
       vault.encumbered,
       vault.unencumbered
     );
@@ -144,12 +145,32 @@ contract Vault is IVault, ProbityBase, Ownable {
       _equityEncumbered = _equityEncumbered.add(amount);
     }
 
-    emit VaultUpdated(
-      owner,
-      vault.collateral,
-      vault.encumbered,
-      vault.unencumbered
-    );
+    emit VaultUpdated(owner, vault.total, vault.encumbered, vault.unencumbered);
+  }
+
+  /**
+   * @notice Unencumbers collateral.
+   * @dev Only called by Teller or Treasury contracts.
+   */
+  function unlock(address owner, uint256 amount)
+    external
+    override
+    onlyTellerOrTreasury
+  {
+    State storage vault = vaults[owner];
+    vault.encumbered = vault.encumbered.sub(amount);
+    vault.unencumbered = vault.unencumbered.add(amount);
+    _totalEncumbered = _totalEncumbered.sub(amount);
+
+    if (msg.sender == address(teller)) {
+      _debtEncumbered = _debtEncumbered.sub(amount);
+    }
+
+    if (msg.sender == address(treasury)) {
+      _equityEncumbered = _equityEncumbered.sub(amount);
+    }
+
+    emit VaultUpdated(owner, vault.total, vault.encumbered, vault.unencumbered);
   }
 
   // --- Modifiers ---

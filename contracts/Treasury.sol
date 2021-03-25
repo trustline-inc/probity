@@ -71,7 +71,7 @@ contract Treasury is ITreasury, Ownable, ProbityBase, DSMath {
   function issue(uint256 collateral, uint256 equity)
     external
     override
-    checkEligibility(collateral, equity)
+    checkIssuanceEligibility(collateral, equity)
   {
     vault.lock(msg.sender, collateral);
     aurei.mint(address(this), equity);
@@ -82,22 +82,36 @@ contract Treasury is ITreasury, Ownable, ProbityBase, DSMath {
 
   /**
    * @notice Redeems equity from the treasury, decreasing the Aurei reserves.
+   * @param collateral - The amount of collateral to redeem
+   * @param equity - The amount of equity to redeem
+   * @dev This adjusts the equity-collateral ratio
+   * @dev TODO: Ensure collateral ratio is maintained.
    */
-  function redeem(uint256 collateral, uint256 equity) external override {
-    aurei.burn(address(this), equity);
+  function redeem(uint256 collateral, uint256 equity)
+    external
+    override
+    checkRedemptionEligibility(collateral, equity)
+  {
+    // Reduce equity balance
     balances[msg.sender] = balances[msg.sender].sub(equity);
     _totalEquity = _totalEquity.sub(equity);
-    // TODO: Unencumber collateral
-    console.log("collateral:", collateral);
+
+    // Burn the Aurei
+    aurei.burn(address(this), equity);
+
+    // Unencumber collateral
+    vault.unlock(msg.sender, collateral);
+
+    // Emit event
     emit TreasuryUpdated(msg.sender, balances[msg.sender]);
   }
 
   /**
    * @notice Funds a loan using Aurei from the treasury.
-   * @param principal - Principal amount of the loan.
    * @param borrower - The address of the borrower.
+   * @param principal - Principal amount of the loan.
    */
-  function fundLoan(uint256 principal, address borrower)
+  function fundLoan(address borrower, uint256 principal)
     external
     override
     onlyTeller
@@ -113,13 +127,33 @@ contract Treasury is ITreasury, Ownable, ProbityBase, DSMath {
    * @param collateral - The amount of collateral used to mint Aurei.
    * @param equity - The amount of Aurei.
    */
-  modifier checkEligibility(uint256 collateral, uint256 equity) {
+  modifier checkIssuanceEligibility(uint256 collateral, uint256 equity) {
     (uint256 total, uint256 encumbered, uint256 unencumbered) =
       vault.get(msg.sender);
     require(unencumbered >= collateral, "TELL: Collateral not available.");
 
     // TODO: Hook in collateral price
     uint256 ratio = wdiv(wmul(collateral, 1 ether), equity);
+    require(
+      ratio >= MIN_COLLATERAL_RATIO,
+      "PRO: Insufficient collateral provided"
+    );
+    _;
+  }
+
+  /**
+   * @notice Ensures that the owner has sufficient collateral after redemption,
+   * and that it meets the minimum collateral ratio requirement.
+   * @param collateral - The amount of collateral to unlock.
+   * @param equity - The amount of Aurei to redeem.
+   */
+  modifier checkRedemptionEligibility(uint256 collateral, uint256 equity) {
+    (uint256 total, uint256 encumbered, uint256 unencumbered) =
+      vault.get(msg.sender);
+    require(encumbered >= collateral, "TELL: Collateral not available.");
+
+    // TODO: Hook in collateral price
+    uint256 ratio = wdiv(wmul(encumbered.sub(collateral), 1 ether), equity);
     require(
       ratio >= MIN_COLLATERAL_RATIO,
       "PRO: Insufficient collateral provided"

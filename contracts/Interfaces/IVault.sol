@@ -45,6 +45,11 @@ interface IVault {
   function lock(address owner, uint256 amount) external;
 
   /**
+   * @notice Unlocks the collateral after redeeming equity or repaying debt.
+   */
+  function unlock(address owner, uint256 amount) external;
+
+  /**
    * @notice Call this to add collateral to an existing vault.
    */
   function deposit() external payable;

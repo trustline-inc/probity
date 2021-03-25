@@ -94,7 +94,7 @@ contract Teller is ITeller, Ownable, ProbityBase, DSMath {
     console.log("Rate:  ", rate);
 
     // Send Aurei to borrower
-    aurei.transfer(msg.sender, principal);
+    treasury.fundLoan(msg.sender, principal);
 
     emit LoanCreated(msg.sender, collateral, principal, rate, block.timestamp);
   }
