@@ -16,6 +16,13 @@ interface ITeller {
     uint256 timestamp
   );
 
+  event Repayment(
+    address borrower,
+    uint256 amount,
+    uint256 collateral,
+    uint256 timestamp
+  );
+
   // --- Functions ---
 
   function balanceOf(address borrower) external view returns (uint256);

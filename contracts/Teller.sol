@@ -23,10 +23,8 @@ contract Teller is ITeller, Ownable, ProbityBase, DSMath {
   uint256 public utilization;
   uint256 public rate;
 
-  uint256 public debt; // Aggregate Debt
-  uint256 public normDebt; // Normalized Aggregate Debt
-  mapping(address => uint256) public debts; // Individual Debts
-  mapping(address => uint256) public normDebts; // Normalized Individual Debts
+  uint256 public debt; // Normalized Aggregate Debt
+  mapping(address => uint256) public debts; // Normalized Individual Debts
 
   IAurei public aurei;
   IRegistry public registry;
@@ -38,6 +36,7 @@ contract Teller is ITeller, Ownable, ProbityBase, DSMath {
   constructor(address _registry) Ownable(msg.sender) {
     registry = IRegistry(_registry);
 
+    // Set defaults
     lastUpdate = block.timestamp;
     accumulator = RAY;
     rate = RAY;
@@ -56,10 +55,10 @@ contract Teller is ITeller, Ownable, ProbityBase, DSMath {
   // --- Functions ---
 
   /**
-   * @notice Returns the total debt balance of a borrower [RAY].
+   * @notice Returns the total debt balance of a borrower.
    */
   function balanceOf(address owner) external view override returns (uint256) {
-    return rmul(normDebts[owner], accumulator);
+    return rmul(debts[owner], accumulator);
   }
 
   function getRate() external view override returns (uint256) {
@@ -76,44 +75,29 @@ contract Teller is ITeller, Ownable, ProbityBase, DSMath {
     override
     checkEligibility(collateral, principal)
   {
-    console.log("===CREATING LOAN===");
     // Lock borrower collateral
     vault.lock(msg.sender, collateral);
 
     // Check Treasury's Aurei balance
     uint256 pool = aurei.balanceOf(address(treasury));
-    console.log("Pool:        ", pool);
-
-    // Set new aggregate debt
-    debt = add(debt, principal);
-
-    // Set new individual debt
-    debts[msg.sender] = add(debts[msg.sender], principal);
+    require(pool >= principal);
 
     // Update interest rate
     updateRate(principal, 0);
 
     // Calculate normalized principal sum
     uint256 normalizedPrincipalSum = ((principal * RAY) / accumulator);
-    console.log("normalizedPrincipalSum:", normalizedPrincipalSum);
 
     // Increase normalized individual debt
-    normDebts[msg.sender] = add(normDebts[msg.sender], normalizedPrincipalSum);
-    console.log("Norm Indv. Debt:", normDebts[msg.sender]);
+    debts[msg.sender] = add(debts[msg.sender], normalizedPrincipalSum);
 
     // Increase normalized aggregate debt
-    normDebt = add(normDebt, normalizedPrincipalSum);
-    console.log("Norm Aggr. Debt:", normDebt);
-
-    console.log("Debt:        ", debt);
-    console.log("Rate:        ", rate);
-    console.log("Principal:   ", principal * 1e9);
-    console.log("Princi./Acc.:", normalizedPrincipalSum);
-    console.log("NDebt * Acc.:", rmul(normalizedPrincipalSum, accumulator));
+    debt = add(debt, normalizedPrincipalSum);
 
     // Send Aurei to borrower
     treasury.fundLoan(msg.sender, principal);
 
+    // Emit event
     emit LoanCreated(msg.sender, collateral, principal, rate, block.timestamp);
   }
 
@@ -127,103 +111,61 @@ contract Teller is ITeller, Ownable, ProbityBase, DSMath {
     external
     checkRequestedCollateral(amount, collateral)
   {
-    console.log("===MAKING REPAYMENT===");
-
     // Transfer Aurei from borrower to treasury
     aurei.transferFrom(msg.sender, address(this), amount);
 
-    // Get previous accumulator
-    uint256 prev = accumulator;
-    console.log("accumulator old:    ", prev);
-
     // Update interest rate
     updateRate(amount, 1);
-    console.log("accumulator new:    ", accumulator);
-    console.log(
-      "norm. debt new:     ",
-      rdiv(normDebts[msg.sender], accumulator)
-    );
 
     // Calculate normalized repayment amount
     uint256 normalizedRepayment = rdiv(amount, accumulator);
-    console.log("normalizedRepayment:", normalizedRepayment);
 
     // Decrease normalized individual debt
-    console.log("Norm Indv. Debt (Prev):", normDebts[msg.sender]);
-    normDebts[msg.sender] = sub(normDebts[msg.sender], normalizedRepayment);
-    console.log("Norm Indv. Debt (Aftr):", normDebts[msg.sender]);
-    console.log(
-      "Norm Indv. * Accum.   :",
-      rmul(normDebts[msg.sender], accumulator)
-    );
+    debts[msg.sender] = sub(debts[msg.sender], normalizedRepayment);
 
     // Decrease normalized aggregate debt
-    normDebt = sub(normDebt, normalizedRepayment);
-    console.log("Norm Aggr. Debt       :", normDebt);
-    console.log("Norm Aggr. * Accum.   :", rmul(normDebt, accumulator));
-
-    console.log("Repayment:   ", amount);
-    console.log("Repaymt./Acc.:", normalizedRepayment);
-    console.log("Rate:        ", rate);
-    console.log("Debt:        ", debt);
+    debt = sub(debt, normalizedRepayment);
 
     // Unlock collateral
     vault.unlock(msg.sender, collateral);
+
+    // Emit event
+    emit Repayment(msg.sender, amount, collateral, block.timestamp);
   }
 
   function totalDebt() external view override returns (uint256) {
-    return debt;
+    return mul(debt, accumulator);
   }
 
   // --- Internal Functions ---
 
   function updateRate(uint256 delta, uint256 op) internal {
-    console.log("===RATE UPDATING===");
     // Calculate new interest rate
     uint256 equity = treasury.totalEquity();
 
     uint256 apr;
 
-    // New Loan (add delta)
+    // New Loan (add the delta)
     if (op == 0) {
       apr = rdiv(
         RAY,
-        sub(
-          RAY,
-          rdiv(add(rmul(normDebt, accumulator), delta) * 1e9, equity * 1e9)
-        )
+        sub(RAY, rdiv(add(rmul(debt, accumulator), delta) * 1e9, equity * 1e9))
       );
     }
 
-    // Repayment (sub delta)
+    // Repayment (subtract the delta)
     if (op == 1) {
       apr = rdiv(
         RAY,
-        sub(
-          RAY,
-          rdiv(sub(rmul(normDebt, accumulator), delta) * 1e9, equity * 1e9)
-        )
+        sub(RAY, rdiv(sub(rmul(debt, accumulator), delta) * 1e9, equity * 1e9))
       );
     }
 
     uint256 mpr = RAY + (RAY / SECONDS_IN_YEAR);
-    uint256 tmp = accumulator;
     rate = apr; // Maybe should store this as MPR.
 
     // Calculate new rate accumulator
     accumulator = rmul(rpow(mpr, (block.timestamp - lastUpdate)), accumulator);
-
-    // View values
-    console.log("Debt:        ", debt);
-    console.log("Equity:      ", equity);
-    console.log("APR:         ", apr);
-    console.log("MPR:         ", mpr);
-    console.log("Old Timestamp:", lastUpdate);
-    console.log("New Timestamp:", block.timestamp);
-    console.log("Chg Timestamp:", block.timestamp - lastUpdate);
-    console.log("Old Accum.:  ", tmp);
-    console.log("New Accum.:  ", accumulator);
-    console.log("===RATE UPDATED===");
   }
 
   // --- Modifiers ---
@@ -266,7 +208,7 @@ contract Teller is ITeller, Ownable, ProbityBase, DSMath {
     uint256 ratio =
       wdiv(
         wmul(sub(encumbered, requested), 1 ether),
-        sub(debts[msg.sender], repayment)
+        sub(rmul(debts[msg.sender], accumulator), repayment)
       );
     require(
       ratio >= MIN_COLLATERAL_RATIO,
