@@ -2,8 +2,8 @@
 
 pragma solidity ^0.8.0;
 
-import "./Dependencies/Ownable.sol";
 import "./Dependencies/DSMath.sol";
+import "./Dependencies/Ownable.sol";
 import "./Dependencies/ProbityBase.sol";
 import "./Interfaces/IAurei.sol";
 import "./Interfaces/IRegistry.sol";
@@ -18,13 +18,12 @@ import "hardhat/console.sol";
 contract Teller is ITeller, Ownable, ProbityBase, DSMath {
   // --- Data ---
 
-  uint256 public accumulator;
-  uint256 public lastUpdate;
-  uint256 public utilization;
-  uint256 public rate;
+  uint256 public accumulator; // Rate accumulator [ray]
+  uint256 public lastUpdate; // Timestamp of last rate update
+  uint256 public rate; // Current interest rate [ray]
 
-  uint256 public debt; // Aggregate Normalized Debt
-  mapping(address => uint256) public debts; // Individual Normalized Debt
+  uint256 public debt; // Normalized aggregate debt [ray]
+  mapping(address => uint256) public debts; // Normalized individual debt [ray]
 
   IAurei public aurei;
   IRegistry public registry;
@@ -36,6 +35,7 @@ contract Teller is ITeller, Ownable, ProbityBase, DSMath {
   constructor(address _registry) Ownable(msg.sender) {
     registry = IRegistry(_registry);
 
+    // Set defaults
     lastUpdate = block.timestamp;
     accumulator = RAY;
     rate = RAY;
@@ -57,11 +57,19 @@ contract Teller is ITeller, Ownable, ProbityBase, DSMath {
    * @notice Returns the total debt balance of a borrower.
    */
   function balanceOf(address owner) external view override returns (uint256) {
-    return wmul(debts[owner], accumulator);
+    return rmul(debts[owner], accumulator);
   }
 
   function getRate() external view override returns (uint256) {
     return rate;
+  }
+
+  function getAccumulator() external view override returns (uint256) {
+    return accumulator;
+  }
+
+  function totalDebt() external view override returns (uint256) {
+    return rmul(debt, accumulator);
   }
 
   /**
@@ -79,42 +87,87 @@ contract Teller is ITeller, Ownable, ProbityBase, DSMath {
 
     // Check Treasury's Aurei balance
     uint256 pool = aurei.balanceOf(address(treasury));
-    console.log("Pool:        ", pool);
+    require(pool >= principal);
 
-    // Increase individual debt
-    debts[msg.sender] = add(debts[msg.sender], principal);
+    // Update interest rate
+    updateRate(principal, 0);
 
-    // Increase aggregate debt
-    debt = add(debt, principal);
+    // Calculate normalized principal sum
+    uint256 normalized = rdiv(principal, accumulator);
 
-    // Calculate new interest rate
-    uint256 equity = treasury.totalEquity();
-    uint256 apr = rdiv(RAY, sub(RAY, rdiv(debt * 1e9, equity * 1e9)));
-    uint256 mpr = RAY + (RAY / SECONDS_IN_YEAR);
-    uint256 tmp = accumulator;
-    rate = apr; // Maybe should store this as MPR.
+    // Increase normalized individual debt
+    debts[msg.sender] = add(debts[msg.sender], normalized);
 
-    // Calculate new rate accumulator
-    accumulator = rmul(rpow(mpr, (block.timestamp - lastUpdate)), accumulator);
-
-    // View values
-    console.log("Debt:        ", debt);
-    console.log("Equity:      ", equity);
-    console.log("APR:         ", apr);
-    console.log("MPR:         ", mpr);
-    console.log("Accumulator: ", tmp);
-    console.log("Last Update: ", lastUpdate);
-    console.log("Timestamp:   ", block.timestamp);
-    console.log("New Accum.:  ", accumulator);
+    // Increase normalized aggregate debt
+    debt = add(debt, normalized);
 
     // Send Aurei to borrower
     treasury.fundLoan(msg.sender, principal);
 
+    // Emit event
     emit LoanCreated(msg.sender, collateral, principal, rate, block.timestamp);
   }
 
-  function totalDebt() external view override returns (uint256) {
-    return debt;
+  /**
+   * @notice Repays debt
+   * @param amount - The amount of Aurei to repay
+   * @param collateral - The amount of collateral to unlock
+   * @dev Contract must first be approved to transfer.
+   */
+  function repay(uint256 amount, uint256 collateral)
+    external
+    checkRequestedCollateral(amount, collateral)
+  {
+    // Transfer Aurei from borrower to treasury
+    aurei.transferFrom(msg.sender, address(this), amount);
+
+    // Update interest rate
+    updateRate(amount, 1);
+
+    // Calculate normalized repayment amount
+    uint256 normalized = rdiv(amount, accumulator);
+
+    // Decrease normalized individual debt
+    debts[msg.sender] = sub(debts[msg.sender], normalized);
+
+    // Decrease normalized aggregate debt
+    debt = sub(debt, normalized);
+
+    // Unlock collateral
+    vault.unlock(msg.sender, collateral);
+
+    // Emit event
+    emit Repayment(msg.sender, amount, collateral, block.timestamp);
+  }
+
+  // --- Internal Functions ---
+
+  function updateRate(uint256 delta, uint256 op) internal {
+    // Calculate new interest rate
+    uint256 equity = treasury.totalSupply();
+
+    uint256 apr;
+
+    // New Loan (add the delta)
+    if (op == 0) {
+      uint256 newDebt = add(rmul(debt, accumulator), delta);
+      require(newDebt != equity, "TELL: Not enough supply.");
+      apr = rdiv(RAY, sub(RAY, rdiv(newDebt * 1e9, equity * 1e9)));
+    }
+
+    // Repayment (subtract the delta)
+    if (op == 1) {
+      apr = rdiv(
+        RAY,
+        sub(RAY, rdiv(sub(rmul(debt, accumulator), delta) * 1e9, equity * 1e9))
+      );
+    }
+
+    uint256 mpr = RAY + (RAY / SECONDS_IN_YEAR);
+    rate = apr; // Maybe should store this as MPR.
+
+    // Calculate new rate accumulator
+    accumulator = rmul(rpow(mpr, (block.timestamp - lastUpdate)), accumulator);
   }
 
   // --- Modifiers ---
@@ -132,6 +185,33 @@ contract Teller is ITeller, Ownable, ProbityBase, DSMath {
 
     // TODO: Hook in collateral price
     uint256 ratio = wdiv(wmul(collateral, 1 ether), principal);
+    require(
+      ratio >= MIN_COLLATERAL_RATIO,
+      "PRO: Insufficient collateral provided"
+    );
+    _;
+  }
+
+  /**
+   * @notice Ensures that the borrower still meets the minimum collateral
+   * ratio requirement when repaying a loan.
+   * @param repayment - The amount of Aurei being repaid
+   * @param requested - The amount of collateral to be unlocked
+   */
+  modifier checkRequestedCollateral(uint256 repayment, uint256 requested) {
+    (uint256 total, uint256 encumbered, uint256 unencumbered) =
+      vault.get(msg.sender);
+
+    // Ensure that the requested collateral amount is less than the encumbered amount
+    require(encumbered >= requested, "TELL: Collateral not available.");
+
+    // Ensure that the collateral ratio after the repayment is sufficient
+    // TODO: Hook in collateral price
+    uint256 ratio =
+      wdiv(
+        wmul(sub(encumbered, requested), 1 ether),
+        sub(rmul(debts[msg.sender], accumulator), repayment)
+      );
     require(
       ratio >= MIN_COLLATERAL_RATIO,
       "PRO: Insufficient collateral provided"

@@ -14,17 +14,23 @@ let bootstrapper: SignerWithAddress;
 let borrower: SignerWithAddress;
 
 // Contracts
+let aurei: Aurei;
 let teller: Teller;
 let treasury: Treasury;
 let vault: Vault;
 
 const SECONDS_IN_YEAR = 31536000;
 
+const rayToWad = (ray) => {
+  return ray.div("1000000000");
+};
+
 describe("Teller", function () {
   before(async function () {
     const { contracts, signers } = await deploy();
 
     // Set contracts
+    aurei = contracts.aurei;
     teller = contracts.teller;
     treasury = contracts.treasury;
     vault = contracts.vault;
@@ -75,8 +81,47 @@ describe("Teller", function () {
           web3.utils.toWei(principal.toString())
         );
 
-      // Rate should equal 2% APR (RAY)
-      expect(await teller.getRate()).to.equal(web3.utils.toWei("2000000000"));
+      // Rate should equal 2% APR
+      expect(rayToWad(await teller.getRate())).to.equal(web3.utils.toWei("2"));
+
+      const balance = web3.utils.fromWei(
+        (await teller.balanceOf(lender.address)).toString()
+      );
+      expect(balance).to.equal("1000");
+    });
+
+    it("Allows users to repay debt", async () => {
+      const repayment = 500;
+      const collateral = 1000;
+
+      // Allow Probity to transfer Aurei balance to treasury
+      await aurei
+        .connect(lender)
+        .approve(teller.address, web3.utils.toWei(repayment.toString()));
+
+      // Get rate at which interest was accumulating
+      const rate = await teller.getRate();
+
+      // Make a repayment
+      await teller
+        .connect(lender)
+        .repay(
+          web3.utils.toWei(repayment.toString()),
+          web3.utils.toWei(collateral.toString())
+        );
+
+      // Calculate interest accrued (~14 periods of compounding interest)
+      // 1000 * e^((1.000000031709791983764586504)*(14/31536000)) = 500.000443937179274209
+
+      // Check balance
+      const balance = web3.utils.fromWei(
+        (await teller.balanceOf(lender.address)).toString()
+      );
+      expect(balance).to.equal("500.000443937179274209");
+    });
+
+    it("Fails repayment when collateral would dip below minimum ratio", async () => {
+      // TODO
     });
   });
 });
