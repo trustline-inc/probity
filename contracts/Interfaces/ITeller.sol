@@ -31,5 +31,7 @@ interface ITeller {
 
   function getRate() external view returns (uint256);
 
+  function getAccumulator() external view returns (uint256);
+
   function totalDebt() external view returns (uint256);
 }

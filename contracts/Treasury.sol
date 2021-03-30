@@ -21,8 +21,9 @@ contract Treasury is ITreasury, Ownable, ProbityBase, DSMath {
 
   // --- Data ---
 
-  uint256 public _totalEquity;
-  mapping(address => uint256) public balances; // Normalized Equity
+  uint256 public supply;
+  mapping(address => uint256) public equities; // user contribution
+  mapping(address => uint256) public balances; // normalized equity
 
   IAurei public aurei;
   IRegistry public registry;
@@ -48,16 +49,17 @@ contract Treasury is ITreasury, Ownable, ProbityBase, DSMath {
   // --- External Functions ---
 
   /**
-   * @notice Returns the treasury balance of a vault.
+   * @notice Returns the interest balance of a vault.
    */
   function balanceOf(address owner) external view override returns (uint256) {
-    // uint256 rate = exchange.getCumulativeRate();
-    // return balances[owner].mul(rate);
-    return balances[owner];
+    uint256 accumulator = teller.getAccumulator();
+    uint256 equity = rmul(balances[owner], accumulator);
+    uint256 utilization = wdiv(teller.totalDebt(), aurei.totalSupply());
+    return wmul(equity, utilization);
   }
 
-  function totalEquity() external view override returns (uint256) {
-    return _totalEquity;
+  function totalSupply() external view override returns (uint256) {
+    return supply;
   }
 
   /**
@@ -72,8 +74,9 @@ contract Treasury is ITreasury, Ownable, ProbityBase, DSMath {
   {
     vault.lock(msg.sender, collateral);
     aurei.mint(address(this), equity);
-    balances[msg.sender] = balances[msg.sender].add(equity);
-    _totalEquity = _totalEquity.add(equity);
+    uint256 accumulator = teller.getAccumulator();
+    balances[msg.sender] = add(balances[msg.sender], rmul(equity, accumulator));
+    supply = supply.add(equity);
     emit TreasuryUpdated(msg.sender, balances[msg.sender]);
   }
 
@@ -91,7 +94,7 @@ contract Treasury is ITreasury, Ownable, ProbityBase, DSMath {
   {
     // Reduce equity balance
     balances[msg.sender] = balances[msg.sender].sub(equity);
-    _totalEquity = _totalEquity.sub(equity);
+    supply = supply.sub(equity);
 
     // Burn the Aurei
     aurei.burn(address(this), equity);

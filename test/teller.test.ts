@@ -21,6 +21,10 @@ let vault: Vault;
 
 const SECONDS_IN_YEAR = 31536000;
 
+const rayToWad = (ray) => {
+  return ray.div("1000000000");
+};
+
 describe("Teller", function () {
   before(async function () {
     const { contracts, signers } = await deploy();
@@ -77,9 +81,8 @@ describe("Teller", function () {
           web3.utils.toWei(principal.toString())
         );
 
-      // Rate should equal 2% APR (RAY)
-      // TODO: test functions to convert ray to wad / wad to ray
-      expect(await teller.getRate()).to.equal(web3.utils.toWei("2000000000"));
+      // Rate should equal 2% APR
+      expect(rayToWad(await teller.getRate())).to.equal(web3.utils.toWei("2"));
 
       const balance = web3.utils.fromWei(
         (await teller.balanceOf(lender.address)).toString()

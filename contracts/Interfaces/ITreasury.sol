@@ -14,7 +14,7 @@ interface ITreasury {
 
   function balanceOf(address owner) external view returns (uint256);
 
-  function totalEquity() external view returns (uint256);
+  function totalSupply() external view returns (uint256);
 
   function issue(uint256 collateral, uint256 equity) external;
 

@@ -2,8 +2,8 @@
 
 pragma solidity ^0.8.0;
 
-import "./Dependencies/Ownable.sol";
 import "./Dependencies/DSMath.sol";
+import "./Dependencies/Ownable.sol";
 import "./Dependencies/ProbityBase.sol";
 import "./Interfaces/IAurei.sol";
 import "./Interfaces/IRegistry.sol";
@@ -18,13 +18,12 @@ import "hardhat/console.sol";
 contract Teller is ITeller, Ownable, ProbityBase, DSMath {
   // --- Data ---
 
-  uint256 public accumulator;
-  uint256 public lastUpdate;
-  uint256 public utilization;
-  uint256 public rate;
+  uint256 public accumulator; // Rate accumulator [ray]
+  uint256 public lastUpdate; // Timestamp of last rate update
+  uint256 public rate; // Current interest rate [ray]
 
-  uint256 public debt; // Normalized Aggregate Debt
-  mapping(address => uint256) public debts; // Normalized Individual Debts
+  uint256 public debt; // Normalized aggregate debt [ray]
+  mapping(address => uint256) public debts; // Normalized individual debt [ray]
 
   IAurei public aurei;
   IRegistry public registry;
@@ -65,6 +64,14 @@ contract Teller is ITeller, Ownable, ProbityBase, DSMath {
     return rate;
   }
 
+  function getAccumulator() external view override returns (uint256) {
+    return accumulator;
+  }
+
+  function totalDebt() external view override returns (uint256) {
+    return rmul(debt, accumulator);
+  }
+
   /**
    * @notice Creates a loan.
    * @param collateral - Amount of collateral used to secure the loan.
@@ -86,13 +93,13 @@ contract Teller is ITeller, Ownable, ProbityBase, DSMath {
     updateRate(principal, 0);
 
     // Calculate normalized principal sum
-    uint256 normalizedPrincipalSum = ((principal * RAY) / accumulator);
+    uint256 normalized = rdiv(principal, accumulator);
 
     // Increase normalized individual debt
-    debts[msg.sender] = add(debts[msg.sender], normalizedPrincipalSum);
+    debts[msg.sender] = add(debts[msg.sender], normalized);
 
     // Increase normalized aggregate debt
-    debt = add(debt, normalizedPrincipalSum);
+    debt = add(debt, normalized);
 
     // Send Aurei to borrower
     treasury.fundLoan(msg.sender, principal);
@@ -118,13 +125,13 @@ contract Teller is ITeller, Ownable, ProbityBase, DSMath {
     updateRate(amount, 1);
 
     // Calculate normalized repayment amount
-    uint256 normalizedRepayment = rdiv(amount, accumulator);
+    uint256 normalized = rdiv(amount, accumulator);
 
     // Decrease normalized individual debt
-    debts[msg.sender] = sub(debts[msg.sender], normalizedRepayment);
+    debts[msg.sender] = sub(debts[msg.sender], normalized);
 
     // Decrease normalized aggregate debt
-    debt = sub(debt, normalizedRepayment);
+    debt = sub(debt, normalized);
 
     // Unlock collateral
     vault.unlock(msg.sender, collateral);
@@ -133,24 +140,19 @@ contract Teller is ITeller, Ownable, ProbityBase, DSMath {
     emit Repayment(msg.sender, amount, collateral, block.timestamp);
   }
 
-  function totalDebt() external view override returns (uint256) {
-    return mul(debt, accumulator);
-  }
-
   // --- Internal Functions ---
 
   function updateRate(uint256 delta, uint256 op) internal {
     // Calculate new interest rate
-    uint256 equity = treasury.totalEquity();
+    uint256 equity = treasury.totalSupply();
 
     uint256 apr;
 
     // New Loan (add the delta)
     if (op == 0) {
-      apr = rdiv(
-        RAY,
-        sub(RAY, rdiv(add(rmul(debt, accumulator), delta) * 1e9, equity * 1e9))
-      );
+      uint256 newDebt = add(rmul(debt, accumulator), delta);
+      require(newDebt != equity, "TELL: Not enough supply.");
+      apr = rdiv(RAY, sub(RAY, rdiv(newDebt * 1e9, equity * 1e9)));
     }
 
     // Repayment (subtract the delta)
