@@ -54,7 +54,10 @@ contract Treasury is ITreasury, Ownable, ProbityBase, DSMath {
   function balanceOf(address owner) external view override returns (uint256) {
     uint256 accumulator = teller.getAccumulator();
     uint256 equity = rmul(balances[owner], accumulator);
-    uint256 utilization = wdiv(teller.totalDebt(), aurei.totalSupply());
+    uint256 aureiSupply = aurei.totalSupply();
+    uint256 utilization;
+    if (aureiSupply == 0) utilization = 0;
+    else utilization = wdiv(teller.totalDebt(), aureiSupply);
     return wmul(equity, utilization);
   }
 
