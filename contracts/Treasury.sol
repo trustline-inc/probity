@@ -57,6 +57,7 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
     return equity;
   }
 
+  // @dev TODO: This isn't being used correctly. Maybe better to use aurei.balanceOf(address(this))?
   function totalSupply() external view override returns (uint256) {
     return supply;
   }

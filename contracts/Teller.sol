@@ -167,7 +167,7 @@ contract Teller is ITeller, Ownable, Base, DSMath {
     if (op == 1) newDebt = sub(rmul(debt, accumulator), delta); // Repayment (subtract the delta)
 
     // Calculate new interest rate
-    uint256 reserves = treasury.totalSupply();
+    uint256 reserves = aurei.balanceOf(address(treasury));
 
     require(newDebt < reserves, "TELL: Not enough supply.");
 
