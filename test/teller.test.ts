@@ -1,12 +1,19 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-web3";
-import { web3 } from "hardhat";
+import BigNumber from "bignumber.js";
+import { ethers, web3 } from "hardhat";
 import { expect } from "chai";
+import { exec } from "child_process";
+import { promisify } from "util";
 
 import { Aurei, Teller, Treasury, Vault } from "../typechain";
 
 import deploy from "../lib/deploy";
+
+BigNumber.config({ POW_PRECISION: 27, DECIMAL_PLACES: 27 });
+const RAY = new BigNumber("1e27");
+const WAD = new BigNumber("1e18");
 
 // Wallets
 let lender: SignerWithAddress;
@@ -19,11 +26,7 @@ let teller: Teller;
 let treasury: Treasury;
 let vault: Vault;
 
-const SECONDS_IN_YEAR = 31536000;
-
-const rayToWad = (ray) => {
-  return ray.div("1000000000");
-};
+const SECONDS_IN_YEAR = 31557600;
 
 describe("Teller", function () {
   before(async function () {
@@ -40,8 +43,10 @@ describe("Teller", function () {
     bootstrapper = signers.bootstrapper;
     borrower = signers.borrower;
 
-    // Set up initial collateral of 4,000 FLR
-    const bootstrapperCollateral = 4000;
+    /**
+     * Set up Aurei liquidity pool
+     */
+    const bootstrapperCollateral = 4000; // FLR
 
     const txBootstrapper = {
       from: bootstrapper.address,
@@ -51,7 +56,7 @@ describe("Teller", function () {
       .connect(bootstrapper)
       .deposit(txBootstrapper);
 
-    // Issue 2,000 AUR from 4,000 FLR
+    // Issue 2000 AUR from 4000 FLR (200% collateralization)
     const equity = 2000;
     const encumberedCollateral = 4000;
 
@@ -63,10 +68,10 @@ describe("Teller", function () {
       );
   });
 
-  describe("Loans", async function () {
+  describe("Loan Creation", async function () {
     it("Creates an Aurei loan", async () => {
-      const collateral = 2000;
-      const principal = 1000;
+      const collateral = 2000; // FLR
+      const principal = 1000; // AUR
 
       // Deposit collateral in vault
       await vault.connect(lender).deposit({
@@ -81,8 +86,20 @@ describe("Teller", function () {
           web3.utils.toWei(principal.toString())
         );
 
-      // Rate should equal 2% APR
-      expect(rayToWad(await teller.getRate())).to.equal(web3.utils.toWei("2"));
+      // APR should equal 2% (1.02 * 1e27)
+      const APR = await teller.getAPR();
+      expect(APR).to.equal("1020000000000000000000000000");
+
+      // MPR should equal (1.02 * 1e27)^(1/31557600)=1000000000627507392906712187
+      const MPR = await teller.getMPR();
+      expect(MPR).to.equal("1000000000627507392906712187");
+
+      // MPR TO APR (precision of 18 decimal digits is good enough)
+      const APR_TO_DECIMAL = new BigNumber(APR.toString()).div(RAY).toFixed(18);
+      const MPR_TO_DECIMAL = new BigNumber(MPR.toString()).div(RAY);
+      const MPR_TO_APR = MPR_TO_DECIMAL.pow(SECONDS_IN_YEAR).toFormat(18);
+
+      expect(MPR_TO_APR.toString()).to.equal(APR_TO_DECIMAL);
 
       const balance = web3.utils.fromWei(
         (await teller.balanceOf(lender.address)).toString()
@@ -91,16 +108,18 @@ describe("Teller", function () {
     });
 
     it("Allows users to repay debt", async () => {
-      const repayment = 500;
-      const collateral = 1000;
+      const principal = 1000; // AUR
+      const repayment = 500; // AUR
+      const collateral = 1000; // FLR
 
       // Allow Probity to transfer Aurei balance to treasury
       await aurei
         .connect(lender)
         .approve(teller.address, web3.utils.toWei(repayment.toString()));
 
-      // Get rate at which interest was accumulating
-      const rate = await teller.getRate();
+      // MPR before repayment
+      const MPR_PRIOR = await teller.getMPR();
+      const MPR_PRIOR_AS_DECIMAL = new BigNumber(MPR_PRIOR.toString()).div(RAY);
 
       // Make a repayment
       await teller
@@ -110,18 +129,45 @@ describe("Teller", function () {
           web3.utils.toWei(collateral.toString())
         );
 
-      // Calculate interest accrued (~14 periods of compounding interest)
-      // 1000 * e^((1.000000031709791983764586504)*(14/31536000)) = 500.000443937179274209
+      // APR & MPR after repayment
+      const APR_AFTER = await teller.getAPR();
+      const MPR_AFTER = await teller.getMPR();
 
-      // Check balance
-      const balance = web3.utils.fromWei(
-        (await teller.balanceOf(lender.address)).toString()
+      // MPR TO APR (precision of 18 decimal digits is good enough)
+      const APR_TO_DECIMAL = new BigNumber(APR_AFTER.toString())
+        .div(RAY)
+        .toFixed(18);
+      const MPR_AFTER_AS_DECIMAL = new BigNumber(MPR_AFTER.toString()).div(RAY);
+      const MPR_TO_APR = MPR_AFTER_AS_DECIMAL.pow(SECONDS_IN_YEAR).toFormat(18);
+      expect(MPR_TO_APR.toString()).to.equal(APR_TO_DECIMAL.toString());
+
+      // Check balance and interest due
+      const balance = await teller.balanceOf(lender.address);
+      const interest = new BigNumber(balance.toString()).minus(
+        web3.utils.toWei(repayment.toString())
       );
-      expect(balance).to.equal("500.000443937179274209");
+      const cumulativeRate = MPR_PRIOR_AS_DECIMAL.multipliedBy(
+        MPR_PRIOR_AS_DECIMAL
+      );
+      const cumulativeRateTimesPrincipal = cumulativeRate.multipliedBy(
+        principal
+      );
+      const expectedBalance = cumulativeRateTimesPrincipal
+        .minus(repayment)
+        .toFixed(18);
+      const expectedInterest = new BigNumber(expectedBalance).minus(500);
+      expect(new BigNumber(balance.toString()).div(WAD).toString()).to.equal(
+        expectedBalance.toString()
+      );
+      expect(new BigNumber(interest.toString()).div(WAD).toString()).to.equal(
+        expectedInterest.toString()
+      );
     });
 
     it("Fails repayment when collateral would dip below minimum ratio", async () => {
       // TODO
     });
   });
+
+  describe("Loan Repayment", async function () {});
 });

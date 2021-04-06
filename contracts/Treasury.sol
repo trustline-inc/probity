@@ -2,9 +2,9 @@
 
 pragma solidity ^0.8.0;
 
+import "./Dependencies/Base.sol";
 import "./Dependencies/Ownable.sol";
 import "./Dependencies/DSMath.sol";
-import "./Dependencies/ProbityBase.sol";
 import "./Dependencies/SafeMath.sol";
 import "./Interfaces/IAurei.sol";
 import "./Interfaces/IRegistry.sol";
@@ -16,7 +16,7 @@ import "hardhat/console.sol";
 /**
  * @notice Manages equity for all vaults.
  */
-contract Treasury is ITreasury, Ownable, ProbityBase, DSMath {
+contract Treasury is ITreasury, Ownable, Base, DSMath {
   using SafeMath for uint256;
 
   // --- Data ---
@@ -52,13 +52,9 @@ contract Treasury is ITreasury, Ownable, ProbityBase, DSMath {
    * @notice Returns the interest balance of a vault.
    */
   function balanceOf(address owner) external view override returns (uint256) {
-    uint256 accumulator = teller.getAccumulator();
-    uint256 equity = rmul(balances[owner], accumulator);
-    uint256 aureiSupply = aurei.totalSupply();
-    uint256 utilization;
-    if (aureiSupply == 0) utilization = 0;
-    else utilization = wdiv(teller.totalDebt(), aureiSupply);
-    return wmul(equity, utilization);
+    uint256 accumulator = teller.getScaledAccumulator();
+    uint256 equity = wmul(balances[owner], accumulator);
+    return equity;
   }
 
   function totalSupply() external view override returns (uint256) {
@@ -138,7 +134,7 @@ contract Treasury is ITreasury, Ownable, ProbityBase, DSMath {
     // TODO: Hook in collateral price
     uint256 ratio = wdiv(wmul(collateral, 1 ether), equity);
     require(
-      ratio >= MIN_COLLATERAL_RATIO,
+      ratio >= LIQUIDATION_RATIO,
       "PRO: Insufficient collateral provided"
     );
     _;
@@ -158,7 +154,7 @@ contract Treasury is ITreasury, Ownable, ProbityBase, DSMath {
     // TODO: Hook in collateral price
     uint256 ratio = wdiv(wmul(encumbered.sub(collateral), 1 ether), equity);
     require(
-      ratio >= MIN_COLLATERAL_RATIO,
+      ratio >= LIQUIDATION_RATIO,
       "PRO: Insufficient collateral provided"
     );
     _;

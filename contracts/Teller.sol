@@ -2,9 +2,9 @@
 
 pragma solidity ^0.8.0;
 
+import "./Dependencies/Base.sol";
 import "./Dependencies/DSMath.sol";
 import "./Dependencies/Ownable.sol";
-import "./Dependencies/ProbityBase.sol";
 import "./Interfaces/IAurei.sol";
 import "./Interfaces/IRegistry.sol";
 import "./Interfaces/ITeller.sol";
@@ -15,12 +15,13 @@ import "hardhat/console.sol";
 /**
  * @notice Creates loans and manages vault debt.
  */
-contract Teller is ITeller, Ownable, ProbityBase, DSMath {
+contract Teller is ITeller, Ownable, Base, DSMath {
   // --- Data ---
-
   uint256 public accumulator; // Rate accumulator [ray]
+  uint256 public scaledAccum; // Rate accumulator scaled by utilization
   uint256 public lastUpdate; // Timestamp of last rate update
-  uint256 public rate; // Current interest rate [ray]
+  uint256 public APR; // Annualized percentage rate
+  uint256 public MPR; // Momentized percentage rate
 
   uint256 public debt; // Normalized aggregate debt [ray]
   mapping(address => uint256) public debts; // Normalized individual debt [ray]
@@ -38,7 +39,8 @@ contract Teller is ITeller, Ownable, ProbityBase, DSMath {
     // Set defaults
     lastUpdate = block.timestamp;
     accumulator = RAY;
-    rate = RAY;
+    APR = RAY;
+    MPR = RAY;
   }
 
   /**
@@ -60,12 +62,20 @@ contract Teller is ITeller, Ownable, ProbityBase, DSMath {
     return rmul(debts[owner], accumulator);
   }
 
-  function getRate() external view override returns (uint256) {
-    return rate;
+  function getAPR() external view override returns (uint256) {
+    return APR;
+  }
+
+  function getMPR() external view override returns (uint256) {
+    return MPR;
   }
 
   function getAccumulator() external view override returns (uint256) {
     return accumulator;
+  }
+
+  function getScaledAccumulator() external view override returns (uint256) {
+    return scaledAccum;
   }
 
   function totalDebt() external view override returns (uint256) {
@@ -105,7 +115,7 @@ contract Teller is ITeller, Ownable, ProbityBase, DSMath {
     treasury.fundLoan(msg.sender, principal);
 
     // Emit event
-    emit LoanCreated(msg.sender, collateral, principal, rate, block.timestamp);
+    emit LoanCreated(msg.sender, collateral, principal, APR, block.timestamp);
   }
 
   /**
@@ -143,31 +153,55 @@ contract Teller is ITeller, Ownable, ProbityBase, DSMath {
   // --- Internal Functions ---
 
   function updateRate(uint256 delta, uint256 op) internal {
-    // Calculate new interest rate
-    uint256 equity = treasury.totalSupply();
+    // Calculate new aggregate debt
+    uint256 newDebt;
 
-    uint256 apr;
-
-    // New Loan (add the delta)
-    if (op == 0) {
-      uint256 newDebt = add(rmul(debt, accumulator), delta);
-      require(newDebt != equity, "TELL: Not enough supply.");
-      apr = rdiv(RAY, sub(RAY, rdiv(newDebt * 1e9, equity * 1e9)));
-    }
-
-    // Repayment (subtract the delta)
-    if (op == 1) {
-      apr = rdiv(
-        RAY,
-        sub(RAY, rdiv(sub(rmul(debt, accumulator), delta) * 1e9, equity * 1e9))
+    // Repayment updates the accumulator here
+    if (op == 1)
+      accumulator = rmul(
+        rpow(MPR, (block.timestamp - lastUpdate)),
+        accumulator
       );
-    }
 
-    uint256 mpr = RAY + (RAY / SECONDS_IN_YEAR);
-    rate = apr; // Maybe should store this as MPR.
+    if (op == 0) newDebt = add(rmul(debt, accumulator), delta); // New Loan (add the delta)
+    if (op == 1) newDebt = sub(rmul(debt, accumulator), delta); // Repayment (subtract the delta)
 
-    // Calculate new rate accumulator
-    accumulator = rmul(rpow(mpr, (block.timestamp - lastUpdate)), accumulator);
+    // Calculate new interest rate
+    uint256 reserves = treasury.totalSupply();
+
+    require(newDebt < reserves, "TELL: Not enough supply.");
+
+    // Calculate utilization and APR
+    uint256 utilization = wdiv(newDebt, reserves);
+    uint256 oneMinusUtilization = sub(RAY, utilization * 1e9);
+    uint256 oneDividedByOneMinusUtilization =
+      rdiv(10**27 * 0.01, oneMinusUtilization);
+    APR = add(oneDividedByOneMinusUtilization, RAY);
+
+    // Round to nearest 0.25%
+    uint256 round = 0.0025 * 10**27;
+    APR = (APR / round) * round;
+
+    // Get MPR
+    uint256 oneMinusUtilizationScaled = EXP_UTILIZATION[APR];
+    MPR = rdiv(RAY, sub(oneMinusUtilizationScaled, RAY));
+
+    // New loan updates the accumulator here (after liquidity has been withdrawn)
+    if (op == 0)
+      accumulator = rmul(
+        rpow(MPR, (block.timestamp - lastUpdate)),
+        accumulator
+      );
+
+    // Update time index
+    lastUpdate = block.timestamp;
+
+    // Update scaled accumulator (to calculate equity balances)
+    uint256 aureiSupply = aurei.totalSupply();
+    uint256 totalPrincipal;
+    if (op == 0) totalPrincipal = sub(aureiSupply, sub(reserves, delta));
+    if (op == 1) totalPrincipal = sub(aureiSupply, add(reserves, delta));
+    scaledAccum = rmul(accumulator, wdiv(totalPrincipal, aureiSupply));
   }
 
   // --- Modifiers ---
@@ -186,7 +220,7 @@ contract Teller is ITeller, Ownable, ProbityBase, DSMath {
     // TODO: Hook in collateral price
     uint256 ratio = wdiv(wmul(collateral, 1 ether), principal);
     require(
-      ratio >= MIN_COLLATERAL_RATIO,
+      ratio >= LIQUIDATION_RATIO,
       "PRO: Insufficient collateral provided"
     );
     _;
@@ -213,7 +247,7 @@ contract Teller is ITeller, Ownable, ProbityBase, DSMath {
         sub(rmul(debts[msg.sender], accumulator), repayment)
       );
     require(
-      ratio >= MIN_COLLATERAL_RATIO,
+      ratio >= LIQUIDATION_RATIO,
       "PRO: Insufficient collateral provided"
     );
     _;

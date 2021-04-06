@@ -25,36 +25,31 @@ describe("Aurei", function () {
   });
 
   describe("Deployment", function () {
-    it("Should set the right owner", async function () {
+    it("Sets the owner to the deployer", async function () {
       expect(await aurei.owner()).to.equal(owner.address);
     });
 
-    it("Total supply of the token must be 0", async function () {
+    it("Starts with zero supply", async function () {
       expect(await aurei.totalSupply()).to.equal(0);
-    });
-
-    it("Owner Balance of the token must be equal to total supply", async function () {
-      const ownerBalance = await aurei.balanceOf(owner.address);
-      expect(await aurei.totalSupply()).to.equal(ownerBalance);
     });
   });
 
   describe("Transactions", function () {
-    it("Minting new tokens and verify owner balance and token supply", async function () {
+    it("Mints new tokens", async function () {
       await aurei.mint(owner.address, 100);
       const ownerBalance = await aurei.balanceOf(owner.address);
       expect(ownerBalance).to.equal(100);
       expect(await aurei.totalSupply()).to.equal(100);
     });
 
-    it("Burning Tokens and verify owner balance and token supply", async function () {
+    it("Burns tokens", async function () {
       await aurei.burn(owner.address, 20);
       const ownerBalance = await aurei.balanceOf(owner.address);
       expect(ownerBalance).to.equal(80);
       expect(await aurei.totalSupply()).to.equal(80);
     });
 
-    it("Transfer tokens to another address", async function () {
+    it("Transfers tokens", async function () {
       await aurei.transfer(alice.address, 20);
       expect(await aurei.balanceOf(alice.address)).to.equal(20);
     });

@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-import "../Dependencies/ProbityBase.sol";
+import "../Dependencies/Base.sol";
 
 /**
  * @notice Contains logic for vault operations, including lifecycle management

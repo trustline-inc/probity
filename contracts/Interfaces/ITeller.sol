@@ -29,9 +29,13 @@ interface ITeller {
 
   function createLoan(uint256 collateral, uint256 principal) external;
 
-  function getRate() external view returns (uint256);
+  function getAPR() external view returns (uint256);
+
+  function getMPR() external view returns (uint256);
 
   function getAccumulator() external view returns (uint256);
+
+  function getScaledAccumulator() external view returns (uint256);
 
   function totalDebt() external view returns (uint256);
 }

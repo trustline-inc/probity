@@ -2,20 +2,21 @@
 
 pragma solidity ^0.8.0;
 
+import "./Dependencies/Base.sol";
+import "./Dependencies/Ownable.sol";
+import "./Dependencies/SafeMath.sol";
 import "./Interfaces/IAurei.sol";
 import "./Interfaces/ITeller.sol";
 import "./Interfaces/ITreasury.sol";
 import "./Interfaces/IVault.sol";
 import "./Interfaces/IRegistry.sol";
-import "./Dependencies/Ownable.sol";
-import "./Dependencies/SafeMath.sol";
 import "hardhat/console.sol";
 
 /**
  * @notice Manages vault collateral.
  *
  */
-contract Vault is IVault, ProbityBase, Ownable {
+contract Vault is IVault, Base, Ownable {
   using SafeMath for uint256;
 
   // --- Data ---

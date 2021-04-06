@@ -2,12 +2,17 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import "@nomiclabs/hardhat-ethers";
 import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-web3";
+import BigNumber from "bignumber.js";
 import { ethers, web3 } from "hardhat";
 import { expect } from "chai";
 
 import { Teller, Treasury, Vault } from "../typechain";
 
 import deploy from "../lib/deploy";
+
+BigNumber.config({ POW_PRECISION: 27, DECIMAL_PLACES: 27 });
+const RAY = new BigNumber("1e27");
+const WAD = new BigNumber("1e18");
 
 // Wallets
 let lender: SignerWithAddress;
@@ -36,7 +41,7 @@ describe("Treasury", function () {
     borrower = signers.borrower;
   });
 
-  describe("Equity Management", async function () {
+  describe("Equity Creation", async function () {
     it("Mints Aurei", async () => {
       // Set up initial collateral of 1,000 FLR
       const lenderCollateral = 1000;
@@ -65,6 +70,7 @@ describe("Treasury", function () {
       balance = await treasury
         .connect(bootstrapper)
         .balanceOf(bootstrapper.address);
+
       expect(web3.utils.fromWei(balance.toString())).to.equal("0");
 
       // Set up borrower vault
@@ -87,15 +93,29 @@ describe("Treasury", function () {
           web3.utils.toWei(principal.toString())
         );
 
+      // 80% utilization and 5% APR
+      const MPR = await teller.getMPR();
+      const MPR_AS_DECIMAL = new BigNumber(MPR.toString()).div(RAY);
+      const APR_AS_DECIMAL = MPR_AS_DECIMAL.pow(SECONDS_IN_YEAR).toFixed(27);
+      expect(MPR_AS_DECIMAL.toString()).to.equal(
+        "1.000000001546067007857011769"
+      );
+      expect(APR_AS_DECIMAL.toString()).to.equal(
+        "1.049964935785777714952136300"
+      );
+
       // Warp time
       await ethers.provider.send("evm_increaseTime", [60]);
       await ethers.provider.send("evm_mine", []);
 
-      // Check lender interest balance
+      // Check lender balance includes interest ((equity * utilization) + (equity * utilization) * MPR^60))
       balance = await treasury.connect(lender).balanceOf(lender.address);
-      expect(web3.utils.fromWei(balance.toString())).to.equal(
-        "400.000152207028067561"
-      );
+      const expected = "400.000007421121701000";
+      expect(
+        new BigNumber(balance.toString()).div(WAD).toFixed(18).toString()
+      ).to.equal(expected);
     });
   });
+
+  describe("Equity Redemption", async function () {});
 });

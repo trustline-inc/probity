@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-import "../Dependencies/ProbityBase.sol";
+import "../Dependencies/Base.sol";
 
 /**
  * @notice Manages contracts registry
@@ -10,10 +10,9 @@ import "../Dependencies/ProbityBase.sol";
 interface IRegistry {
   // --- Functions --
 
-  function setupContractAddress(ProbityBase.Contract name, address _addr)
-    external;
+  function setupContractAddress(Base.Contract name, address _addr) external;
 
-  function getContractAddress(ProbityBase.Contract name)
+  function getContractAddress(Base.Contract name)
     external
     view
     returns (address);

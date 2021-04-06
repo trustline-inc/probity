@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "./Dependencies/Base.sol";
 import "./Dependencies/Ownable.sol";
-import "./Dependencies/ProbityBase.sol";
 import "./Interfaces/IRegistry.sol";
 import "hardhat/console.sol";
 
@@ -12,7 +12,7 @@ import "hardhat/console.sol";
 contract Registry is IRegistry, Ownable {
   // --- Data ---
 
-  mapping(ProbityBase.Contract => address) private contracts;
+  mapping(Base.Contract => address) private contracts;
 
   // --- Constructor ---
 
@@ -20,7 +20,7 @@ contract Registry is IRegistry, Ownable {
 
   // --- External Functions ---
 
-  function setupContractAddress(ProbityBase.Contract name, address _addr)
+  function setupContractAddress(Base.Contract name, address _addr)
     external
     override
     onlyOwner
@@ -28,7 +28,7 @@ contract Registry is IRegistry, Ownable {
     contracts[name] = _addr;
   }
 
-  function getContractAddress(ProbityBase.Contract name)
+  function getContractAddress(Base.Contract name)
     external
     view
     override
