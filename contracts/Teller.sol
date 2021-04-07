@@ -163,13 +163,16 @@ contract Teller is ITeller, Ownable, Base, DSMath {
         accumulator
       );
 
-    if (op == 0) newDebt = add(rmul(debt, accumulator), delta); // New Loan (add the delta)
-    if (op == 1) newDebt = sub(rmul(debt, accumulator), delta); // Repayment (subtract the delta)
-
-    // Calculate new interest rate
     uint256 reserves = aurei.balanceOf(address(treasury));
 
-    require(newDebt < reserves, "TELL: Not enough supply.");
+    // New Loan (add the delta)
+    if (op == 0) {
+      newDebt = add(rmul(debt, accumulator), delta);
+      require(delta < reserves, "TELL: Not enough supply.");
+    }
+
+    // Repayment (subtract the delta)
+    if (op == 1) newDebt = sub(rmul(debt, accumulator), delta);
 
     // Calculate utilization and APR
     uint256 utilization = wdiv(newDebt, reserves);
