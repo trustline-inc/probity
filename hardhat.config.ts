@@ -15,6 +15,10 @@ const config: HardhatUserConfig = {
     hardhat: {
       chainId: 1337,
     },
+    trustline: {
+      url: "https://coston.trustline.co/ext/bc/C/rpc",
+      accounts: [process.env.PRIVATE_KEY],
+    },
   },
   solidity: "0.8.0",
 };
