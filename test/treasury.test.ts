@@ -110,9 +110,13 @@ describe("Treasury", function () {
 
       // Check lender balance includes interest ((equity * utilization) + (equity * utilization) * MPR^60))
       balance = await treasury.connect(lender).balanceOf(lender.address);
-      const expected = "400.000007421121701000";
+      const expected = "400.000007421121700818";
       expect(
-        new BigNumber(balance.toString()).div(WAD).toFixed(18).toString()
+        new BigNumber(balance.toString())
+          .div(WAD)
+          .div(1e9)
+          .toFixed(18)
+          .toString()
       ).to.equal(expected);
     });
   });

@@ -39,6 +39,7 @@ contract Teller is ITeller, Ownable, Base, DSMath {
     // Set defaults
     lastUpdate = block.timestamp;
     accumulator = RAY;
+    scaledAccum = RAY;
     APR = RAY;
     MPR = RAY;
   }
@@ -204,7 +205,7 @@ contract Teller is ITeller, Ownable, Base, DSMath {
     uint256 totalPrincipal;
     if (op == 0) totalPrincipal = sub(aureiSupply, sub(reserves, delta));
     if (op == 1) totalPrincipal = sub(aureiSupply, add(reserves, delta));
-    scaledAccum = rmul(accumulator, wdiv(totalPrincipal, aureiSupply));
+    scaledAccum = wmul(accumulator, wdiv(totalPrincipal, aureiSupply));
   }
 
   // --- Modifiers ---
