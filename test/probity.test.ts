@@ -66,7 +66,7 @@ describe("Probity", function () {
 
     it("Allows a user to borrow", async () => {
       // Create lender vault
-      const lenderCollateral = 3000;
+      const lenderCollateral = 5000;
 
       const txLender = {
         from: lender.address,
@@ -75,7 +75,7 @@ describe("Probity", function () {
       let txLenderResponse = await vault.connect(lender).deposit(txLender);
 
       // Issue equity
-      const capital = 1000;
+      const capital = 1500;
       txLenderResponse = await treasury
         .connect(lender)
         .issue(
@@ -112,7 +112,7 @@ describe("Probity", function () {
 
       // Check capital balances
       var lenderCapital = await treasury.balanceOf(lender.address);
-      expect(lenderCapital.toString()).to.equal("1000000000000000000000");
+      expect(lenderCapital.toString()).to.equal("1500000000000000000000");
 
       const borrowerCapital = await treasury.balanceOf(borrower.address);
       expect(borrowerCapital.toString()).to.equal("0");
@@ -138,8 +138,8 @@ describe("Probity", function () {
 
     it("Allows a user to borrow a second time", async () => {
       // Borrow Aurei a second time
-      const principal = 100;
-      const borrowerCollateral = 200;
+      const principal = 500;
+      const borrowerCollateral = 1000;
       const txLoanResponse = await teller
         .connect(borrower)
         .createLoan(
@@ -153,8 +153,9 @@ describe("Probity", function () {
       var delta = Number(timestamp) - lastUpdated;
 
       // Check capital balances
+      const expectedLenderCapital = "1500000000936661921546";
       var lenderCapital = await treasury.balanceOf(lender.address);
-      expect(lenderCapital.toString()).to.equal("1000000000469477005856");
+      expect(lenderCapital.toString()).to.equal(expectedLenderCapital);
 
       const borrowerCapital = await treasury.balanceOf(borrower.address);
       expect(borrowerCapital.toString()).to.equal("0");
@@ -163,15 +164,17 @@ describe("Probity", function () {
       const lenderAurei = await aurei.balanceOf(lender.address);
       expect(lenderAurei.toString()).to.equal("0");
 
+      const expectedBorrowerAurei = "1000000000000000000000";
       const borrowerAurei = await aurei.balanceOf(borrower.address);
-      expect(borrowerAurei.toString()).to.equal(web3.utils.toWei("600"));
+      expect(borrowerAurei.toString()).to.equal(expectedBorrowerAurei);
 
       // Check debt balances
       const lenderDebt = await teller.balanceOf(lender.address);
       expect(lenderDebt.toString()).to.equal("0");
 
+      const expectedBorrowerDebt = "1000000000468330960774";
       const borrowerDebt = await teller.balanceOf(borrower.address);
-      expect(borrowerDebt.toString()).to.equal("600000000391230838213");
+      expect(borrowerDebt.toString()).to.equal(expectedBorrowerDebt);
     });
   });
 });
