@@ -20,6 +20,9 @@ let teller: Teller;
 let treasury: Treasury;
 let vault: Vault;
 
+// Global timestamp variable
+var lastUpdated;
+
 const SECONDS_IN_YEAR = 31536000;
 
 describe("Probity", function () {
@@ -95,7 +98,7 @@ describe("Probity", function () {
 
       // Borrow Aurei
       const principal = 500;
-      borrowerCollateral = 3000;
+      borrowerCollateral = 1000;
       const txLoanResponse = await teller
         .connect(borrower)
         .createLoan(
@@ -103,6 +106,9 @@ describe("Probity", function () {
           web3.utils.toWei(principal.toString())
         );
       let result = await txLoanResponse.wait();
+      var tx = await web3.eth.getTransaction(txLenderResponse.hash);
+      var block = await web3.eth.getBlock(tx.blockNumber);
+      lastUpdated = block.timestamp;
 
       // Check capital balances
       var lenderCapital = await treasury.balanceOf(lender.address);
@@ -128,6 +134,44 @@ describe("Probity", function () {
       expect(borrowerDebt.toString()).to.equal(
         web3.utils.toWei(principal.toString())
       );
+    });
+
+    it("Allows a user to borrow a second time", async () => {
+      // Borrow Aurei a second time
+      const principal = 100;
+      const borrowerCollateral = 200;
+      const txLoanResponse = await teller
+        .connect(borrower)
+        .createLoan(
+          web3.utils.toWei(borrowerCollateral.toString()),
+          web3.utils.toWei(principal.toString())
+        );
+      let result = await txLoanResponse.wait();
+      var tx = await web3.eth.getTransaction(txLoanResponse.hash);
+      var block = await web3.eth.getBlock(tx.blockNumber);
+      var timestamp = block.timestamp;
+      var delta = Number(timestamp) - lastUpdated;
+
+      // Check capital balances
+      var lenderCapital = await treasury.balanceOf(lender.address);
+      expect(lenderCapital.toString()).to.equal("1000000000469477005856");
+
+      const borrowerCapital = await treasury.balanceOf(borrower.address);
+      expect(borrowerCapital.toString()).to.equal("0");
+
+      // Check aurei balances
+      const lenderAurei = await aurei.balanceOf(lender.address);
+      expect(lenderAurei.toString()).to.equal("0");
+
+      const borrowerAurei = await aurei.balanceOf(borrower.address);
+      expect(borrowerAurei.toString()).to.equal(web3.utils.toWei("600"));
+
+      // Check debt balances
+      const lenderDebt = await teller.balanceOf(lender.address);
+      expect(lenderDebt.toString()).to.equal("0");
+
+      const borrowerDebt = await teller.balanceOf(borrower.address);
+      expect(borrowerDebt.toString()).to.equal("600000000391230838213");
     });
   });
 });

@@ -168,6 +168,7 @@ contract Teller is ITeller, Ownable, Base, DSMath {
       );
 
     uint256 reserves = aurei.balanceOf(address(treasury));
+    uint256 aureiSupply = aurei.totalSupply();
 
     // New Loan (add the delta)
     if (op == 0) {
@@ -179,7 +180,7 @@ contract Teller is ITeller, Ownable, Base, DSMath {
     if (op == 1) newDebt = sub(rmul(debt, accumulator), delta);
 
     // Calculate utilization and APR
-    uint256 utilization = wdiv(newDebt, reserves);
+    uint256 utilization = wdiv(newDebt, aureiSupply);
     uint256 oneMinusUtilization = sub(RAY, utilization * 1e9);
     uint256 oneDividedByOneMinusUtilization =
       rdiv(10**27 * 0.01, oneMinusUtilization);
@@ -201,7 +202,6 @@ contract Teller is ITeller, Ownable, Base, DSMath {
       );
 
     // Update scaled accumulator (to calculate equity balances)
-    uint256 aureiSupply = aurei.totalSupply();
     uint256 totalPrincipal;
     if (op == 0) totalPrincipal = sub(aureiSupply, sub(reserves, delta));
     if (op == 1) totalPrincipal = sub(aureiSupply, add(reserves, delta));
