@@ -37,7 +37,7 @@ contract Teller is ITeller, Ownable, Base, DSMath {
     registry = IRegistry(_registry);
 
     // Set defaults
-    lastUpdate = block.timestamp;
+    lastUpdate = 0;
     accumulator = RAY;
     scaledAccum = RAY;
     APR = RAY;
@@ -154,6 +154,9 @@ contract Teller is ITeller, Ownable, Base, DSMath {
   // --- Internal Functions ---
 
   function updateRate(uint256 delta, uint256 op) internal {
+    // Only run on first loan
+    if (lastUpdate == 0) lastUpdate = block.timestamp;
+
     // Calculate new aggregate debt
     uint256 newDebt;
 
@@ -197,15 +200,20 @@ contract Teller is ITeller, Ownable, Base, DSMath {
         accumulator
       );
 
-    // Update time index
-    lastUpdate = block.timestamp;
-
     // Update scaled accumulator (to calculate equity balances)
     uint256 aureiSupply = aurei.totalSupply();
     uint256 totalPrincipal;
     if (op == 0) totalPrincipal = sub(aureiSupply, sub(reserves, delta));
     if (op == 1) totalPrincipal = sub(aureiSupply, add(reserves, delta));
-    scaledAccum = wmul(accumulator, wdiv(totalPrincipal, aureiSupply));
+    uint256 util_ratio = wdiv(totalPrincipal, aureiSupply) * 1e9; // convert to ray
+    uint256 multipliedByRatio = rmul(sub(MPR, RAY), util_ratio);
+    uint256 multipliedByRatioPlusOne = add(multipliedByRatio, RAY);
+    uint256 exponentiated =
+      rpow(multipliedByRatioPlusOne, (block.timestamp - lastUpdate));
+    scaledAccum = rmul(exponentiated, scaledAccum);
+
+    // Update time index
+    lastUpdate = block.timestamp;
   }
 
   // --- Modifiers ---

@@ -41,7 +41,7 @@ describe("Treasury", function () {
     borrower = signers.borrower;
   });
 
-  describe("Equity Creation", async function () {
+  describe("Capital allocation", async function () {
     it("Mints Aurei", async () => {
       // Set up initial collateral of 1,000 FLR
       const lenderCollateral = 1000;
@@ -108,16 +108,12 @@ describe("Treasury", function () {
       await ethers.provider.send("evm_increaseTime", [60]);
       await ethers.provider.send("evm_mine", []);
 
+      // TODO: Force rate accumulator to update
+
       // Check lender balance includes interest ((equity * utilization) + (equity * utilization) * MPR^60))
       balance = await treasury.connect(lender).balanceOf(lender.address);
-      const expected = "400.000007421121700818";
-      expect(
-        new BigNumber(balance.toString())
-          .div(WAD)
-          .div(1e9)
-          .toFixed(18)
-          .toString()
-      ).to.equal(expected);
+      const expected = "500000000000000000000";
+      expect(balance.toString()).to.equal(expected);
     });
   });
 

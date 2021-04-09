@@ -1,7 +1,8 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import "@nomiclabs/hardhat-ethers";
 import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-web3";
-import { web3 } from "hardhat";
+import { ethers, web3 } from "hardhat";
 import { expect } from "chai";
 
 import { Aurei, Teller, Treasury, Vault } from "../typechain";
@@ -35,28 +36,6 @@ describe("Probity", function () {
     lender = signers.lender;
     bootstrapper = signers.bootstrapper;
     borrower = signers.borrower;
-
-    // Set up initial collateral of 2,000 FLR
-    const bootstrapperCollateral = 2000;
-
-    const txBootstrapper = {
-      from: bootstrapper.address,
-      value: web3.utils.toWei(bootstrapperCollateral.toString()),
-    };
-    let txBootstrapperResponse = await vault
-      .connect(bootstrapper)
-      .deposit(txBootstrapper);
-
-    // Issue 1,000 AUR from 2,000 FLR
-    const borrow = 1000;
-    const encumberedCollateral = 2000;
-
-    txBootstrapperResponse = await treasury
-      .connect(bootstrapper)
-      .issue(
-        web3.utils.toWei(encumberedCollateral.toString()),
-        web3.utils.toWei(borrow.toString())
-      );
   });
 
   describe("Rates", async function () {
@@ -100,6 +79,8 @@ describe("Probity", function () {
           web3.utils.toWei(lenderCollateral.toString()),
           web3.utils.toWei(capital.toString())
         );
+      var tx = await web3.eth.getTransaction(txLenderResponse.hash);
+      var block = await web3.eth.getBlock(tx.blockNumber);
 
       // Creating borrower vault
       let borrowerCollateral = 3000;
@@ -123,16 +104,14 @@ describe("Probity", function () {
         );
       let result = await txLoanResponse.wait();
 
-      // Capital balances
-      const lenderCapital = await treasury.balanceOf(lender.address);
-      expect(lenderCapital.toString()).to.equal(
-        web3.utils.toWei(capital.toString())
-      );
+      // Check capital balances
+      var lenderCapital = await treasury.balanceOf(lender.address);
+      expect(lenderCapital.toString()).to.equal("1000000000000000000000");
 
-      const borrowerCapital = await treasury.balanceOf(lender.address);
+      const borrowerCapital = await treasury.balanceOf(borrower.address);
       expect(borrowerCapital.toString()).to.equal("0");
 
-      // Aurei balances
+      // Check aurei balances
       const lenderAurei = await aurei.balanceOf(lender.address);
       expect(lenderAurei.toString()).to.equal("0");
 
@@ -141,7 +120,7 @@ describe("Probity", function () {
         web3.utils.toWei(principal.toString())
       );
 
-      // Debt balances
+      // Check debt balances
       const lenderDebt = await teller.balanceOf(lender.address);
       expect(lenderDebt.toString()).to.equal("0");
 

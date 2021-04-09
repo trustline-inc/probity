@@ -49,12 +49,12 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
   // --- External Functions ---
 
   /**
-   * @notice Returns the interest balance of a vault.
+   * @notice Returns the capital balance of a vault.
    */
   function balanceOf(address owner) external view override returns (uint256) {
     uint256 accumulator = teller.getScaledAccumulator();
-    uint256 equity = wmul(balances[owner], accumulator);
-    return equity;
+    uint256 capital = wmul(balances[owner], accumulator) / 1e9;
+    return capital;
   }
 
   // @dev TODO: This isn't being used correctly. Maybe better to use aurei.balanceOf(address(this))?
@@ -63,20 +63,23 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
   }
 
   /**
-   * @notice Issues equity to caller and adds Aurei to the treasury.
+   * @notice Adds capital to the system by minting Aurei to the treasury.
    * @param collateral - Amount of collateral backing the Aurei.
-   * @param equity - Amount of Aurei to mint.
+   * @param capital - Amount of Aurei to mint.
    */
-  function issue(uint256 collateral, uint256 equity)
+  function issue(uint256 collateral, uint256 capital)
     external
     override
-    checkIssuanceEligibility(collateral, equity)
+    checkIssuanceEligibility(collateral, capital)
   {
     vault.lock(msg.sender, collateral);
-    aurei.mint(address(this), equity);
+    aurei.mint(address(this), capital);
     uint256 accumulator = teller.getAccumulator();
-    balances[msg.sender] = add(balances[msg.sender], rmul(equity, accumulator));
-    supply = supply.add(equity);
+    balances[msg.sender] = add(
+      balances[msg.sender],
+      rdiv(capital, accumulator)
+    );
+    supply = supply.add(capital);
     emit TreasuryUpdated(msg.sender, balances[msg.sender]);
   }
 
