@@ -11,6 +11,7 @@ const config: HardhatUserConfig = {
     coston: {
       url: "https://coston.flare.network/ext/bc/C/rpc",
       accounts: [process.env.PRIVATE_KEY],
+      chainId: 16,
     },
     hardhat: {
       chainId: 1337,
