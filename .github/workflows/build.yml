@@ -18,6 +18,6 @@ jobs:
       - name: Archive contract ABI artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: contract-abi-artifacts
+          name: aurei-abi-artifacts
           path: |
-            artifacts/contracts
+            artifacts
