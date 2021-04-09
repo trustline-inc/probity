@@ -7,6 +7,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    - uses: actions/download-artifact@v2
+      with:
+        name: aurei-abi-artifacts
+        path: artifacts
     # Setup .npmrc file to publish to npm
     - uses: actions/setup-node@v2
       with:
