@@ -93,12 +93,12 @@ describe("Probity", function () {
       let txLenderResponse = await vault.connect(lender).deposit(txLender);
 
       // Issue equity
-      const lenderEquity = 1000;
+      const capital = 1000;
       txLenderResponse = await treasury
         .connect(lender)
         .issue(
           web3.utils.toWei(lenderCollateral.toString()),
-          web3.utils.toWei(lenderEquity.toString())
+          web3.utils.toWei(capital.toString())
         );
 
       // Creating borrower vault
@@ -122,6 +122,33 @@ describe("Probity", function () {
           web3.utils.toWei(principal.toString())
         );
       let result = await txLoanResponse.wait();
+
+      // Capital balances
+      const lenderCapital = await treasury.balanceOf(lender.address);
+      expect(lenderCapital.toString()).to.equal(
+        web3.utils.toWei(capital.toString())
+      );
+
+      const borrowerCapital = await treasury.balanceOf(lender.address);
+      expect(borrowerCapital.toString()).to.equal("0");
+
+      // Aurei balances
+      const lenderAurei = await aurei.balanceOf(lender.address);
+      expect(lenderAurei.toString()).to.equal("0");
+
+      const borrowerAurei = await aurei.balanceOf(borrower.address);
+      expect(borrowerAurei.toString()).to.equal(
+        web3.utils.toWei(principal.toString())
+      );
+
+      // Debt balances
+      const lenderDebt = await teller.balanceOf(lender.address);
+      expect(lenderDebt.toString()).to.equal("0");
+
+      const borrowerDebt = await teller.balanceOf(borrower.address);
+      expect(borrowerDebt.toString()).to.equal(
+        web3.utils.toWei(principal.toString())
+      );
     });
   });
 });
