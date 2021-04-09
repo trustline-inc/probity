@@ -170,14 +170,14 @@ contract Teller is ITeller, Ownable, Base, DSMath {
     uint256 reserves = aurei.balanceOf(address(treasury));
     uint256 aureiSupply = aurei.totalSupply();
 
-    // New Loan (add the delta)
+    // New Loan
     if (op == 0) {
-      newDebt = add(rmul(debt, accumulator), delta);
+      newDebt = add(sub(aureiSupply, reserves), delta);
       require(delta < reserves, "TELL: Not enough supply.");
     }
 
-    // Repayment (subtract the delta)
-    if (op == 1) newDebt = sub(rmul(debt, accumulator), delta);
+    // Repayment
+    if (op == 1) newDebt = sub(sub(aureiSupply, reserves), delta);
 
     // Calculate utilization and APR
     uint256 utilization = wdiv(newDebt, aureiSupply);
@@ -201,12 +201,8 @@ contract Teller is ITeller, Ownable, Base, DSMath {
         accumulator
       );
 
-    // Update scaled accumulator (to calculate equity balances)
-    uint256 totalPrincipal;
-    if (op == 0) totalPrincipal = sub(aureiSupply, sub(reserves, delta));
-    if (op == 1) totalPrincipal = sub(aureiSupply, add(reserves, delta));
-    uint256 util_ratio = wdiv(totalPrincipal, aureiSupply) * 1e9; // convert to ray
-    uint256 multipliedByRatio = rmul(sub(MPR, RAY), util_ratio);
+    // Update scaled accumulator (to calculate capital balances)
+    uint256 multipliedByRatio = rmul(sub(MPR, RAY), utilization * 1e9);
     uint256 multipliedByRatioPlusOne = add(multipliedByRatio, RAY);
     uint256 exponentiated =
       rpow(multipliedByRatioPlusOne, (block.timestamp - lastUpdate));
