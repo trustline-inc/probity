@@ -202,10 +202,10 @@ contract Teller is ITeller, Ownable, Base, DSMath {
       );
 
     // Update scaled accumulator (to calculate capital balances)
-    uint256 multipliedByRatio = rmul(sub(MPR, RAY), utilization * 1e9);
-    uint256 multipliedByRatioPlusOne = add(multipliedByRatio, RAY);
+    uint256 multipliedByUtilization = rmul(sub(MPR, RAY), utilization * 1e9);
+    uint256 multipliedByUtilizationPlusOne = add(multipliedByUtilization, RAY);
     uint256 exponentiated =
-      rpow(multipliedByRatioPlusOne, (block.timestamp - lastUpdate));
+      rpow(multipliedByUtilizationPlusOne, (block.timestamp - lastUpdate));
     scaledAccum = rmul(exponentiated, scaledAccum);
 
     // Update time index
