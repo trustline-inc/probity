@@ -1,4 +1,4 @@
-# Probity
+# Aurei Stablecoin
 
 Smart contract system for the Aurei crypto stablecoin.
 
