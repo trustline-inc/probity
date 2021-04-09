@@ -1,8 +1,8 @@
 {
   "name": "@trustline/aurei",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "license": "MIT",
-  "description": "Aurei stablecoin system",
+  "description": "Aurei crypto stablecoin",
   "scripts": {
     "node": "npx hardhat node",
     "build": "npm run clean && npm run compile",
@@ -26,6 +26,7 @@
     "@types/chai": "^4.2.15",
     "@types/mocha": "^8.2.1",
     "@types/node": "^14.14.31",
+    "bignumber.js": "^9.0.1",
     "chai": "^4.3.0",
     "dotenv": "^8.2.0",
     "ethereum-waffle": "^3.3.0",
@@ -46,8 +47,5 @@
     "hooks": {
       "pre-commit": "pretty-quick --staged"
     }
-  },
-  "dependencies": {
-    "bignumber.js": "^9.0.1"
   }
 }
