@@ -1,5 +1,7 @@
 # Aurei Stablecoin
 
+[![Build](https://github.com/trustline-inc/aurei/actions/workflows/build.yml/badge.svg)](https://github.com/trustline-inc/aurei/actions/workflows/build.yml)
+
 Smart contract system for the Aurei crypto stablecoin.
 
 You can view the documentation [here](https://docs.trustline.co/trustline/-MX0imPEPxcvrbI-teLl/).

@@ -1,0 +1,23 @@
+name: Build
+
+on: [push]
+
+jobs:
+  build_and_test:
+    runs-on: ubuntu-latest
+    env:
+      PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: npm install, build, and test
+        run: |
+          npm install
+          npm run build --if-present
+          npm test
+      - name: Archive contract ABI artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: aurei-abi-artifacts
+          path: |
+            artifacts
