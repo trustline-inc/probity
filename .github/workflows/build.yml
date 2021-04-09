@@ -6,7 +6,7 @@ jobs:
   build_and_test:
     runs-on: ubuntu-latest
     env:
-      PRIVATE_KEY: ${{ secrets.PrivateKey }}
+      PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
