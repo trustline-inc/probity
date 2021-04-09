@@ -9,7 +9,7 @@ const config: HardhatUserConfig = {
   defaultNetwork: "coston",
   networks: {
     coston: {
-      url: "https://costone.flare.network/ext/bc/C/rpc",
+      url: "https://coston.flare.network/ext/bc/C/rpc",
       accounts: [process.env.PRIVATE_KEY],
     },
     hardhat: {
