@@ -88,13 +88,26 @@ PRIVATE_KEY=<INSERT_TESTNET_PK_HERE>
 Generate an Ethereum account and place the private key in the file. Request for your testnet account funded with `FLR` so you can deploy the contract.
 
 ```
-$ npm run deploy:prod
+$ npm run deploy:coston
 
-> @trustline/stablecoin@1.0.0 deploy
-> npx hardhat run ./scripts/deploy.ts
-
-SimpleStorage deployed to: 0xB1F59e4B1099F47f6515fa55B909a4502D2bd30D
+> @trustline/aurei@0.1.0 deploy
+> npx hardhat --network coston run ./scripts/deploy.ts
+Compiling 1 file with 0.8.0
+Compilation finished successfully
+Creating Typechain artifacts in directory typechain for target ethers-v5
+Successfully generated Typechain artifacts!
+Contracts deployed!
 ```
+
+#### Testnet Contracts
+
+|Contract|Address                                   |
+|--------|------------------------------------------|
+|aurei   |0x55195Bb903Bf8e8c40a96Af4acCd5B64C1E616dA|
+|registry|0xC36d2dd30605Aff0cd972e9a9F5C8F78D007bCd2|
+|teller  |0xD0c8A3321bAA4828aE7d8d7f956748AD5E816701|
+|treasury|0x11BcB77D52198920E968D19529593C5C41Df7A64|
+|vault   |0xd73C83B46d16A4069344eAF148F214C4A0BbAd36|
 
 ## Upgrades
 
