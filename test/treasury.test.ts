@@ -117,5 +117,18 @@ describe("Treasury", function () {
     });
   });
 
-  describe("Equity Redemption", async function () {});
+  describe("Equity Redemption", async function () {
+    it("Redeems capital", async () => {
+      const aureiSupplied = 500;
+      const encumberedCollateral = 1000;
+      await expect(
+        treasury
+          .connect(lender)
+          .redeem(
+            web3.utils.toWei(encumberedCollateral.toString()),
+            web3.utils.toWei(aureiSupplied.toString())
+          )
+      ).to.be.revertedWith("TREAS: Not enough reserves.");
+    });
+  });
 });

@@ -84,23 +84,27 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
   }
 
   /**
-   * @notice Redeems equity from the treasury, decreasing the Aurei reserves.
+   * @notice Redeems capital from the treasury, decreasing the Aurei reserves.
    * @param collateral - The amount of collateral to redeem
-   * @param equity - The amount of equity to redeem
-   * @dev This adjusts the equity-collateral ratio
+   * @param capital - The amount of capital to redeem
+   * @dev This adjusts the capital-collateral ratio
    * @dev TODO: Ensure collateral ratio is maintained.
    */
-  function redeem(uint256 collateral, uint256 equity)
+  function redeem(uint256 collateral, uint256 capital)
     external
     override
-    checkRedemptionEligibility(collateral, equity)
+    checkRedemptionEligibility(collateral, capital)
   {
-    // Reduce equity balance
-    balances[msg.sender] = balances[msg.sender].sub(equity);
-    supply = supply.sub(equity);
+    // Reduce capital balance
+    balances[msg.sender] = balances[msg.sender].sub(capital);
+    supply = supply.sub(capital);
 
     // Burn the Aurei
-    aurei.burn(address(this), equity);
+    require(
+      aurei.balanceOf(address(this)) > capital,
+      "TREAS: Not enough reserves."
+    );
+    aurei.burn(address(this), capital);
 
     // Unencumber collateral
     vault.unlock(msg.sender, collateral);
@@ -128,18 +132,18 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
    * @notice Ensures that the owner has sufficient collateral to mint Aurei,
    * and that it meets the minimum collateral ratio requirement.
    * @param collateral - The amount of collateral used to mint Aurei.
-   * @param equity - The amount of Aurei.
+   * @param capital - The amount of Aurei.
    */
-  modifier checkIssuanceEligibility(uint256 collateral, uint256 equity) {
+  modifier checkIssuanceEligibility(uint256 collateral, uint256 capital) {
     (uint256 total, uint256 encumbered, uint256 unencumbered) =
       vault.get(msg.sender);
-    require(unencumbered >= collateral, "TELL: Collateral not available.");
+    require(unencumbered >= collateral, "TREAS: Collateral not available.");
 
     // TODO: Hook in collateral price
-    uint256 ratio = wdiv(wmul(collateral, 1 ether), equity);
+    uint256 ratio = wdiv(wmul(collateral, 1 ether), capital);
     require(
       ratio >= LIQUIDATION_RATIO,
-      "PRO: Insufficient collateral provided"
+      "TREAS: Insufficient collateral provided"
     );
     _;
   }
@@ -147,20 +151,27 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
   /**
    * @notice Ensures that the owner has sufficient collateral after redemption,
    * and that it meets the minimum collateral ratio requirement.
-   * @param collateral - The amount of collateral to unlock.
-   * @param equity - The amount of Aurei to redeem.
+   * @param requested - The amount of collateral to unlock.
+   * @param capital - The amount of Aurei to redeem.
    */
-  modifier checkRedemptionEligibility(uint256 collateral, uint256 equity) {
+  modifier checkRedemptionEligibility(uint256 requested, uint256 capital) {
     (uint256 total, uint256 encumbered, uint256 unencumbered) =
       vault.get(msg.sender);
-    require(encumbered >= collateral, "TELL: Collateral not available.");
+    require(encumbered >= requested, "TELL: Collateral not available.");
+
+    // Get current capital balance
+    uint256 accumulator = teller.getScaledAccumulator();
+    uint256 balance = wmul(balances[msg.sender], accumulator) / 1e9;
 
     // TODO: Hook in collateral price
-    uint256 ratio = wdiv(wmul(encumbered.sub(collateral), 1 ether), equity);
-    require(
-      ratio >= LIQUIDATION_RATIO,
-      "PRO: Insufficient collateral provided"
-    );
+    if (balance.sub(capital) != 0) {
+      uint256 ratio =
+        wdiv(wmul(encumbered.sub(requested), 1 ether), balance.sub(capital));
+      require(
+        ratio >= LIQUIDATION_RATIO,
+        "TREAS: Insufficient collateral provided"
+      );
+    }
     _;
   }
 
