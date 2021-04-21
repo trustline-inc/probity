@@ -9,10 +9,11 @@ import {
   TellerFactory,
   TreasuryFactory,
   VaultFactory,
+  BridgeFactory,
 } from "../typechain";
 
 // Import contract types
-import { Aurei, Registry, Teller, Treasury, Vault } from "../typechain";
+import { Aurei, Registry, Teller, Treasury, Vault, Bridge } from "../typechain";
 
 /**
  * Contracts
@@ -23,6 +24,7 @@ interface Contracts {
   teller: Teller;
   treasury: Treasury;
   vault: Vault;
+  bridge: Bridge;
 }
 
 const contracts: Contracts = {
@@ -31,6 +33,7 @@ const contracts: Contracts = {
   teller: null,
   treasury: null,
   vault: null,
+  bridge: null,
 };
 
 enum Contract {
@@ -38,6 +41,7 @@ enum Contract {
   Teller,
   Treasury,
   Vault,
+  Bridge,
 }
 
 interface Signers {
@@ -134,6 +138,16 @@ const deploy = async () => {
     Contract.Vault,
     contracts.vault.address
   );
+
+  const bridgeFactory = (await ethers.getContractFactory(
+    "Bridge",
+    signers.owner
+  )) as BridgeFactory;
+  contracts.bridge = await bridgeFactory.deploy(
+    contracts.aurei.address,
+    "0x1000000000000000000000000000000000000001"
+  );
+  await contracts.bridge.deployed();
 
   await contracts.teller.initializeContract();
   await contracts.treasury.initializeContract();
