@@ -1,6 +1,6 @@
 {
   "name": "@trustline/aurei",
-  "version": "0.2.0",
+  "version": "0.2.2",
   "license": "MIT",
   "description": "Aurei crypto stablecoin",
   "scripts": {
@@ -19,7 +19,7 @@
     "artifacts"
   ],
   "publishConfig": {
-    "registry":"https://npm.pkg.github.com"
+    "registry": "https://npm.pkg.github.com"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.1",
