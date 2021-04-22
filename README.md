@@ -103,11 +103,11 @@ Contracts deployed!
 
 |Contract|Address                                   |
 |--------|------------------------------------------|
-|aurei   |0x55195Bb903Bf8e8c40a96Af4acCd5B64C1E616dA|
-|registry|0xC36d2dd30605Aff0cd972e9a9F5C8F78D007bCd2|
-|teller  |0xD0c8A3321bAA4828aE7d8d7f956748AD5E816701|
-|treasury|0x11BcB77D52198920E968D19529593C5C41Df7A64|
-|vault   |0xd73C83B46d16A4069344eAF148F214C4A0BbAd36|
+|aurei   |0xCF089F2dDEa08213be33f8dd05787D568cA6E61d|
+|registry|0xcb285Ce3871AA7BDaf8991cA8E72332fda683cE8|
+|teller  |0x3AE45E2cb7839aE239f14401894780A151Ebe617|
+|treasury|0x00316Cc40E7D92b81C7b89777100159B13F128B9|
+|vault   |0x3dA42377eee416d59389eb0dcEAE01Ad9eA0dc10|
 
 ## Upgrades
 
