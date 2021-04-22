@@ -16,11 +16,11 @@ const config: HardhatUserConfig = {
     hardhat: {
       chainId: 1337,
     },
-    flare_local: {
+    local: {
       url: "http://127.0.0.1:9650/ext/bc/C/rpc",
       accounts: [process.env.PRIVATE_KEY],
     },
-    trustline: {
+    private: {
       url: "https://coston.trustline.co/ext/bc/C/rpc",
       accounts: [process.env.PRIVATE_KEY],
     },
