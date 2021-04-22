@@ -53,7 +53,7 @@ npm run test
 
 ## Publishing
 
-You can publish the `@trustline/probity` npm package containing the contract ABIs using this command:
+You can publish the `@trustline/aurei` npm package containing the contract ABIs using this command:
 
 ```
 npm publish
@@ -85,7 +85,7 @@ Create an `.env` file at the project root with the following contents:
 PRIVATE_KEY=<INSERT_TESTNET_PK_HERE>
 ```
 
-Generate an Ethereum account and place the private key in the file. Request for your testnet account funded with `FLR` so you can deploy the contract.
+Generate an Ethereum account and place the private key in the file. Ensure that the account is funded so you can deploy the contract.
 
 ```
 $ npm run deploy:coston
@@ -101,13 +101,13 @@ Contracts deployed!
 
 #### Testnet Contracts
 
-|Contract|Address                                   |
-|--------|------------------------------------------|
-|aurei   |0xCF089F2dDEa08213be33f8dd05787D568cA6E61d|
-|registry|0xcb285Ce3871AA7BDaf8991cA8E72332fda683cE8|
-|teller  |0x3AE45E2cb7839aE239f14401894780A151Ebe617|
-|treasury|0x00316Cc40E7D92b81C7b89777100159B13F128B9|
-|vault   |0x3dA42377eee416d59389eb0dcEAE01Ad9eA0dc10|
+| Contract | Address                                    |
+| -------- | ------------------------------------------ |
+| Aurei    | 0xCF089F2dDEa08213be33f8dd05787D568cA6E61d |
+| Registry | 0xcb285Ce3871AA7BDaf8991cA8E72332fda683cE8 |
+| Teller   | 0x3AE45E2cb7839aE239f14401894780A151Ebe617 |
+| Treasury | 0x00316Cc40E7D92b81C7b89777100159B13F128B9 |
+| Vault    | 0x3dA42377eee416d59389eb0dcEAE01Ad9eA0dc10 |
 
 ## Upgrades
 
