@@ -11,6 +11,7 @@
     "fund:local": "npx hardhat --network localhost run ./scripts/fund.ts",
     "deploy:local": "npx hardhat --network localhost run ./scripts/deploy.ts",
     "deploy:coston": "npx hardhat --network coston run ./scripts/deploy.ts",
+    "deploy:private": "npx hardhat --network private run ./scripts/deploy.ts",
     "test": "npx hardhat test --network hardhat",
     "coverage": "npm run build && npx hardhat coverage --temp artifacts --network coverage"
   },
@@ -18,6 +19,9 @@
   "files": [
     "artifacts"
   ],
+  "repository": {
+    "url": "https://github.com/trustline-inc/aurei.git"
+  },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
   },
@@ -28,7 +32,7 @@
     "@typechain/ethers-v5": "^2.0.0",
     "@types/chai": "^4.2.15",
     "@types/mocha": "^8.2.1",
-    "@types/node": "^14.14.31",
+    "@types/node": "^14.14.41",
     "bignumber.js": "^9.0.1",
     "chai": "^4.3.0",
     "dotenv": "^8.2.0",
