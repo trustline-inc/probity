@@ -4,11 +4,16 @@ import deploy from "../lib/deploy";
 async function main() {
   const { contracts, signers } = await deploy();
   console.log("Contracts deployed!");
-  console.log("===================");
 
+  const addresses = [];
   for (let contract in contracts) {
-    console.log(contract, contracts[contract].address);
+    addresses.push({
+      Contract: contract.toUpperCase(),
+      Address: contracts[contract].address,
+    });
   }
+
+  console.table(addresses);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
