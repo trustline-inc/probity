@@ -19,10 +19,12 @@ const config: HardhatUserConfig = {
     local: {
       url: "http://127.0.0.1:9650/ext/bc/C/rpc",
       accounts: [process.env.PRIVATE_KEY],
+      chainId: 16,
     },
     private: {
       url: "https://coston.trustline.co/ext/bc/C/rpc",
       accounts: [process.env.PRIVATE_KEY],
+      chainId: 16,
     },
   },
   solidity: "0.8.0",
