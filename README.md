@@ -63,15 +63,15 @@ npm publish
 
 ### Local Deployment
 
-You can deploy in the localhost network following these steps:
+You can deploy in the local network following these steps:
 
-Start a local node
+1. Run a local node.
 
-```
-npm run node
-```
+You can run a local Flare node by using the `local.sh` script in in [`flare`](https://gitlab.com/flarenetwork/flare).
 
-Open a new terminal and deploy the smart contract in the localhost network
+2. Deploy to the network.
+
+Open a new terminal and deploy the smart contract in the local network
 
 ```
 npm run deploy:local
