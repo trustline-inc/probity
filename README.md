@@ -109,6 +109,20 @@ Contracts deployed!
 | Treasury | 0x00316Cc40E7D92b81C7b89777100159B13F128B9 |
 | Vault    | 0x3dA42377eee416d59389eb0dcEAE01Ad9eA0dc10 |
 
+## Publishing
+
+[Authenticating with a personal access token](https://docs.github.com/en/packages/guides/configuring-npm-for-use-with-github-packages#authenticating-with-a-personal-access-token)
+
+1. Create an `.npmrc` at the project root
+
+```
+//npm.pkg.github.com/:_authToken=TOKEN
+```
+
+2. Update `version` in `package.json`
+
+3. Run `npm publish`
+
 ## Upgrades
 
 Required reading: [The State of Smart Contract Upgrades](https://blog.openzeppelin.com/the-state-of-smart-contract-upgrades/)

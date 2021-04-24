@@ -1,5 +1,6 @@
 # Node.js
 node_modules
+.npmrc
 
 # Keystore file
 keystore.json
