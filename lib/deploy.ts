@@ -5,11 +5,11 @@ import { ethers } from "hardhat";
 // Import contract factory types
 import {
   AureiFactory,
+  BridgeFactory,
   RegistryFactory,
   TellerFactory,
   TreasuryFactory,
   VaultFactory,
-  BridgeFactory,
 } from "../typechain";
 
 // Import contract types
@@ -20,28 +20,29 @@ import { Aurei, Registry, Teller, Treasury, Vault, Bridge } from "../typechain";
  */
 interface Contracts {
   aurei: Aurei;
+  bridge: Bridge;
   registry: Registry;
   teller: Teller;
   treasury: Treasury;
   vault: Vault;
-  bridge: Bridge;
 }
 
 const contracts: Contracts = {
   aurei: null,
+  bridge: null,
   registry: null,
   teller: null,
   treasury: null,
   vault: null,
-  bridge: null,
 };
 
+// Must be alphabetical
 enum Contract {
   Aurei,
+  Bridge,
   Teller,
   Treasury,
   Vault,
-  Bridge,
 }
 
 interface Signers {
@@ -122,6 +123,9 @@ const deploy = async () => {
   contracts.treasury = await treasuryFactory.deploy(contracts.registry.address);
   await contracts.treasury.deployed();
 
+  /**
+   * Register contract addresses
+   */
   await contracts.registry.setupContractAddress(
     Contract.Aurei,
     contracts.aurei.address
