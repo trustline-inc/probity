@@ -13,7 +13,9 @@ import {
 } from "../typechain";
 
 // Import contract types
-import { Aurei, Registry, Teller, Treasury, Vault, Bridge } from "../typechain";
+import { Aurei, Bridge, Registry, Teller, Treasury, Vault } from "../typechain";
+
+const STATE_CONNECTOR_ADDRESS = "0x1000000000000000000000000000000000000001";
 
 /**
  * Contracts
@@ -36,7 +38,7 @@ const contracts: Contracts = {
   vault: null,
 };
 
-// Must be alphabetical
+// Contracts submitted to the register
 enum Contract {
   Aurei,
   Bridge,
@@ -149,9 +151,13 @@ const deploy = async () => {
   )) as BridgeFactory;
   contracts.bridge = await bridgeFactory.deploy(
     contracts.aurei.address,
-    "0x1000000000000000000000000000000000000001"
+    STATE_CONNECTOR_ADDRESS
   );
   await contracts.bridge.deployed();
+  await contracts.registry.setupContractAddress(
+    Contract.Bridge,
+    contracts.bridge.address
+  );
 
   await contracts.teller.initializeContract();
   await contracts.treasury.initializeContract();
