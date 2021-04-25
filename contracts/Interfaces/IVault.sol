@@ -15,7 +15,7 @@ interface IVault {
     address indexed owner,
     uint256 collateral,
     uint256 encumbered,
-    uint256 unencumbered
+    uint256 available
   );
 
   // --- Functions ---

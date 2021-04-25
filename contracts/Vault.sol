@@ -22,9 +22,9 @@ contract Vault is IVault, Base, Ownable {
   // --- Data ---
 
   struct State {
-    uint256 total;
+    uint256 collateral;
     uint256 encumbered;
-    uint256 unencumbered;
+    uint256 available;
   }
 
   ITeller public teller;
@@ -68,7 +68,7 @@ contract Vault is IVault, Base, Ownable {
     )
   {
     State memory vault = vaults[owner];
-    return (vault.total, vault.encumbered, vault.unencumbered);
+    return (vault.collateral, vault.encumbered, vault.available);
   }
 
   /**
@@ -92,35 +92,35 @@ contract Vault is IVault, Base, Ownable {
    */
   function deposit() external payable override {
     State storage vault = vaults[msg.sender];
-    vault.total = vaults[msg.sender].total.add(msg.value);
-    vault.unencumbered = vault.unencumbered.add(msg.value);
+    vault.collateral = vaults[msg.sender].collateral.add(msg.value);
+    vault.available = vault.available.add(msg.value);
     emit VaultUpdated(
       msg.sender,
-      vault.total,
+      vault.collateral,
       vault.encumbered,
-      vault.encumbered
+      vault.available
     );
   }
 
   /**
-   * @notice Withdraws unencumbered collateral from the vault.
+   * @notice Withdraws available collateral from the vault.
    * @param amount - The amount of collateral to withdraw.
    * @dev https://docs.soliditylang.org/en/v0.4.24/common-patterns.html#withdrawal-from-contracts
    */
   function withdraw(uint256 amount) external override {
     State storage vault = vaults[msg.sender];
     require(
-      amount <= vault.total - vault.encumbered,
+      amount <= vault.collateral - vault.encumbered,
       "CUST: Overdraft not allowed."
     );
-    vault.total = vault.total.sub(amount);
-    vault.unencumbered = vault.unencumbered.sub(amount);
+    vault.collateral = vault.collateral.sub(amount);
+    vault.available = vault.available.sub(amount);
     payable(msg.sender).transfer(amount);
     emit VaultUpdated(
       msg.sender,
-      vault.total,
+      vault.collateral,
       vault.encumbered,
-      vault.unencumbered
+      vault.available
     );
   }
 
@@ -135,7 +135,7 @@ contract Vault is IVault, Base, Ownable {
   {
     State storage vault = vaults[owner];
     vault.encumbered = vault.encumbered.add(amount);
-    vault.unencumbered = vault.unencumbered.sub(amount);
+    vault.available = vault.available.sub(amount);
     _totalEncumbered = _totalEncumbered.add(amount);
 
     if (msg.sender == address(teller)) {
@@ -146,7 +146,12 @@ contract Vault is IVault, Base, Ownable {
       _equityEncumbered = _equityEncumbered.add(amount);
     }
 
-    emit VaultUpdated(owner, vault.total, vault.encumbered, vault.unencumbered);
+    emit VaultUpdated(
+      owner,
+      vault.collateral,
+      vault.encumbered,
+      vault.available
+    );
   }
 
   /**
@@ -160,7 +165,7 @@ contract Vault is IVault, Base, Ownable {
   {
     State storage vault = vaults[owner];
     vault.encumbered = vault.encumbered.sub(amount);
-    vault.unencumbered = vault.unencumbered.add(amount);
+    vault.available = vault.available.add(amount);
     _totalEncumbered = _totalEncumbered.sub(amount);
 
     if (msg.sender == address(teller)) {
@@ -171,7 +176,12 @@ contract Vault is IVault, Base, Ownable {
       _equityEncumbered = _equityEncumbered.sub(amount);
     }
 
-    emit VaultUpdated(owner, vault.total, vault.encumbered, vault.unencumbered);
+    emit VaultUpdated(
+      owner,
+      vault.collateral,
+      vault.encumbered,
+      vault.available
+    );
   }
 
   // --- Modifiers ---
