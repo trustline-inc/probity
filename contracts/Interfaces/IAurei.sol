@@ -11,8 +11,6 @@ import "../Dependencies/IERC2612.sol";
 interface IAurei is IERC20, IERC2612 {
   // --- Events ---
 
-  event AureiBalanceUpdated(address _user, uint256 _amount);
-
   // --- Functions ---
 
   function mint(address _account, uint256 _amount) external;
