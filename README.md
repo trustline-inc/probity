@@ -29,6 +29,8 @@ Install dependencies:
 npm install
 ```
 
+Update the variables in `.env`
+
 ## IDE
 
 [Visual Studio Code](https://code.visualstudio.com/) is the recommended IDE. Here's how to install Solidity language support:
