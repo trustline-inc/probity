@@ -1,10 +1,19 @@
 require("dotenv").config();
+import { existsSync } from "fs";
 import "hardhat-typechain";
 import "@nomiclabs/hardhat-ethers";
 import "@nomiclabs/hardhat-web3";
 import "@nomiclabs/hardhat-waffle";
 import { HardhatUserConfig } from "hardhat/config";
-const flare = require("../flare/client/config.json");
+
+// Add Flare local accounts from Flare config
+const flareLocalAccounts = [];
+const flareConfPath = `${process.env.FLARE_DIR}/client/config.json`;
+if (existsSync(flareConfPath)) {
+  const flareConf = require(flareConfPath);
+  flareLocalAccounts.push(flareConf.accounts[0].privateKey);
+  flareLocalAccounts.push(flareConf.accounts[1].privateKey);
+}
 
 const config: HardhatUserConfig = {
   defaultNetwork: "coston",
@@ -19,7 +28,7 @@ const config: HardhatUserConfig = {
     },
     local: {
       url: "http://127.0.0.1:9650/ext/bc/C/rpc",
-      accounts: [flare.accounts[0].privateKey, flare.accounts[1].privateKey],
+      accounts: flareLocalAccounts,
       chainId: 16,
     },
     private: {
