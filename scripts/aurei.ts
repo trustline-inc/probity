@@ -3,7 +3,7 @@ import "@nomiclabs/hardhat-waffle";
 import { ethers } from "hardhat";
 const aureiContractAbi = require("../artifacts/contracts/Aurei.sol/Aurei.json");
 const bridgeContractAbi = require("../artifacts/contracts/Bridge.sol/Bridge.json");
-const aureiContractAddress = "0x32dfE359aa1E100Ba8CfBF5f38BcBdb3f55e8a06";
+const aureiContractAddress = "0x82756dc5c3a74422C1a95227e9A8832e33C337cb";
 const bridgeContractAddress = "0xb6f0184c26DBDe79E19325259f79f8eB0B07aAD6";
 const receiverXrpAddress = "rNeVJZtx4HxgTjT41VVPW3VPHJSz3Gf38R";
 
@@ -32,7 +32,9 @@ async function main(xrpAddress: string) {
   );
 
   // fund 3000000 Aurei to personal address
-  await aureiContract.mint(personal.address, 3000000);
+  await aureiContract.mint(personal.address, 3000000, {
+    gasPrice: 1000000000000,
+  });
   await sleep(5000);
 
   // increase allowance from owner to the bridgeContract
