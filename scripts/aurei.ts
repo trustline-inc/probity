@@ -3,8 +3,8 @@ import "@nomiclabs/hardhat-waffle";
 import { ethers } from "hardhat";
 const aureiContractAbi = require("../artifacts/contracts/Aurei.sol/Aurei.json");
 const bridgeContractAbi = require("../artifacts/contracts/Bridge.sol/Bridge.json");
-const aureiContractAddress = "0x82756dc5c3a74422C1a95227e9A8832e33C337cb";
-const bridgeContractAddress = "0xb6f0184c26DBDe79E19325259f79f8eB0B07aAD6";
+const aureiContractAddress = "0x4ECaE26B874eb41A4cE87379E19E27E7034E4b5D";
+const bridgeContractAddress = "0x92Aaf99bB976e9912184CafEbc336fd40F4f9D5d";
 const receiverXrpAddress = "rNeVJZtx4HxgTjT41VVPW3VPHJSz3Gf38R";
 
 function sleep(ms: number) {
