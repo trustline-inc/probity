@@ -139,7 +139,7 @@ contract Bridge {
     uint64 amount,
     address destAddress
   ) external {
-    require(toFlareTransfers[txHash].exists, "Tx hash already exists");
+    require(!toFlareTransfers[txHash].exists, "Tx hash already exists");
     require(
       aurei.balanceOf(address(this)) > amount,
       "Requested Aurei balance is higher than what the contract currently holds"
