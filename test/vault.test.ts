@@ -107,7 +107,7 @@ describe("Vault", function () {
       // Bob attempts to withdraw 1000 units of collateral (-1000 new total)
       await expect(
         vault.connect(bob).withdraw(web3.utils.toWei(collateral.toString()))
-      ).to.be.revertedWith("CUST: Overdraft not allowed.");
+      ).to.be.revertedWith("VAULT: Overdraft not allowed.");
 
       // Check Bob's vault details
       const _vault = await vault.connect(bob).get(bob.address);
@@ -131,7 +131,7 @@ describe("Vault", function () {
       // Alice attempts to withdraw encumbered collateral
       await expect(
         vault.connect(alice).withdraw(web3.utils.toWei(withdrawSize.toString()))
-      ).to.be.revertedWith("CUST: Overdraft not allowed.");
+      ).to.be.revertedWith("VAULT: Overdraft not allowed.");
     });
   });
 });
