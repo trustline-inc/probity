@@ -111,7 +111,7 @@ contract Vault is IVault, Base, Ownable {
     State storage vault = vaults[msg.sender];
     require(
       amount <= vault.collateral - vault.encumbered,
-      "CUST: Overdraft not allowed."
+      "VAULT: Overdraft not allowed."
     );
     vault.collateral = vault.collateral.sub(amount);
     vault.available = vault.available.sub(amount);
@@ -192,7 +192,7 @@ contract Vault is IVault, Base, Ownable {
   modifier onlyTellerOrTreasury() {
     require(
       msg.sender == address(teller) || msg.sender == address(treasury),
-      "CUST: Invalid caller."
+      "VAULT: Invalid caller."
     );
     _;
   }

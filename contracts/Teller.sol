@@ -193,7 +193,6 @@ contract Teller is ITeller, Ownable, Base, DSMath {
     // Get MPR
     uint256 oneMinusUtilizationScaled = EXP_UTILIZATION[APR];
     MPR = rdiv(RAY, sub(oneMinusUtilizationScaled, RAY));
-
     // New loan updates the accumulator here (after liquidity has been withdrawn)
     if (op == 0)
       accumulator = rmul(
