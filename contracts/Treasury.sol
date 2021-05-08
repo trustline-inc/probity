@@ -60,6 +60,13 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
     return capital;
   }
 
+  function interestBalance() external view returns (uint256) {
+    uint256 accumulator = teller.getScaledAccumulator();
+    uint256 capital = wmul(normalizedCapital[msg.sender], accumulator) / 1e9;
+    uint256 interest = capital - initialCapital[msg.sender];
+    return interest;
+  }
+
   // @dev TODO: This isn't being used correctly. Maybe better to use aurei.balanceOf(address(this))?
   function totalSupply() external view override returns (uint256) {
     return supply;
@@ -129,7 +136,6 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
    */
   function withdraw(uint256 amount) external override {
     // 1. Calculate withdrawable TCN
-    // Total - initial
     uint256 accumulator = teller.getScaledAccumulator();
     uint256 capital = wmul(normalizedCapital[msg.sender], accumulator) / 1e9;
     uint256 interest = capital - initialCapital[msg.sender];
