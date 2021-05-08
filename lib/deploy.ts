@@ -7,13 +7,22 @@ import {
   AureiFactory,
   BridgeFactory,
   RegistryFactory,
+  TcnTokenFactory,
   TellerFactory,
   TreasuryFactory,
   VaultFactory,
 } from "../typechain";
 
 // Import contract types
-import { Aurei, Bridge, Registry, Teller, Treasury, Vault } from "../typechain";
+import {
+  Aurei,
+  Bridge,
+  Registry,
+  TcnToken,
+  Teller,
+  Treasury,
+  Vault,
+} from "../typechain";
 
 const STATE_CONNECTOR_ADDRESS = "0x1000000000000000000000000000000000000001";
 
@@ -24,6 +33,7 @@ interface Contracts {
   aurei: Aurei;
   bridge: Bridge;
   registry: Registry;
+  tcnToken: TcnToken;
   teller: Teller;
   treasury: Treasury;
   vault: Vault;
@@ -33,6 +43,7 @@ const contracts: Contracts = {
   aurei: null,
   bridge: null,
   registry: null,
+  tcnToken: null,
   teller: null,
   treasury: null,
   vault: null,
@@ -42,6 +53,7 @@ const contracts: Contracts = {
 enum Contract {
   Aurei,
   Bridge,
+  TcnToken,
   Teller,
   Treasury,
   Vault,
@@ -111,6 +123,13 @@ const deploy = async () => {
   contracts.vault = await vaultFactory.deploy(contracts.registry.address);
   await contracts.vault.deployed();
 
+  const tcnTokenFactory = (await ethers.getContractFactory(
+    "TcnToken",
+    signers.owner
+  )) as TcnTokenFactory;
+  contracts.tcnToken = await tcnTokenFactory.deploy();
+  await contracts.tcnToken.deployed();
+
   const tellerFactory = (await ethers.getContractFactory(
     "Teller",
     signers.owner
@@ -131,6 +150,10 @@ const deploy = async () => {
   await contracts.registry.setupContractAddress(
     Contract.Aurei,
     contracts.aurei.address
+  );
+  await contracts.registry.setupContractAddress(
+    Contract.TcnToken,
+    contracts.tcnToken.address
   );
   await contracts.registry.setupContractAddress(
     Contract.Teller,

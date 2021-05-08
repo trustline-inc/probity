@@ -6,7 +6,7 @@ import BigNumber from "bignumber.js";
 import { ethers, web3 } from "hardhat";
 import { expect } from "chai";
 
-import { Teller, Treasury, Vault } from "../typechain";
+import { TcnToken, Teller, Treasury, Vault } from "../typechain";
 
 import deploy from "../lib/deploy";
 
@@ -20,6 +20,7 @@ let bootstrapper: SignerWithAddress;
 let borrower: SignerWithAddress;
 
 // Contracts
+let tcnToken: TcnToken;
 let teller: Teller;
 let treasury: Treasury;
 let vault: Vault;
@@ -31,6 +32,7 @@ describe("Treasury", function () {
     const { contracts, signers } = await deploy();
 
     // Set contracts
+    tcnToken = contracts.tcnToken;
     teller = contracts.teller;
     treasury = contracts.treasury;
     vault = contracts.vault;
@@ -74,12 +76,9 @@ describe("Treasury", function () {
       expect(web3.utils.fromWei(balance.toString())).to.equal("0");
 
       // Set up borrower vault
-      const borrowerCollateral = 800;
-      const principal = 400;
-
       const txBorrower = {
         from: borrower.address,
-        value: web3.utils.toWei(borrowerCollateral.toString()),
+        value: web3.utils.toWei((1600).toString()),
       };
       let txBorrowerResponse = await vault
         .connect(borrower)
@@ -89,8 +88,8 @@ describe("Treasury", function () {
       await teller
         .connect(borrower)
         .createLoan(
-          web3.utils.toWei(borrowerCollateral.toString()),
-          web3.utils.toWei(principal.toString())
+          web3.utils.toWei((800).toString()),
+          web3.utils.toWei((400).toString())
         );
 
       // 80% utilization and 5% APR
@@ -108,19 +107,37 @@ describe("Treasury", function () {
       await ethers.provider.send("evm_increaseTime", [60]);
       await ethers.provider.send("evm_mine", []);
 
-      // TODO: Force rate accumulator to update
+      // Force rate accumulator to update with a second loan
+      await teller
+        .connect(borrower)
+        .createLoan(
+          web3.utils.toWei((100).toString()),
+          web3.utils.toWei((50).toString())
+        );
 
       // Check lender balance includes interest ((equity * utilization) + (equity * utilization) * MPR^60))
       balance = await treasury.connect(lender).balanceOf(lender.address);
-      const expected = "500000000000000000000";
+      const expected = "500000082904424066585";
       expect(balance.toString()).to.equal(expected);
     });
   });
 
-  describe("Equity Redemption", async function () {
+  describe("Interest", async function () {
+    it("Allows interest withdrawal", async () => {
+      await treasury.connect(lender).withdraw(10);
+      const balance = await tcnToken.balanceOf(lender.address);
+      expect(
+        parseFloat(web3.utils.fromWei(balance.toString()))
+      ).to.be.greaterThan(0);
+      const supply = await tcnToken.totalSupply();
+      expect(supply).to.equal(balance);
+    });
+  });
+
+  describe("Collateral Redemption", async function () {
     it("Redeems capital", async () => {
-      const aureiSupplied = 500;
-      const encumberedCollateral = 1000;
+      const aureiSupplied = 400;
+      const encumberedCollateral = 800;
       await expect(
         treasury
           .connect(lender)

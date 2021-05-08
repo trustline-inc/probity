@@ -8,7 +8,7 @@ import "../Dependencies/IERC2612.sol";
 /**
  * @notice Common interface for the TCN token.
  */
-interface ITCN is IERC20, IERC2612 {
+interface ITcnToken is IERC20, IERC2612 {
   // --- Events ---
 
   // --- Functions ---

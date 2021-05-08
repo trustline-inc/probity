@@ -8,6 +8,7 @@ import "./Dependencies/DSMath.sol";
 import "./Dependencies/SafeMath.sol";
 import "./Interfaces/IAurei.sol";
 import "./Interfaces/IRegistry.sol";
+import "./Interfaces/ITcnToken.sol";
 import "./Interfaces/ITreasury.sol";
 import "./Interfaces/ITeller.sol";
 import "./Interfaces/IVault.sol";
@@ -22,11 +23,12 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
   // --- Data ---
 
   uint256 public supply;
-  mapping(address => uint256) public equities; // user contribution
-  mapping(address => uint256) public balances; // normalized equity
+  mapping(address => uint256) public initialCapital;
+  mapping(address => uint256) public normalizedCapital;
 
   IAurei public aurei;
   IRegistry public registry;
+  ITcnToken public tcnToken;
   ITeller public teller;
   IVault public vault;
 
@@ -42,6 +44,7 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
    */
   function initializeContract() external onlyOwner {
     aurei = IAurei(registry.getContractAddress(Contract.Aurei));
+    tcnToken = ITcnToken(registry.getContractAddress(Contract.TcnToken));
     teller = ITeller(registry.getContractAddress(Contract.Teller));
     vault = IVault(registry.getContractAddress(Contract.Vault));
   }
@@ -53,7 +56,7 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
    */
   function balanceOf(address owner) external view override returns (uint256) {
     uint256 accumulator = teller.getScaledAccumulator();
-    uint256 capital = wmul(balances[owner], accumulator) / 1e9;
+    uint256 capital = wmul(normalizedCapital[owner], accumulator) / 1e9;
     return capital;
   }
 
@@ -75,12 +78,13 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
     vault.lock(msg.sender, collateral);
     aurei.mint(address(this), capital);
     uint256 accumulator = teller.getAccumulator();
-    balances[msg.sender] = add(
-      balances[msg.sender],
+    normalizedCapital[msg.sender] = add(
+      normalizedCapital[msg.sender],
       rdiv(capital, accumulator)
     );
+    initialCapital[msg.sender] = initialCapital[msg.sender].add(capital);
     supply = supply.add(capital);
-    emit TreasuryUpdated(msg.sender, balances[msg.sender]);
+    emit TreasuryUpdated(msg.sender, normalizedCapital[msg.sender]);
   }
 
   /**
@@ -96,7 +100,12 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
     checkRedemptionEligibility(collateral, capital)
   {
     // Reduce capital balance
-    balances[msg.sender] = balances[msg.sender].sub(capital);
+    uint256 accumulator = teller.getAccumulator();
+    normalizedCapital[msg.sender] = sub(
+      normalizedCapital[msg.sender],
+      rdiv(capital, accumulator)
+    );
+    initialCapital[msg.sender] = initialCapital[msg.sender].sub(capital);
     supply = supply.sub(capital);
 
     // Burn the Aurei
@@ -110,7 +119,33 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
     vault.unlock(msg.sender, collateral);
 
     // Emit event
-    emit TreasuryUpdated(msg.sender, balances[msg.sender]);
+    emit TreasuryUpdated(msg.sender, normalizedCapital[msg.sender]);
+  }
+
+  /**
+   * @notice Withdraws available TCN from the vault.
+   * @param amount - The amount of TCN to withdraw.
+   * @dev https://docs.soliditylang.org/en/v0.4.24/common-patterns.html#withdrawal-from-contracts
+   */
+  function withdraw(uint256 amount) external override {
+    // 1. Calculate withdrawable TCN
+    // Total - initial
+    uint256 accumulator = teller.getScaledAccumulator();
+    uint256 capital = wmul(normalizedCapital[msg.sender], accumulator) / 1e9;
+    uint256 interest = capital - initialCapital[msg.sender];
+
+    // 2. Reduce capital
+    initialCapital[msg.sender] = capital.sub(interest);
+    normalizedCapital[msg.sender] = sub(
+      normalizedCapital[msg.sender],
+      rdiv(interest, accumulator)
+    );
+
+    // 3. Burn AUR
+    aurei.burn(address(this), interest);
+
+    // 4. Mint TCN to caller
+    tcnToken.mint(msg.sender, interest);
   }
 
   /**
@@ -161,7 +196,7 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
 
     // Get current capital balance
     uint256 accumulator = teller.getScaledAccumulator();
-    uint256 balance = wmul(balances[msg.sender], accumulator) / 1e9;
+    uint256 balance = wmul(normalizedCapital[msg.sender], accumulator) / 1e9;
 
     // TODO: Hook in collateral price
     if (balance.sub(capital) != 0) {

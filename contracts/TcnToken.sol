@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import "./Dependencies/Ownable.sol";
 import "./Dependencies/SafeMath.sol";
-import "./Interfaces/ITCN.sol";
+import "./Interfaces/ITcnToken.sol";
 import "./Interfaces/ITeller.sol";
 
 /**
@@ -14,7 +14,7 @@ import "./Interfaces/ITeller.sol";
  * and their EIP2612 (ERC20Permit / ERC712) functionality:
  * https://github.com/OpenZeppelin/openzeppelin-contracts/blob/53516bc555a454862470e7860a9b5254db4d00f5/contracts/token/ERC20/ERC20Permit.sol
  */
-contract TCN is ITCN, Ownable {
+contract TcnToken is ITcnToken, Ownable {
   using SafeMath for uint256;
 
   // --- Data ---

@@ -16,6 +16,8 @@ interface ITreasury {
 
   function totalSupply() external view returns (uint256);
 
+  function withdraw(uint256 amount) external;
+
   function issue(uint256 collateral, uint256 equity) external;
 
   function redeem(uint256 collateral, uint256 equity) external;
