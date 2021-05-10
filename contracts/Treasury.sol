@@ -129,25 +129,27 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
    * @param amount - The amount of TCN to withdraw.
    * @dev https://docs.soliditylang.org/en/v0.4.24/common-patterns.html#withdrawal-from-contracts
    */
-  function withdraw(uint256 amount) external override {
-    // 1. Calculate withdrawable TCN
+  function withdraw(uint256 amount, bool tcn) external override {
+    // Calculate withdrawable TCN
     uint256 accumulator = teller.getScaledAccumulator();
     uint256 capital = wmul(normalizedCapital[msg.sender], accumulator) / 1e9;
     uint256 interest = capital - initialCapital[msg.sender];
     require(amount <= interest, "TREASURY: Insufficient interest balance");
 
-    // 2. Reduce capital
+    // Reduce capital
     initialCapital[msg.sender] = capital.sub(amount);
     normalizedCapital[msg.sender] = sub(
       normalizedCapital[msg.sender],
       rdiv(amount, accumulator)
     );
 
-    // 3. Burn AUR
-    aurei.burn(address(this), amount);
-
-    // 4. Mint TCN to caller
-    tcnToken.mint(msg.sender, amount);
+    if (tcn) {
+      // Burn AUR and mint TCN to caller
+      aurei.burn(address(this), amount);
+      tcnToken.mint(msg.sender, amount);
+    } else {
+      aurei.transferFrom(address(this), msg.sender, amount);
+    }
   }
 
   /**

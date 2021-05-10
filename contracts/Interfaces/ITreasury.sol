@@ -24,5 +24,5 @@ interface ITreasury {
 
   function redeem(uint256 collateral, uint256 capital) external;
 
-  function withdraw(uint256 amount) external;
+  function withdraw(uint256 amount, bool tcn) external;
 }
