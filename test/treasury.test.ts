@@ -124,7 +124,7 @@ describe("Treasury", function () {
 
   describe("Interest", async function () {
     it("Allows interest withdrawal", async () => {
-      await treasury.connect(lender).withdraw(10);
+      await treasury.connect(lender).withdraw(10, true);
       const balance = await tcnToken.balanceOf(lender.address);
       expect(
         parseFloat(web3.utils.fromWei(balance.toString()))
