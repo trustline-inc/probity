@@ -15,7 +15,7 @@ import "./Interfaces/IVault.sol";
 import "hardhat/console.sol";
 
 /**
- * @notice Manages equity for all vaults.
+ * @notice Manages capital for all vaults.
  */
 contract Treasury is ITreasury, Ownable, Base, DSMath {
   using SafeMath for uint256;
@@ -67,11 +67,6 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
     return interest;
   }
 
-  // @dev TODO: This isn't being used correctly. Maybe better to use aurei.balanceOf(address(this))?
-  function totalSupply() external view override returns (uint256) {
-    return supply;
-  }
-
   /**
    * @notice Adds capital to the system by minting Aurei to the treasury.
    * @param collateral - Amount of collateral backing the Aurei.
@@ -91,7 +86,7 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
     );
     initialCapital[msg.sender] = initialCapital[msg.sender].add(capital);
     supply = supply.add(capital);
-    emit TreasuryUpdated(msg.sender, normalizedCapital[msg.sender]);
+    emit TreasuryUpdated(msg.sender, collateral, capital);
   }
 
   /**
@@ -126,11 +121,11 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
     vault.unlock(msg.sender, collateral);
 
     // Emit event
-    emit TreasuryUpdated(msg.sender, normalizedCapital[msg.sender]);
+    emit TreasuryUpdated(msg.sender, collateral, capital);
   }
 
   /**
-   * @notice Withdraws available TCN from the vault.
+   * @notice Withdraws TCN from the vault.
    * @param amount - The amount of TCN to withdraw.
    * @dev https://docs.soliditylang.org/en/v0.4.24/common-patterns.html#withdrawal-from-contracts
    */
@@ -139,19 +134,20 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
     uint256 accumulator = teller.getScaledAccumulator();
     uint256 capital = wmul(normalizedCapital[msg.sender], accumulator) / 1e9;
     uint256 interest = capital - initialCapital[msg.sender];
+    require(amount <= interest, "TREASURY: Insufficient interest balance");
 
     // 2. Reduce capital
-    initialCapital[msg.sender] = capital.sub(interest);
+    initialCapital[msg.sender] = capital.sub(amount);
     normalizedCapital[msg.sender] = sub(
       normalizedCapital[msg.sender],
-      rdiv(interest, accumulator)
+      rdiv(amount, accumulator)
     );
 
     // 3. Burn AUR
-    aurei.burn(address(this), interest);
+    aurei.burn(address(this), amount);
 
     // 4. Mint TCN to caller
-    tcnToken.mint(msg.sender, interest);
+    tcnToken.mint(msg.sender, amount);
   }
 
   /**
