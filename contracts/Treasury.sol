@@ -22,7 +22,7 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
 
   // --- Data ---
 
-  uint256 public supply;
+  uint256 public _totalSupply;
   mapping(address => uint256) public initialCapital;
   mapping(address => uint256) public normalizedCapital;
 
@@ -54,16 +54,19 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
   /**
    * @notice Returns the capital balance of a vault.
    */
-  function balanceOf(address owner) external view override returns (uint256) {
+  function capitalOf(address owner) external view override returns (uint256) {
     uint256 accumulator = teller.getScaledAccumulator();
     uint256 capital = wmul(normalizedCapital[owner], accumulator) / 1e9;
     return capital;
   }
 
-  function interestBalance() external view returns (uint256) {
+  /**
+   * @notice Returns the interest balance of a vault.
+   */
+  function interestOf(address owner) external view override returns (uint256) {
     uint256 accumulator = teller.getScaledAccumulator();
-    uint256 capital = wmul(normalizedCapital[msg.sender], accumulator) / 1e9;
-    uint256 interest = capital - initialCapital[msg.sender];
+    uint256 capital = wmul(normalizedCapital[owner], accumulator) / 1e9;
+    uint256 interest = capital - initialCapital[owner];
     return interest;
   }
 
@@ -85,7 +88,7 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
       rdiv(capital, accumulator)
     );
     initialCapital[msg.sender] = initialCapital[msg.sender].add(capital);
-    supply = supply.add(capital);
+    _totalSupply = _totalSupply.add(capital);
     emit TreasuryUpdated(msg.sender, collateral, capital);
   }
 
@@ -108,12 +111,12 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
       rdiv(capital, accumulator)
     );
     initialCapital[msg.sender] = initialCapital[msg.sender].sub(capital);
-    supply = supply.sub(capital);
+    _totalSupply = _totalSupply.sub(capital);
 
     // Burn the Aurei
     require(
       aurei.balanceOf(address(this)) > capital,
-      "TREAS: Not enough reserves."
+      "TREASURY: Not enough reserves."
     );
     aurei.burn(address(this), capital);
 
@@ -165,6 +168,13 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
     aurei.transfer(borrower, principal);
   }
 
+  /**
+   * @return Total AUR capital
+   */
+  function totalSupply() external view override returns (uint256) {
+    return _totalSupply;
+  }
+
   // --- Modifiers ---
 
   /**
@@ -176,13 +186,13 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
   modifier checkIssuanceEligibility(uint256 collateral, uint256 capital) {
     (uint256 total, uint256 encumbered, uint256 unencumbered) =
       vault.get(msg.sender);
-    require(unencumbered >= collateral, "TREAS: Collateral not available.");
+    require(unencumbered >= collateral, "TREASURY: Collateral not available.");
 
     // TODO: Hook in collateral price
     uint256 ratio = wdiv(wmul(collateral, 1 ether), capital);
     require(
       ratio >= LIQUIDATION_RATIO,
-      "TREAS: Insufficient collateral provided"
+      "TREASURY: Insufficient collateral provided"
     );
     _;
   }
@@ -196,7 +206,7 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
   modifier checkRedemptionEligibility(uint256 requested, uint256 capital) {
     (uint256 total, uint256 encumbered, uint256 unencumbered) =
       vault.get(msg.sender);
-    require(encumbered >= requested, "TELL: Collateral not available.");
+    require(encumbered >= requested, "TREASURY: Collateral not available.");
 
     // Get current capital balance
     uint256 accumulator = teller.getScaledAccumulator();
@@ -208,7 +218,7 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
         wdiv(wmul(encumbered.sub(requested), 1 ether), balance.sub(capital));
       require(
         ratio >= LIQUIDATION_RATIO,
-        "TREAS: Insufficient collateral provided"
+        "TREASURY: Insufficient collateral provided"
       );
     }
     _;

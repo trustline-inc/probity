@@ -69,9 +69,7 @@ describe("Treasury", function () {
     it("Gets the current balance", async () => {
       let balance;
 
-      balance = await treasury
-        .connect(bootstrapper)
-        .balanceOf(bootstrapper.address);
+      balance = await treasury.capitalOf(bootstrapper.address);
 
       expect(web3.utils.fromWei(balance.toString())).to.equal("0");
 
@@ -116,7 +114,7 @@ describe("Treasury", function () {
         );
 
       // Check lender balance includes interest ((equity * utilization) + (equity * utilization) * MPR^60))
-      balance = await treasury.connect(lender).balanceOf(lender.address);
+      balance = await treasury.capitalOf(lender.address);
       const expected = "500000082904424066585";
       expect(balance.toString()).to.equal(expected);
     });
@@ -124,8 +122,10 @@ describe("Treasury", function () {
 
   describe("Interest", async function () {
     it("Allows interest withdrawal", async () => {
+      var interest = await treasury.interestOf(lender.address);
       await treasury.connect(lender).withdraw(10, true);
       const balance = await tcnToken.balanceOf(lender.address);
+      interest = await treasury.interestOf(lender.address);
       expect(
         parseFloat(web3.utils.fromWei(balance.toString()))
       ).to.be.greaterThan(0);
@@ -145,7 +145,7 @@ describe("Treasury", function () {
             web3.utils.toWei(encumberedCollateral.toString()),
             web3.utils.toWei(aureiSupplied.toString())
           )
-      ).to.be.revertedWith("TREAS: Not enough reserves.");
+      ).to.be.revertedWith("TREASURY: Not enough reserves.");
     });
   });
 });

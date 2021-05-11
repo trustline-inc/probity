@@ -16,7 +16,9 @@ interface ITreasury {
 
   // --- Functions ---
 
-  function balanceOf(address owner) external view returns (uint256);
+  function capitalOf(address owner) external view returns (uint256);
+
+  function interestOf(address owner) external view returns (uint256);
 
   function fundLoan(address borrower, uint256 principal) external;
 
@@ -25,4 +27,6 @@ interface ITreasury {
   function redeem(uint256 collateral, uint256 capital) external;
 
   function withdraw(uint256 amount, bool tcn) external;
+
+  function totalSupply() external view returns (uint256);
 }

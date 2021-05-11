@@ -173,7 +173,7 @@ contract Teller is ITeller, Ownable, Base, DSMath {
     // New Loan
     if (op == 0) {
       newDebt = add(sub(aureiSupply, reserves), delta);
-      require(delta < reserves, "TELL: Not enough supply.");
+      require(delta < reserves, "TELLER: Not enough supply.");
     }
 
     // Repayment
@@ -222,7 +222,7 @@ contract Teller is ITeller, Ownable, Base, DSMath {
   modifier checkEligibility(uint256 collateral, uint256 principal) {
     (uint256 total, uint256 encumbered, uint256 unencumbered) =
       vault.get(msg.sender);
-    require(unencumbered >= collateral, "TELL: Collateral not available.");
+    require(unencumbered >= collateral, "TELLER: Collateral not available.");
 
     // TODO: Hook in collateral price
     uint256 ratio = wdiv(wmul(collateral, 1 ether), principal);
@@ -244,7 +244,7 @@ contract Teller is ITeller, Ownable, Base, DSMath {
       vault.get(msg.sender);
 
     // Ensure that the requested collateral amount is less than the encumbered amount
-    require(encumbered >= requested, "TELL: Collateral not available.");
+    require(encumbered >= requested, "TELLER: Collateral not available.");
 
     // Ensure that the collateral ratio after the repayment is sufficient
     // TODO: Hook in collateral price

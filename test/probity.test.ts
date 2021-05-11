@@ -111,10 +111,10 @@ describe("Probity", function () {
       lastUpdated = block.timestamp;
 
       // Check capital balances
-      var lenderCapital = await treasury.balanceOf(lender.address);
+      var lenderCapital = await treasury.capitalOf(lender.address);
       expect(lenderCapital.toString()).to.equal("1500000000000000000000");
 
-      const borrowerCapital = await treasury.balanceOf(borrower.address);
+      const borrowerCapital = await treasury.capitalOf(borrower.address);
       expect(borrowerCapital.toString()).to.equal("0");
 
       // Check aurei balances
@@ -154,10 +154,10 @@ describe("Probity", function () {
 
       // Check capital balances
       const expectedLenderCapital = "1500000000936661921546";
-      var lenderCapital = await treasury.balanceOf(lender.address);
+      var lenderCapital = await treasury.capitalOf(lender.address);
       expect(lenderCapital.toString()).to.equal(expectedLenderCapital);
 
-      const borrowerCapital = await treasury.balanceOf(borrower.address);
+      const borrowerCapital = await treasury.capitalOf(borrower.address);
       expect(borrowerCapital.toString()).to.equal("0");
 
       // Check aurei balances

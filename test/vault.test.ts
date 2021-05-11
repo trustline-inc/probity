@@ -47,7 +47,7 @@ describe("Vault", function () {
       expect(web3.utils.fromWei(_vault[1].toString())).to.equal("0");
 
       // Check Alice's equity and debt balances
-      expect(await treasury.balanceOf(alice.address)).to.equal("0");
+      expect(await treasury.capitalOf(alice.address)).to.equal("0");
       expect(await teller.balanceOf(alice.address)).to.equal("0");
     });
 
@@ -67,7 +67,7 @@ describe("Vault", function () {
       expect(web3.utils.fromWei(_vault[1].toString())).to.equal("0");
 
       // Check Bob's equity and debt balances
-      expect(await treasury.balanceOf(bob.address)).to.equal("0");
+      expect(await treasury.capitalOf(bob.address)).to.equal("0");
       expect(await teller.balanceOf(bob.address)).to.equal("0");
     });
   });

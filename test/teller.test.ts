@@ -2,10 +2,8 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-web3";
 import BigNumber from "bignumber.js";
-import { ethers, web3 } from "hardhat";
+import { web3 } from "hardhat";
 import { expect } from "chai";
-import { exec } from "child_process";
-import { promisify } from "util";
 
 import { Aurei, Teller, Treasury, Vault } from "../typechain";
 
