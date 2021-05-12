@@ -9,6 +9,7 @@ import { expect } from "chai";
 import { Aurei, Teller, Treasury, Vault } from "../typechain";
 
 import deploy from "../lib/deploy";
+import { SECONDS_IN_YEAR } from "./constants";
 
 BigNumber.config({ POW_PRECISION: 27, DECIMAL_PLACES: 27 });
 Decimal.config({ precision: 28, toExpPos: 28, rounding: Decimal.ROUND_FLOOR });
@@ -25,8 +26,6 @@ let aurei: Aurei;
 let teller: Teller;
 let treasury: Treasury;
 let vault: Vault;
-
-const SECONDS_IN_YEAR = 31557600;
 
 describe("Teller", function () {
   before(async function () {

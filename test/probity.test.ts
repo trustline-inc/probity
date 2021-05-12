@@ -2,12 +2,12 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import "@nomiclabs/hardhat-ethers";
 import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-web3";
-import { ethers, web3 } from "hardhat";
+import { web3 } from "hardhat";
 import { expect } from "chai";
 
 import { Aurei, Teller, Treasury, Vault } from "../typechain";
-
 import deploy from "../lib/deploy";
+import { SECONDS_IN_YEAR } from "./constants";
 
 // Wallets
 let lender: SignerWithAddress;
@@ -22,8 +22,6 @@ let vault: Vault;
 
 // Global timestamp variable
 var lastUpdated;
-
-const SECONDS_IN_YEAR = 31536000;
 
 describe("Probity", function () {
   before(async function () {
@@ -46,14 +44,14 @@ describe("Probity", function () {
       // Convert to MPR by taking the n-th root
       const APR = 1.03; // 3%
       const MPR = Math.pow(APR, 1 / SECONDS_IN_YEAR);
-      expect(MPR).to.equal(1.0000000009373036);
+      expect(MPR).to.equal(1.0000000009366619);
       expect(Math.pow(MPR, SECONDS_IN_YEAR).toFixed(2)).to.equal(
         APR.toString()
       );
 
       // Calculations in Wei
       expect(web3.utils.toWei(MPR.toString()).length).to.equal(19); // e.g., 1e18
-      expect(web3.utils.toWei(MPR.toString())).to.equal("1000000000937303600");
+      expect(web3.utils.toWei(MPR.toString())).to.equal("1000000000936661900");
     });
 
     it("Sets the vault's normalized debt", async () => {
