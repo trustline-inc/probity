@@ -2,6 +2,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-web3";
 import BigNumber from "bignumber.js";
+import { Decimal } from "decimal.js";
 import { web3 } from "hardhat";
 import { expect } from "chai";
 
@@ -10,6 +11,7 @@ import { Aurei, Teller, Treasury, Vault } from "../typechain";
 import deploy from "../lib/deploy";
 
 BigNumber.config({ POW_PRECISION: 27, DECIMAL_PLACES: 27 });
+Decimal.config({ precision: 28, toExpPos: 28, rounding: Decimal.ROUND_FLOOR });
 const RAY = new BigNumber("1e27");
 const WAD = new BigNumber("1e18");
 
@@ -90,7 +92,10 @@ describe("Teller", function () {
 
       // MPR should equal (1.02 * 1e27)^(1/31557600)=1000000000627507392906712187
       const MPR = await teller.getMPR();
-      expect(MPR).to.equal("1000000000627507392906712187");
+      const expected = new Decimal(1.02)
+        .toPower(new Decimal(1).div(SECONDS_IN_YEAR))
+        .mul("1e27");
+      expect(MPR.toString()).to.equal(expected.toString());
 
       // MPR TO APR (precision of 18 decimal digits is good enough)
       const APR_TO_DECIMAL = new BigNumber(APR.toString()).div(RAY).toFixed(18);

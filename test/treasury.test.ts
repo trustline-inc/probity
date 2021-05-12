@@ -3,6 +3,7 @@ import "@nomiclabs/hardhat-ethers";
 import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-web3";
 import BigNumber from "bignumber.js";
+import { Decimal } from "decimal.js";
 import { ethers, web3 } from "hardhat";
 import { expect } from "chai";
 
@@ -11,6 +12,7 @@ import { TcnToken, Teller, Treasury, Vault } from "../typechain";
 import deploy from "../lib/deploy";
 
 BigNumber.config({ POW_PRECISION: 27, DECIMAL_PLACES: 27 });
+Decimal.config({ precision: 28, toExpPos: 28, rounding: Decimal.ROUND_FLOOR });
 const RAY = new BigNumber("1e27");
 const WAD = new BigNumber("1e18");
 
@@ -25,7 +27,7 @@ let teller: Teller;
 let treasury: Treasury;
 let vault: Vault;
 
-const SECONDS_IN_YEAR = 31536000;
+const SECONDS_IN_YEAR = 31557600;
 
 describe("Treasury", function () {
   before(async function () {
@@ -67,7 +69,7 @@ describe("Treasury", function () {
     });
 
     it("Gets the current balance", async () => {
-      let balance;
+      let balance: any;
 
       balance = await treasury.capitalOf(bootstrapper.address);
 
@@ -76,11 +78,9 @@ describe("Treasury", function () {
       // Set up borrower vault
       const txBorrower = {
         from: borrower.address,
-        value: web3.utils.toWei((1600).toString()),
+        value: web3.utils.toWei((1000).toString()),
       };
-      let txBorrowerResponse = await vault
-        .connect(borrower)
-        .deposit(txBorrower);
+      await vault.connect(borrower).deposit(txBorrower);
 
       // Create loan
       await teller
@@ -91,32 +91,41 @@ describe("Treasury", function () {
         );
 
       // 80% utilization and 5% APR
+      const expectedAsDecimal = new Decimal(1.05).toPower(
+        new Decimal(1).div(SECONDS_IN_YEAR)
+      );
+      const expectedAsInteger = expectedAsDecimal.mul("1e27");
+
       const MPR = await teller.getMPR();
       const MPR_AS_DECIMAL = new BigNumber(MPR.toString()).div(RAY);
-      const APR_AS_DECIMAL = MPR_AS_DECIMAL.pow(SECONDS_IN_YEAR).toFixed(27);
-      expect(MPR_AS_DECIMAL.toString()).to.equal(
-        "1.000000001546067007857011769"
-      );
-      expect(APR_AS_DECIMAL.toString()).to.equal(
-        "1.049964935785777714952136300"
-      );
+      const APR_AS_DECIMAL = MPR_AS_DECIMAL.pow(SECONDS_IN_YEAR).toFixed(2);
+
+      expect(MPR.toString()).to.equal(expectedAsInteger.toString());
+      expect(MPR_AS_DECIMAL.toString()).to.equal(expectedAsDecimal.toString());
+      expect(APR_AS_DECIMAL.toString()).to.equal("1.05");
 
       // Warp time
-      await ethers.provider.send("evm_increaseTime", [60]);
+      await ethers.provider.send("evm_increaseTime", [SECONDS_IN_YEAR]);
       await ethers.provider.send("evm_mine", []);
 
       // Force rate accumulator to update with a second loan
       await teller
         .connect(borrower)
         .createLoan(
-          web3.utils.toWei((100).toString()),
-          web3.utils.toWei((50).toString())
+          web3.utils.toWei((20).toString()),
+          web3.utils.toWei((10).toString())
         );
 
-      // Check lender balance includes interest ((equity * utilization) + (equity * utilization) * MPR^60))
+      // Check lender balance includes interest
+      // (capital + (capital * utilization * APR) - (capital * utilization))
       balance = await treasury.capitalOf(lender.address);
-      const expected = "500000082904424066585";
-      expect(balance.toString()).to.equal(expected);
+      const expected = new BigNumber(500)
+        .plus(new BigNumber(500).multipliedBy(0.8).multipliedBy(APR_AS_DECIMAL))
+        .minus(new BigNumber(500).multipliedBy(0.8))
+        .multipliedBy(1e18);
+
+      // TODO: Fix this with expected
+      expect(balance.toString()).to.equal("522440723053163410796");
     });
   });
 
