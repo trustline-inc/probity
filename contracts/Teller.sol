@@ -103,7 +103,7 @@ contract Teller is ITeller, Ownable, Base, DSMath {
     require(pool >= principal);
 
     // Update interest rate
-    updateRate(principal, Activity.Borrow);
+    this.updateRate(principal, Activity.Borrow);
 
     // Calculate normalized principal sum
     uint256 normalized = rdiv(principal, accumulator);
@@ -135,7 +135,7 @@ contract Teller is ITeller, Ownable, Base, DSMath {
     aurei.transferFrom(msg.sender, address(this), amount);
 
     // Update interest rate
-    updateRate(amount, Activity.Repay);
+    this.updateRate(amount, Activity.Repay);
 
     // Calculate normalized repayment amount
     uint256 normalized = rdiv(amount, accumulator);

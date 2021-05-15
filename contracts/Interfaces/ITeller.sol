@@ -41,5 +41,5 @@ interface ITeller {
 
   function totalDebt() external view returns (uint256);
 
-  function updateRate(uint256 delta, Activity activity) external;
+  function updateRate(uint256 delta, Base.Activity activity) external;
 }
