@@ -140,7 +140,7 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
     require(amount <= interest, "TREASURY: Insufficient interest balance");
 
     // Reduce capital
-    initialCapital[msg.sender] = capital.sub(amount);
+    // initialCapital[msg.sender] = capital.sub(amount);
     normalizedCapital[msg.sender] = sub(
       normalizedCapital[msg.sender],
       rdiv(amount, accumulator)

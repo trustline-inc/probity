@@ -9,12 +9,19 @@ import { expect } from "chai";
 import { Aurei, Teller, Treasury, Vault } from "../typechain";
 
 import deploy from "../lib/deploy";
-import { SECONDS_IN_YEAR } from "./constants";
+import { SECONDS_IN_YEAR, RAY, WAD } from "./constants";
 
-BigNumber.config({ POW_PRECISION: 27, DECIMAL_PLACES: 27 });
-Decimal.config({ precision: 28, toExpPos: 28, rounding: Decimal.ROUND_FLOOR });
-const RAY = new BigNumber("1e27");
-const WAD = new BigNumber("1e18");
+BigNumber.config({
+  POW_PRECISION: 27,
+  DECIMAL_PLACES: 27,
+  EXPONENTIAL_AT: 1e9,
+});
+Decimal.config({
+  precision: 30,
+  toExpPos: 28,
+  toExpNeg: -28,
+  rounding: Decimal.ROUND_DOWN,
+});
 
 // Wallets
 let lender: SignerWithAddress;
@@ -87,14 +94,30 @@ describe("Teller", function () {
 
       // APR should equal 2% (1.02 * 1e27)
       const APR = await teller.getAPR();
-      expect(APR).to.equal("1020000000000000000000000000");
+      const utilization = new BigNumber(principal).div(2000);
+      const expectedAPR = new BigNumber(1).plus(
+        new BigNumber(1).div(
+          new BigNumber(100).multipliedBy(new BigNumber(1).minus(utilization))
+        )
+      );
+      expect(new BigNumber(APR.toString()).div(1e27).toString()).to.equal(
+        expectedAPR.toString()
+      );
 
       // MPR should equal (1.02 * 1e27)^(1/31557600)=1000000000627507392906712187
       const MPR = await teller.getMPR();
-      const expected = new Decimal(1.02)
-        .toPower(new Decimal(1).div(SECONDS_IN_YEAR))
-        .mul("1e27");
-      expect(MPR.toString()).to.equal(expected.toString());
+
+      Decimal.set({ precision: 30, rounding: Decimal.ROUND_DOWN }); // Extra level of precision required for rounding
+      const expectedMpr = new Decimal(expectedAPR.toString()).toPower(
+        new Decimal(1).div(SECONDS_IN_YEAR)
+      );
+      Decimal.set({ precision: 27, rounding: Decimal.ROUND_DOWN });
+
+      const expectedMprAsInteger = new BigNumber(
+        expectedMpr.toFixed(27)
+      ).multipliedBy(1e27);
+
+      expect(MPR.toString()).to.equal(expectedMprAsInteger.toString());
 
       // MPR TO APR (precision of 18 decimal digits is good enough)
       const APR_TO_DECIMAL = new BigNumber(APR.toString()).div(RAY).toFixed(18);

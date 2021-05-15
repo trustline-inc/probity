@@ -19,6 +19,7 @@ contract Teller is ITeller, Ownable, Base, DSMath {
   // --- Data ---
   uint256 public accumulator; // Rate accumulator [ray]
   uint256 public scaledAccum; // Rate accumulator scaled by utilization
+  uint256 public utilization; // Aurei reserve utilization
   uint256 public lastUpdate; // Timestamp of last rate update
   uint256 public APR; // Annualized percentage rate
   uint256 public MPR; // Momentized percentage rate
@@ -40,6 +41,7 @@ contract Teller is ITeller, Ownable, Base, DSMath {
     lastUpdate = 0;
     accumulator = RAY;
     scaledAccum = RAY;
+    utilization = WAD;
     APR = RAY;
     MPR = RAY;
   }
@@ -159,13 +161,7 @@ contract Teller is ITeller, Ownable, Base, DSMath {
 
     // Calculate new aggregate debt
     uint256 newDebt;
-
-    // Repayment updates the accumulator here
-    if (op == 1)
-      accumulator = rmul(
-        rpow(MPR, (block.timestamp - lastUpdate)),
-        accumulator
-      );
+    accumulator = rmul(rpow(MPR, (block.timestamp - lastUpdate)), accumulator);
 
     uint256 reserves = aurei.balanceOf(address(treasury));
     uint256 aureiSupply = aurei.totalSupply();
@@ -179,8 +175,15 @@ contract Teller is ITeller, Ownable, Base, DSMath {
     // Repayment
     if (op == 1) newDebt = sub(sub(aureiSupply, reserves), delta);
 
-    // Calculate utilization and APR
-    uint256 utilization = wdiv(newDebt, aureiSupply);
+    // Update scaled accumulator (to calculate capital balances)
+    uint256 multipliedByUtilization = rmul(sub(MPR, RAY), utilization * 1e9);
+    uint256 multipliedByUtilizationPlusOne = add(multipliedByUtilization, RAY);
+    uint256 exponentiated =
+      rpow(multipliedByUtilizationPlusOne, (block.timestamp - lastUpdate));
+    scaledAccum = rmul(exponentiated, scaledAccum);
+
+    // Calculate new utilization and APR
+    utilization = wdiv(newDebt, aureiSupply);
     uint256 oneMinusUtilization = sub(RAY, utilization * 1e9);
     uint256 oneDividedByOneMinusUtilization =
       rdiv(10**27 * 0.01, oneMinusUtilization);
@@ -188,24 +191,11 @@ contract Teller is ITeller, Ownable, Base, DSMath {
 
     // Round to nearest 0.25%
     uint256 round = 0.0025 * 10**27;
-    APR = (APR / round) * round;
+    APR = ((APR + round - 1) / round) * round;
 
     // Get MPR
     uint256 oneMinusUtilizationScaled = EXP_UTILIZATION[APR];
     MPR = rdiv(RAY, sub(oneMinusUtilizationScaled, RAY));
-    // New loan updates the accumulator here (after liquidity has been withdrawn)
-    if (op == 0)
-      accumulator = rmul(
-        rpow(MPR, (block.timestamp - lastUpdate)),
-        accumulator
-      );
-
-    // Update scaled accumulator (to calculate capital balances)
-    uint256 multipliedByUtilization = rmul(sub(MPR, RAY), utilization * 1e9);
-    uint256 multipliedByUtilizationPlusOne = add(multipliedByUtilization, RAY);
-    uint256 exponentiated =
-      rpow(multipliedByUtilizationPlusOne, (block.timestamp - lastUpdate));
-    scaledAccum = rmul(exponentiated, scaledAccum);
 
     // Update time index
     lastUpdate = block.timestamp;

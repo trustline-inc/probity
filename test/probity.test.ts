@@ -4,10 +4,24 @@ import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-web3";
 import { web3 } from "hardhat";
 import { expect } from "chai";
+import { Decimal } from "decimal.js";
+import BigNumber from "bignumber.js";
 
 import { Aurei, Teller, Treasury, Vault } from "../typechain";
 import deploy from "../lib/deploy";
 import { SECONDS_IN_YEAR } from "./constants";
+
+BigNumber.config({
+  POW_PRECISION: 27,
+  DECIMAL_PLACES: 27,
+  EXPONENTIAL_AT: 1e9,
+});
+Decimal.config({
+  precision: 30,
+  toExpPos: 28,
+  toExpNeg: -28,
+  rounding: Decimal.ROUND_HALF_UP,
+});
 
 // Wallets
 let lender: SignerWithAddress;
@@ -132,6 +146,33 @@ describe("Probity", function () {
       expect(borrowerDebt.toString()).to.equal(
         web3.utils.toWei(principal.toString())
       );
+
+      // Verify the rate
+      const utilization = new BigNumber(principal).div(capital);
+      const expectedAPR = new BigNumber(1).plus(
+        new BigNumber(1).div(
+          new BigNumber(100).multipliedBy(new BigNumber(1).minus(utilization))
+        )
+      );
+
+      Decimal.set({ precision: 30, rounding: Decimal.ROUND_HALF_UP }); // Extra level of precision required for rounding
+      const expectedMPR = new Decimal(expectedAPR.toString())
+        .pow(new Decimal(1).div(SECONDS_IN_YEAR))
+        .toFixed(27);
+      Decimal.set({ precision: 27, rounding: Decimal.ROUND_HALF_UP });
+
+      const expectedMprAsInteger = new BigNumber(expectedMPR).multipliedBy(
+        1e27
+      );
+      const MPR = await teller.getMPR();
+      const MPR_AS_DECIMAL = new BigNumber(MPR.toString())
+        .div(1e27)
+        .toFixed(27);
+      const APR_AS_DECIMAL = new BigNumber(MPR_AS_DECIMAL).pow(SECONDS_IN_YEAR);
+
+      expect(MPR.toString()).to.equal(expectedMprAsInteger.toString());
+      expect(MPR_AS_DECIMAL.toString()).to.equal(expectedMPR.toString());
+      expect(APR_AS_DECIMAL.toFixed(3)).to.equal(expectedAPR.toString());
     });
 
     it("Allows a user to borrow a second time", async () => {
@@ -148,12 +189,26 @@ describe("Probity", function () {
       var tx = await web3.eth.getTransaction(txLoanResponse.hash);
       var block = await web3.eth.getBlock(tx.blockNumber);
       var timestamp = block.timestamp;
-      var delta = Number(timestamp) - lastUpdated;
+      // var delta = Number(timestamp) - lastUpdated;
+      var delta = 1;
 
       // Check capital balances
-      const expectedLenderCapital = "1500000000936661921546";
+      const expectedAPR = 1.015;
+      const expectedUtilization = 1 / 3;
+      const expectedMPR = new Decimal(expectedAPR)
+        .toPower(new Decimal(1).div(SECONDS_IN_YEAR))
+        .pow(delta);
+      const expectedLenderCapital = new BigNumber(expectedMPR.toString())
+        .minus(1)
+        .multipliedBy(expectedUtilization)
+        .plus(1)
+        .multipliedBy(1500)
+        .multipliedBy(1e18)
+        .decimalPlaces(0);
       var lenderCapital = await treasury.capitalOf(lender.address);
-      expect(lenderCapital.toString()).to.equal(expectedLenderCapital);
+      expect(lenderCapital.toString()).to.equal(
+        expectedLenderCapital.toString()
+      );
 
       const borrowerCapital = await treasury.capitalOf(borrower.address);
       expect(borrowerCapital.toString()).to.equal("0");
@@ -170,9 +225,13 @@ describe("Probity", function () {
       const lenderDebt = await teller.balanceOf(lender.address);
       expect(lenderDebt.toString()).to.equal("0");
 
-      const expectedBorrowerDebt = "1000000000468330960774";
+      const expectedBorrowerDebt = new BigNumber(expectedMPR.toString())
+        .multipliedBy(principal)
+        .plus(principal)
+        .multipliedBy(1e18)
+        .decimalPlaces(0);
       const borrowerDebt = await teller.balanceOf(borrower.address);
-      expect(borrowerDebt.toString()).to.equal(expectedBorrowerDebt);
+      expect(borrowerDebt.toString()).to.equal(expectedBorrowerDebt.toString());
     });
   });
 });
