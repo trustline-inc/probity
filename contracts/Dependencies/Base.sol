@@ -9,6 +9,7 @@ contract Base {
   // --- Registered contracts ---
 
   enum Contract {Aurei, Bridge, TcnToken, Teller, Treasury, Vault}
+  enum Activity {Borrow, Repay, Stake, Redeem, Withdraw}
 
   // --- Math constants ---
 

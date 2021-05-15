@@ -103,7 +103,7 @@ contract Teller is ITeller, Ownable, Base, DSMath {
     require(pool >= principal);
 
     // Update interest rate
-    updateRate(principal, 0);
+    updateRate(principal, Activity.Borrow);
 
     // Calculate normalized principal sum
     uint256 normalized = rdiv(principal, accumulator);
@@ -135,7 +135,7 @@ contract Teller is ITeller, Ownable, Base, DSMath {
     aurei.transferFrom(msg.sender, address(this), amount);
 
     // Update interest rate
-    updateRate(amount, 1);
+    updateRate(amount, Activity.Repay);
 
     // Calculate normalized repayment amount
     uint256 normalized = rdiv(amount, accumulator);
@@ -153,9 +153,11 @@ contract Teller is ITeller, Ownable, Base, DSMath {
     emit Repayment(msg.sender, amount, collateral, block.timestamp);
   }
 
-  // --- Internal Functions ---
-
-  function updateRate(uint256 delta, uint256 op) internal {
+  function updateRate(uint256 delta, Activity activity)
+    external
+    override
+    onlyTellerOrTreasury
+  {
     // Only run on first loan
     if (lastUpdate == 0) lastUpdate = block.timestamp;
 
@@ -166,14 +168,13 @@ contract Teller is ITeller, Ownable, Base, DSMath {
     uint256 reserves = aurei.balanceOf(address(treasury));
     uint256 aureiSupply = aurei.totalSupply();
 
-    // New Loan
-    if (op == 0) {
+    if (activity == Activity.Borrow) {
       newDebt = add(sub(aureiSupply, reserves), delta);
       require(delta < reserves, "TELLER: Not enough supply.");
     }
 
-    // Repayment
-    if (op == 1) newDebt = sub(sub(aureiSupply, reserves), delta);
+    if (activity == Activity.Repay)
+      newDebt = sub(sub(aureiSupply, reserves), delta);
 
     // Update scaled accumulator (to calculate capital balances)
     uint256 multipliedByUtilization = rmul(sub(MPR, RAY), utilization * 1e9);
@@ -255,6 +256,17 @@ contract Teller is ITeller, Ownable, Base, DSMath {
    */
   modifier onlyTreasury {
     require(msg.sender == registry.getContractAddress(Contract.Treasury));
+    _;
+  }
+
+  /**
+   * @dev Ensure that msg.sender === Treasury || msg.sender === Teller contract address.
+   */
+  modifier onlyTellerOrTreasury {
+    require(
+      msg.sender == registry.getContractAddress(Contract.Treasury) ||
+        msg.sender == registry.getContractAddress(Contract.Teller)
+    );
     _;
   }
 }

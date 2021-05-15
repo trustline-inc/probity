@@ -89,6 +89,7 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
     );
     initialCapital[msg.sender] = initialCapital[msg.sender].add(capital);
     _totalSupply = _totalSupply.add(capital);
+    teller.updateRate(0, Activity.Stake);
     emit TreasuryUpdated(msg.sender, collateral, capital);
   }
 
@@ -123,6 +124,8 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
     // Unencumber collateral
     vault.unlock(msg.sender, collateral);
 
+    teller.updateRate(0, Activity.Redeem);
+
     // Emit event
     emit TreasuryUpdated(msg.sender, collateral, capital);
   }
@@ -153,6 +156,11 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
     } else {
       aurei.transferFrom(address(this), msg.sender, amount);
     }
+
+    teller.updateRate(0, Activity.Withdraw);
+
+    // Emit event
+    emit TreasuryUpdated(msg.sender, 0, capital);
   }
 
   /**

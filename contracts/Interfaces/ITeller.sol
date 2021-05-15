@@ -2,6 +2,8 @@
 
 pragma solidity ^0.8.0;
 
+import "../Dependencies/Base.sol";
+
 /**
  * @notice Manages debts for all vaults.
  */
@@ -38,4 +40,6 @@ interface ITeller {
   function getScaledAccumulator() external view returns (uint256);
 
   function totalDebt() external view returns (uint256);
+
+  function updateRate(uint256 delta, Activity activity) external;
 }
