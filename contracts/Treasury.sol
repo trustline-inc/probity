@@ -55,8 +55,8 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
    * @notice Returns the capital balance of a vault.
    */
   function capitalOf(address owner) external view override returns (uint256) {
-    uint256 accumulator = teller.getScaledAccumulator();
-    uint256 capital = wmul(normalizedCapital[owner], accumulator) / 1e9;
+    uint256 capitalAccumulator = teller.getCapitalAccumulator();
+    uint256 capital = wmul(normalizedCapital[owner], capitalAccumulator) / 1e9;
     return capital;
   }
 
@@ -64,7 +64,7 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
    * @notice Returns the interest balance of a vault.
    */
   function interestOf(address owner) external view override returns (uint256) {
-    uint256 accumulator = teller.getScaledAccumulator();
+    uint256 accumulator = teller.getCapitalAccumulator();
     uint256 capital = wmul(normalizedCapital[owner], accumulator) / 1e9;
     uint256 interest = capital - initialCapital[owner];
     return interest;
@@ -82,14 +82,14 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
   {
     vault.lock(msg.sender, collateral);
     aurei.mint(address(this), capital);
-    uint256 accumulator = teller.getAccumulator();
+    uint256 accumulator = teller.getCapitalAccumulator();
     normalizedCapital[msg.sender] = add(
       normalizedCapital[msg.sender],
       rdiv(capital, accumulator)
     );
     initialCapital[msg.sender] = initialCapital[msg.sender].add(capital);
     _totalSupply = _totalSupply.add(capital);
-    teller.updateRate(0, Activity.Stake);
+    teller.updateRate();
     emit TreasuryUpdated(msg.sender, collateral, capital);
   }
 
@@ -106,7 +106,7 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
     checkRedemptionEligibility(collateral, capital)
   {
     // Reduce capital balance
-    uint256 accumulator = teller.getAccumulator();
+    uint256 accumulator = teller.getCapitalAccumulator();
     normalizedCapital[msg.sender] = sub(
       normalizedCapital[msg.sender],
       rdiv(capital, accumulator)
@@ -124,7 +124,7 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
     // Unencumber collateral
     vault.unlock(msg.sender, collateral);
 
-    teller.updateRate(0, Activity.Redeem);
+    teller.updateRate();
 
     // Emit event
     emit TreasuryUpdated(msg.sender, collateral, capital);
@@ -137,13 +137,12 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
    */
   function withdraw(uint256 amount, bool tcn) external override {
     // Calculate withdrawable TCN
-    uint256 accumulator = teller.getScaledAccumulator();
+    uint256 accumulator = teller.getCapitalAccumulator();
     uint256 capital = wmul(normalizedCapital[msg.sender], accumulator) / 1e9;
     uint256 interest = capital - initialCapital[msg.sender];
     require(amount <= interest, "TREASURY: Insufficient interest balance");
 
     // Reduce capital
-    // initialCapital[msg.sender] = capital.sub(amount);
     normalizedCapital[msg.sender] = sub(
       normalizedCapital[msg.sender],
       rdiv(amount, accumulator)
@@ -157,7 +156,7 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
       aurei.transferFrom(address(this), msg.sender, amount);
     }
 
-    teller.updateRate(0, Activity.Withdraw);
+    teller.updateRate();
 
     // Emit event
     emit TreasuryUpdated(msg.sender, 0, capital);
@@ -208,22 +207,31 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
   /**
    * @notice Ensures that the owner has sufficient collateral after redemption,
    * and that it meets the minimum collateral ratio requirement.
-   * @param requested - The amount of collateral to unlock.
-   * @param capital - The amount of Aurei to redeem.
+   * @param collateralRequested - The amount of collateral to unlock.
+   * @param capitalToRemove - The amount of Aurei to burn.
    */
-  modifier checkRedemptionEligibility(uint256 requested, uint256 capital) {
+  modifier checkRedemptionEligibility(
+    uint256 collateralRequested,
+    uint256 capitalToRemove
+  ) {
     (uint256 total, uint256 encumbered, uint256 unencumbered) =
       vault.get(msg.sender);
-    require(encumbered >= requested, "TREASURY: Collateral not available.");
+    require(
+      encumbered >= collateralRequested,
+      "TREASURY: Collateral not available."
+    );
 
     // Get current capital balance
-    uint256 accumulator = teller.getScaledAccumulator();
-    uint256 balance = wmul(normalizedCapital[msg.sender], accumulator) / 1e9;
+    uint256 accumulator = teller.getCapitalAccumulator();
+    uint256 capital = wmul(normalizedCapital[msg.sender], accumulator) / 1e9;
+    uint256 interest = this.interestOf(msg.sender);
+    require(capital >= capitalToRemove, "TREASURY: Capital not available.");
+    uint256 remainder = capital.sub(interest).sub(capitalToRemove);
 
     // TODO: Hook in collateral price
-    if (balance.sub(capital) != 0) {
+    if (remainder != 0) {
       uint256 ratio =
-        wdiv(wmul(encumbered.sub(requested), 1 ether), balance.sub(capital));
+        wdiv(wmul(encumbered.sub(collateralRequested), 1 ether), remainder);
       require(
         ratio >= LIQUIDATION_RATIO,
         "TREASURY: Insufficient collateral provided"

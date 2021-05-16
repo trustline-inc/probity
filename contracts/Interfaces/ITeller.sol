@@ -35,11 +35,11 @@ interface ITeller {
 
   function getMPR() external view returns (uint256);
 
-  function getAccumulator() external view returns (uint256);
+  function getDebtAccumulator() external view returns (uint256);
 
-  function getScaledAccumulator() external view returns (uint256);
+  function getCapitalAccumulator() external view returns (uint256);
 
   function totalDebt() external view returns (uint256);
 
-  function updateRate(uint256 delta, Base.Activity activity) external;
+  function updateRate() external;
 }

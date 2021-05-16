@@ -17,8 +17,8 @@ import "hardhat/console.sol";
  */
 contract Teller is ITeller, Ownable, Base, DSMath {
   // --- Data ---
-  uint256 public accumulator; // Rate accumulator [ray]
-  uint256 public scaledAccum; // Rate accumulator scaled by utilization
+  uint256 public debtAccumulator; // Rate accumulator [ray]
+  uint256 public capitalAccumulator; // Rate accumulator scaled by utilization
   uint256 public utilization; // Aurei reserve utilization
   uint256 public lastUpdate; // Timestamp of last rate update
   uint256 public APR; // Annualized percentage rate
@@ -39,9 +39,9 @@ contract Teller is ITeller, Ownable, Base, DSMath {
 
     // Set defaults
     lastUpdate = 0;
-    accumulator = RAY;
-    scaledAccum = RAY;
-    utilization = WAD;
+    utilization = 0;
+    debtAccumulator = RAY;
+    capitalAccumulator = RAY;
     APR = RAY;
     MPR = RAY;
   }
@@ -62,7 +62,7 @@ contract Teller is ITeller, Ownable, Base, DSMath {
    * @notice Returns the total debt balance of a borrower.
    */
   function balanceOf(address owner) external view override returns (uint256) {
-    return rmul(debts[owner], accumulator);
+    return rmul(debts[owner], debtAccumulator);
   }
 
   function getAPR() external view override returns (uint256) {
@@ -73,16 +73,16 @@ contract Teller is ITeller, Ownable, Base, DSMath {
     return MPR;
   }
 
-  function getAccumulator() external view override returns (uint256) {
-    return accumulator;
+  function getDebtAccumulator() external view override returns (uint256) {
+    return debtAccumulator;
   }
 
-  function getScaledAccumulator() external view override returns (uint256) {
-    return scaledAccum;
+  function getCapitalAccumulator() external view override returns (uint256) {
+    return capitalAccumulator;
   }
 
   function totalDebt() external view override returns (uint256) {
-    return rmul(debt, accumulator);
+    return rmul(debt, debtAccumulator);
   }
 
   /**
@@ -99,23 +99,19 @@ contract Teller is ITeller, Ownable, Base, DSMath {
     vault.lock(msg.sender, collateral);
 
     // Check Treasury's Aurei balance
-    uint256 pool = aurei.balanceOf(address(treasury));
-    require(pool >= principal);
+    uint256 reserves = aurei.balanceOf(address(treasury));
+    require(reserves >= principal);
 
-    // Update interest rate
-    this.updateRate(principal, Activity.Borrow);
-
-    // Calculate normalized principal sum
-    uint256 normalized = rdiv(principal, accumulator);
-
-    // Increase normalized individual debt
+    // Increase normalized individual and aggregate debt
+    uint256 normalized = rdiv(principal, debtAccumulator);
     debts[msg.sender] = add(debts[msg.sender], normalized);
-
-    // Increase normalized aggregate debt
     debt = add(debt, normalized);
 
     // Send Aurei to borrower
     treasury.fundLoan(msg.sender, principal);
+
+    // Update interest rate
+    this.updateRate();
 
     // Emit event
     emit LoanCreated(msg.sender, collateral, principal, APR, block.timestamp);
@@ -132,19 +128,15 @@ contract Teller is ITeller, Ownable, Base, DSMath {
     checkRequestedCollateral(amount, collateral)
   {
     // Transfer Aurei from borrower to treasury
-    aurei.transferFrom(msg.sender, address(this), amount);
+    aurei.transferFrom(msg.sender, address(treasury), amount);
+
+    // Decrease normalized individual and aggregate debt
+    uint256 normalized = rdiv(amount, debtAccumulator);
+    debts[msg.sender] = sub(debts[msg.sender], normalized);
+    debt = sub(debt, normalized);
 
     // Update interest rate
-    this.updateRate(amount, Activity.Repay);
-
-    // Calculate normalized repayment amount
-    uint256 normalized = rdiv(amount, accumulator);
-
-    // Decrease normalized individual debt
-    debts[msg.sender] = sub(debts[msg.sender], normalized);
-
-    // Decrease normalized aggregate debt
-    debt = sub(debt, normalized);
+    this.updateRate();
 
     // Unlock collateral
     vault.unlock(msg.sender, collateral);
@@ -153,50 +145,37 @@ contract Teller is ITeller, Ownable, Base, DSMath {
     emit Repayment(msg.sender, amount, collateral, block.timestamp);
   }
 
-  function updateRate(uint256 delta, Activity activity)
-    external
-    override
-    onlyTellerOrTreasury
-  {
-    // Only run on first loan
+  function updateRate() external override onlyTellerOrTreasury {
+    // Only runs on first update
     if (lastUpdate == 0) lastUpdate = block.timestamp;
 
-    // Calculate new aggregate debt
-    uint256 newDebt;
-    accumulator = rmul(rpow(MPR, (block.timestamp - lastUpdate)), accumulator);
+    // Update debt accumulator
+    if (utilization > 0)
+      debtAccumulator = rmul(
+        rpow(MPR, (block.timestamp - lastUpdate)),
+        debtAccumulator
+      );
 
-    uint256 reserves = aurei.balanceOf(address(treasury));
-    uint256 aureiSupply = aurei.totalSupply();
-
-    if (activity == Activity.Borrow) {
-      newDebt = add(sub(aureiSupply, reserves), delta);
-      require(delta < reserves, "TELLER: Not enough supply.");
-    }
-
-    if (activity == Activity.Repay)
-      newDebt = sub(sub(aureiSupply, reserves), delta);
-
-    // Update scaled accumulator (to calculate capital balances)
+    // Update capital accumulator
     uint256 multipliedByUtilization = rmul(sub(MPR, RAY), utilization * 1e9);
     uint256 multipliedByUtilizationPlusOne = add(multipliedByUtilization, RAY);
     uint256 exponentiated =
       rpow(multipliedByUtilizationPlusOne, (block.timestamp - lastUpdate));
-    scaledAccum = rmul(exponentiated, scaledAccum);
+    capitalAccumulator = rmul(exponentiated, capitalAccumulator);
 
-    // Calculate new utilization and APR
-    utilization = wdiv(newDebt, aureiSupply);
+    // Set new APR (round to nearest 0.25%)
+    uint256 borrows =
+      sub(aurei.totalSupply(), aurei.balanceOf(address(treasury)));
+    utilization = wdiv(borrows, aurei.totalSupply());
+    uint256 round = 0.0025 * 10**27;
     uint256 oneMinusUtilization = sub(RAY, utilization * 1e9);
     uint256 oneDividedByOneMinusUtilization =
       rdiv(10**27 * 0.01, oneMinusUtilization);
     APR = add(oneDividedByOneMinusUtilization, RAY);
-
-    // Round to nearest 0.25%
-    uint256 round = 0.0025 * 10**27;
     APR = ((APR + round - 1) / round) * round;
 
-    // Get MPR
-    uint256 oneMinusUtilizationScaled = EXP_UTILIZATION[APR];
-    MPR = rdiv(RAY, sub(oneMinusUtilizationScaled, RAY));
+    // Set new MPR
+    MPR = APR_TO_MPR[APR];
 
     // Update time index
     lastUpdate = block.timestamp;
@@ -242,7 +221,7 @@ contract Teller is ITeller, Ownable, Base, DSMath {
     uint256 ratio =
       wdiv(
         wmul(sub(encumbered, requested), 1 ether),
-        sub(rmul(debts[msg.sender], accumulator), repayment)
+        sub(rmul(debts[msg.sender], debtAccumulator), repayment)
       );
     require(
       ratio >= LIQUIDATION_RATIO,

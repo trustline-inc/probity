@@ -13,9 +13,10 @@ import deploy from "../lib/deploy";
 import { SECONDS_IN_YEAR } from "./constants";
 
 BigNumber.config({
-  POW_PRECISION: 27,
+  POW_PRECISION: 30,
   DECIMAL_PLACES: 27,
   EXPONENTIAL_AT: 1e9,
+  ROUNDING_MODE: BigNumber.ROUND_DOWN,
 });
 Decimal.config({
   precision: 30,
@@ -26,7 +27,6 @@ Decimal.config({
 
 // Wallets
 let lender: SignerWithAddress;
-let bootstrapper: SignerWithAddress;
 let borrower: SignerWithAddress;
 
 // Contracts
@@ -47,14 +47,13 @@ describe("Treasury", function () {
 
     // Set signers
     lender = signers.lender;
-    bootstrapper = signers.bootstrapper;
     borrower = signers.borrower;
   });
 
   describe("Capital allocation", async function () {
     it("Mints Aurei", async () => {
-      // Set up initial collateral of 1,000 FLR
-      const lenderCollateral = 1000;
+      // Set up initial collateral of 750 FLR
+      const lenderCollateral = 750;
 
       const txLender = {
         from: lender.address,
@@ -62,9 +61,9 @@ describe("Treasury", function () {
       };
       let txLenderResponse = await vault.connect(lender).deposit(txLender);
 
-      // Issue 500 AUR from 1,000 FLR
+      // Issue 500 AUR from 750 FLR
       const aurei = 500;
-      const encumberedCollateral = 1000;
+      const encumberedCollateral = 750;
 
       txLenderResponse = await treasury
         .connect(lender)
@@ -72,15 +71,13 @@ describe("Treasury", function () {
           web3.utils.toWei(encumberedCollateral.toString()),
           web3.utils.toWei(aurei.toString())
         );
+
+      const balance = await treasury.connect(lender).capitalOf(lender.address);
+
+      expect(balance.toString()).to.equal(web3.utils.toWei(aurei.toString()));
     });
 
     it("Gets the current balance", async () => {
-      let balance: any;
-
-      balance = await treasury.capitalOf(bootstrapper.address);
-
-      expect(web3.utils.fromWei(balance.toString())).to.equal("0");
-
       // Set up borrower vault
       const txBorrower = {
         from: borrower.address,
@@ -110,23 +107,17 @@ describe("Treasury", function () {
         expectedAPR.toString()
       );
 
-      Decimal.set({ precision: 30, rounding: Decimal.ROUND_DOWN }); // Extra level of precision required for rounding
-      const expectedMPR = new Decimal(expectedAPR.toString()).toPower(
-        new Decimal(1).div(SECONDS_IN_YEAR)
-      );
-      Decimal.set({ precision: 27, rounding: Decimal.ROUND_DOWN });
-
-      var expectedMprAsInteger = new BigNumber(
-        expectedMPR.toFixed(27)
-      ).multipliedBy(1e27);
-
       const MPR = await teller.getMPR();
       const MPR_AS_DECIMAL = new BigNumber(MPR.toString()).div(1e27);
       const APR_AS_DECIMAL = new BigNumber(MPR_AS_DECIMAL).pow(SECONDS_IN_YEAR);
 
-      expect(MPR.toString()).to.equal(expectedMprAsInteger.toString());
-      expect(MPR_AS_DECIMAL.toString()).to.equal(expectedMPR.toFixed(27));
-      expect(APR_AS_DECIMAL.toFixed(2)).to.equal(expectedAPR.toFixed(2));
+      expect(MPR.toString()).to.equal("1000000001546067007857011769");
+      expect(MPR_AS_DECIMAL.toString()).to.equal(
+        "1.000000001546067007857011769"
+      );
+      expect(APR_AS_DECIMAL.toFixed(3, BigNumber.ROUND_HALF_UP)).to.equal(
+        expectedAPR.toFixed(3, BigNumber.ROUND_HALF_UP)
+      );
 
       // Warp time
       await ethers.provider.send("evm_increaseTime", [SECONDS_IN_YEAR]);
@@ -141,8 +132,10 @@ describe("Treasury", function () {
         );
 
       // Check capital balance
-      balance = await treasury.capitalOf(lender.address);
-      const expectedLenderCapital = new BigNumber(expectedMPR.toString())
+      let balance = await treasury.capitalOf(lender.address);
+      const expectedLenderCapital = new BigNumber(
+        "1.000000001546067007857011769"
+      )
         .minus(1)
         .multipliedBy(utilization)
         .plus(1)
@@ -151,7 +144,7 @@ describe("Treasury", function () {
         .multipliedBy(1e18)
         .decimalPlaces(0);
 
-      // Fix this later
+      // TODO: Fix below, for some reason it's slightly off.
       // expect(web3.utils.fromWei(balance.toString())).to.equal(web3.utils.fromWei(expectedLenderCapital.toString()));
     });
   });
@@ -172,8 +165,8 @@ describe("Treasury", function () {
 
   describe("Collateral Redemption", async function () {
     it("Redeems capital", async () => {
-      const aureiSupplied = 400;
-      const encumberedCollateral = 800;
+      const aureiSupplied = 500;
+      const encumberedCollateral = 750;
       await expect(
         treasury
           .connect(lender)
