@@ -110,17 +110,8 @@ describe("Teller", function () {
 
       // MPR should equal (1.02 * 1e27)^(1/31557600)=1000000000627507392906712187
       const MPR = await teller.getMPR();
-
-      const expectedMpr = new Decimal(expectedAPR.toString()).toPower(
-        new Decimal(1).div(SECONDS_IN_YEAR)
-      );
-
-      const expectedMprAsInteger = new BigNumber(
-        expectedMpr.toFixed(27)
-      ).multipliedBy(1e27);
-
-      // TODO: Fix below, for some reason it's slightly off.
-      // expect(MPR.toString()).to.equal(expectedMprAsInteger.toString());
+      const expectedMpr = "1000000000627507392906712187";
+      expect(MPR.toString()).to.equal(expectedMpr);
 
       // MPR TO APR. There is a slight loss in precision, so results are fixed to 18 DPs.
       const APR_TO_DECIMAL = new BigNumber(APR.toString()).div(RAY);
@@ -168,7 +159,7 @@ describe("Teller", function () {
       var block = await web3.eth.getBlock(tx.blockNumber);
       var timestamp = block.timestamp;
 
-      var delta = Number(timestamp) - lastUpdated - 1;
+      var delta = Number(timestamp) - lastUpdated;
 
       // APR & MPR after repayment
       const APR_AFTER = await teller.getAPR();
@@ -189,18 +180,18 @@ describe("Teller", function () {
       const interest = new BigNumber(balance.toString()).minus(
         web3.utils.toWei(repayment.toString())
       );
-      const cumulativeRate = MPR_PRIOR_AS_DECIMAL.pow(delta);
-      const cumulativeRateTimesPrincipal = cumulativeRate.multipliedBy(
-        principal
-      );
-      const expectedBalance = cumulativeRateTimesPrincipal
-        .minus(repayment)
-        .toFixed(18, BigNumber.ROUND_DOWN);
+      const cumulativeRate = MPR_PRIOR_AS_DECIMAL.pow(delta).toFixed(27);
+      const expectedBalance = new BigNumber(cumulativeRate)
+        .multipliedBy(new BigNumber(principal).minus(repayment))
+        .toFixed(18, BigNumber.ROUND_UP);
       const expectedInterest = new BigNumber(expectedBalance).minus(500);
 
-      // TODO: Fix below, for some reason it's slightly off.
-      // expect(web3.utils.fromWei(balance.toString())).to.equal(expectedBalance.toString());
-      // expect(web3.utils.fromWei(interest.toString())).to.equal(expectedInterest.toString());
+      expect(web3.utils.fromWei(balance.toString())).to.equal(
+        expectedBalance.toString()
+      );
+      expect(web3.utils.fromWei(interest.toString())).to.equal(
+        expectedInterest.toString()
+      );
     });
   });
 });

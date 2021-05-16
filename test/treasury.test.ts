@@ -133,18 +133,21 @@ describe("Treasury", function () {
 
       // Check capital balance
       let balance = await treasury.capitalOf(lender.address);
+      const expectedMPR = "1.000000001546067007857011769";
       const expectedLenderCapital = new BigNumber(
-        "1.000000001546067007857011769"
+        new BigNumber(expectedMPR)
+          .minus(1)
+          .multipliedBy(utilization)
+          .plus(1)
+          .toFixed(27)
       )
-        .minus(1)
-        .multipliedBy(utilization)
-        .plus(1)
-        .pow(SECONDS_IN_YEAR + 1)
+        .pow(SECONDS_IN_YEAR + 2)
         .multipliedBy(500)
         .multipliedBy(1e18)
-        .decimalPlaces(0);
+        .toFixed(0, BigNumber.ROUND_UP);
 
-      // TODO: Fix below, for some reason it's slightly off.
+      // Loses precision with DS-Math, probably due to the large exponent (31577600)
+      // Either try a new math library or reduce the period to something smaller like a month
       // expect(web3.utils.fromWei(balance.toString())).to.equal(web3.utils.fromWei(expectedLenderCapital.toString()));
     });
   });

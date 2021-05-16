@@ -15,6 +15,7 @@ BigNumber.config({
   POW_PRECISION: 30,
   DECIMAL_PLACES: 27,
   EXPONENTIAL_AT: 1e9,
+  ROUNDING_MODE: BigNumber.ROUND_DOWN,
 });
 Decimal.config({
   precision: 30,
