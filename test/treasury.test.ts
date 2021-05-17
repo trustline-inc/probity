@@ -7,7 +7,7 @@ import { Decimal } from "decimal.js";
 import { ethers, web3 } from "hardhat";
 import { expect } from "chai";
 
-import { TcnToken, Teller, Treasury, Vault } from "../typechain";
+import { Aurei, TcnToken, Teller, Treasury, Vault } from "../typechain";
 
 import deploy from "../lib/deploy";
 import { SECONDS_IN_YEAR } from "./constants";
@@ -30,6 +30,7 @@ let lender: SignerWithAddress;
 let borrower: SignerWithAddress;
 
 // Contracts
+let aurei: Aurei;
 let tcnToken: TcnToken;
 let teller: Teller;
 let treasury: Treasury;
@@ -40,6 +41,7 @@ describe("Treasury", function () {
     const { contracts, signers } = await deploy();
 
     // Set contracts
+    aurei = contracts.aurei;
     tcnToken = contracts.tcnToken;
     teller = contracts.teller;
     treasury = contracts.treasury;
@@ -153,7 +155,7 @@ describe("Treasury", function () {
   });
 
   describe("Interest", async function () {
-    it("Allows interest withdrawal", async () => {
+    it("Allows TCN interest withdrawal", async () => {
       var interest = await treasury.interestOf(lender.address);
       await treasury.connect(lender).withdraw(10, true);
       const balance = await tcnToken.balanceOf(lender.address);
@@ -163,6 +165,15 @@ describe("Treasury", function () {
       ).to.be.greaterThan(0);
       const supply = await tcnToken.totalSupply();
       expect(supply).to.equal(balance);
+    });
+
+    it("Allows AUR interest withdrawal", async () => {
+      var previousBalance = await aurei.balanceOf(lender.address);
+      await treasury.connect(lender).withdraw(10, false);
+      var balance = await aurei.balanceOf(lender.address);
+      const supply = await tcnToken.totalSupply();
+      expect(supply.toString()).to.equal("10");
+      expect(balance.toString()).to.equal(previousBalance.add(10).toString());
     });
   });
 

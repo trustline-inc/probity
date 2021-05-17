@@ -153,7 +153,7 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
       aurei.burn(address(this), amount);
       tcnToken.mint(msg.sender, amount);
     } else {
-      aurei.transferFrom(address(this), msg.sender, amount);
+      aurei.transfer(msg.sender, amount);
     }
 
     teller.updateRate();
