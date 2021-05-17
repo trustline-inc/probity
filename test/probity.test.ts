@@ -67,7 +67,7 @@ describe("Probity", function () {
       const capital = 1500;
       txLenderResponse = await treasury
         .connect(lender)
-        .issue(
+        .stake(
           web3.utils.toWei(lenderCollateral.toString()),
           web3.utils.toWei(capital.toString())
         );

@@ -22,7 +22,7 @@ interface ITreasury {
 
   function fundLoan(address borrower, uint256 principal) external;
 
-  function issue(uint256 collateral, uint256 capital) external;
+  function stake(uint256 collateral, uint256 capital) external;
 
   function redeem(uint256 collateral, uint256 capital) external;
 

@@ -75,7 +75,7 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
    * @param collateral - Amount of collateral backing the Aurei.
    * @param capital - Amount of Aurei to mint.
    */
-  function issue(uint256 collateral, uint256 capital)
+  function stake(uint256 collateral, uint256 capital)
     external
     override
     checkIssuanceEligibility(collateral, capital)

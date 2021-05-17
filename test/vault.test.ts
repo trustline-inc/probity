@@ -123,7 +123,7 @@ describe("Vault", function () {
       // Alice encumbers her collateral
       treasury
         .connect(alice)
-        .issue(
+        .stake(
           web3.utils.toWei(equityCollateral.toString()),
           web3.utils.toWei(equity.toString())
         );

@@ -68,7 +68,7 @@ describe("Teller", function () {
 
     txLenderResponse = await treasury
       .connect(lender)
-      .issue(
+      .stake(
         web3.utils.toWei(encumberedCollateral.toString()),
         web3.utils.toWei(equity.toString())
       );
