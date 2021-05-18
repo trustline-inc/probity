@@ -15,14 +15,14 @@ interface ITeller {
     uint256 collateral,
     uint256 timestamp,
     uint256 rate,
-    address borrower
+    address indexed borrower
   );
 
   event Repayment(
     uint256 amount,
     uint256 collateral,
     uint256 timestamp,
-    address borrower
+    address indexed borrower
   );
 
   // --- Functions ---
