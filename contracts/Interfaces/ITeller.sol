@@ -2,8 +2,6 @@
 
 pragma solidity ^0.8.0;
 
-import "../Dependencies/Base.sol";
-
 /**
  * @notice Manages debt for all vaults.
  */
@@ -47,7 +45,7 @@ interface ITeller {
 
   // User actions
 
-  function createLoan(uint256 collateral, uint256 principal) external;
+  function createLoan(uint256 principal) external payable;
 
   function repay(uint256 amount, uint256 collateral) external;
 }

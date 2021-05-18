@@ -57,22 +57,14 @@ describe("Treasury", function () {
       // Set up initial collateral of 750 FLR
       const lenderCollateral = 750;
 
-      const txLender = {
-        from: lender.address,
-        value: web3.utils.toWei(lenderCollateral.toString()),
-      };
-      let txLenderResponse = await vault.connect(lender).deposit(txLender);
-
       // Issue 500 AUR from 750 FLR
       const aurei = 500;
-      const encumberedCollateral = 750;
 
-      txLenderResponse = await treasury
+      await treasury
         .connect(lender)
-        .stake(
-          web3.utils.toWei(encumberedCollateral.toString()),
-          web3.utils.toWei(aurei.toString())
-        );
+        .stake(web3.utils.toWei(aurei.toString()), {
+          value: web3.utils.toWei(lenderCollateral.toString()),
+        });
 
       const balance = await treasury.connect(lender).capitalOf(lender.address);
 
@@ -80,22 +72,14 @@ describe("Treasury", function () {
     });
 
     it("Gets the current balance", async () => {
-      // Set up borrower vault
-      const txBorrower = {
-        from: borrower.address,
-        value: web3.utils.toWei((1000).toString()),
-      };
-      await vault.connect(borrower).deposit(txBorrower);
-
       // Create loan
       const principal = 400;
       const collateral = 800;
       await teller
         .connect(borrower)
-        .createLoan(
-          web3.utils.toWei(collateral.toString()),
-          web3.utils.toWei(principal.toString())
-        );
+        .createLoan(web3.utils.toWei(principal.toString()), {
+          value: web3.utils.toWei(collateral.toString()),
+        });
 
       // 80% utilization and 5% APR
       const APR = await teller.getAPR();
@@ -128,10 +112,9 @@ describe("Treasury", function () {
       // Force rate accumulator to update with a second loan
       await teller
         .connect(borrower)
-        .createLoan(
-          web3.utils.toWei((20).toString()),
-          web3.utils.toWei((10).toString())
-        );
+        .createLoan(web3.utils.toWei((10).toString()), {
+          value: web3.utils.toWei((20).toString()),
+        });
 
       // Check capital balance
       let balance = await treasury.capitalOf(lender.address);
@@ -180,12 +163,12 @@ describe("Treasury", function () {
   describe("Collateral Redemption", async function () {
     it("Redeems capital", async () => {
       const aureiSupplied = 500;
-      const encumberedCollateral = 750;
+      const collateralRequested = 750;
       await expect(
         treasury
           .connect(lender)
           .redeem(
-            web3.utils.toWei(encumberedCollateral.toString()),
+            web3.utils.toWei(collateralRequested.toString()),
             web3.utils.toWei(aureiSupplied.toString())
           )
       ).to.be.revertedWith("TREASURY: Not enough reserves.");

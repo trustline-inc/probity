@@ -21,21 +21,21 @@ contract Vault is IVault, Base, Ownable {
 
   // --- Data ---
 
-  struct State {
-    uint256 collateral;
-    uint256 encumbered;
-    uint256 available;
+  struct Collateral {
+    uint256 loanCollateral;
+    uint256 stakedCollateral;
   }
 
   ITeller public teller;
   ITreasury public treasury;
   IRegistry public registry;
 
-  uint256 public _totalEncumbered;
-  uint256 public _debtEncumbered;
-  uint256 public _equityEncumbered;
+  // Aggregate collateral amounts
+  uint256 public _totalCollateral;
+  uint256 public _totalLoanCollateral;
+  uint256 public _totalStakedCollateral;
 
-  mapping(address => State) public vaults;
+  mapping(address => Collateral) public vaults;
 
   // --- Constructor ---
 
@@ -61,44 +61,57 @@ contract Vault is IVault, Base, Ownable {
     external
     view
     override
-    returns (
-      uint256,
-      uint256,
-      uint256
-    )
+    returns (uint256, uint256)
   {
-    State memory vault = vaults[owner];
-    return (vault.collateral, vault.encumbered, vault.available);
+    Collateral memory balances = vaults[owner];
+    return (balances.loanCollateral, balances.stakedCollateral);
   }
 
   /**
-   * @notice Gets the total amount of locked collateral.
-   * @return The amount of locked collateral.
+   * @notice Gets the aggregate amount of loan collateral.
+   * @return The amount of loan collateral.
    */
-  function totalEncumbered() external view override returns (uint256) {
-    return _totalEncumbered;
+  function totalLoanCollateral() external view override returns (uint256) {
+    return _totalLoanCollateral;
   }
 
-  function debtEncumbered() external view override returns (uint256) {
-    return _debtEncumbered;
-  }
-
-  function equityEncumbered() external view override returns (uint256) {
-    return _equityEncumbered;
+  /**
+   * @notice Gets the aggregate amount of collateral for capital.
+   * @return The amount of locked collateral for capital.
+   */
+  function totalStakedCollateral() external view override returns (uint256) {
+    return _totalStakedCollateral;
   }
 
   /**
    * @notice Deposits collateral to a vault.
    */
-  function deposit() external payable override {
-    State storage vault = vaults[msg.sender];
-    vault.collateral = vaults[msg.sender].collateral.add(msg.value);
-    vault.available = vault.available.add(msg.value);
+  function deposit(Activity activity, address owner)
+    external
+    payable
+    override
+    onlyTellerOrTreasury
+  {
+    require(
+      activity == Activity.Borrow || activity == Activity.Stake,
+      "VAULT: Invalid activity for deposit."
+    );
+    Collateral storage balances = vaults[owner];
+
+    if (activity == Activity.Borrow) {
+      balances.loanCollateral = vaults[owner].loanCollateral.add(msg.value);
+      _totalLoanCollateral = _totalLoanCollateral.add(msg.value);
+    }
+
+    if (activity == Activity.Stake) {
+      balances.stakedCollateral = vaults[owner].stakedCollateral.add(msg.value);
+      _totalStakedCollateral = _totalStakedCollateral.add(msg.value);
+    }
+
     emit VaultUpdated(
-      msg.sender,
-      vault.collateral,
-      vault.encumbered,
-      vault.available
+      owner,
+      balances.loanCollateral,
+      balances.stakedCollateral
     );
   }
 
@@ -107,80 +120,41 @@ contract Vault is IVault, Base, Ownable {
    * @param amount - The amount of collateral to withdraw.
    * @dev https://docs.soliditylang.org/en/v0.4.24/common-patterns.html#withdrawal-from-contracts
    */
-  function withdraw(uint256 amount) external override {
-    State storage vault = vaults[msg.sender];
+  function withdraw(
+    Activity activity,
+    address owner,
+    uint256 amount
+  ) external override onlyTellerOrTreasury {
     require(
-      amount <= vault.collateral - vault.encumbered,
-      "VAULT: Overdraft not allowed."
+      activity == Activity.Repay || activity == Activity.Redeem,
+      "VAULT: Invalid activity for withdrawal."
     );
-    vault.collateral = vault.collateral.sub(amount);
-    vault.available = vault.available.sub(amount);
-    payable(msg.sender).transfer(amount);
-    emit VaultUpdated(
-      msg.sender,
-      vault.collateral,
-      vault.encumbered,
-      vault.available
-    );
-  }
+    Collateral storage balances = vaults[owner];
 
-  /**
-   * @notice Encumbers collateral.
-   * @dev Only called by Teller or Treasury contracts.
-   */
-  function lock(address owner, uint256 amount)
-    external
-    override
-    onlyTellerOrTreasury
-  {
-    State storage vault = vaults[owner];
-    vault.encumbered = vault.encumbered.add(amount);
-    vault.available = vault.available.sub(amount);
-    _totalEncumbered = _totalEncumbered.add(amount);
-
-    if (msg.sender == address(teller)) {
-      _debtEncumbered = _debtEncumbered.add(amount);
+    if (activity == Activity.Repay) {
+      require(
+        amount <= balances.loanCollateral,
+        "VAULT: Overdraft not allowed."
+      );
+      balances.loanCollateral = vaults[owner].loanCollateral.sub(amount);
+      _totalLoanCollateral = _totalLoanCollateral.sub(amount);
     }
 
-    if (msg.sender == address(treasury)) {
-      _equityEncumbered = _equityEncumbered.add(amount);
+    if (activity == Activity.Redeem) {
+      require(
+        amount <= balances.stakedCollateral,
+        "VAULT: Overdraft not allowed."
+      );
+      balances.stakedCollateral = vaults[owner].stakedCollateral.sub(amount);
+      _totalStakedCollateral = _totalStakedCollateral.sub(amount);
     }
+
+    payable(owner).transfer(amount);
 
     emit VaultUpdated(
       owner,
-      vault.collateral,
-      vault.encumbered,
-      vault.available
-    );
-  }
-
-  /**
-   * @notice Unencumbers collateral.
-   * @dev Only called by Teller or Treasury contracts.
-   */
-  function unlock(address owner, uint256 amount)
-    external
-    override
-    onlyTellerOrTreasury
-  {
-    State storage vault = vaults[owner];
-    vault.encumbered = vault.encumbered.sub(amount);
-    vault.available = vault.available.add(amount);
-    _totalEncumbered = _totalEncumbered.sub(amount);
-
-    if (msg.sender == address(teller)) {
-      _debtEncumbered = _debtEncumbered.sub(amount);
-    }
-
-    if (msg.sender == address(treasury)) {
-      _equityEncumbered = _equityEncumbered.sub(amount);
-    }
-
-    emit VaultUpdated(
-      owner,
-      vault.collateral,
-      vault.encumbered,
-      vault.available
+      balances.loanCollateral,
+      balances.stakedCollateral
     );
   }
 

@@ -87,16 +87,16 @@ contract Teller is ITeller, Ownable, Base, DSMath {
 
   /**
    * @notice Creates a loan.
-   * @param collateral - Amount of collateral used to secure the loan.
    * @param principal - The initial amount of the loan.
    */
-  function createLoan(uint256 collateral, uint256 principal)
+  function createLoan(uint256 principal)
     external
+    payable
     override
-    checkEligibility(collateral, principal)
+    checkEligibility(principal)
   {
-    // Lock borrower collateral
-    vault.lock(msg.sender, collateral);
+    // Deposit borrower collateral
+    vault.deposit{value: msg.value}(Activity.Borrow, msg.sender);
 
     // Check Treasury's Aurei balance
     uint256 reserves = aurei.balanceOf(address(treasury));
@@ -114,7 +114,7 @@ contract Teller is ITeller, Ownable, Base, DSMath {
     this.updateRate();
 
     // Emit event
-    emit LoanCreated(principal, collateral, block.timestamp, APR, msg.sender);
+    emit LoanCreated(principal, msg.value, block.timestamp, APR, msg.sender);
   }
 
   /**
@@ -139,8 +139,8 @@ contract Teller is ITeller, Ownable, Base, DSMath {
     // Update interest rate
     this.updateRate();
 
-    // Unlock collateral
-    vault.unlock(msg.sender, collateral);
+    // Return collateral
+    vault.withdraw(Activity.Repay, msg.sender, collateral);
 
     // Emit event
     emit Repayment(amount, collateral, block.timestamp, msg.sender);
@@ -187,16 +187,13 @@ contract Teller is ITeller, Ownable, Base, DSMath {
   /**
    * @notice Ensures that the borrower has sufficient collateral to secure a loan,
    * and that it meets the minimum collateral ratio requirement.
-   * @param collateral - The amount of collateral securing the loan.
    * @param principal - The principal amount of Aurei.
    */
-  modifier checkEligibility(uint256 collateral, uint256 principal) {
-    (uint256 total, uint256 encumbered, uint256 unencumbered) =
-      vault.get(msg.sender);
-    require(unencumbered >= collateral, "TELLER: Collateral not available.");
+  modifier checkEligibility(uint256 principal) {
+    (uint256 loanCollateral, uint256 stakedCollateral) = vault.get(msg.sender);
 
     // TODO: Hook in collateral price
-    uint256 ratio = wdiv(wmul(collateral, 1 ether), principal);
+    uint256 ratio = wdiv(wmul(msg.value, 1 ether), principal);
     require(
       ratio >= LIQUIDATION_RATIO,
       "PRO: Insufficient collateral provided"
@@ -211,17 +208,13 @@ contract Teller is ITeller, Ownable, Base, DSMath {
    * @param requested - The amount of collateral to be unlocked
    */
   modifier checkRequestedCollateral(uint256 repayment, uint256 requested) {
-    (uint256 total, uint256 encumbered, uint256 unencumbered) =
-      vault.get(msg.sender);
-
-    // Ensure that the requested collateral amount is less than the encumbered amount
-    require(encumbered >= requested, "TELLER: Collateral not available.");
+    (uint256 loanCollateral, uint256 stakedCollateral) = vault.get(msg.sender);
 
     // Ensure that the collateral ratio after the repayment is sufficient
     // TODO: Hook in collateral price
     uint256 ratio =
       wdiv(
-        wmul(sub(encumbered, requested), 1 ether),
+        wmul(sub(loanCollateral, requested), 1 ether),
         sub(rmul(debts[msg.sender], debtAccumulator), repayment)
       );
     require(

@@ -72,15 +72,15 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
 
   /**
    * @notice Adds capital to the system by minting Aurei to the treasury.
-   * @param collateral - Amount of collateral backing the Aurei.
    * @param capital - Amount of Aurei to mint.
    */
-  function stake(uint256 collateral, uint256 capital)
+  function stake(uint256 capital)
     external
+    payable
     override
-    checkIssuanceEligibility(collateral, capital)
+    checkStakingEligibility(capital)
   {
-    vault.lock(msg.sender, collateral);
+    vault.deposit{value: msg.value}(Activity.Stake, msg.sender);
     aurei.mint(address(this), capital);
     uint256 accumulator = teller.getCapitalAccumulator();
     normalizedCapital[msg.sender] = add(
@@ -90,7 +90,7 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
     initialCapital[msg.sender] = initialCapital[msg.sender].add(capital);
     _totalSupply = _totalSupply.add(capital);
     teller.updateRate();
-    emit Stake(capital, collateral, block.timestamp, msg.sender);
+    emit Stake(capital, msg.value, block.timestamp, msg.sender);
   }
 
   /**
@@ -121,10 +121,11 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
     );
     aurei.burn(address(this), capital);
 
-    // Unencumber collateral
-    vault.unlock(msg.sender, collateral);
-
+    // Update the rate
     teller.updateRate();
+
+    // Return collateral
+    vault.withdraw(Activity.Redeem, msg.sender, collateral);
 
     // Emit event
     emit Redemption(capital, collateral, block.timestamp, msg.sender);
@@ -139,7 +140,7 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
     // Calculate withdrawable TCN
     uint256 accumulator = teller.getCapitalAccumulator();
     uint256 capital = wmul(normalizedCapital[msg.sender], accumulator) / 1e9;
-    uint256 interest = capital - initialCapital[msg.sender];
+    uint256 interest = capital.sub(initialCapital[msg.sender]);
     require(amount <= interest, "TREASURY: Insufficient interest balance");
 
     // Reduce capital
@@ -187,16 +188,13 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
   /**
    * @notice Ensures that the owner has sufficient collateral to mint Aurei,
    * and that it meets the minimum collateral ratio requirement.
-   * @param collateral - The amount of collateral used to mint Aurei.
    * @param capital - The amount of Aurei.
    */
-  modifier checkIssuanceEligibility(uint256 collateral, uint256 capital) {
-    (uint256 total, uint256 encumbered, uint256 unencumbered) =
-      vault.get(msg.sender);
-    require(unencumbered >= collateral, "TREASURY: Collateral not available.");
+  modifier checkStakingEligibility(uint256 capital) {
+    (uint256 loanCollateral, uint256 stakedCollateral) = vault.get(msg.sender);
 
     // TODO: Hook in collateral price
-    uint256 ratio = wdiv(wmul(collateral, 1 ether), capital);
+    uint256 ratio = wdiv(wmul(msg.value, 1 ether), capital);
     require(
       ratio >= LIQUIDATION_RATIO,
       "TREASURY: Insufficient collateral provided"
@@ -214,10 +212,9 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
     uint256 collateralRequested,
     uint256 capitalToRemove
   ) {
-    (uint256 total, uint256 encumbered, uint256 unencumbered) =
-      vault.get(msg.sender);
+    (uint256 loanCollateral, uint256 stakedCollateral) = vault.get(msg.sender);
     require(
-      encumbered >= collateralRequested,
+      stakedCollateral >= collateralRequested,
       "TREASURY: Collateral not available."
     );
 
@@ -231,7 +228,10 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
     // TODO: Hook in collateral price
     if (remainder != 0) {
       uint256 ratio =
-        wdiv(wmul(encumbered.sub(collateralRequested), 1 ether), remainder);
+        wdiv(
+          wmul(stakedCollateral.sub(collateralRequested), 1 ether),
+          remainder
+        );
       require(
         ratio >= LIQUIDATION_RATIO,
         "TREASURY: Insufficient collateral provided"

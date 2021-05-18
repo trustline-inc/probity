@@ -45,7 +45,7 @@ interface ITreasury {
 
   // User actions
 
-  function stake(uint256 collateral, uint256 capital) external;
+  function stake(uint256 capital) external payable;
 
   function redeem(uint256 collateral, uint256 capital) external;
 

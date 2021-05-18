@@ -57,20 +57,13 @@ describe("Probity", function () {
       // Create lender vault
       const lenderCollateral = 5000;
 
-      const txLender = {
-        from: lender.address,
-        value: web3.utils.toWei(lenderCollateral.toString()),
-      };
-      let txLenderResponse = await vault.connect(lender).deposit(txLender);
-
       // Mint 1500 Aurei
       const capital = 1500;
-      txLenderResponse = await treasury
+      const txLenderResponse = await treasury
         .connect(lender)
-        .stake(
-          web3.utils.toWei(lenderCollateral.toString()),
-          web3.utils.toWei(capital.toString())
-        );
+        .stake(web3.utils.toWei(capital.toString()), {
+          value: web3.utils.toWei(lenderCollateral.toString()),
+        });
       var tx = await web3.eth.getTransaction(txLenderResponse.hash);
       var block = await web3.eth.getBlock(tx.blockNumber);
 
@@ -99,21 +92,14 @@ describe("Probity", function () {
       // Create borrower vault
       let borrowerCollateral = 3000;
 
-      const txBorrower = {
-        from: borrower.address,
-        value: web3.utils.toWei(borrowerCollateral.toString()),
-      };
-      await vault.connect(borrower).deposit(txBorrower);
-
       // Borrow 500 Aurei
       const principal = 500;
       borrowerCollateral = 1000;
       const txBorrowerResponse = await teller
         .connect(borrower)
-        .createLoan(
-          web3.utils.toWei(borrowerCollateral.toString()),
-          web3.utils.toWei(principal.toString())
-        );
+        .createLoan(web3.utils.toWei(principal.toString()), {
+          value: web3.utils.toWei(borrowerCollateral.toString()),
+        });
       var tx = await web3.eth.getTransaction(txBorrowerResponse.hash);
       var block = await web3.eth.getBlock(tx.blockNumber);
       lastUpdated = block.timestamp;
@@ -192,10 +178,9 @@ describe("Probity", function () {
       // Borrow 500 Aurei
       const txLoanResponse = await teller
         .connect(borrower)
-        .createLoan(
-          web3.utils.toWei(borrowerCollateral.toString()),
-          web3.utils.toWei(principal.toString())
-        );
+        .createLoan(web3.utils.toWei(principal.toString()), {
+          value: web3.utils.toWei(borrowerCollateral.toString()),
+        });
       var tx = await web3.eth.getTransaction(txLoanResponse.hash);
       var block = await web3.eth.getBlock(tx.blockNumber);
       var timestamp = block.timestamp;

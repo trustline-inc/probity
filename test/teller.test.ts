@@ -56,22 +56,14 @@ describe("Teller", function () {
      */
     const lenderCollateral = 4000; // FLR
 
-    const txLender = {
-      from: lender.address,
-      value: web3.utils.toWei(lenderCollateral.toString()),
-    };
-    let txLenderResponse = await vault.connect(lender).deposit(txLender);
-
     // Issue 2000 AUR from 4000 FLR (200% collateralization)
     const equity = 2000;
-    const encumberedCollateral = 4000;
 
-    txLenderResponse = await treasury
+    await treasury
       .connect(lender)
-      .stake(
-        web3.utils.toWei(encumberedCollateral.toString()),
-        web3.utils.toWei(equity.toString())
-      );
+      .stake(web3.utils.toWei(equity.toString()), {
+        value: web3.utils.toWei(lenderCollateral.toString()),
+      });
   });
 
   describe("Loan Creation", async function () {
@@ -79,18 +71,12 @@ describe("Teller", function () {
       const collateral = 2000; // FLR
       const principal = 1000; // AUR
 
-      // Deposit collateral in vault
-      await vault.connect(borrower).deposit({
-        value: web3.utils.toWei(collateral.toString()),
-      });
-
       // Create loan
       const txBorrowerResponse = await teller
         .connect(borrower)
-        .createLoan(
-          web3.utils.toWei(collateral.toString()),
-          web3.utils.toWei(principal.toString())
-        );
+        .createLoan(web3.utils.toWei(principal.toString()), {
+          value: web3.utils.toWei(collateral.toString()),
+        });
 
       var tx = await web3.eth.getTransaction(txBorrowerResponse.hash);
       var block = await web3.eth.getBlock(tx.blockNumber);

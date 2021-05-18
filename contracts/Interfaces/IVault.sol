@@ -13,50 +13,34 @@ interface IVault {
 
   event VaultUpdated(
     address indexed owner,
-    uint256 collateral,
-    uint256 encumbered,
-    uint256 available
+    uint256 loanCollateral,
+    uint256 stakedCollateral
   );
 
   // --- Functions ---
 
-  function totalEncumbered() external view returns (uint256);
+  function totalLoanCollateral() external view returns (uint256);
 
-  function debtEncumbered() external view returns (uint256);
-
-  function equityEncumbered() external view returns (uint256);
+  function totalStakedCollateral() external view returns (uint256);
 
   /**
    * @notice Fetches details about the message sender's vault.
-   * @return (collateral, encumbered, unencumbered)
+   * @return (lockedCollateralForBorrowing, lockedCollateralForStaking)
    */
-  function get(address owner)
-    external
-    view
-    returns (
-      uint256,
-      uint256,
-      uint256
-    );
-
-  /**
-   * @notice Locks the collateral to issue equity or take debt.
-   */
-  function lock(address owner, uint256 amount) external;
-
-  /**
-   * @notice Unlocks the collateral after redeeming equity or repaying debt.
-   */
-  function unlock(address owner, uint256 amount) external;
+  function get(address owner) external view returns (uint256, uint256);
 
   /**
    * @notice Call this to add collateral to an existing vault.
    */
-  function deposit() external payable;
+  function deposit(Base.Activity activity, address owner) external payable;
 
   /**
-   * @notice Call this to withdraw unencumbered collateral from a vault.
-   * @param amount - The amount of unencumbered collateral to withdraw.
+   * @notice Call this to withdraw collateral from a vault.
+   * @param amount - The amount of collateral to withdraw.
    */
-  function withdraw(uint256 amount) external;
+  function withdraw(
+    Base.Activity activity,
+    address owner,
+    uint256 amount
+  ) external;
 }
