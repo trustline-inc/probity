@@ -114,7 +114,7 @@ contract Teller is ITeller, Ownable, Base, DSMath {
     this.updateRate();
 
     // Emit event
-    emit LoanCreated(msg.sender, collateral, principal, APR, block.timestamp);
+    emit LoanCreated(principal, collateral, block.timestamp, APR, msg.sender);
   }
 
   /**
@@ -125,6 +125,7 @@ contract Teller is ITeller, Ownable, Base, DSMath {
    */
   function repay(uint256 amount, uint256 collateral)
     external
+    override
     checkRequestedCollateral(amount, collateral)
   {
     // Transfer Aurei from borrower to treasury
@@ -142,7 +143,7 @@ contract Teller is ITeller, Ownable, Base, DSMath {
     vault.unlock(msg.sender, collateral);
 
     // Emit event
-    emit Repayment(msg.sender, amount, collateral, block.timestamp);
+    emit Repayment(amount, collateral, block.timestamp, msg.sender);
   }
 
   function updateRate() external override onlyTellerOrTreasury {

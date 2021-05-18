@@ -90,7 +90,7 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
     initialCapital[msg.sender] = initialCapital[msg.sender].add(capital);
     _totalSupply = _totalSupply.add(capital);
     teller.updateRate();
-    emit TreasuryUpdated(msg.sender, collateral, capital);
+    emit Stake(capital, collateral, block.timestamp, msg.sender);
   }
 
   /**
@@ -127,7 +127,7 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
     teller.updateRate();
 
     // Emit event
-    emit TreasuryUpdated(msg.sender, collateral, capital);
+    emit Redemption(capital, collateral, block.timestamp, msg.sender);
   }
 
   /**
@@ -159,7 +159,7 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
     teller.updateRate();
 
     // Emit event
-    emit TreasuryUpdated(msg.sender, 0, capital);
+    emit Withdrawal(amount, 0, block.timestamp, msg.sender);
   }
 
   /**

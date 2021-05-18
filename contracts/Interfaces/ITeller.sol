@@ -5,31 +5,33 @@ pragma solidity ^0.8.0;
 import "../Dependencies/Base.sol";
 
 /**
- * @notice Manages debts for all vaults.
+ * @notice Manages debt for all vaults.
  */
 interface ITeller {
   // --- Events ---
 
   event LoanCreated(
-    address borrower,
-    uint256 collateral,
     uint256 principal,
+    uint256 collateral,
+    uint256 timestamp,
     uint256 rate,
-    uint256 timestamp
+    address borrower
   );
 
   event Repayment(
-    address borrower,
     uint256 amount,
     uint256 collateral,
-    uint256 timestamp
+    uint256 timestamp,
+    address borrower
   );
 
   // --- Functions ---
 
+  // Read-only
+
   function balanceOf(address borrower) external view returns (uint256);
 
-  function createLoan(uint256 collateral, uint256 principal) external;
+  function totalDebt() external view returns (uint256);
 
   function getAPR() external view returns (uint256);
 
@@ -39,7 +41,13 @@ interface ITeller {
 
   function getCapitalAccumulator() external view returns (uint256);
 
-  function totalDebt() external view returns (uint256);
+  // Teller actions
 
   function updateRate() external;
+
+  // User actions
+
+  function createLoan(uint256 collateral, uint256 principal) external;
+
+  function repay(uint256 amount, uint256 collateral) external;
 }
