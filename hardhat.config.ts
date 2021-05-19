@@ -25,6 +25,9 @@ const config: HardhatUserConfig = {
     },
     hardhat: {
       chainId: 1337,
+      allowUnlimitedContractSize: true,
+      gas: 12000000,
+      blockGasLimit: 0x1fffffffffffff,
     },
     local: {
       url: "http://127.0.0.1:9650/ext/bc/C/rpc",
