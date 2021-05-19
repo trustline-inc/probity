@@ -39,6 +39,15 @@ interface ITeller {
 
   function getCapitalAccumulator() external view returns (uint256);
 
+  function getUtilization()
+    external
+    view
+    returns (
+      uint256,
+      uint256,
+      uint256
+    );
+
   // Teller actions
 
   function updateRate() external;

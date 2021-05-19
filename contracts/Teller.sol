@@ -81,6 +81,27 @@ contract Teller is ITeller, Ownable, Base, DSMath {
     return capitalAccumulator;
   }
 
+  /**
+   * @notice Gets the utilization rate and quantities
+   * @return Total principal, total supply, and utilization rate.
+   */
+  function getUtilization()
+    external
+    view
+    override
+    returns (
+      uint256,
+      uint256,
+      uint256
+    )
+  {
+    uint256 _totalPrincipal =
+      sub(aurei.totalSupply(), aurei.balanceOf(address(treasury)));
+    uint256 _totalSupply = aurei.totalSupply();
+    uint256 _utilization = wdiv(_totalPrincipal, _totalSupply);
+    return (_totalPrincipal, _totalSupply, _utilization);
+  }
+
   function totalDebt() external view override returns (uint256) {
     return rmul(debt, debtAccumulator);
   }

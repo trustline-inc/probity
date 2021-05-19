@@ -59,11 +59,9 @@ describe("Teller", function () {
     // Issue 2000 AUR from 4000 FLR (200% collateralization)
     const equity = 2000;
 
-    await treasury
-      .connect(lender)
-      .stake(web3.utils.toWei(equity.toString()), {
-        value: web3.utils.toWei(lenderCollateral.toString()),
-      });
+    await treasury.connect(lender).stake(web3.utils.toWei(equity.toString()), {
+      value: web3.utils.toWei(lenderCollateral.toString()),
+    });
   });
 
   describe("Loan Creation", async function () {
@@ -178,6 +176,11 @@ describe("Teller", function () {
       expect(web3.utils.fromWei(interest.toString())).to.equal(
         expectedInterest.toString()
       );
+    });
+
+    it("Gets the utilization rate", async () => {
+      const utilization = await teller.getUtilization();
+      expect(utilization).to.have.lengthOf(3);
     });
   });
 });
