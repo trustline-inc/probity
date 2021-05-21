@@ -60,11 +60,9 @@ describe("Treasury", function () {
       // Issue 500 AUR from 750 FLR
       const aurei = 500;
 
-      await treasury
-        .connect(lender)
-        .stake(web3.utils.toWei(aurei.toString()), {
-          value: web3.utils.toWei(lenderCollateral.toString()),
-        });
+      await treasury.connect(lender).stake(web3.utils.toWei(aurei.toString()), {
+        value: web3.utils.toWei(lenderCollateral.toString()),
+      });
 
       const balance = await treasury.connect(lender).capitalOf(lender.address);
 
@@ -173,5 +171,10 @@ describe("Treasury", function () {
           )
       ).to.be.revertedWith("TREASURY: Not enough reserves.");
     });
+  });
+
+  describe("Liquidations", () => {
+    it("Can go below the liquidation ratio", async () => {});
+    it("Allows a keeper to liquidate a supplier", async () => {});
   });
 });

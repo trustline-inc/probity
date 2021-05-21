@@ -57,7 +57,7 @@ contract Vault is IVault, Base, Ownable {
    * @notice Fetches vault details.
    * @return The vault data structure.
    */
-  function get(address owner)
+  function balanceOf(address owner)
     external
     view
     override
@@ -126,7 +126,10 @@ contract Vault is IVault, Base, Ownable {
     uint256 amount
   ) external override onlyTellerOrTreasury {
     require(
-      activity == Activity.Repay || activity == Activity.Redeem,
+      activity == Activity.Repay ||
+        activity == Activity.Redeem ||
+        activity == Activity.LiquidateLoan ||
+        activity == Activity.LiquidateStake,
       "VAULT: Invalid activity for withdrawal."
     );
     Collateral storage balances = vaults[owner];
@@ -138,6 +141,7 @@ contract Vault is IVault, Base, Ownable {
       );
       balances.loanCollateral = vaults[owner].loanCollateral.sub(amount);
       _totalLoanCollateral = _totalLoanCollateral.sub(amount);
+      payable(owner).transfer(amount);
     }
 
     if (activity == Activity.Redeem) {
@@ -147,9 +151,20 @@ contract Vault is IVault, Base, Ownable {
       );
       balances.stakedCollateral = vaults[owner].stakedCollateral.sub(amount);
       _totalStakedCollateral = _totalStakedCollateral.sub(amount);
+      payable(owner).transfer(amount);
     }
 
-    payable(owner).transfer(amount);
+    if (activity == Activity.LiquidateLoan) {
+      balances.loanCollateral = vaults[owner].loanCollateral.sub(amount);
+      _totalLoanCollateral = _totalLoanCollateral.sub(amount);
+      payable(msg.sender).transfer(amount);
+    }
+
+    if (activity == Activity.LiquidateStake) {
+      balances.stakedCollateral = vaults[owner].stakedCollateral.sub(amount);
+      _totalStakedCollateral = _totalStakedCollateral.sub(amount);
+      payable(msg.sender).transfer(amount);
+    }
 
     emit VaultUpdated(
       owner,

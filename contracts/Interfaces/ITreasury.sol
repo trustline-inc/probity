@@ -29,6 +29,16 @@ interface ITreasury {
     address indexed owner
   );
 
+  event Liquidation(
+    uint256 collateralAmount,
+    uint256 collateralValue,
+    uint256 liquidatorFee,
+    uint256 protocolFee,
+    uint256 timestamp,
+    address indexed borrower,
+    address indexed liquidator
+  );
+
   // --- Functions ---
 
   // Read-only
@@ -50,4 +60,6 @@ interface ITreasury {
   function redeem(uint256 collateral, uint256 capital) external;
 
   function withdraw(uint256 amount, bool tcn) external;
+
+  function liquidate(address supplier) external;
 }

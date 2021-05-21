@@ -203,7 +203,65 @@ contract Teller is ITeller, Ownable, Base, DSMath {
     lastUpdate = block.timestamp;
   }
 
+  /**
+   * @notice Liquidates a borrower's position
+   * @param borrower - Borrower address
+   */
+  function liquidate(address borrower)
+    external
+    payable
+    override
+    checkLiquidationElegibility(borrower)
+  {
+    // TODO: Calculate fees and value
+    uint256 collateralValue = 1;
+    uint256 liquidatorFee = 1;
+    uint256 protocolFee = 1;
+
+    (uint256 loanCollateral, uint256 stakedCollateral) =
+      vault.balanceOf(borrower);
+
+    // Clear loan balance
+    uint256 normalized = rdiv(debts[msg.sender], debtAccumulator);
+    debts[msg.sender] = 0;
+    debt = sub(debt, normalized);
+
+    // Send loan collateral to liquidator
+    // TODO: Check usage of delegatecall. Parity bug?
+    address(vault).delegatecall(
+      abi.encodeWithSignature(
+        "withdraw(address,uint256)",
+        borrower,
+        loanCollateral
+      )
+    );
+
+    emit Liquidation(
+      loanCollateral,
+      collateralValue,
+      liquidatorFee,
+      protocolFee,
+      block.timestamp,
+      borrower,
+      msg.sender
+    );
+  }
+
   // --- Modifiers ---
+
+  modifier checkLiquidationElegibility(address borrower) {
+    (uint256 loanCollateral, uint256 stakedCollateral) =
+      vault.balanceOf(borrower);
+    uint256 debt = this.balanceOf(borrower);
+
+    // TODO: Hook in collateral price
+    uint256 ratio = wdiv(wmul(loanCollateral, 1 ether), debt);
+    require(
+      ratio <= LIQUIDATION_RATIO,
+      "TREASURY: Liquidation threshold not exceeded"
+    );
+    _;
+  }
 
   /**
    * @notice Ensures that the borrower has sufficient collateral to secure a loan,
@@ -211,7 +269,8 @@ contract Teller is ITeller, Ownable, Base, DSMath {
    * @param principal - The principal amount of Aurei.
    */
   modifier checkEligibility(uint256 principal) {
-    (uint256 loanCollateral, uint256 stakedCollateral) = vault.get(msg.sender);
+    (uint256 loanCollateral, uint256 stakedCollateral) =
+      vault.balanceOf(msg.sender);
 
     // TODO: Hook in collateral price
     uint256 ratio = wdiv(wmul(msg.value, 1 ether), principal);
@@ -229,7 +288,8 @@ contract Teller is ITeller, Ownable, Base, DSMath {
    * @param requested - The amount of collateral to be unlocked
    */
   modifier checkRequestedCollateral(uint256 repayment, uint256 requested) {
-    (uint256 loanCollateral, uint256 stakedCollateral) = vault.get(msg.sender);
+    (uint256 loanCollateral, uint256 stakedCollateral) =
+      vault.balanceOf(msg.sender);
 
     // Ensure that the collateral ratio after the repayment is sufficient
     // TODO: Hook in collateral price

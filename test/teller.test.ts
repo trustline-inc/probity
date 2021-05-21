@@ -183,4 +183,9 @@ describe("Teller", function () {
       expect(utilization).to.have.lengthOf(3);
     });
   });
+
+  describe("Liquidations", () => {
+    it("Can go below the liquidation ratio", async () => {});
+    it("Allows a keeper to liquidate a borrower", async () => {});
+  });
 });

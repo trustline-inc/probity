@@ -24,10 +24,10 @@ interface IVault {
   function totalStakedCollateral() external view returns (uint256);
 
   /**
-   * @notice Fetches details about the message sender's vault.
-   * @return (lockedCollateralForBorrowing, lockedCollateralForStaking)
+   * @notice Fetches collateral balances of the owner's vault.
+   * @return (loanCollateral, stakedCollateral)
    */
-  function get(address owner) external view returns (uint256, uint256);
+  function balanceOf(address owner) external view returns (uint256, uint256);
 
   /**
    * @notice Call this to add collateral to an existing vault.

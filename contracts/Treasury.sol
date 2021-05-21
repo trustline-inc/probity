@@ -177,6 +177,60 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
   }
 
   /**
+   * @notice Liquidates a supplier's position
+   * @param supplier - Supplier address
+   */
+  function liquidate(address supplier)
+    external
+    override
+    checkLiquidationElegibility(supplier)
+  {
+    // TODO: Calculate fees and value
+    uint256 collateralValue = 1;
+    uint256 liquidatorFee = 1;
+    uint256 protocolFee = 1;
+
+    (uint256 loanCollateral, uint256 stakedCollateral) =
+      vault.balanceOf(supplier);
+
+    // Clear capital balance (keep interest)
+    uint256 capital = this.capitalOf(supplier);
+    uint256 interest = this.interestOf(supplier);
+    uint256 capitalMinusInterest = capital.sub(interest);
+
+    require(
+      aurei.balanceOf(address(this)) > capitalMinusInterest,
+      "TREASURY: Not enough reserves."
+    );
+
+    normalizedCapital[msg.sender] = 0;
+    initialCapital[msg.sender] = 0;
+    _totalSupply = _totalSupply.sub(capitalMinusInterest);
+
+    // TODO: Check usage of delegatecall. Parity bug?
+    address(vault).delegatecall(
+      abi.encodeWithSignature(
+        "withdraw(address,uint256)",
+        supplier,
+        stakedCollateral
+      )
+    );
+
+    // Burn the Aurei
+    aurei.burn(address(this), capitalMinusInterest);
+
+    emit Liquidation(
+      stakedCollateral,
+      collateralValue,
+      liquidatorFee,
+      protocolFee,
+      block.timestamp,
+      supplier,
+      msg.sender
+    );
+  }
+
+  /**
    * @return Total AUR capital
    */
   function totalSupply() external view override returns (uint256) {
@@ -185,13 +239,28 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
 
   // --- Modifiers ---
 
+  modifier checkLiquidationElegibility(address supplier) {
+    (uint256 loanCollateral, uint256 stakedCollateral) =
+      vault.balanceOf(supplier);
+    uint256 capital = this.capitalOf(supplier);
+
+    // TODO: Hook in collateral price
+    uint256 ratio = wdiv(wmul(stakedCollateral, 1 ether), capital);
+    require(
+      ratio <= LIQUIDATION_RATIO,
+      "TREASURY: Liquidation threshold not exceeded"
+    );
+    _;
+  }
+
   /**
    * @notice Ensures that the owner has sufficient collateral to mint Aurei,
    * and that it meets the minimum collateral ratio requirement.
    * @param capital - The amount of Aurei.
    */
   modifier checkStakingEligibility(uint256 capital) {
-    (uint256 loanCollateral, uint256 stakedCollateral) = vault.get(msg.sender);
+    (uint256 loanCollateral, uint256 stakedCollateral) =
+      vault.balanceOf(msg.sender);
 
     // TODO: Hook in collateral price
     uint256 ratio = wdiv(wmul(msg.value, 1 ether), capital);
@@ -212,7 +281,8 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
     uint256 collateralRequested,
     uint256 capitalToRemove
   ) {
-    (uint256 loanCollateral, uint256 stakedCollateral) = vault.get(msg.sender);
+    (uint256 loanCollateral, uint256 stakedCollateral) =
+      vault.balanceOf(msg.sender);
     require(
       stakedCollateral >= collateralRequested,
       "TREASURY: Collateral not available."
