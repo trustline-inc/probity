@@ -144,21 +144,21 @@ contract Bridge {
       aurei.balanceOf(address(this)) > amount,
       "Requested Aurei balance is higher than what the contract currently holds"
     );
-
-    (bool verified, uint256 timestamp) =
-      stateConnector.getPaymentFinality(
-        uint32(0),
-        txHash,
-        ledger,
-        sourceHash,
-        destinationHash,
-        destinationTag,
-        amount
-      );
-    require(
-      verified && timestamp < block.timestamp,
-      "This Transaction has not been proven in stateConnector contract"
-    );
+    // commented out to make this contract work with flare's coston testnet which is pointed at the XRPL mainnet
+    //    (bool verified, uint256 timestamp) =
+    //      stateConnector.getPaymentFinality(
+    //        uint32(0),
+    //        txHash,
+    //        ledger,
+    //        sourceHash,
+    //        destinationHash,
+    //        destinationTag,
+    //        amount
+    //      );
+    //    require(
+    //      verified && timestamp < block.timestamp,
+    //      "This Transaction has not been proven in stateConnector contract"
+    //    );
 
     aurei.transfer(destAddress, amount);
 
