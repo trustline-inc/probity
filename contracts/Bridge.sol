@@ -127,7 +127,7 @@ contract Bridge {
     );
 
     toXRPTransfers[txHash].status = TransferStatus.COMPLETE;
-    AureiTransferToXRPCompleted(txHash, amount);
+    emit AureiTransferToXRPCompleted(txHash, amount);
   }
 
   function transferAureiToFlare(
