@@ -1,5 +1,6 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import "@nomiclabs/hardhat-waffle";
+import { BigNumber } from "ethers";
 import { ethers } from "hardhat";
 
 // Import contract factory types
@@ -125,7 +126,8 @@ const deploy = async () => {
     "Ftso",
     signers.owner
   )) as FtsoFactory;
-  contracts.ftso = await ftsoFactory.deploy();
+  const initialPrice = "121"; // $1.21
+  contracts.ftso = await ftsoFactory.deploy(initialPrice.toString());
   await contracts.ftso.deployed();
 
   const vaultFactory = (await ethers.getContractFactory(

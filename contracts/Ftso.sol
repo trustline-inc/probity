@@ -19,7 +19,9 @@ contract Ftso {
 
   // --- Constructor ---
 
-  constructor() {}
+  constructor(uint256 _price) {
+    price = _price;
+  }
 
   // --- External Functions ---
 
