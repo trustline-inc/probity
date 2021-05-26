@@ -111,20 +111,21 @@ contract Bridge {
     uint64 destinationTag,
     uint64 amount
   ) external {
-    (bool verified, uint256 timestamp) =
-      stateConnector.getPaymentFinality(
-        uint32(0),
-        txHashOnXRP,
-        ledger,
-        sourceHash,
-        destinationHash,
-        destinationTag,
-        amount
-      );
-    require(
-      verified && timestamp < block.timestamp,
-      "This Transaction has not been proven in stateConnector contract"
-    );
+    // commented out to make this contract work with flare's coston testnet which is pointed at the XRPL mainnet
+    // (bool verified, uint256 timestamp) =
+    //   stateConnector.getPaymentFinality(
+    //     uint32(0),
+    //     txHashOnXRP,
+    //     ledger,
+    //     sourceHash,
+    //     destinationHash,
+    //     destinationTag,
+    //     amount
+    //   );
+    // require(
+    //   verified && timestamp < block.timestamp,
+    //   "This Transaction has not been proven in stateConnector contract"
+    // );
 
     toXRPTransfers[txHash].status = TransferStatus.COMPLETE;
     emit AureiTransferToXRPCompleted(txHash, amount);
