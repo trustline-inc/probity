@@ -8,7 +8,7 @@ import "hardhat/console.sol";
 /**
  * @notice Mock contract to store and set FLR/USD prices.
  */
-contract FTSO {
+contract Ftso {
   // --- Data ---
 
   uint256 price;
