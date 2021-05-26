@@ -19,7 +19,7 @@ const config: HardhatUserConfig = {
   defaultNetwork: "coston",
   networks: {
     coston: {
-      url: "https://coston.flare.network/ext/bc/C/rpc",
+      url: "https://coston.trustline.co/ext/bc/C/rpc",
       accounts: [process.env.PRIVATE_KEY],
       chainId: 16,
     },
@@ -32,11 +32,6 @@ const config: HardhatUserConfig = {
     local: {
       url: "http://127.0.0.1:9650/ext/bc/C/rpc",
       accounts: flareLocalAccounts,
-      chainId: 16,
-    },
-    private: {
-      url: "https://coston.trustline.co/ext/bc/C/rpc",
-      accounts: [process.env.PRIVATE_KEY],
       chainId: 16,
     },
   },
