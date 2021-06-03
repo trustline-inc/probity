@@ -1,11 +1,13 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import "@nomiclabs/hardhat-waffle";
+import { BigNumber } from "ethers";
 import { ethers } from "hardhat";
 
 // Import contract factory types
 import {
   AureiFactory,
   BridgeFactory,
+  FtsoFactory,
   RegistryFactory,
   TcnTokenFactory,
   TellerFactory,
@@ -17,6 +19,7 @@ import {
 import {
   Aurei,
   Bridge,
+  Ftso,
   Registry,
   TcnToken,
   Teller,
@@ -32,6 +35,7 @@ const STATE_CONNECTOR_ADDRESS = "0x1000000000000000000000000000000000000001";
 interface Contracts {
   aurei: Aurei;
   bridge: Bridge;
+  ftso: Ftso;
   registry: Registry;
   tcnToken: TcnToken;
   teller: Teller;
@@ -42,6 +46,7 @@ interface Contracts {
 const contracts: Contracts = {
   aurei: null,
   bridge: null,
+  ftso: null,
   registry: null,
   tcnToken: null,
   teller: null,
@@ -53,6 +58,7 @@ const contracts: Contracts = {
 enum Contract {
   Aurei,
   Bridge,
+  Ftso,
   TcnToken,
   Teller,
   Treasury,
@@ -116,6 +122,14 @@ const deploy = async () => {
   contracts.aurei = await aureiFactory.deploy();
   await contracts.aurei.deployed();
 
+  const ftsoFactory = (await ethers.getContractFactory(
+    "Ftso",
+    signers.owner
+  )) as FtsoFactory;
+  const initialPrice = "100"; // $0.00 (price always has an extra 100)
+  contracts.ftso = await ftsoFactory.deploy(initialPrice.toString());
+  await contracts.ftso.deployed();
+
   const vaultFactory = (await ethers.getContractFactory(
     "Vault",
     signers.owner
@@ -150,6 +164,10 @@ const deploy = async () => {
   await contracts.registry.setupContractAddress(
     Contract.Aurei,
     contracts.aurei.address
+  );
+  await contracts.registry.setupContractAddress(
+    Contract.Ftso,
+    contracts.ftso.address
   );
   await contracts.registry.setupContractAddress(
     Contract.TcnToken,
