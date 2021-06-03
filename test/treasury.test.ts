@@ -7,7 +7,7 @@ import { Decimal } from "decimal.js";
 import { ethers, web3 } from "hardhat";
 import { expect } from "chai";
 
-import { Aurei, TcnToken, Teller, Treasury, Vault } from "../typechain";
+import { Aurei, Ftso, TcnToken, Teller, Treasury, Vault } from "../typechain";
 
 import deploy from "../lib/deploy";
 import { SECONDS_IN_YEAR } from "./constants";
@@ -31,6 +31,7 @@ let borrower: SignerWithAddress;
 
 // Contracts
 let aurei: Aurei;
+let ftso: Ftso;
 let tcnToken: TcnToken;
 let teller: Teller;
 let treasury: Treasury;
@@ -175,6 +176,7 @@ describe("Treasury", function () {
 
   describe("Liquidations", () => {
     it("Can go below the liquidation ratio", async () => {});
+
     it("Allows a keeper to liquidate a supplier", async () => {});
   });
 });

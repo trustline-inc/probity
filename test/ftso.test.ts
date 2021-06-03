@@ -29,9 +29,9 @@ describe("FTSO", function () {
   describe("Price feed", function () {
     it("Sets the FLR/USD price", async function () {
       const expectedPrice = 0.8;
-      await ftso.setPrice((expectedPrice * 100 + 100).toString());
+      await ftso.setPrice((expectedPrice * 100).toString());
       const actualPrice = await ftso.getPrice();
-      expect((actualPrice.toNumber() - 100) / 100).to.equal(expectedPrice);
+      expect(actualPrice.toNumber() / 100).to.equal(expectedPrice);
     });
   });
 });
