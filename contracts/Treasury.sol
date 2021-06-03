@@ -7,6 +7,7 @@ import "./Dependencies/Ownable.sol";
 import "./Dependencies/DSMath.sol";
 import "./Dependencies/SafeMath.sol";
 import "./Interfaces/IAurei.sol";
+import "./Interfaces/IFtso.sol";
 import "./Interfaces/IRegistry.sol";
 import "./Interfaces/ITcnToken.sol";
 import "./Interfaces/ITreasury.sol";
@@ -27,6 +28,7 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
   mapping(address => uint256) public normalizedCapital;
 
   IAurei public aurei;
+  IFtso public ftso;
   IRegistry public registry;
   ITcnToken public tcnToken;
   ITeller public teller;
@@ -44,6 +46,7 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
    */
   function initializeContract() external onlyOwner {
     aurei = IAurei(registry.getContractAddress(Contract.Aurei));
+    ftso = IFtso(registry.getContractAddress(Contract.Ftso));
     tcnToken = ITcnToken(registry.getContractAddress(Contract.TcnToken));
     teller = ITeller(registry.getContractAddress(Contract.Teller));
     vault = IVault(registry.getContractAddress(Contract.Vault));
@@ -186,12 +189,12 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
     checkLiquidationElegibility(supplier)
   {
     // TODO: Calculate fees and value
+    // uint256 collateralPrice = ftso.getPrice();
     uint256 collateralValue = 1;
     uint256 liquidatorFee = 1;
     uint256 protocolFee = 1;
 
-    (uint256 loanCollateral, uint256 stakedCollateral) =
-      vault.balanceOf(supplier);
+    (, uint256 stakedCollateral) = vault.balanceOf(supplier);
 
     // Clear capital balance (keep interest)
     uint256 capital = this.capitalOf(supplier);
@@ -207,14 +210,16 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
     initialCapital[msg.sender] = 0;
     _totalSupply = _totalSupply.sub(capitalMinusInterest);
 
-    // TODO: Check usage of delegatecall. Parity bug?
-    address(vault).delegatecall(
-      abi.encodeWithSignature(
-        "withdraw(address,uint256)",
-        supplier,
-        stakedCollateral
-      )
-    );
+    // Send capitalized collateral to liquidity provider
+    (bool success, ) =
+      address(vault).delegatecall(
+        abi.encodeWithSignature(
+          "withdraw(address,uint256)",
+          supplier,
+          stakedCollateral
+        )
+      );
+    require(success);
 
     // Burn the Aurei
     aurei.burn(address(this), capitalMinusInterest);
@@ -243,9 +248,9 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
     (uint256 loanCollateral, uint256 stakedCollateral) =
       vault.balanceOf(supplier);
     uint256 capital = this.capitalOf(supplier);
-
-    // TODO: Hook in collateral price
-    uint256 ratio = wdiv(wmul(stakedCollateral, 1 ether), capital);
+    uint256 collateralPrice = ftso.getPrice();
+    uint256 ratio =
+      wdiv(wdiv(wmul(stakedCollateral, collateralPrice), 100), capital);
     require(
       ratio <= LIQUIDATION_RATIO,
       "TREASURY: Liquidation threshold not exceeded"
@@ -261,9 +266,8 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
   modifier checkStakingEligibility(uint256 capital) {
     (uint256 loanCollateral, uint256 stakedCollateral) =
       vault.balanceOf(msg.sender);
-
-    // TODO: Hook in collateral price
-    uint256 ratio = wdiv(wmul(msg.value, 1 ether), capital);
+    uint256 collateralPrice = ftso.getPrice();
+    uint256 ratio = wdiv(wdiv(wmul(msg.value, collateralPrice), 100), capital);
     require(
       ratio >= LIQUIDATION_RATIO,
       "TREASURY: Insufficient collateral provided"
@@ -295,11 +299,14 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
     require(capital >= capitalToRemove, "TREASURY: Capital not available.");
     uint256 remainder = capital.sub(interest).sub(capitalToRemove);
 
-    // TODO: Hook in collateral price
+    uint256 collateralPrice = ftso.getPrice();
     if (remainder != 0) {
       uint256 ratio =
         wdiv(
-          wmul(stakedCollateral.sub(collateralRequested), 1 ether),
+          wdiv(
+            wmul(stakedCollateral.sub(collateralRequested), collateralPrice),
+            100
+          ),
           remainder
         );
       require(

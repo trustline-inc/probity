@@ -126,7 +126,7 @@ const deploy = async () => {
     "Ftso",
     signers.owner
   )) as FtsoFactory;
-  const initialPrice = "100"; // $0.00 (price always has an extra 100)
+  const initialPrice = "100"; // $1.00
   contracts.ftso = await ftsoFactory.deploy(initialPrice.toString());
   await contracts.ftso.deployed();
 
