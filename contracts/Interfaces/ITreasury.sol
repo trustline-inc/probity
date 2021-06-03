@@ -49,9 +49,11 @@ interface ITreasury {
 
   function totalSupply() external view returns (uint256);
 
-  // Treasury actions
+  // Teller actions
 
   function fundLoan(address borrower, uint256 principal) external;
+
+  function recapitalize(uint256 amount) external payable;
 
   // User actions
 

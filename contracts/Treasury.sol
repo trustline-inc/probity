@@ -34,6 +34,20 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
   ITeller public teller;
   IVault public vault;
 
+  struct LiquidateLocalVars {
+    uint256 collateralAmount;
+    uint256 collateralPrice;
+    uint256 collateralValue;
+    uint256 liquidatorFee;
+    uint256 protocolFee;
+  }
+
+  struct RedeemLocalVars {
+    uint256 accumulator;
+    uint256 collateral;
+    uint256 capital;
+  }
+
   // --- Constructor ---
 
   constructor(address _registry) Ownable(msg.sender) {
@@ -108,30 +122,34 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
     override
     checkRedemptionEligibility(collateral, capital)
   {
+    RedeemLocalVars memory vars;
+    vars.collateral = collateral;
+    vars.capital = capital;
+    vars.accumulator = teller.getCapitalAccumulator();
+
     // Reduce capital balance
-    uint256 accumulator = teller.getCapitalAccumulator();
     normalizedCapital[msg.sender] = sub(
       normalizedCapital[msg.sender],
-      rdiv(capital, accumulator)
+      rdiv(capital, vars.accumulator)
     );
-    initialCapital[msg.sender] = initialCapital[msg.sender].sub(capital);
-    _totalSupply = _totalSupply.sub(capital);
+    initialCapital[msg.sender] = initialCapital[msg.sender].sub(vars.capital);
+    _totalSupply = _totalSupply.sub(vars.capital);
 
     // Burn the Aurei
     require(
-      aurei.balanceOf(address(this)) > capital,
+      aurei.balanceOf(address(this)) > vars.capital,
       "TREASURY: Not enough reserves."
     );
-    aurei.burn(address(this), capital);
+    aurei.burn(address(this), vars.capital);
 
     // Update the rate
     teller.updateRate();
 
     // Return collateral
-    vault.withdraw(Activity.Redeem, msg.sender, collateral);
+    vault.withdraw(Activity.Redeem, msg.sender, msg.sender, vars.collateral);
 
     // Emit event
-    emit Redemption(capital, collateral, block.timestamp, msg.sender);
+    emit Redemption(vars.capital, vars.collateral, block.timestamp, msg.sender);
   }
 
   /**
@@ -188,19 +206,22 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
     override
     checkLiquidationElegibility(supplier)
   {
-    // TODO: Calculate fees and value
-    // uint256 collateralPrice = ftso.getPrice();
-    uint256 collateralValue = 1;
-    uint256 liquidatorFee = 1;
-    uint256 protocolFee = 1;
-
-    (, uint256 stakedCollateral) = vault.balanceOf(supplier);
+    LiquidateLocalVars memory vars;
+    (, vars.collateralAmount) = vault.balanceOf(supplier);
+    vars.collateralPrice = ftso.getPrice();
+    vars.collateralValue = wdiv(
+      wmul(vars.collateralAmount, vars.collateralPrice),
+      100
+    );
+    vars.liquidatorFee = 1;
+    vars.protocolFee = 1;
 
     // Clear capital balance (keep interest)
     uint256 capital = this.capitalOf(supplier);
     uint256 interest = this.interestOf(supplier);
     uint256 capitalMinusInterest = capital.sub(interest);
-
+    console.log(aurei.balanceOf(address(this)));
+    console.log(capitalMinusInterest);
     require(
       aurei.balanceOf(address(this)) > capitalMinusInterest,
       "TREASURY: Not enough reserves."
@@ -211,29 +232,31 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
     _totalSupply = _totalSupply.sub(capitalMinusInterest);
 
     // Send capitalized collateral to liquidity provider
-    (bool success, ) =
-      address(vault).delegatecall(
-        abi.encodeWithSignature(
-          "withdraw(address,uint256)",
-          supplier,
-          stakedCollateral
-        )
-      );
-    require(success);
+    vault.withdraw(
+      Activity.LiquidateStake,
+      supplier,
+      msg.sender,
+      vars.collateralAmount
+    );
 
     // Burn the Aurei
     aurei.burn(address(this), capitalMinusInterest);
 
     emit Liquidation(
-      stakedCollateral,
-      collateralValue,
-      liquidatorFee,
-      protocolFee,
+      vars.collateralAmount,
+      vars.collateralValue,
+      vars.liquidatorFee,
+      vars.protocolFee,
       block.timestamp,
       supplier,
       msg.sender
     );
   }
+
+  /**
+   * @dev requires approve call before
+   */
+  function recapitalize(uint256 amount) external payable override {}
 
   /**
    * @return Total AUR capital

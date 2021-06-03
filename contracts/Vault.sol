@@ -123,6 +123,7 @@ contract Vault is IVault, Base, Ownable {
   function withdraw(
     Activity activity,
     address owner,
+    address recipient,
     uint256 amount
   ) external override onlyTellerOrTreasury {
     require(
@@ -141,7 +142,7 @@ contract Vault is IVault, Base, Ownable {
       );
       balances.loanCollateral = vaults[owner].loanCollateral.sub(amount);
       _totalLoanCollateral = _totalLoanCollateral.sub(amount);
-      payable(owner).transfer(amount);
+      payable(recipient).transfer(amount);
     }
 
     if (activity == Activity.Redeem) {
@@ -151,19 +152,19 @@ contract Vault is IVault, Base, Ownable {
       );
       balances.stakedCollateral = vaults[owner].stakedCollateral.sub(amount);
       _totalStakedCollateral = _totalStakedCollateral.sub(amount);
-      payable(owner).transfer(amount);
+      payable(recipient).transfer(amount);
     }
 
     if (activity == Activity.LiquidateLoan) {
       balances.loanCollateral = vaults[owner].loanCollateral.sub(amount);
       _totalLoanCollateral = _totalLoanCollateral.sub(amount);
-      payable(msg.sender).transfer(amount);
+      payable(recipient).transfer(amount);
     }
 
     if (activity == Activity.LiquidateStake) {
       balances.stakedCollateral = vaults[owner].stakedCollateral.sub(amount);
       _totalStakedCollateral = _totalStakedCollateral.sub(amount);
-      payable(msg.sender).transfer(amount);
+      payable(recipient).transfer(amount);
     }
 
     emit VaultUpdated(

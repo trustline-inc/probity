@@ -34,6 +34,14 @@ contract Teller is ITeller, Ownable, Base, DSMath {
   ITreasury public treasury;
   IVault public vault;
 
+  struct LiquidateLocalVars {
+    uint256 collateralAmount;
+    uint256 collateralPrice;
+    uint256 collateralValue;
+    uint256 purchasePrice;
+    uint256 protocolFee;
+  }
+
   // --- Constructor ---
 
   constructor(address _registry) Ownable(msg.sender) {
@@ -164,7 +172,7 @@ contract Teller is ITeller, Ownable, Base, DSMath {
     this.updateRate();
 
     // Return collateral
-    vault.withdraw(Activity.Repay, msg.sender, collateral);
+    vault.withdraw(Activity.Repay, msg.sender, msg.sender, collateral);
 
     // Emit event
     emit Repayment(amount, collateral, block.timestamp, msg.sender);
@@ -214,37 +222,39 @@ contract Teller is ITeller, Ownable, Base, DSMath {
     external
     payable
     override
-    checkLiquidationElegibility(borrower)
+    checkLiquidationElegibility(borrower, msg.value)
   {
-    // TODO: Calculate fees and value
-    // uint256 collateralPrice = ftso.getPrice();
-    uint256 collateralValue = 1;
-    uint256 liquidatorFee = 1;
-    uint256 protocolFee = 1;
+    LiquidateLocalVars memory vars;
+    (vars.collateralAmount, ) = vault.balanceOf(borrower);
+    vars.collateralPrice = ftso.getPrice();
+    vars.collateralValue = wdiv(
+      wmul(vars.collateralAmount, vars.collateralPrice),
+      100
+    );
+    vars.purchasePrice = msg.value;
+    vars.protocolFee = 1;
 
-    (uint256 loanCollateral, ) = vault.balanceOf(borrower);
+    // Send Aurei to the treasury
+    // treasury.recapitalize(msg.value);
 
     // Clear loan balance
-    uint256 normalized = rdiv(debts[msg.sender], debtAccumulator);
-    debts[msg.sender] = 0;
+    uint256 normalized = rdiv(debts[borrower], debtAccumulator);
+    debts[borrower] = 0;
     debt = sub(debt, normalized);
 
     // Send loan collateral to liquidator
-    (bool success, ) =
-      address(vault).delegatecall(
-        abi.encodeWithSignature(
-          "withdraw(address,uint256)",
-          borrower,
-          loanCollateral
-        )
-      );
-    require(success);
+    vault.withdraw(
+      Activity.LiquidateLoan,
+      borrower,
+      msg.sender,
+      vars.collateralAmount
+    );
 
     emit Liquidation(
-      loanCollateral,
-      collateralValue,
-      liquidatorFee,
-      protocolFee,
+      vars.collateralAmount,
+      vars.collateralValue,
+      vars.purchasePrice,
+      vars.protocolFee,
       block.timestamp,
       borrower,
       msg.sender
@@ -253,7 +263,10 @@ contract Teller is ITeller, Ownable, Base, DSMath {
 
   // --- Modifiers ---
 
-  modifier checkLiquidationElegibility(address borrower) {
+  modifier checkLiquidationElegibility(
+    address borrower,
+    uint256 purchasePrice
+  ) {
     (uint256 loanCollateral, uint256 stakedCollateral) =
       vault.balanceOf(borrower);
     uint256 borrowerDebt = this.balanceOf(borrower);
@@ -263,6 +276,10 @@ contract Teller is ITeller, Ownable, Base, DSMath {
     require(
       ratio <= LIQUIDATION_RATIO,
       "TREASURY: Liquidation threshold not exceeded"
+    );
+    require(
+      purchasePrice >= borrowerDebt,
+      "TREASURY: Purchase price must be greater than or equal to the par value of the borrower debt."
     );
     _;
   }

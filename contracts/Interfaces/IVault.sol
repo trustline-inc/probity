@@ -41,6 +41,7 @@ interface IVault {
   function withdraw(
     Base.Activity activity,
     address owner,
+    address recipient,
     uint256 amount
   ) external;
 }

@@ -35,7 +35,6 @@ let ftso: Ftso;
 let tcnToken: TcnToken;
 let teller: Teller;
 let treasury: Treasury;
-let vault: Vault;
 
 describe("Treasury", function () {
   before(async function () {
@@ -43,10 +42,10 @@ describe("Treasury", function () {
 
     // Set contracts
     aurei = contracts.aurei;
+    ftso = contracts.ftso;
     tcnToken = contracts.tcnToken;
     teller = contracts.teller;
     treasury = contracts.treasury;
-    vault = contracts.vault;
 
     // Set signers
     lender = signers.lender;
@@ -175,8 +174,13 @@ describe("Treasury", function () {
   });
 
   describe("Liquidations", () => {
-    it("Can go below the liquidation ratio", async () => {});
+    it("Allows a keeper to liquidate a supplier", async () => {
+      await ftso.setPrice((0.25 * 100).toString());
 
-    it("Allows a keeper to liquidate a supplier", async () => {});
+      // Borrower must be liquidated first to recapitalize the treasury
+      const parValue = "430500002190934575175";
+      await teller.liquidate(borrower.address, { value: parValue });
+      await treasury.liquidate(lender.address);
+    });
   });
 });
