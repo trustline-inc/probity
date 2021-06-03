@@ -8,7 +8,7 @@ pragma solidity ^0.8.0;
 contract Base {
   // --- Registered contracts ---
 
-  enum Contract {Aurei, Bridge, TcnToken, Teller, Treasury, Vault}
+  enum Contract {Aurei, Bridge, Ftso, TcnToken, Teller, Treasury, Vault}
   enum Activity {
     Borrow,
     Repay,
