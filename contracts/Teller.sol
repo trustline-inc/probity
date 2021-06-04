@@ -6,6 +6,7 @@ import "./Dependencies/Base.sol";
 import "./Dependencies/DSMath.sol";
 import "./Dependencies/Ownable.sol";
 import "./Interfaces/IAurei.sol";
+import "./Interfaces/IFtso.sol";
 import "./Interfaces/IRegistry.sol";
 import "./Interfaces/ITeller.sol";
 import "./Interfaces/ITreasury.sol";
@@ -28,9 +29,18 @@ contract Teller is ITeller, Ownable, Base, DSMath {
   mapping(address => uint256) public debts; // Normalized individual debt [ray]
 
   IAurei public aurei;
+  IFtso public ftso;
   IRegistry public registry;
   ITreasury public treasury;
   IVault public vault;
+
+  struct LiquidateLocalVars {
+    uint256 collateralAmount;
+    uint256 collateralPrice;
+    uint256 collateralValue;
+    uint256 purchasePrice;
+    uint256 protocolFee;
+  }
 
   // --- Constructor ---
 
@@ -52,6 +62,7 @@ contract Teller is ITeller, Ownable, Base, DSMath {
    */
   function initializeContract() external onlyOwner {
     aurei = IAurei(registry.getContractAddress(Contract.Aurei));
+    ftso = IFtso(registry.getContractAddress(Contract.Ftso));
     treasury = ITreasury(registry.getContractAddress(Contract.Treasury));
     vault = IVault(registry.getContractAddress(Contract.Vault));
   }
@@ -161,7 +172,7 @@ contract Teller is ITeller, Ownable, Base, DSMath {
     this.updateRate();
 
     // Return collateral
-    vault.withdraw(Activity.Repay, msg.sender, collateral);
+    vault.withdraw(Activity.Repay, msg.sender, msg.sender, collateral);
 
     // Emit event
     emit Repayment(amount, collateral, block.timestamp, msg.sender);
@@ -203,7 +214,75 @@ contract Teller is ITeller, Ownable, Base, DSMath {
     lastUpdate = block.timestamp;
   }
 
+  /**
+   * @notice Liquidates a borrower's position
+   * @param borrower - Borrower address
+   */
+  function liquidate(address borrower, uint256 purchasePrice)
+    external
+    payable
+    override
+    checkLiquidationElegibility(borrower, purchasePrice)
+  {
+    LiquidateLocalVars memory vars;
+    (vars.collateralAmount, ) = vault.balanceOf(borrower);
+    vars.collateralPrice = ftso.getPrice();
+    vars.collateralValue = wdiv(
+      wmul(vars.collateralAmount, vars.collateralPrice),
+      100
+    );
+    vars.purchasePrice = purchasePrice;
+    vars.protocolFee = 1; // TODO: Assess protocol fee
+
+    // Send Aurei to the treasury
+    aurei.transferFrom(msg.sender, address(treasury), vars.purchasePrice);
+
+    // Clear loan balance
+    uint256 normalized = rdiv(debts[borrower], debtAccumulator);
+    debts[borrower] = 0;
+    debt = sub(debt, normalized);
+
+    // Send loan collateral to liquidator
+    vault.withdraw(
+      Activity.LiquidateLoan,
+      borrower,
+      msg.sender,
+      vars.collateralAmount
+    );
+
+    emit Liquidation(
+      vars.collateralAmount,
+      vars.collateralValue,
+      vars.purchasePrice,
+      vars.protocolFee,
+      block.timestamp,
+      borrower,
+      msg.sender
+    );
+  }
+
   // --- Modifiers ---
+
+  modifier checkLiquidationElegibility(
+    address borrower,
+    uint256 purchasePrice
+  ) {
+    (uint256 loanCollateral, uint256 stakedCollateral) =
+      vault.balanceOf(borrower);
+    uint256 borrowerDebt = this.balanceOf(borrower);
+    uint256 collateralPrice = ftso.getPrice();
+    uint256 ratio =
+      wdiv((wdiv(wmul(loanCollateral, collateralPrice), 100)), borrowerDebt);
+    require(
+      ratio <= LIQUIDATION_RATIO,
+      "TREASURY: Liquidation threshold not exceeded"
+    );
+    require(
+      purchasePrice >= borrowerDebt,
+      "TREASURY: Purchase price must be greater than or equal to the par value of the borrower debt."
+    );
+    _;
+  }
 
   /**
    * @notice Ensures that the borrower has sufficient collateral to secure a loan,
@@ -211,10 +290,11 @@ contract Teller is ITeller, Ownable, Base, DSMath {
    * @param principal - The principal amount of Aurei.
    */
   modifier checkEligibility(uint256 principal) {
-    (uint256 loanCollateral, uint256 stakedCollateral) = vault.get(msg.sender);
-
-    // TODO: Hook in collateral price
-    uint256 ratio = wdiv(wmul(msg.value, 1 ether), principal);
+    (uint256 loanCollateral, uint256 stakedCollateral) =
+      vault.balanceOf(msg.sender);
+    uint256 collateralPrice = ftso.getPrice();
+    uint256 ratio =
+      wdiv(wdiv(wmul(msg.value, collateralPrice), 100), principal);
     require(
       ratio >= LIQUIDATION_RATIO,
       "PRO: Insufficient collateral provided"
@@ -229,13 +309,14 @@ contract Teller is ITeller, Ownable, Base, DSMath {
    * @param requested - The amount of collateral to be unlocked
    */
   modifier checkRequestedCollateral(uint256 repayment, uint256 requested) {
-    (uint256 loanCollateral, uint256 stakedCollateral) = vault.get(msg.sender);
+    (uint256 loanCollateral, uint256 stakedCollateral) =
+      vault.balanceOf(msg.sender);
 
     // Ensure that the collateral ratio after the repayment is sufficient
-    // TODO: Hook in collateral price
+    uint256 collateralPrice = ftso.getPrice();
     uint256 ratio =
       wdiv(
-        wmul(sub(loanCollateral, requested), 1 ether),
+        wdiv(wmul(sub(loanCollateral, requested), collateralPrice), 100),
         sub(rmul(debts[msg.sender], debtAccumulator), repayment)
       );
     require(

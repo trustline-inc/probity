@@ -7,6 +7,7 @@ import "./Dependencies/Ownable.sol";
 import "./Dependencies/DSMath.sol";
 import "./Dependencies/SafeMath.sol";
 import "./Interfaces/IAurei.sol";
+import "./Interfaces/IFtso.sol";
 import "./Interfaces/IRegistry.sol";
 import "./Interfaces/ITcnToken.sol";
 import "./Interfaces/ITreasury.sol";
@@ -27,10 +28,25 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
   mapping(address => uint256) public normalizedCapital;
 
   IAurei public aurei;
+  IFtso public ftso;
   IRegistry public registry;
   ITcnToken public tcnToken;
   ITeller public teller;
   IVault public vault;
+
+  struct LiquidateLocalVars {
+    uint256 collateralAmount;
+    uint256 collateralPrice;
+    uint256 collateralValue;
+    uint256 liquidatorDiscount;
+    uint256 protocolFee;
+  }
+
+  struct RedeemLocalVars {
+    uint256 accumulator;
+    uint256 collateral;
+    uint256 capital;
+  }
 
   // --- Constructor ---
 
@@ -44,6 +60,7 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
    */
   function initializeContract() external onlyOwner {
     aurei = IAurei(registry.getContractAddress(Contract.Aurei));
+    ftso = IFtso(registry.getContractAddress(Contract.Ftso));
     tcnToken = ITcnToken(registry.getContractAddress(Contract.TcnToken));
     teller = ITeller(registry.getContractAddress(Contract.Teller));
     vault = IVault(registry.getContractAddress(Contract.Vault));
@@ -105,30 +122,34 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
     override
     checkRedemptionEligibility(collateral, capital)
   {
+    RedeemLocalVars memory vars;
+    vars.collateral = collateral;
+    vars.capital = capital;
+    vars.accumulator = teller.getCapitalAccumulator();
+
     // Reduce capital balance
-    uint256 accumulator = teller.getCapitalAccumulator();
     normalizedCapital[msg.sender] = sub(
       normalizedCapital[msg.sender],
-      rdiv(capital, accumulator)
+      rdiv(capital, vars.accumulator)
     );
-    initialCapital[msg.sender] = initialCapital[msg.sender].sub(capital);
-    _totalSupply = _totalSupply.sub(capital);
+    initialCapital[msg.sender] = initialCapital[msg.sender].sub(vars.capital);
+    _totalSupply = _totalSupply.sub(vars.capital);
 
     // Burn the Aurei
     require(
-      aurei.balanceOf(address(this)) > capital,
+      aurei.balanceOf(address(this)) > vars.capital,
       "TREASURY: Not enough reserves."
     );
-    aurei.burn(address(this), capital);
+    aurei.burn(address(this), vars.capital);
 
     // Update the rate
     teller.updateRate();
 
     // Return collateral
-    vault.withdraw(Activity.Redeem, msg.sender, collateral);
+    vault.withdraw(Activity.Redeem, msg.sender, msg.sender, vars.collateral);
 
     // Emit event
-    emit Redemption(capital, collateral, block.timestamp, msg.sender);
+    emit Redemption(vars.capital, vars.collateral, block.timestamp, msg.sender);
   }
 
   /**
@@ -177,6 +198,61 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
   }
 
   /**
+   * @notice Liquidates a supplier's position
+   * @param supplier - Supplier address
+   */
+  function liquidate(address supplier)
+    external
+    override
+    checkLiquidationElegibility(supplier)
+  {
+    LiquidateLocalVars memory vars;
+    (, vars.collateralAmount) = vault.balanceOf(supplier);
+    vars.collateralPrice = ftso.getPrice();
+    vars.collateralValue = wdiv(
+      wmul(vars.collateralAmount, vars.collateralPrice),
+      100
+    );
+    vars.liquidatorDiscount = 1; // TODO: Assess liquidator discount
+    vars.protocolFee = 1; // TODO: Assess protocol fee
+
+    // Clear capital balance (keep interest)
+    uint256 capital = this.capitalOf(supplier);
+    uint256 interest = this.interestOf(supplier);
+    uint256 capitalMinusInterest = capital.sub(interest);
+
+    require(
+      aurei.balanceOf(address(this)) > capitalMinusInterest,
+      "TREASURY: Not enough reserves."
+    );
+
+    normalizedCapital[msg.sender] = 0;
+    initialCapital[msg.sender] = 0;
+    _totalSupply = _totalSupply.sub(capitalMinusInterest);
+
+    // Send capitalized collateral to liquidity provider
+    vault.withdraw(
+      Activity.LiquidateStake,
+      supplier,
+      msg.sender,
+      vars.collateralAmount
+    );
+
+    // Burn the Aurei
+    aurei.burn(address(this), capitalMinusInterest);
+
+    emit Liquidation(
+      vars.collateralAmount,
+      vars.collateralValue,
+      vars.liquidatorDiscount,
+      vars.protocolFee,
+      block.timestamp,
+      supplier,
+      msg.sender
+    );
+  }
+
+  /**
    * @return Total AUR capital
    */
   function totalSupply() external view override returns (uint256) {
@@ -185,16 +261,30 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
 
   // --- Modifiers ---
 
+  modifier checkLiquidationElegibility(address supplier) {
+    (uint256 loanCollateral, uint256 stakedCollateral) =
+      vault.balanceOf(supplier);
+    uint256 capital = this.capitalOf(supplier);
+    uint256 collateralPrice = ftso.getPrice();
+    uint256 ratio =
+      wdiv(wdiv(wmul(stakedCollateral, collateralPrice), 100), capital);
+    require(
+      ratio <= LIQUIDATION_RATIO,
+      "TREASURY: Liquidation threshold not exceeded"
+    );
+    _;
+  }
+
   /**
    * @notice Ensures that the owner has sufficient collateral to mint Aurei,
    * and that it meets the minimum collateral ratio requirement.
    * @param capital - The amount of Aurei.
    */
   modifier checkStakingEligibility(uint256 capital) {
-    (uint256 loanCollateral, uint256 stakedCollateral) = vault.get(msg.sender);
-
-    // TODO: Hook in collateral price
-    uint256 ratio = wdiv(wmul(msg.value, 1 ether), capital);
+    (uint256 loanCollateral, uint256 stakedCollateral) =
+      vault.balanceOf(msg.sender);
+    uint256 collateralPrice = ftso.getPrice();
+    uint256 ratio = wdiv(wdiv(wmul(msg.value, collateralPrice), 100), capital);
     require(
       ratio >= LIQUIDATION_RATIO,
       "TREASURY: Insufficient collateral provided"
@@ -212,7 +302,8 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
     uint256 collateralRequested,
     uint256 capitalToRemove
   ) {
-    (uint256 loanCollateral, uint256 stakedCollateral) = vault.get(msg.sender);
+    (uint256 loanCollateral, uint256 stakedCollateral) =
+      vault.balanceOf(msg.sender);
     require(
       stakedCollateral >= collateralRequested,
       "TREASURY: Collateral not available."
@@ -225,11 +316,14 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
     require(capital >= capitalToRemove, "TREASURY: Capital not available.");
     uint256 remainder = capital.sub(interest).sub(capitalToRemove);
 
-    // TODO: Hook in collateral price
+    uint256 collateralPrice = ftso.getPrice();
     if (remainder != 0) {
       uint256 ratio =
         wdiv(
-          wmul(stakedCollateral.sub(collateralRequested), 1 ether),
+          wdiv(
+            wmul(stakedCollateral.sub(collateralRequested), collateralPrice),
+            100
+          ),
           remainder
         );
       require(

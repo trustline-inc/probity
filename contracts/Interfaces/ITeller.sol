@@ -23,6 +23,16 @@ interface ITeller {
     address indexed borrower
   );
 
+  event Liquidation(
+    uint256 collateralAmount,
+    uint256 collateralValue,
+    uint256 purchasePrice,
+    uint256 protocolFee,
+    uint256 timestamp,
+    address indexed borrower,
+    address indexed liquidator
+  );
+
   // --- Functions ---
 
   // Read-only
@@ -57,4 +67,6 @@ interface ITeller {
   function createLoan(uint256 principal) external payable;
 
   function repay(uint256 amount, uint256 collateral) external;
+
+  function liquidate(address borrower, uint256 purchasePrice) external payable;
 }

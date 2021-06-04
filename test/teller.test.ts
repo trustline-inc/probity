@@ -6,7 +6,7 @@ import { Decimal } from "decimal.js";
 import { web3 } from "hardhat";
 import { expect } from "chai";
 
-import { Aurei, Teller, Treasury, Vault } from "../typechain";
+import { Aurei, Ftso, Teller, Treasury, Vault } from "../typechain";
 
 import deploy from "../lib/deploy";
 import { SECONDS_IN_YEAR, RAY, WAD } from "./constants";
@@ -27,9 +27,11 @@ Decimal.config({
 // Wallets
 let lender: SignerWithAddress;
 let borrower: SignerWithAddress;
+let liquidator: SignerWithAddress;
 
 // Contracts
 let aurei: Aurei;
+let ftso: Ftso;
 let teller: Teller;
 let treasury: Treasury;
 let vault: Vault;
@@ -43,6 +45,7 @@ describe("Teller", function () {
 
     // Set contracts
     aurei = contracts.aurei;
+    ftso = contracts.ftso;
     teller = contracts.teller;
     treasury = contracts.treasury;
     vault = contracts.vault;
@@ -50,6 +53,7 @@ describe("Teller", function () {
     // Set signers
     lender = signers.lender;
     borrower = signers.borrower;
+    liquidator = signers.alice;
 
     /**
      * Set up Aurei liquidity pool
@@ -181,6 +185,30 @@ describe("Teller", function () {
     it("Gets the utilization rate", async () => {
       const utilization = await teller.getUtilization();
       expect(utilization).to.have.lengthOf(3);
+    });
+  });
+
+  describe("Liquidations", () => {
+    it("Allows a keeper to liquidate a borrower", async () => {
+      // $0.25 FLR/USD => 75% decrease in price
+      await ftso.setPrice((0.25 * 100).toString());
+
+      const parValue = web3.utils.toWei("500.000001296122006814");
+
+      // Add more to the treasury for liquidator borrow
+      // 4000 FLR * $0.25 = $1000 collateral value => 200% ratio
+      await treasury
+        .connect(liquidator)
+        .stake(web3.utils.toWei("500"), { value: web3.utils.toWei("4000") });
+
+      // Take out Aurei loan to purchase borrower collateral
+      // 4000 FLR * $0.25 = $1000 collateral value => 200% ratio
+      await teller
+        .connect(liquidator)
+        .createLoan(parValue.toString(), { value: web3.utils.toWei("4000") });
+
+      await aurei.connect(liquidator).approve(teller.address, parValue);
+      await teller.connect(liquidator).liquidate(borrower.address, parValue);
     });
   });
 });

@@ -9,7 +9,15 @@ contract Base {
   // --- Registered contracts ---
 
   enum Contract {Aurei, Bridge, Ftso, TcnToken, Teller, Treasury, Vault}
-  enum Activity {Borrow, Repay, Stake, Redeem, Withdraw}
+  enum Activity {
+    Borrow,
+    Repay,
+    Stake,
+    Redeem,
+    Withdraw,
+    LiquidateLoan,
+    LiquidateStake
+  }
 
   // --- Math constants ---
 
