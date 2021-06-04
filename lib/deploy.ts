@@ -73,7 +73,7 @@ interface Signers {
   don: SignerWithAddress;
   lender: SignerWithAddress;
   borrower: SignerWithAddress;
-  bootstrapper: SignerWithAddress;
+  liquidator: SignerWithAddress;
   addrs: SignerWithAddress[];
 }
 
@@ -85,7 +85,7 @@ const signers: Signers = {
   don: null,
   lender: null,
   borrower: null,
-  bootstrapper: null,
+  liquidator: null,
   addrs: null,
 };
 
@@ -102,7 +102,7 @@ const deploy = async () => {
     signers.don,
     signers.lender,
     signers.borrower,
-    signers.bootstrapper,
+    signers.liquidator,
     ...signers.addrs
   ] = await ethers.getSigners();
 

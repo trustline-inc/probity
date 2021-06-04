@@ -218,11 +218,11 @@ contract Teller is ITeller, Ownable, Base, DSMath {
    * @notice Liquidates a borrower's position
    * @param borrower - Borrower address
    */
-  function liquidate(address borrower)
+  function liquidate(address borrower, uint256 purchasePrice)
     external
     payable
     override
-    checkLiquidationElegibility(borrower, msg.value)
+    checkLiquidationElegibility(borrower, purchasePrice)
   {
     LiquidateLocalVars memory vars;
     (vars.collateralAmount, ) = vault.balanceOf(borrower);
@@ -231,11 +231,11 @@ contract Teller is ITeller, Ownable, Base, DSMath {
       wmul(vars.collateralAmount, vars.collateralPrice),
       100
     );
-    vars.purchasePrice = msg.value;
+    vars.purchasePrice = purchasePrice;
     vars.protocolFee = 1;
 
     // Send Aurei to the treasury
-    // treasury.recapitalize(msg.value);
+    aurei.transferFrom(msg.sender, address(treasury), vars.purchasePrice);
 
     // Clear loan balance
     uint256 normalized = rdiv(debts[borrower], debtAccumulator);

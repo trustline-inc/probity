@@ -7,10 +7,11 @@ import { Decimal } from "decimal.js";
 import { ethers, web3 } from "hardhat";
 import { expect } from "chai";
 
-import { Aurei, Ftso, TcnToken, Teller, Treasury, Vault } from "../typechain";
+import { Aurei, Ftso, TcnToken, Teller, Treasury } from "../typechain";
 
 import deploy from "../lib/deploy";
 import { SECONDS_IN_YEAR } from "./constants";
+import { Signer } from "node:crypto";
 
 BigNumber.config({
   POW_PRECISION: 30,
@@ -27,7 +28,9 @@ Decimal.config({
 
 // Wallets
 let lender: SignerWithAddress;
+let lender2: SignerWithAddress;
 let borrower: SignerWithAddress;
+let liquidator: SignerWithAddress;
 
 // Contracts
 let aurei: Aurei;
@@ -50,6 +53,7 @@ describe("Treasury", function () {
     // Set signers
     lender = signers.lender;
     borrower = signers.borrower;
+    liquidator = signers.liquidator;
   });
 
   describe("Capital allocation", async function () {
@@ -175,11 +179,26 @@ describe("Treasury", function () {
 
   describe("Liquidations", () => {
     it("Allows a keeper to liquidate a supplier", async () => {
+      // $0.25 FLR/USD => 75% decrease in price
       await ftso.setPrice((0.25 * 100).toString());
 
       // Borrower must be liquidated first to recapitalize the treasury
-      const parValue = "430500002190934575175";
-      await teller.liquidate(borrower.address, { value: parValue });
+      const parValue = web3.utils.toWei("430.500005381210832296");
+
+      // Add more to the treasury for liquidator borrow
+      // 4000 FLR * $0.25 = $1000 collateral value => 200% ratio
+      await treasury
+        .connect(liquidator)
+        .stake(web3.utils.toWei("500"), { value: web3.utils.toWei("4000") });
+
+      // Take out Aurei loan to purchase borrower collateral
+      // 4000 FLR * $0.25 = $1000 collateral value => 200% ratio
+      await teller
+        .connect(liquidator)
+        .createLoan(parValue.toString(), { value: web3.utils.toWei("4000") });
+
+      await aurei.connect(liquidator).approve(teller.address, parValue);
+      await teller.connect(liquidator).liquidate(borrower.address, parValue);
       await treasury.liquidate(lender.address);
     });
   });
