@@ -38,7 +38,7 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
     uint256 collateralAmount;
     uint256 collateralPrice;
     uint256 collateralValue;
-    uint256 liquidatorFee;
+    uint256 liquidatorDiscount;
     uint256 protocolFee;
   }
 
@@ -213,15 +213,14 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
       wmul(vars.collateralAmount, vars.collateralPrice),
       100
     );
-    vars.liquidatorFee = 1;
-    vars.protocolFee = 1;
+    vars.liquidatorDiscount = 1; // TODO: Assess liquidator discount
+    vars.protocolFee = 1; // TODO: Assess protocol fee
 
     // Clear capital balance (keep interest)
     uint256 capital = this.capitalOf(supplier);
     uint256 interest = this.interestOf(supplier);
     uint256 capitalMinusInterest = capital.sub(interest);
-    console.log(aurei.balanceOf(address(this)));
-    console.log(capitalMinusInterest);
+
     require(
       aurei.balanceOf(address(this)) > capitalMinusInterest,
       "TREASURY: Not enough reserves."
@@ -245,7 +244,7 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
     emit Liquidation(
       vars.collateralAmount,
       vars.collateralValue,
-      vars.liquidatorFee,
+      vars.liquidatorDiscount,
       vars.protocolFee,
       block.timestamp,
       supplier,

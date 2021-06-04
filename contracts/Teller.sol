@@ -232,7 +232,7 @@ contract Teller is ITeller, Ownable, Base, DSMath {
       100
     );
     vars.purchasePrice = purchasePrice;
-    vars.protocolFee = 1;
+    vars.protocolFee = 1; // TODO: Assess protocol fee
 
     // Send Aurei to the treasury
     aurei.transferFrom(msg.sender, address(treasury), vars.purchasePrice);

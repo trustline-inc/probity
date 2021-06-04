@@ -199,7 +199,7 @@ describe("Treasury", function () {
 
       await aurei.connect(liquidator).approve(teller.address, parValue);
       await teller.connect(liquidator).liquidate(borrower.address, parValue);
-      await treasury.liquidate(lender.address);
+      await treasury.connect(liquidator).liquidate(lender.address);
     });
   });
 });
