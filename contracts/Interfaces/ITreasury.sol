@@ -53,8 +53,6 @@ interface ITreasury {
 
   function fundLoan(address borrower, uint256 principal) external;
 
-  function recapitalize(uint256 amount) external payable;
-
   // User actions
 
   function stake(uint256 capital) external payable;
