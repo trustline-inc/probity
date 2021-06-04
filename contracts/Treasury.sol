@@ -253,11 +253,6 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
   }
 
   /**
-   * @dev requires approve call before
-   */
-  function recapitalize(uint256 amount) external payable override {}
-
-  /**
    * @return Total AUR capital
    */
   function totalSupply() external view override returns (uint256) {
