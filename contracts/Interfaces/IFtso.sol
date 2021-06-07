@@ -2,8 +2,6 @@
 
 pragma solidity ^0.8.0;
 
-import "../Dependencies/Base.sol";
-
 /**
  * @notice Manages the price of collateral assets.
  */
