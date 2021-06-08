@@ -5,9 +5,9 @@ import { ethers } from "hardhat";
 // Import contract factory types
 import {
   AureiFactory,
-  MarketFactoryFactory,
   BridgeFactory,
   FtsoFactory,
+  MarketFactoryFactory,
   RegistryFactory,
   TcnTokenFactory,
   TellerFactory,
@@ -18,9 +18,9 @@ import {
 // Import contract types
 import {
   Aurei,
-  MarketFactory,
   Bridge,
   Ftso,
+  MarketFactory,
   Registry,
   TcnToken,
   Teller,
@@ -35,9 +35,9 @@ const STATE_CONNECTOR_ADDRESS = "0x1000000000000000000000000000000000000001";
  */
 interface Contracts {
   aurei: Aurei;
-  marketFactory: MarketFactory;
   bridge: Bridge;
   ftso: Ftso;
+  marketFactory: MarketFactory;
   registry: Registry;
   tcnToken: TcnToken;
   teller: Teller;
@@ -47,9 +47,9 @@ interface Contracts {
 
 const contracts: Contracts = {
   aurei: null,
-  marketFactory: null,
   bridge: null,
   ftso: null,
+  marketFactory: null,
   registry: null,
   tcnToken: null,
   teller: null,
@@ -60,9 +60,9 @@ const contracts: Contracts = {
 // Contracts submitted to the register
 enum Contract {
   Aurei,
-  MarketFactory,
   Bridge,
   Ftso,
+  MarketFactory,
   TcnToken,
   Teller,
   Treasury,
@@ -139,7 +139,7 @@ const deploy = async () => {
     "Ftso",
     signers.owner
   )) as FtsoFactory;
-  const initialPrice = "100"; // $1.00
+  const initialPrice = "189370"; // XAU/USD = $1,893.70
   contracts.ftso = await ftsoFactory.deploy(initialPrice.toString());
   await contracts.ftso.deployed();
 
@@ -179,12 +179,12 @@ const deploy = async () => {
     contracts.aurei.address
   );
   await contracts.registry.setupContractAddress(
-    Contract.MarketFactory,
-    contracts.marketFactory.address
-  );
-  await contracts.registry.setupContractAddress(
     Contract.Ftso,
     contracts.ftso.address
+  );
+  await contracts.registry.setupContractAddress(
+    Contract.MarketFactory,
+    contracts.marketFactory.address
   );
   await contracts.registry.setupContractAddress(
     Contract.TcnToken,
