@@ -2,15 +2,15 @@
 
 pragma solidity ^0.8.0;
 
-import "./Dependencies/Base.sol";
-import "./Dependencies/DSMath.sol";
-import "./Dependencies/Ownable.sol";
-import "./Interfaces/IAurei.sol";
-import "./Interfaces/IFtso.sol";
-import "./Interfaces/IRegistry.sol";
-import "./Interfaces/ITeller.sol";
-import "./Interfaces/ITreasury.sol";
-import "./Interfaces/IVault.sol";
+import "./libraries/Base.sol";
+import "./libraries/DSMath.sol";
+import "./libraries/Ownable.sol";
+import "./interfaces/IAurei.sol";
+import "./interfaces/IFtso.sol";
+import "./interfaces/IRegistry.sol";
+import "./interfaces/ITeller.sol";
+import "./interfaces/ITreasury.sol";
+import "./interfaces/IVault.sol";
 import "hardhat/console.sol";
 
 /**

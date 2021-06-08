@@ -2,17 +2,13 @@
 
 pragma solidity ^0.8.0;
 
-import "../Dependencies/IERC20.sol";
-import "../Dependencies/IERC2612.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/draft-IERC20Permit.sol";
 
 /**
  * @notice Common interface for the Aurei token.
  */
-interface IAurei is IERC20, IERC2612 {
-  // --- Events ---
-
-  // --- Functions ---
-
+interface IAurei is IERC20, IERC20Permit {
   function mint(address _account, uint256 _amount) external;
 
   function burn(address _account, uint256 _amount) external;

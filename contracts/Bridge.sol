@@ -2,8 +2,8 @@
 
 pragma solidity ^0.8.0;
 
-import "./Interfaces/IAurei.sol";
-import "./Interfaces/IStateConnector.sol";
+import "./interfaces/IAurei.sol";
+import "./interfaces/IStateConnector.sol";
 
 contract Bridge {
   IAurei aurei;

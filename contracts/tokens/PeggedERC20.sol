@@ -2,37 +2,31 @@
 
 pragma solidity ^0.8.0;
 
-import "./Dependencies/Ownable.sol";
-import "./Dependencies/SafeMath.sol";
-import "./Interfaces/ITcnToken.sol";
-import "./Interfaces/ITeller.sol";
+import "../interfaces/IPeggedERC20.sol";
+import "../libraries/SafeMath.sol";
+import "../libraries/Ownable.sol";
 
-/**
- * Based upon OpenZeppelin's ERC20 contract:
- * https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC20/ERC20.sol
- *
- * and their EIP2612 (ERC20Permit / ERC712) functionality:
- * https://github.com/OpenZeppelin/openzeppelin-contracts/blob/53516bc555a454862470e7860a9b5254db4d00f5/contracts/token/ERC20/ERC20Permit.sol
- */
-contract TcnToken is ITcnToken, Ownable {
+abstract contract PeggedERC20 is IPeggedERC20, Ownable {
   using SafeMath for uint256;
 
   // --- Data ---
 
-  uint256 private _totalSupply;
-  string internal constant _NAME = "Trustline Credit Network Token";
-  string internal constant _SYMBOL = "TCN";
+  uint256 internal _totalSupply;
+  string internal constant _NAME = "Pegged Token";
+  string internal constant _SYMBOL = "PEG";
   string internal constant _VERSION = "1.0.0";
   uint8 internal constant _DECIMALS = 18;
 
-  mapping(address => uint256) private _balances;
-  mapping(address => mapping(address => uint256)) private _allowed;
+  mapping(address => uint256) internal _balances;
+  mapping(address => mapping(address => uint256)) internal _allowed;
 
   // --- ERC2612 Data ---
 
   bytes32 private immutable _DOMAIN_SEPARATOR;
+
+  // Permit Typehash: keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
   bytes32 private constant _PERMIT_TYPEHASH =
-    0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9; // keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
+    0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
 
   mapping(address => uint256) private _nonces;
 
@@ -86,13 +80,12 @@ contract TcnToken is ITcnToken, Ownable {
     return _balances[account];
   }
 
-  function decimals() external pure override returns (uint8) {
+  function decimals() external pure returns (uint8) {
     return _DECIMALS;
   }
 
   function decreaseAllowance(address spender, uint256 subtractedValue)
     external
-    override
     returns (bool)
   {
     _approve(
@@ -108,7 +101,6 @@ contract TcnToken is ITcnToken, Ownable {
 
   function increaseAllowance(address spender, uint256 addedValue)
     external
-    override
     returns (bool)
   {
     _approve(
@@ -119,11 +111,11 @@ contract TcnToken is ITcnToken, Ownable {
     return true;
   }
 
-  function name() external pure override returns (string memory) {
+  function name() external pure returns (string memory) {
     return _NAME;
   }
 
-  function symbol() external pure override returns (string memory) {
+  function symbol() external pure returns (string memory) {
     return _SYMBOL;
   }
 
@@ -178,15 +170,14 @@ contract TcnToken is ITcnToken, Ownable {
     return true;
   }
 
-  function version() external pure override returns (string memory) {
+  function version() external pure returns (string memory) {
     return _VERSION;
   }
 
   // --- ERC2612 Functions ---
 
-  // @dev commented out for now because of `ProviderError: invalid opcode: CHAINID`
   function DOMAIN_SEPARATOR() external view override returns (bytes32) {
-    // return _DOMAIN_SEPARATOR;
+    return _DOMAIN_SEPARATOR;
   }
 
   function permit(
@@ -198,7 +189,7 @@ contract TcnToken is ITcnToken, Ownable {
     bytes32 r,
     bytes32 s
   ) external override {
-    require(deadline >= block.timestamp, "TCN: EXPIRED");
+    require(deadline >= block.timestamp, "STBL: EXPIRED");
     bytes32 digest =
       keccak256(
         abi.encodePacked(
@@ -219,12 +210,12 @@ contract TcnToken is ITcnToken, Ownable {
     address recoveredAddress = ecrecover(digest, v, r, s);
     require(
       recoveredAddress != address(0) && recoveredAddress == owner,
-      "TCN: INVALID_SIGNATURE"
+      "STBL: INVALID_SIGNATURE"
     );
     _approve(owner, spender, amount);
   }
 
-  function permitTypeHash() external pure override returns (bytes32) {
+  function permitTypeHash() external pure returns (bytes32) {
     return _PERMIT_TYPEHASH;
   }
 
@@ -268,7 +259,11 @@ contract TcnToken is ITcnToken, Ownable {
   function _requireValidRecipient(address _recipient) internal view {
     require(
       _recipient != address(0) && _recipient != address(this),
-      "TCN: Cannot transfer tokens directly to the TCN token contract or the zero address"
+      "STBL: Cannot transfer tokens directly to the STBL token contract or the zero address"
     );
   }
+
+  /**
+   * Market-making functionality
+   */
 }

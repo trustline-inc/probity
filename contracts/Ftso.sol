@@ -2,8 +2,8 @@
 
 pragma solidity ^0.8.0;
 
-import "./Dependencies/Base.sol";
-import "./Interfaces/IFtso.sol";
+import "./libraries/Base.sol";
+import "./interfaces/IFtso.sol";
 import "hardhat/console.sol";
 
 /**

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./Dependencies/Base.sol";
-import "./Dependencies/Ownable.sol";
-import "./Interfaces/IRegistry.sol";
+import "./libraries/Base.sol";
+import "./libraries/Ownable.sol";
+import "./interfaces/IRegistry.sol";
 import "hardhat/console.sol";
 
 /**

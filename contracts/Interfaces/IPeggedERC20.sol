@@ -6,12 +6,10 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/draft-IERC20Permit.sol";
 
 /**
- * @notice Common interface for the TCN token.
+ * @notice A pegged token.
  */
-interface ITcnToken is IERC20, IERC20Permit {
-  // --- Events ---
-
-  // --- Functions ---
+interface IPeggedERC20 is IERC20, IERC20Permit {
+  // --- External Functions ---
 
   function mint(address _account, uint256 _amount) external;
 
