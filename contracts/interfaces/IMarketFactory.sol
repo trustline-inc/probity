@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 /**
  * @notice Factory for incentivized exchange markets.
  */
-interface IAureiMarketFactory {
+interface IMarketFactory {
   event NewExchange(address indexed token, address indexed exchange);
 
   function initializeFactory(address template) external;

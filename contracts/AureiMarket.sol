@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import "./libraries/Base.sol";
 import "./interfaces/IAurei.sol";
 import "./interfaces/IAureiMarket.sol";
-import "./interfaces/IAureiMarketFactory.sol";
+import "./interfaces/IMarketFactory.sol";
 import "./interfaces/IRegistry.sol";
 import "./libraries/Ownable.sol";
 import "./tokens/PeggedERC20.sol";
@@ -13,10 +13,17 @@ import "./tokens/PeggedERC20.sol";
 contract AureiMarket is IAureiMarket, PeggedERC20 {
   using SafeMath for uint256;
 
-  IAurei aurei; // Interface for Aurei token
-  IAureiMarketFactory factory; // Interface for the factory that created this contract
+  /// @dev Interface for Aurei token
+  IAurei aurei;
+
+  /// @dev Interface for the factory that created this contract
+  IMarketFactory factory;
+
+  /// @dev Used to get addresses of other ARS contracts
   IRegistry registry;
-  IERC20 token; // Address of the ERC20 token traded on this contract
+
+  /// @dev Address of the ERC20 token traded on this contract
+  IERC20 token;
 
   // --- Constructor ---
 
@@ -32,7 +39,7 @@ contract AureiMarket is IAureiMarket, PeggedERC20 {
         tokenAddress != address(0),
       "INVALID_ADDRESS"
     );
-    factory = IAureiMarketFactory(msg.sender);
+    factory = IMarketFactory(msg.sender);
     token = IERC20(tokenAddress);
     registry = IRegistry(_registry);
   }

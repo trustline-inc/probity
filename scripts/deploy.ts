@@ -2,7 +2,7 @@ import "@nomiclabs/hardhat-ethers";
 import deploy from "../lib/deploy";
 
 async function main() {
-  const { contracts, signers } = await deploy();
+  const { contracts } = await deploy();
   console.log("Contracts deployed!");
 
   const addresses = [];

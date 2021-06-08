@@ -4,12 +4,12 @@ pragma solidity ^0.8.0;
 
 import "./libraries/Base.sol";
 import "./libraries/Ownable.sol";
-import "./interfaces/IAureiMarketFactory.sol";
+import "./interfaces/IMarketFactory.sol";
 import "./interfaces/IRegistry.sol";
 import "./AureiMarket.sol";
 import "hardhat/console.sol";
 
-contract AureiMarketFactory is IAureiMarketFactory, Base, Ownable {
+contract MarketFactory is IMarketFactory, Base, Ownable {
   /***********************************|
   |       Events And Variables        |
   |__________________________________*/

@@ -1,11 +1,11 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import "@nomiclabs/hardhat-waffle";
-import { BigNumber } from "ethers";
 import { ethers } from "hardhat";
 
 // Import contract factory types
 import {
   AureiFactory,
+  MarketFactoryFactory,
   BridgeFactory,
   FtsoFactory,
   RegistryFactory,
@@ -18,6 +18,7 @@ import {
 // Import contract types
 import {
   Aurei,
+  MarketFactory,
   Bridge,
   Ftso,
   Registry,
@@ -34,6 +35,7 @@ const STATE_CONNECTOR_ADDRESS = "0x1000000000000000000000000000000000000001";
  */
 interface Contracts {
   aurei: Aurei;
+  marketFactory: MarketFactory;
   bridge: Bridge;
   ftso: Ftso;
   registry: Registry;
@@ -45,6 +47,7 @@ interface Contracts {
 
 const contracts: Contracts = {
   aurei: null,
+  marketFactory: null,
   bridge: null,
   ftso: null,
   registry: null,
@@ -57,6 +60,7 @@ const contracts: Contracts = {
 // Contracts submitted to the register
 enum Contract {
   Aurei,
+  MarketFactory,
   Bridge,
   Ftso,
   TcnToken,
@@ -122,6 +126,15 @@ const deploy = async () => {
   contracts.aurei = await aureiFactory.deploy();
   await contracts.aurei.deployed();
 
+  const marketFactoryFactory = (await ethers.getContractFactory(
+    "MarketFactory",
+    signers.owner
+  )) as MarketFactoryFactory;
+  contracts.marketFactory = await marketFactoryFactory.deploy(
+    contracts.registry.address
+  );
+  await contracts.marketFactory.deployed();
+
   const ftsoFactory = (await ethers.getContractFactory(
     "Ftso",
     signers.owner
@@ -164,6 +177,10 @@ const deploy = async () => {
   await contracts.registry.setupContractAddress(
     Contract.Aurei,
     contracts.aurei.address
+  );
+  await contracts.registry.setupContractAddress(
+    Contract.MarketFactory,
+    contracts.marketFactory.address
   );
   await contracts.registry.setupContractAddress(
     Contract.Ftso,
