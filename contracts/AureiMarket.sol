@@ -2,9 +2,11 @@
 
 pragma solidity ^0.8.0;
 
+import "./libraries/Base.sol";
 import "./interfaces/IAurei.sol";
 import "./interfaces/IAureiMarket.sol";
 import "./interfaces/IAureiMarketFactory.sol";
+import "./interfaces/IRegistry.sol";
 import "./libraries/Ownable.sol";
 import "./tokens/PeggedERC20.sol";
 
@@ -13,14 +15,17 @@ contract AureiMarket is IAureiMarket, PeggedERC20 {
 
   IAurei aurei; // Interface for Aurei token
   IAureiMarketFactory factory; // Interface for the factory that created this contract
+  IRegistry registry;
   IERC20 token; // Address of the ERC20 token traded on this contract
+
+  // --- Constructor ---
 
   /**
    * @notice Intial setup of an Aurei market.
    * @param tokenAddress - Address of ERC20 token.
    * @dev This is called once by the factory after contract creation.
    */
-  function setup(address tokenAddress) public {
+  function setup(address tokenAddress, address _registry) public {
     require(
       address(factory) == address(0) &&
         address(token) == address(0) &&
@@ -29,6 +34,7 @@ contract AureiMarket is IAureiMarket, PeggedERC20 {
     );
     factory = IAureiMarketFactory(msg.sender);
     token = IERC20(tokenAddress);
+    registry = IRegistry(_registry);
   }
 
   /**
@@ -335,7 +341,7 @@ contract AureiMarket is IAureiMarket, PeggedERC20 {
     uint256 min_liquidity,
     uint256 max_tokens,
     uint256 deadline
-  ) public payable returns (uint256) {
+  ) public payable onlyTreasury returns (uint256) {
     require(
       deadline > block.timestamp && max_tokens > 0 && msg.value > 0,
       "AureiMarket#addLiquidity: INVALID_ARGUMENT"
@@ -346,13 +352,13 @@ contract AureiMarket is IAureiMarket, PeggedERC20 {
       require(min_liquidity > 0);
       uint256 flr_reserve = address(this).balance.sub(msg.value);
       uint256 aur_reserve = aurei.balanceOf(address(this));
-      uint256 token_amount = (msg.value.mul(aur_reserve) / flr_reserve).add(1);
+      uint256 aur_amount = (msg.value.mul(aur_reserve) / flr_reserve).add(1);
       uint256 liquidity_minted = msg.value.mul(total_liquidity) / flr_reserve;
-      require(max_tokens >= token_amount && liquidity_minted >= min_liquidity);
+      require(max_tokens >= aur_amount && liquidity_minted >= min_liquidity);
       _balances[msg.sender] = _balances[msg.sender].add(liquidity_minted);
       _totalSupply = total_liquidity.add(liquidity_minted);
-      require(token.transferFrom(msg.sender, address(this), token_amount));
-      emit AddLiquidity(msg.sender, msg.value, token_amount);
+      require(token.transferFrom(msg.sender, address(this), aur_amount));
+      emit AddLiquidity(msg.sender, msg.value, aur_amount);
       emit Transfer(address(0), msg.sender, liquidity_minted);
       return liquidity_minted;
     } else {
@@ -363,12 +369,12 @@ contract AureiMarket is IAureiMarket, PeggedERC20 {
         "INVALID_VALUE"
       );
       require(factory.getExchange(address(token)) == address(this));
-      uint256 token_amount = max_tokens;
+      uint256 aur_amount = max_tokens;
       uint256 initial_liquidity = address(this).balance;
       _totalSupply = initial_liquidity;
       _balances[msg.sender] = initial_liquidity;
-      require(token.transferFrom(msg.sender, address(this), token_amount));
-      emit AddLiquidity(msg.sender, msg.value, token_amount);
+      require(token.transferFrom(msg.sender, address(this), aur_amount));
+      emit AddLiquidity(msg.sender, msg.value, aur_amount);
       emit Transfer(address(0), msg.sender, initial_liquidity);
       return initial_liquidity;
     }
@@ -387,7 +393,7 @@ contract AureiMarket is IAureiMarket, PeggedERC20 {
     uint256 min_flr,
     uint256 min_tokens,
     uint256 deadline
-  ) public returns (uint256, uint256) {
+  ) public onlyTreasury returns (uint256, uint256) {
     require(
       amount > 0 && deadline > block.timestamp && min_flr > 0 && min_tokens > 0
     );
@@ -395,15 +401,23 @@ contract AureiMarket is IAureiMarket, PeggedERC20 {
     require(total_liquidity > 0);
     uint256 aur_reserve = aurei.balanceOf(address(this));
     uint256 flr_amount = amount.mul(address(this).balance) / total_liquidity;
-    uint256 token_amount = amount.mul(aur_reserve) / total_liquidity;
-    require(flr_amount >= min_flr && token_amount >= min_tokens);
+    uint256 aur_amount = amount.mul(aur_reserve) / total_liquidity;
+    require(flr_amount >= min_flr && aur_amount >= min_tokens);
 
     _balances[msg.sender] = _balances[msg.sender].sub(amount);
     _totalSupply = total_liquidity.sub(amount);
     payable(msg.sender).transfer(flr_amount);
-    require(token.transfer(msg.sender, token_amount));
-    emit RemoveLiquidity(msg.sender, flr_amount, token_amount);
+    require(token.transfer(msg.sender, aur_amount));
+    emit RemoveLiquidity(msg.sender, flr_amount, aur_amount);
     emit Transfer(msg.sender, address(0), amount);
-    return (flr_amount, token_amount);
+    return (flr_amount, aur_amount);
+  }
+
+  /**
+   * @dev Ensure that msg.sender === Treasury contract address.
+   */
+  modifier onlyTreasury {
+    require(msg.sender == registry.getContractAddress(Base.Contract.Treasury));
+    _;
   }
 }

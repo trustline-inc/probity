@@ -5,6 +5,7 @@ pragma solidity ^0.8.0;
 import "./libraries/Base.sol";
 import "./libraries/Ownable.sol";
 import "./interfaces/IAureiMarketFactory.sol";
+import "./interfaces/IRegistry.sol";
 import "./AureiMarket.sol";
 import "hardhat/console.sol";
 
@@ -13,6 +14,7 @@ contract AureiMarketFactory is IAureiMarketFactory, Base, Ownable {
   |       Events And Variables        |
   |__________________________________*/
 
+  IRegistry public registry;
   address public exchangeTemplate;
   uint256 public tokenCount;
   mapping(address => address) internal token_to_exchange;
@@ -23,7 +25,9 @@ contract AureiMarketFactory is IAureiMarketFactory, Base, Ownable {
   |         Factory Functions         |
   |__________________________________*/
 
-  constructor() Ownable(msg.sender) {}
+  constructor(address _registry) Ownable(msg.sender) {
+    registry = IRegistry(_registry);
+  }
 
   function initializeFactory(address template) public override {
     require(exchangeTemplate == address(0));
@@ -40,7 +44,7 @@ contract AureiMarketFactory is IAureiMarketFactory, Base, Ownable {
     require(exchangeTemplate != address(0));
     require(token_to_exchange[token] == address(0));
     AureiMarket exchange = new AureiMarket();
-    exchange.setup(token);
+    exchange.setup(token, address(registry));
     token_to_exchange[token] = address(exchange);
     exchange_to_token[address(exchange)] = token;
     uint256 token_id = tokenCount + 1;
