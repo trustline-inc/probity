@@ -10,6 +10,9 @@ import "./interfaces/IRegistry.sol";
 import "./libraries/Ownable.sol";
 import "./tokens/PeggedERC20.sol";
 
+/**
+ * @notice adapted from UniSwap V1
+ */
 contract AureiMarket is IAureiMarket, PeggedERC20 {
   using SafeMath for uint256;
 
@@ -424,7 +427,10 @@ contract AureiMarket is IAureiMarket, PeggedERC20 {
    * @dev Ensure that msg.sender === Treasury contract address.
    */
   modifier onlyTreasury {
-    require(msg.sender == registry.getContractAddress(Base.Contract.Treasury));
+    require(
+      msg.sender == registry.getContractAddress(Base.Contract.Treasury),
+      "AUREI_MARKET: Only Treasury can call this method."
+    );
     _;
   }
 }
