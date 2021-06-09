@@ -5,7 +5,7 @@ import "@nomiclabs/hardhat-web3";
 import { ethers } from "hardhat";
 import { expect } from "chai";
 import * as hardhat from "hardhat";
-import { Aurei, MarketFactory } from "../typechain";
+import { Aurei, AureiMarket, MarketFactory } from "../typechain";
 
 import deploy from "../lib/deploy";
 
@@ -16,7 +16,7 @@ let liquidityProvider: SignerWithAddress;
 
 // Contracts
 let aurei: Aurei;
-let aureiMarket;
+let aureiMarket: AureiMarket;
 let marketFactory: MarketFactory;
 
 describe("Exchange", function () {
@@ -40,7 +40,7 @@ describe("Exchange", function () {
       const { events } = await response.wait();
       const address = events[1].args.exchange;
       const abi = (await hardhat.artifacts.readArtifact("AureiMarket")).abi;
-      aureiMarket = new ethers.Contract(address, abi);
+      aureiMarket = new ethers.Contract(address, abi) as AureiMarket;
     });
 
     describe("liquidity provision", async () => {
