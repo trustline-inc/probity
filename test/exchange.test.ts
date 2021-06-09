@@ -37,8 +37,10 @@ describe("Exchange", function () {
 
   describe("Aurei Markets", async function () {
     it("deploys a market", async () => {
-      const address = await marketFactory.createExchange(aurei.address);
-      console.log(address);
+      const response = await marketFactory.createExchange(aurei.address);
+      expect(response).to.emit(marketFactory, "NewExchange");
+      const { events } = await response.wait();
+      const exchange = events[1].args.exchange;
     });
   });
 });
