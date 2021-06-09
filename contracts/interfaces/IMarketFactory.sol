@@ -8,8 +8,6 @@ pragma solidity ^0.8.0;
 interface IMarketFactory {
   event NewExchange(address indexed token, address indexed exchange);
 
-  function initializeFactory(address template) external;
-
   function createExchange(address token) external returns (address payable);
 
   function getExchange(address token) external view returns (address payable);

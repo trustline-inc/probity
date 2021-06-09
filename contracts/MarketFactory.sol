@@ -15,7 +15,6 @@ contract MarketFactory is IMarketFactory, Base, Ownable {
   |__________________________________*/
 
   IRegistry public registry;
-  address public exchangeTemplate;
   uint256 public tokenCount;
   mapping(address => address) internal token_to_exchange;
   mapping(address => address) internal exchange_to_token;
@@ -29,19 +28,12 @@ contract MarketFactory is IMarketFactory, Base, Ownable {
     registry = IRegistry(_registry);
   }
 
-  function initializeFactory(address template) public override {
-    require(exchangeTemplate == address(0));
-    require(template != address(0));
-    exchangeTemplate = template;
-  }
-
   function createExchange(address token)
     public
     override
     returns (address payable)
   {
     require(token != address(0));
-    require(exchangeTemplate != address(0));
     require(token_to_exchange[token] == address(0));
     AureiMarket exchange = new AureiMarket();
     exchange.setup(token, address(registry));
