@@ -34,8 +34,8 @@ contract Comptroller is IComptroller, Base, DSMath {
   }
 
   /**
-   * @notice Deposits into FLR/AUR liquidity pool
-   * @param market - Address of an FLR/AUR market contract
+   * @notice Deposits into AUR liquidity pool
+   * @param market - Address of an AUR market contract
    */
   function deposit(address market) external payable override {
     aureiMarket = IAureiMarket(market);
@@ -46,21 +46,37 @@ contract Comptroller is IComptroller, Base, DSMath {
     uint256 price = ftso.getPrice();
 
     // Ensure pool ratio is maintained to FLR/XAU
-    uint256 mintedAurei = wdiv(msg.value, wdiv(wmul(price, 1 ether), 100));
+    uint256 mint = wdiv(msg.value, wdiv(wmul(price, 1 ether), 100));
 
     // Mint Aurei to meet the peg
-    aurei.mint(address(this), mintedAurei);
-    aurei.approve(market, mintedAurei);
+    aurei.mint(address(this), mint);
+    aurei.approve(market, mint);
 
     uint256 endOfTime = 2**256 - 1;
     uint256 initialLiquidity =
-      aureiMarket.addLiquidity{value: msg.value}(0, mintedAurei, endOfTime);
+      aureiMarket.addLiquidity{value: msg.value}(0, mint, endOfTime);
+  }
 
-    console.log("initialAureiReserves :", aureiReserves);
-    console.log("initialSparkReserves :", sparkReserves);
-    console.log("initialLiquidity     :", initialLiquidity);
-    console.log("mintedAurei          :", mintedAurei);
-    console.log("newAureiReserves     :", aurei.balanceOf(market));
-    console.log("newSparkReserves     :", market.balance);
+  /**
+   * @notice Withdraws from AUR liquidity pool
+   * @param market - Address of an AUR market contract
+   */
+  function withdraw(address market, uint256 amount) external override {
+    aureiMarket = IAureiMarket(market);
+
+    uint256 aureiReserves = aurei.balanceOf(market);
+    uint256 sparkReserves = market.balance;
+
+    uint256 price = ftso.getPrice();
+
+    // Ensure pool ratio is pegged to FLR/XAU
+    uint256 aureiBurnAmount = wdiv(amount, wdiv(wmul(price, 1 ether), 100));
+
+    uint256 endOfTime = 2**256 - 1;
+    (uint256 sparkAmount, uint256 aureiAmount) =
+      aureiMarket.removeLiquidity(0, amount, aureiBurnAmount, endOfTime);
+
+    // Burn Aurei to meet the peg
+    aurei.burn(address(this), aureiBurnAmount);
   }
 }

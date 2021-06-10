@@ -9,4 +9,6 @@ import "../libraries/Base.sol";
  */
 interface IComptroller {
   function deposit(address market) external payable;
+
+  function withdraw(address market, uint256 amount) external;
 }

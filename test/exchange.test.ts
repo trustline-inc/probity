@@ -67,18 +67,57 @@ describe("Exchange", function () {
       });
 
       it("adds liquidity", async () => {
-        await ftso.setPrice("200000"); // FLR/XAU = 2000.00
+        await ftso.setPrice("100000"); // FLR/XAU = 1000.00
         await expect(
-          comptroller
+          await comptroller
             .connect(liquidityProvider)
-            .deposit(aureiMarket.address, { value: web3.utils.toWei("2000") })
+            .deposit(aureiMarket.address, { value: web3.utils.toWei("5000") })
         ).to.emit(aureiMarket, "AddLiquidity");
         expect(
           (await aurei.balanceOf(aureiMarket.address)).toString()
-        ).to.equal(web3.utils.toWei("1"));
+        ).to.equal(web3.utils.toWei("5"));
         expect(await ethers.provider.getBalance(aureiMarket.address)).to.equal(
-          web3.utils.toWei("2000")
+          web3.utils.toWei("5000")
         );
+      });
+    });
+
+    describe("liquidity withdrawal", async () => {
+      it("reverts without PEG burn", async () => {
+        await expect(
+          comptroller
+            .connect(liquidityProvider)
+            .withdraw(aureiMarket.address, web3.utils.toWei("1000"))
+        ).to.be.revertedWith("AUREI_MARKET: Must burn PEG tokens.");
+      });
+
+      it("withdraws liquidity", async () => {
+        // Make a trade to create PEG tokens
+        const balance1 = await aureiMarket.balanceOf(liquidityProvider.address);
+        console.log("balance before trade:", balance1.toString());
+        const minimumAureiBought = web3.utils.toWei("0.45"); // Accounting for fees
+        await aureiMarket
+          .connect(buyer)
+          .flrToAurSwapInput(
+            minimumAureiBought,
+            Math.floor(Date.now() / 1000) + 100,
+            { value: web3.utils.toWei("500") }
+          );
+        const balance2 = await aureiMarket.balanceOf(liquidityProvider.address);
+        console.log("balance after trade:", balance2.toString());
+        // PEG tokens not minting for some reason
+
+        // await expect(
+        //   comptroller
+        //     .connect(liquidityProvider)
+        //     .withdraw(aureiMarket.address, web3.utils.toWei("1000"))
+        // ).to.emit(aureiMarket, "RemoveLiquidity");
+        // expect(
+        //   (await aurei.balanceOf(aureiMarket.address)).toString()
+        // ).to.equal(web3.utils.toWei("0.5"));
+        // expect(await ethers.provider.getBalance(aureiMarket.address)).to.equal(
+        //   web3.utils.toWei("1000")
+        // );
       });
     });
   });

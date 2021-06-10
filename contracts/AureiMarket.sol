@@ -26,25 +26,22 @@ contract AureiMarket is IAureiMarket, PeggedERC20 {
   /// @dev Used to get addresses of other ARS contracts
   IRegistry registry;
 
-  /// @dev Address of the ERC20 token traded on this contract
-  IERC20 token;
-
   // --- Constructor ---
 
   /**
    * @notice Intial setup of an Aurei market.
-   * @param tokenAddress - Address of ERC20 token.
+   * @param tokenAddress - Address of ERC20 aurei.
    * @dev This is called once by the factory after contract creation.
    */
   function setup(address tokenAddress, address _registry) public {
     require(
       address(factory) == address(0) &&
-        address(token) == address(0) &&
+        address(aurei) == address(0) &&
         tokenAddress != address(0),
       "INVALID_ADDRESS"
     );
     factory = IMarketFactory(msg.sender);
-    token = IERC20(tokenAddress);
+    aurei = IAurei(tokenAddress);
     registry = IRegistry(_registry);
   }
 
@@ -344,17 +341,17 @@ contract AureiMarket is IAureiMarket, PeggedERC20 {
    * @notice Deposit FLR && AUR at current ratio to mint PEG tokens.
    * @dev min_liquidity does nothing when total PEG supply is 0.
    * @param min_liquidity Minimum number of PEG sender will mint if total PEG supply is greater than 0.
-   * @param max_tokens Maximum number of tokens deposited. Deposits max amount if total PEG supply is 0.
+   * @param max_aur Maximum number of AUR deposited. Deposits max amount if total PEG supply is 0.
    * @param deadline Time after which this transaction can no longer be executed.
    * @return The amount of PEG minted.
    */
   function addLiquidity(
     uint256 min_liquidity,
-    uint256 max_tokens,
+    uint256 max_aur,
     uint256 deadline
   ) public payable override onlyComptroller returns (uint256) {
     require(
-      deadline > block.timestamp && max_tokens > 0 && msg.value > 0,
+      deadline > block.timestamp && max_aur > 0 && msg.value > 0,
       "AureiMarket#addLiquidity: INVALID_ARGUMENT"
     );
     uint256 total_liquidity = _totalSupply;
@@ -365,26 +362,26 @@ contract AureiMarket is IAureiMarket, PeggedERC20 {
       uint256 aur_reserve = aurei.balanceOf(address(this));
       uint256 aur_amount = (msg.value.mul(aur_reserve) / flr_reserve).add(1);
       uint256 liquidity_minted = msg.value.mul(total_liquidity) / flr_reserve;
-      require(max_tokens >= aur_amount && liquidity_minted >= min_liquidity);
+      require(max_aur >= aur_amount && liquidity_minted >= min_liquidity);
       _balances[msg.sender] = _balances[msg.sender].add(liquidity_minted);
       _totalSupply = total_liquidity.add(liquidity_minted);
-      require(token.transferFrom(msg.sender, address(this), aur_amount));
+      require(aurei.transferFrom(msg.sender, address(this), aur_amount));
       emit AddLiquidity(msg.sender, msg.value, aur_amount);
       emit Transfer(address(0), msg.sender, liquidity_minted);
       return liquidity_minted;
     } else {
       require(
         address(factory) != address(0) &&
-          address(token) != address(0) &&
+          address(aurei) != address(0) &&
           msg.value >= 1000000000,
         "INVALID_VALUE"
       );
-      require(factory.getExchange(address(token)) == address(this));
-      uint256 aur_amount = max_tokens;
+      require(factory.getExchange(address(aurei)) == address(this));
+      uint256 aur_amount = max_aur;
       uint256 initial_liquidity = address(this).balance;
       _totalSupply = initial_liquidity;
       _balances[msg.sender] = initial_liquidity;
-      require(token.transferFrom(msg.sender, address(this), aur_amount));
+      require(aurei.transferFrom(msg.sender, address(this), aur_amount));
       emit AddLiquidity(msg.sender, msg.value, aur_amount);
       emit Transfer(address(0), msg.sender, initial_liquidity);
       return initial_liquidity;
@@ -395,30 +392,40 @@ contract AureiMarket is IAureiMarket, PeggedERC20 {
    * @dev Burn PEG tokens to withdraw FLR && AUR at current ratio.
    * @param amount Amount of PEG burned.
    * @param min_flr Minimum FLR withdrawn.
-   * @param min_tokens Minimum AUR withdrawn.
+   * @param min_aur Minimum AUR withdrawn.
    * @param deadline Time after which this transaction can no longer be executed.
    * @return The amount of FLR && AUR withdrawn.
    */
   function removeLiquidity(
     uint256 amount,
     uint256 min_flr,
-    uint256 min_tokens,
+    uint256 min_aur,
     uint256 deadline
   ) public override onlyComptroller returns (uint256, uint256) {
+    require(amount > 0, "AUREI_MARKET: Must burn PEG tokens.");
+    require(deadline > block.timestamp, "AUREI_MARKET: Deadline expired.");
     require(
-      amount > 0 && deadline > block.timestamp && min_flr > 0 && min_tokens > 0
+      min_flr > 0,
+      "AUREI_MARKET: FLR withdrawn must be greater than zero."
+    );
+    require(
+      min_aur > 0,
+      "AUREI_MARKET: AUR withdrawn must be greater than zero."
     );
     uint256 total_liquidity = _totalSupply;
-    require(total_liquidity > 0);
+    require(
+      total_liquidity > 0,
+      "AUREI_MARKET: Total liquidity must be greater than zero."
+    );
     uint256 aur_reserve = aurei.balanceOf(address(this));
     uint256 flr_amount = amount.mul(address(this).balance) / total_liquidity;
     uint256 aur_amount = amount.mul(aur_reserve) / total_liquidity;
-    require(flr_amount >= min_flr && aur_amount >= min_tokens);
+    require(flr_amount >= min_flr && aur_amount >= min_aur);
 
     _balances[msg.sender] = _balances[msg.sender].sub(amount);
     _totalSupply = total_liquidity.sub(amount);
     payable(msg.sender).transfer(flr_amount);
-    require(token.transfer(msg.sender, aur_amount));
+    require(aurei.transfer(msg.sender, aur_amount));
     emit RemoveLiquidity(msg.sender, flr_amount, aur_amount);
     emit Transfer(msg.sender, address(0), amount);
     return (flr_amount, aur_amount);
