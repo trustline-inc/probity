@@ -9,6 +9,7 @@ import "./interfaces/IMarketFactory.sol";
 import "./interfaces/IRegistry.sol";
 import "./libraries/Ownable.sol";
 import "./tokens/PeggedERC20.sol";
+import "hardhat/console.sol";
 
 /**
  * @notice adapted from UniSwap V1
@@ -351,7 +352,7 @@ contract AureiMarket is IAureiMarket, PeggedERC20 {
     uint256 min_liquidity,
     uint256 max_tokens,
     uint256 deadline
-  ) public payable onlyTreasury returns (uint256) {
+  ) public payable override onlyComptroller returns (uint256) {
     require(
       deadline > block.timestamp && max_tokens > 0 && msg.value > 0,
       "AureiMarket#addLiquidity: INVALID_ARGUMENT"
@@ -403,7 +404,7 @@ contract AureiMarket is IAureiMarket, PeggedERC20 {
     uint256 min_flr,
     uint256 min_tokens,
     uint256 deadline
-  ) public onlyTreasury returns (uint256, uint256) {
+  ) public override onlyComptroller returns (uint256, uint256) {
     require(
       amount > 0 && deadline > block.timestamp && min_flr > 0 && min_tokens > 0
     );
@@ -424,12 +425,12 @@ contract AureiMarket is IAureiMarket, PeggedERC20 {
   }
 
   /**
-   * @dev Ensure that msg.sender === Treasury contract address.
+   * @dev Ensure that msg.sender === Comptroller contract address.
    */
-  modifier onlyTreasury {
+  modifier onlyComptroller {
     require(
-      msg.sender == registry.getContractAddress(Base.Contract.Treasury),
-      "AUREI_MARKET: Only Treasury can call this method."
+      msg.sender == registry.getContractAddress(Base.Contract.Comptroller),
+      "AUREI_MARKET: Only Comptroller can call this method."
     );
     _;
   }

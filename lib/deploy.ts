@@ -6,6 +6,7 @@ import { ethers } from "hardhat";
 import {
   AureiFactory,
   BridgeFactory,
+  ComptrollerFactory,
   FtsoFactory,
   MarketFactoryFactory,
   RegistryFactory,
@@ -19,6 +20,7 @@ import {
 import {
   Aurei,
   Bridge,
+  Comptroller,
   Ftso,
   MarketFactory,
   Registry,
@@ -36,6 +38,7 @@ const STATE_CONNECTOR_ADDRESS = "0x1000000000000000000000000000000000000001";
 interface Contracts {
   aurei: Aurei;
   bridge: Bridge;
+  comptroller: Comptroller;
   ftso: Ftso;
   marketFactory: MarketFactory;
   registry: Registry;
@@ -48,6 +51,7 @@ interface Contracts {
 const contracts: Contracts = {
   aurei: null,
   bridge: null,
+  comptroller: null,
   ftso: null,
   marketFactory: null,
   registry: null,
@@ -61,6 +65,7 @@ const contracts: Contracts = {
 enum Contract {
   Aurei,
   Bridge,
+  Comptroller,
   Ftso,
   MarketFactory,
   TcnToken,
@@ -126,6 +131,15 @@ const deploy = async () => {
   contracts.aurei = await aureiFactory.deploy();
   await contracts.aurei.deployed();
 
+  const comptrollerFactory = (await ethers.getContractFactory(
+    "Comptroller",
+    signers.owner
+  )) as ComptrollerFactory;
+  contracts.comptroller = await comptrollerFactory.deploy(
+    contracts.registry.address
+  );
+  await contracts.comptroller.deployed();
+
   const marketFactoryFactory = (await ethers.getContractFactory(
     "MarketFactory",
     signers.owner
@@ -179,6 +193,10 @@ const deploy = async () => {
     contracts.aurei.address
   );
   await contracts.registry.setupContractAddress(
+    Contract.Comptroller,
+    contracts.comptroller.address
+  );
+  await contracts.registry.setupContractAddress(
     Contract.Ftso,
     contracts.ftso.address
   );
@@ -217,6 +235,7 @@ const deploy = async () => {
     contracts.bridge.address
   );
 
+  await contracts.comptroller.initializeContract();
   await contracts.teller.initializeContract();
   await contracts.treasury.initializeContract();
   await contracts.vault.initializeContract();

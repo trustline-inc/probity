@@ -11,6 +11,7 @@ contract Base {
   enum Contract {
     Aurei,
     Bridge,
+    Comptroller,
     Ftso,
     MarketFactory,
     TcnToken,
