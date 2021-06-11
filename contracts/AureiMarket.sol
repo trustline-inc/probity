@@ -66,10 +66,14 @@ contract AureiMarket is IAureiMarket, PeggedERC20 {
     uint256 input_reserve,
     uint256 output_reserve
   ) public view returns (uint256) {
+    console.log("input_amount:", input_amount);
     require(input_reserve > 0 && output_reserve > 0, "INVALID_VALUE");
     uint256 input_amount_with_fee = input_amount.mul(997);
+    console.log("input_amount_with_fee:", input_amount_with_fee);
     uint256 numerator = input_amount_with_fee.mul(output_reserve);
+    console.log("numerator:", numerator);
     uint256 denominator = input_reserve.mul(1000).add(input_amount_with_fee);
+    console.log("denominator:", denominator);
     return numerator / denominator;
   }
 
@@ -100,8 +104,10 @@ contract AureiMarket is IAureiMarket, PeggedERC20 {
   ) private returns (uint256) {
     require(deadline >= block.timestamp && flr_sold > 0 && min_aur > 0);
     uint256 aur_reserve = aurei.balanceOf(address(this));
+    console.log("aur_reserve", aur_reserve);
     uint256 aur_bought =
       getInputPrice(flr_sold, address(this).balance.sub(flr_sold), aur_reserve);
+    console.log("aur_bought", aur_bought);
     require(aur_bought >= min_aur);
     require(aurei.transfer(recipient, aur_bought));
     emit AureiPurchase(buyer, flr_sold, aur_bought);
@@ -402,6 +408,7 @@ contract AureiMarket is IAureiMarket, PeggedERC20 {
     uint256 min_aur,
     uint256 deadline
   ) public override onlyComptroller returns (uint256, uint256) {
+    console.log("===removing liquidity===");
     require(amount > 0, "AUREI_MARKET: Must burn PEG tokens.");
     require(deadline > block.timestamp, "AUREI_MARKET: Deadline expired.");
     require(
@@ -420,6 +427,12 @@ contract AureiMarket is IAureiMarket, PeggedERC20 {
     uint256 aur_reserve = aurei.balanceOf(address(this));
     uint256 flr_amount = amount.mul(address(this).balance) / total_liquidity;
     uint256 aur_amount = amount.mul(aur_reserve) / total_liquidity;
+    console.log("flr_amount     :", flr_amount);
+    console.log("min_flr        :", min_flr);
+    console.log("aur_reserve    :", aur_reserve);
+    console.log("total_liquidity:", total_liquidity);
+    console.log("aur_amount     :", aur_amount);
+    console.log("min_aur        :", min_aur);
     require(flr_amount >= min_flr && aur_amount >= min_aur);
 
     _balances[msg.sender] = _balances[msg.sender].sub(amount);

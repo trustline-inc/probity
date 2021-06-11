@@ -24,6 +24,8 @@ contract Comptroller is IComptroller, Base, DSMath {
     registry = IRegistry(_registry);
   }
 
+  fallback() external payable {}
+
   /**
    * @notice Initialize dependent contract.
    * @dev Should probably make this inheritable.
@@ -61,7 +63,11 @@ contract Comptroller is IComptroller, Base, DSMath {
    * @notice Withdraws from AUR liquidity pool
    * @param market - Address of an AUR market contract
    */
-  function withdraw(address market, uint256 amount) external override {
+  function withdraw(
+    address market,
+    uint256 liquidityAmount,
+    uint256 sparkAmount
+  ) external override {
     aureiMarket = IAureiMarket(market);
 
     uint256 aureiReserves = aurei.balanceOf(market);
@@ -70,13 +76,18 @@ contract Comptroller is IComptroller, Base, DSMath {
     uint256 price = ftso.getPrice();
 
     // Ensure pool ratio is pegged to FLR/XAU
-    uint256 aureiBurnAmount = wdiv(amount, wdiv(wmul(price, 1 ether), 100));
+    uint256 aureiAmount = wdiv(sparkAmount, wdiv(wmul(price, 1 ether), 100));
 
     uint256 endOfTime = 2**256 - 1;
-    (uint256 sparkAmount, uint256 aureiAmount) =
-      aureiMarket.removeLiquidity(0, amount, aureiBurnAmount, endOfTime);
+    (uint256 _sparkAmount, uint256 _aureiAmount) =
+      aureiMarket.removeLiquidity(
+        liquidityAmount,
+        sparkAmount,
+        aureiAmount,
+        endOfTime
+      );
 
     // Burn Aurei to meet the peg
-    aurei.burn(address(this), aureiBurnAmount);
+    aurei.burn(address(this), aureiAmount);
   }
 }

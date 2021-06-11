@@ -87,15 +87,25 @@ describe("Exchange", function () {
         await expect(
           comptroller
             .connect(liquidityProvider)
-            .withdraw(aureiMarket.address, web3.utils.toWei("1000"))
+            .withdraw(
+              aureiMarket.address,
+              web3.utils.toWei("0"),
+              web3.utils.toWei("1000")
+            )
         ).to.be.revertedWith("AUREI_MARKET: Must burn PEG tokens.");
       });
 
       it("withdraws liquidity", async () => {
-        // Make a trade to create PEG tokens
-        const balance1 = await aureiMarket.balanceOf(liquidityProvider.address);
-        console.log("balance before trade:", balance1.toString());
-        const minimumAureiBought = web3.utils.toWei("0.45"); // Accounting for fees
+        /**
+         * Make a trade to create PEG tokens
+         */
+
+        const balancePrior = await aureiMarket.balanceOf(comptroller.address);
+        expect(balancePrior.toString()).to.equal(web3.utils.toWei("5000"));
+
+        // Accounting for fees
+        const minimumAureiBought = web3.utils.toWei("0.45");
+
         await aureiMarket
           .connect(buyer)
           .flrToAurSwapInput(
@@ -103,21 +113,25 @@ describe("Exchange", function () {
             Math.floor(Date.now() / 1000) + 100,
             { value: web3.utils.toWei("500") }
           );
-        const balance2 = await aureiMarket.balanceOf(liquidityProvider.address);
-        console.log("balance after trade:", balance2.toString());
-        // PEG tokens not minting for some reason
+        const balanceAfter = await aureiMarket.balanceOf(comptroller.address);
+        console.log("balance after trade:", balanceAfter.toString());
+        // expect(balanceAfter.toString()).to.equal();
 
-        // await expect(
-        //   comptroller
-        //     .connect(liquidityProvider)
-        //     .withdraw(aureiMarket.address, web3.utils.toWei("1000"))
-        // ).to.emit(aureiMarket, "RemoveLiquidity");
-        // expect(
-        //   (await aurei.balanceOf(aureiMarket.address)).toString()
-        // ).to.equal(web3.utils.toWei("0.5"));
-        // expect(await ethers.provider.getBalance(aureiMarket.address)).to.equal(
-        //   web3.utils.toWei("1000")
-        // );
+        await expect(
+          comptroller
+            .connect(liquidityProvider)
+            .withdraw(
+              aureiMarket.address,
+              web3.utils.toWei("100"),
+              web3.utils.toWei("10")
+            )
+        ).to.emit(aureiMarket, "RemoveLiquidity");
+        expect(
+          (await aurei.balanceOf(aureiMarket.address)).toString()
+        ).to.equal(web3.utils.toWei("4.455760661998726927"));
+        expect(await ethers.provider.getBalance(aureiMarket.address)).to.equal(
+          web3.utils.toWei("5390.000000000000000000")
+        );
       });
     });
   });
