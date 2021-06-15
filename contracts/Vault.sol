@@ -36,6 +36,9 @@ contract Vault is IVault, Base, Ownable {
   uint256 public _totalStakedCollateral;
 
   mapping(address => Collateral) public vaults;
+  mapping(address => bool) public userExists;
+
+  address[] users;
 
   // --- Constructor ---
 
@@ -52,6 +55,14 @@ contract Vault is IVault, Base, Ownable {
   }
 
   // --- External Functions ---
+
+  /**
+   * @notice Gets all users
+   * @return An array of users
+   */
+  function getUsers() external view override returns (address[] memory) {
+    return users;
+  }
 
   /**
    * @notice Fetches vault details.
@@ -92,6 +103,11 @@ contract Vault is IVault, Base, Ownable {
     override
     onlyTellerOrTreasury
   {
+    if (!userExists[owner]) {
+      users.push(owner);
+      userExists[owner] = true;
+    }
+
     require(
       activity == Activity.Borrow || activity == Activity.Stake,
       "VAULT: Invalid activity for deposit."

@@ -19,6 +19,8 @@ interface IVault {
 
   // --- Functions ---
 
+  function getUsers() external view returns (address[] memory);
+
   function totalLoanCollateral() external view returns (uint256);
 
   function totalStakedCollateral() external view returns (uint256);
