@@ -20,7 +20,7 @@ contract Aurei is IAurei, Ownable {
   // --- Data ---
 
   uint256 private _totalSupply;
-  string internal constant _NAME = "Aurei Stablecoin";
+  string internal constant _NAME = "Aurei";
   string internal constant _SYMBOL = "AUR";
   string internal constant _VERSION = "1.0.0";
   uint8 internal constant _DECIMALS = 18;
