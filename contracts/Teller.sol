@@ -220,7 +220,6 @@ contract Teller is ITeller, Ownable, Base, DSMath {
    */
   function liquidate(address borrower, uint256 purchasePrice)
     external
-    payable
     override
     checkLiquidationElegibility(borrower, purchasePrice)
   {
