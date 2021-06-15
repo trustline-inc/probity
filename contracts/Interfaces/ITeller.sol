@@ -68,5 +68,5 @@ interface ITeller {
 
   function repay(uint256 amount, uint256 collateral) external;
 
-  function liquidate(address borrower, uint256 purchasePrice) external payable;
+  function liquidate(address borrower, uint256 purchasePrice) external;
 }
