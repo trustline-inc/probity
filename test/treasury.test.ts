@@ -11,7 +11,6 @@ import { Aurei, Ftso, TcnToken, Teller, Treasury } from "../typechain";
 
 import deploy from "../lib/deploy";
 import { SECONDS_IN_YEAR } from "./constants";
-import { Signer } from "node:crypto";
 
 BigNumber.config({
   POW_PRECISION: 30,
@@ -28,7 +27,6 @@ Decimal.config({
 
 // Wallets
 let lender: SignerWithAddress;
-let lender2: SignerWithAddress;
 let borrower: SignerWithAddress;
 let liquidator: SignerWithAddress;
 
