@@ -89,5 +89,6 @@ contract Comptroller is IComptroller, Base, DSMath {
 
     // Burn Aurei to meet the peg
     aurei.burn(address(this), aureiAmount);
+    payable(msg.sender).transfer(sparkAmount);
   }
 }

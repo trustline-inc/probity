@@ -102,6 +102,7 @@ contract AureiMarket is IAureiMarket, PeggedERC20 {
     address buyer,
     address recipient
   ) private returns (uint256) {
+    console.log("===BUYING AUR WITH FLR===");
     require(deadline >= block.timestamp && flr_sold > 0 && min_aur > 0);
     uint256 aur_reserve = aurei.balanceOf(address(this));
     console.log("aur_reserve", aur_reserve);

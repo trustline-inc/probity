@@ -67,6 +67,8 @@ describe("Exchange", function () {
       });
 
       it("adds liquidity", async () => {
+        const balance1 = await liquidityProvider.getBalance();
+        console.log("balance1:", balance1.toString());
         await ftso.setPrice("100000"); // FLR/XAU = 1000.00
         await expect(
           await comptroller
@@ -79,6 +81,8 @@ describe("Exchange", function () {
         expect(await ethers.provider.getBalance(aureiMarket.address)).to.equal(
           web3.utils.toWei("5000")
         );
+        const balance2 = await liquidityProvider.getBalance();
+        console.log("balance2:", balance1.toString());
       });
     });
 
@@ -97,7 +101,7 @@ describe("Exchange", function () {
 
       it("withdraws liquidity", async () => {
         /**
-         * Make a trade to create PEG tokens
+         * Buyer buys 0.45 AUR to create liquidity provider PEG tokens
          */
 
         const balancePrior = await aureiMarket.balanceOf(comptroller.address);
@@ -117,13 +121,15 @@ describe("Exchange", function () {
         console.log("balance after trade:", balanceAfter.toString());
         // expect(balanceAfter.toString()).to.equal();
 
+        const liquidityTokensBurned = web3.utils.toWei("100");
+        const minimumSparkWithdrawn = web3.utils.toWei("10");
         await expect(
           comptroller
             .connect(liquidityProvider)
             .withdraw(
               aureiMarket.address,
-              web3.utils.toWei("100"),
-              web3.utils.toWei("10")
+              liquidityTokensBurned,
+              minimumSparkWithdrawn
             )
         ).to.emit(aureiMarket, "RemoveLiquidity");
         expect(
@@ -132,6 +138,8 @@ describe("Exchange", function () {
         expect(await ethers.provider.getBalance(aureiMarket.address)).to.equal(
           web3.utils.toWei("5390.000000000000000000")
         );
+        const balance = await liquidityProvider.getBalance();
+        console.log("balance:", balance.toString());
       });
     });
   });
