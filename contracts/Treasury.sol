@@ -281,8 +281,6 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
    * @param capital - The amount of Aurei.
    */
   modifier checkStakingEligibility(uint256 capital) {
-    (uint256 loanCollateral, uint256 stakedCollateral) =
-      vault.balanceOf(msg.sender);
     uint256 collateralPrice = ftso.getPrice();
     uint256 ratio = wdiv(wdiv(wmul(msg.value, collateralPrice), 100), capital);
     require(
