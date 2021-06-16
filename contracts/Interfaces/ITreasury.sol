@@ -35,7 +35,7 @@ interface ITreasury {
     uint256 liquidatorFee,
     uint256 protocolFee,
     uint256 timestamp,
-    address indexed borrower,
+    address indexed supplier,
     address indexed liquidator
   );
 

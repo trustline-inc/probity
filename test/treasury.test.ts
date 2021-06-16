@@ -197,7 +197,29 @@ describe("Treasury", function () {
 
       await aurei.connect(liquidator).approve(teller.address, parValue);
       await teller.connect(liquidator).liquidate(borrower.address, parValue);
-      await treasury.connect(liquidator).liquidate(lender.address);
+      const result = await treasury
+        .connect(liquidator)
+        .liquidate(lender.address);
+      const data = await result.wait();
+      expect(data.events[2].event).to.equal("Liquidation");
+      const [
+        collateralAmount,
+        collateralValue,
+        liquidatorFee,
+        protocolFee,
+        timestamp,
+        _supplier,
+        _liquidator,
+      ] = data.events[2].args;
+      console.log(
+        "collateralAmount: " + collateralAmount.toString() + "\n",
+        "collateralValue: " + collateralValue.toString() + "\n",
+        "liquidatorFee: " + liquidatorFee.toString() + "\n",
+        "protocolFee: " + protocolFee.toString() + "\n",
+        "timestamp: " + timestamp.toString()
+      );
+      expect(_supplier).to.equal(lender.address);
+      expect(_liquidator).to.equal(liquidator.address);
     });
   });
 });
