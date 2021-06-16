@@ -119,6 +119,20 @@ describe("Teller", function () {
       expect(balance).to.equal("1000");
     });
 
+    it("does not exceed 100% APR", async () => {
+      const collateral = 1998; // FLR
+      const principal = 999; // AUR
+
+      // Attempt to create loan
+      await expect(
+        teller
+          .connect(borrower)
+          .createLoan(web3.utils.toWei(principal.toString()), {
+            value: web3.utils.toWei(collateral.toString()),
+          })
+      ).to.be.revertedWith("TELLER: Max APR exceeed.");
+    });
+
     it("Allows users to repay debt", async () => {
       const principal = 1000; // AUR
       const repayment = 500; // AUR
@@ -193,7 +207,14 @@ describe("Teller", function () {
       // $0.25 FLR/USD => 75% decrease in price
       await ftso.setPrice((0.25 * 100).toString());
 
-      const parValue = web3.utils.toWei("500.000001296122006814");
+      // Borrower debt is par value
+      const parValue = web3.utils.toWei("500.000001609875704080");
+
+      // Get collateral market value
+      const collaterals = await vault.balanceOf(borrower.address);
+      const marketValue = new BigNumber(collaterals[0].toString())
+        .times(new BigNumber("0.25"))
+        .toString();
 
       // Add more to the treasury for liquidator borrow
       // 4000 FLR * $0.25 = $1000 collateral value => 200% ratio

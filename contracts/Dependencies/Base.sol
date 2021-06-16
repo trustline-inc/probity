@@ -25,7 +25,7 @@ contract Base {
   uint256 constant ONE = 10**18;
 
   // Set max APR to 100%
-  uint256 constant MAX_APR = ONE;
+  uint256 constant MAX_APR = ONE * 2 * 1e9;
 
   // Minimum collateral ratio for FLR vaults (150%)
   uint256 public constant LIQUIDATION_RATIO = 1500000000000000000;

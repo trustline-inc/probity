@@ -132,7 +132,7 @@ contract Teller is ITeller, Ownable, Base, DSMath {
 
     // Check Treasury's Aurei balance
     uint256 reserves = aurei.balanceOf(address(treasury));
-    require(reserves >= principal);
+    require(reserves >= principal, "TELLER: Not enough reserves.");
 
     // Increase normalized individual and aggregate debt
     uint256 normalized = rdiv(principal, debtAccumulator);
@@ -206,7 +206,7 @@ contract Teller is ITeller, Ownable, Base, DSMath {
       rdiv(10**27 * 0.01, oneMinusUtilization);
     APR = add(oneDividedByOneMinusUtilization, RAY);
     APR = ((APR + round - 1) / round) * round;
-    require(APR >= MAX_APR, "TELLER: Max APR exceeed.");
+    require(APR <= MAX_APR, "TELLER: Max APR exceeed.");
 
     // Set new MPR
     MPR = APR_TO_MPR[APR];
