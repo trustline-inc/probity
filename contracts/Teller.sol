@@ -275,11 +275,11 @@ contract Teller is ITeller, Ownable, Base, DSMath {
       wdiv((wdiv(wmul(loanCollateral, collateralPrice), 100)), borrowerDebt);
     require(
       ratio <= LIQUIDATION_RATIO,
-      "TREASURY: Liquidation threshold not exceeded"
+      "TELLER: Liquidation threshold not exceeded"
     );
     require(
       purchasePrice >= borrowerDebt,
-      "TREASURY: Purchase price must be greater than or equal to the par value of the borrower debt."
+      "TELLER: Purchase price must be greater than or equal to the par value of the borrower debt."
     );
     _;
   }
