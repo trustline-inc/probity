@@ -190,10 +190,7 @@ const deploy = async () => {
     "Bridge",
     signers.owner
   )) as BridgeFactory;
-  contracts.bridge = await bridgeFactory.deploy(
-    contracts.aurei.address,
-    STATE_CONNECTOR_ADDRESS
-  );
+  contracts.bridge = await bridgeFactory.deploy(contracts.aurei.address);
   await contracts.bridge.deployed();
   await contracts.registry.setupContractAddress(
     Contract.Bridge,
