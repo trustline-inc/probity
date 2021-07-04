@@ -1,10 +1,11 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import "@nomiclabs/hardhat-waffle";
 import { ethers } from "hardhat";
+import * as dotenv from "dotenv";
+dotenv.config();
+
 const aureiContractAbi = require("../artifacts/contracts/Aurei.sol/Aurei.json");
 const bridgeContractAbi = require("../artifacts/contracts/Bridge.sol/Bridge.json");
-const aureiContractAddress = "0x82756dc5c3a74422C1a95227e9A8832e33C337cb";
-const bridgeContractAddress = "0xb6f0184c26DBDe79E19325259f79f8eB0B07aAD6";
 const flareRedemptionAddress = "0xffC11262622D5069aBad729efe84a95C169d9c06";
 
 /**
@@ -17,12 +18,12 @@ async function main(flareAddress: string) {
   [owner, personal] = await ethers.getSigners();
 
   const bridgeContract = new ethers.Contract(
-    bridgeContractAddress,
+    process.env.BRIDGE,
     bridgeContractAbi.abi,
     owner
   );
   const aureiContract = new ethers.Contract(
-    aureiContractAddress,
+    process.env.AUREI,
     aureiContractAbi.abi,
     owner
   );

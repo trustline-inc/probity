@@ -1,11 +1,48 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import "@nomiclabs/hardhat-waffle";
 import { ethers } from "hardhat";
+import * as dotenv from "dotenv";
+dotenv.config();
+
 const bridgeContractAbi = require("../artifacts/contracts/Bridge.sol/Bridge.json");
-const bridgeContractAddress = "0xa8Cb9E99a22D49fb0C2944a9C23977007041e148";
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function fetchIncompleteTransfers(bridgeContract: any) {
+  const res = await bridgeContract.getToXRPTransferHashes();
+
+  const output = {
+    pending: [] as any[],
+    inProgress: [] as any[],
+  };
+
+  for (const txHash of res) {
+    const transfer = await bridgeContract.toXRPTransfers(txHash);
+
+    let amount = transfer[2];
+    const status = transfer[5];
+
+    if (amount.toString() === "0" || status === 2) continue;
+    console.log(txHash, transfer);
+    const entry = {
+      txHash,
+      destination: transfer[1],
+      amount: parseFloat(amount),
+      nonce: transfer[3],
+      txIdOnXRP: transfer[4],
+      status: transfer[5],
+    };
+
+    if (transfer[5] === "0") {
+      output.pending.push(entry);
+    } else if (transfer[5] === "1") {
+      output.inProgress.push(entry);
+    }
+  }
+
+  return output;
 }
 
 /**
@@ -17,16 +54,17 @@ async function main() {
   [owner] = await ethers.getSigners();
 
   const txHashes = [
-    "0xab9be1ebf6cab3fa08c735c60c49123226d87e930db1614fb57ad8262cbc9e71",
-    "0x59c6ece4a30b86fe2000111ecb9a0ab29fe98db044b0b57851fe54fa2580372c",
+    "0x6c37fed5a04f90e11eb2633fd03318ec8eea59cb9905c91dc765c17574a35984",
+    "0x52473939709c67d7522d6e46ca0db4dad5dfa39a606c022caffc27f4af2355a3",
   ];
 
   const bridgeContract = new ethers.Contract(
-    bridgeContractAddress,
+    process.env.BRIDGE,
     bridgeContractAbi.abi,
     owner
   );
-
+  // const output = await fetchIncompleteTransfers(bridgeContract)
+  // console.log(output)
   for (let txHash of txHashes) {
     await bridgeContract.updateTransferStatus(txHash, "Cancelled", 2);
     await sleep(5000);
