@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import "../Interfaces/IAurei.sol";
 import "../Interfaces/IStateConnector.sol";
 
-contract Bridge {
+contract BridgeOld {
   IAurei aurei;
   IStateConnector stateConnector;
 
