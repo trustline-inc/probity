@@ -21,10 +21,6 @@ interface IVault {
 
   function getUsers() external view returns (address[] memory);
 
-  function totalLoanCollateral() external view returns (uint256);
-
-  function totalStakedCollateral() external view returns (uint256);
-
   /**
    * @notice Fetches collateral balances of the owner's vault.
    * @return (loanCollateral, stakedCollateral)

@@ -31,9 +31,8 @@ contract Vault is IVault, Base, Ownable {
   IRegistry public registry;
 
   // Aggregate collateral amounts
-  uint256 public _totalCollateral;
-  uint256 public _totalLoanCollateral;
-  uint256 public _totalStakedCollateral;
+  uint256 public totalLoanCollateral;
+  uint256 public totalStakedCollateral;
 
   mapping(address => Collateral) public vaults;
   mapping(address => bool) public userExists;
@@ -79,22 +78,6 @@ contract Vault is IVault, Base, Ownable {
   }
 
   /**
-   * @notice Gets the aggregate amount of loan collateral.
-   * @return The amount of loan collateral.
-   */
-  function totalLoanCollateral() external view override returns (uint256) {
-    return _totalLoanCollateral;
-  }
-
-  /**
-   * @notice Gets the aggregate amount of collateral for capital.
-   * @return The amount of locked collateral for capital.
-   */
-  function totalStakedCollateral() external view override returns (uint256) {
-    return _totalStakedCollateral;
-  }
-
-  /**
    * @notice Deposits collateral to a vault.
    */
   function deposit(Activity activity, address owner)
@@ -116,12 +99,12 @@ contract Vault is IVault, Base, Ownable {
 
     if (activity == Activity.Borrow) {
       balances.loanCollateral = vaults[owner].loanCollateral.add(msg.value);
-      _totalLoanCollateral = _totalLoanCollateral.add(msg.value);
+      totalLoanCollateral = totalLoanCollateral.add(msg.value);
     }
 
     if (activity == Activity.Stake) {
       balances.stakedCollateral = vaults[owner].stakedCollateral.add(msg.value);
-      _totalStakedCollateral = _totalStakedCollateral.add(msg.value);
+      totalStakedCollateral = totalStakedCollateral.add(msg.value);
     }
 
     emit VaultUpdated(
@@ -157,7 +140,7 @@ contract Vault is IVault, Base, Ownable {
         "VAULT: Overdraft not allowed."
       );
       balances.loanCollateral = vaults[owner].loanCollateral.sub(amount);
-      _totalLoanCollateral = _totalLoanCollateral.sub(amount);
+      totalLoanCollateral = totalLoanCollateral.sub(amount);
       payable(recipient).transfer(amount);
     }
 
@@ -167,19 +150,19 @@ contract Vault is IVault, Base, Ownable {
         "VAULT: Overdraft not allowed."
       );
       balances.stakedCollateral = vaults[owner].stakedCollateral.sub(amount);
-      _totalStakedCollateral = _totalStakedCollateral.sub(amount);
+      totalStakedCollateral = totalStakedCollateral.sub(amount);
       payable(recipient).transfer(amount);
     }
 
     if (activity == Activity.LiquidateLoan) {
       balances.loanCollateral = vaults[owner].loanCollateral.sub(amount);
-      _totalLoanCollateral = _totalLoanCollateral.sub(amount);
+      totalLoanCollateral = totalLoanCollateral.sub(amount);
       payable(recipient).transfer(amount);
     }
 
     if (activity == Activity.LiquidateStake) {
       balances.stakedCollateral = vaults[owner].stakedCollateral.sub(amount);
-      _totalStakedCollateral = _totalStakedCollateral.sub(amount);
+      totalStakedCollateral = totalStakedCollateral.sub(amount);
       payable(recipient).transfer(amount);
     }
 
