@@ -2,18 +2,23 @@
 
 pragma solidity ^0.8.0;
 
-import "../Dependencies/Base.sol";
-
 /**
  * @notice Manages contracts registry
  */
 interface IRegistry {
   // --- Functions --
+  enum Contract {
+    Aurei,
+    Bridge,
+    Ftso,
+    TcnToken,
+    Teller,
+    Treasury,
+    Vault,
+    Governance
+  }
 
-  function setupContractAddress(Base.Contract name, address _addr) external;
+  function setupContractAddress(Contract name, address _addr) external;
 
-  function getContractAddress(Base.Contract name)
-    external
-    view
-    returns (address);
+  function getContractAddress(Contract name) external view returns (address);
 }

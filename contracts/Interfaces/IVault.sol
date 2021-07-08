@@ -9,41 +9,15 @@ import "../Dependencies/Base.sol";
  * and depositing or withdrawing collateral.
  */
 interface IVault {
-  // --- Events ---
+  function depositCollateral(
+    bytes32 collateral,
+    address user,
+    uint256 amount
+  ) external;
 
-  event VaultUpdated(
-    address indexed owner,
-    uint256 loanCollateral,
-    uint256 stakedCollateral
-  );
-
-  // --- Functions ---
-
-  function getUsers() external view returns (address[] memory);
-
-  function totalLoanCollateral() external view returns (uint256);
-
-  function totalStakedCollateral() external view returns (uint256);
-
-  /**
-   * @notice Fetches collateral balances of the owner's vault.
-   * @return (loanCollateral, stakedCollateral)
-   */
-  function balanceOf(address owner) external view returns (uint256, uint256);
-
-  /**
-   * @notice Call this to add collateral to an existing vault.
-   */
-  function deposit(Base.Activity activity, address owner) external payable;
-
-  /**
-   * @notice Call this to withdraw collateral from a vault.
-   * @param amount - The amount of collateral to withdraw.
-   */
-  function withdraw(
-    Base.Activity activity,
-    address owner,
-    address recipient,
+  function withdrawCollateral(
+    bytes32 collateral,
+    address user,
     uint256 amount
   ) external;
 }
