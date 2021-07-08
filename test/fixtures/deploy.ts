@@ -1,19 +1,16 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import "@nomiclabs/hardhat-waffle";
-import { BigNumber } from "ethers";
-import { ethers } from "hardhat";
+import { ethers, web3 } from "hardhat";
 
 // Import contract factory types
 import {
   AureiFactory,
   BridgeFactory,
-  FtsoFactory,
   RegistryFactory,
-  TcnTokenFactory,
-  TellerFactory,
-  TreasuryFactory,
   VaultFactory,
   StateConnectorFactory,
+  FlrCollateralFactory,
+  Erc20CollateralFactory,
 } from "../../typechain";
 
 // Import contract types
@@ -23,10 +20,10 @@ import {
   Ftso,
   Registry,
   TcnToken,
-  Teller,
-  Treasury,
   Vault,
   StateConnector,
+  FlrCollateral,
+  Erc20Collateral,
 } from "../../typechain";
 
 /**
@@ -38,10 +35,10 @@ interface Contracts {
   ftso: Ftso;
   registry: Registry;
   tcnToken: TcnToken;
-  teller: Teller;
-  treasury: Treasury;
   vault: Vault;
   stateConnector: StateConnector;
+  flrCollateral: FlrCollateral;
+  fxrpCollateral: Erc20Collateral;
 }
 
 const contracts: Contracts = {
@@ -50,10 +47,10 @@ const contracts: Contracts = {
   ftso: null,
   registry: null,
   tcnToken: null,
-  teller: null,
-  treasury: null,
   vault: null,
   stateConnector: null,
+  flrCollateral: null,
+  fxrpCollateral: null,
 };
 
 // Contracts submitted to the register
@@ -132,4 +129,68 @@ const deployBridge = async () => {
   return { contracts, signers };
 };
 
-export { deployBridge };
+const deployCollateral = async () => {
+  // Set signers
+  [
+    signers.owner,
+    signers.alice,
+    signers.bob,
+    signers.charlie,
+    signers.don,
+    signers.lender,
+    signers.borrower,
+    signers.liquidator,
+    ...signers.addrs
+  ] = await ethers.getSigners();
+
+  const registryFactory = (await ethers.getContractFactory(
+    "Registry",
+    signers.owner
+  )) as RegistryFactory;
+  contracts.registry = await registryFactory.deploy();
+  await contracts.registry.deployed();
+
+  const vaultFactory = (await ethers.getContractFactory(
+    "Vault",
+    signers.owner
+  )) as VaultFactory;
+  contracts.vault = await vaultFactory.deploy(contracts.registry.address);
+  await contracts.vault.deployed();
+
+  await contracts.registry.setupContractAddress(
+    Contract.Vault,
+    contracts.vault.address
+  );
+
+  const flrCollateralFactory = (await ethers.getContractFactory(
+    "FLRCollateral",
+    signers.owner
+  )) as FlrCollateralFactory;
+  contracts.flrCollateral = await flrCollateralFactory.deploy(
+    contracts.registry.address,
+    web3.utils.keccak256("FLR Collateral")
+  );
+  await contracts.flrCollateral.deployed();
+
+  const aureiFactory = (await ethers.getContractFactory(
+    "Aurei",
+    signers.owner
+  )) as AureiFactory;
+  contracts.aurei = await aureiFactory.deploy();
+  await contracts.aurei.deployed();
+
+  const fxrpCollateralFactory = (await ethers.getContractFactory(
+    "ERC20Collateral",
+    signers.owner
+  )) as Erc20CollateralFactory;
+  contracts.fxrpCollateral = await fxrpCollateralFactory.deploy(
+    contracts.registry.address,
+    web3.utils.keccak256("FXRP Collateral"),
+    contracts.aurei.address
+  );
+  await contracts.fxrpCollateral.deployed();
+
+  return { contracts, signers };
+};
+
+export { deployBridge, deployCollateral };

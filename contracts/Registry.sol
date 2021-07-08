@@ -12,7 +12,7 @@ import "hardhat/console.sol";
 contract Registry is IRegistry, Ownable {
   // --- Data ---
 
-  mapping(Base.Contract => address) private contracts;
+  mapping(IRegistry.Contract => address) private contracts;
 
   // --- Constructor ---
 
@@ -20,7 +20,7 @@ contract Registry is IRegistry, Ownable {
 
   // --- External Functions ---
 
-  function setupContractAddress(Base.Contract name, address _addr)
+  function setupContractAddress(IRegistry.Contract name, address _addr)
     external
     override
     onlyOwner
@@ -28,7 +28,7 @@ contract Registry is IRegistry, Ownable {
     contracts[name] = _addr;
   }
 
-  function getContractAddress(Base.Contract name)
+  function getContractAddress(IRegistry.Contract name)
     external
     view
     override
