@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.7.4;
 
 import "../Dependencies/Base.sol";
 
@@ -20,10 +20,6 @@ interface IVault {
   // --- Functions ---
 
   function getUsers() external view returns (address[] memory);
-
-  function totalLoanCollateral() external view returns (uint256);
-
-  function totalStakedCollateral() external view returns (uint256);
 
   /**
    * @notice Fetches collateral balances of the owner's vault.

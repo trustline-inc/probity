@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+
 /**
  * @dev Flare network <> XRPL, Aurei bridge contract
  * The purpose for this smart contract is to be able to issue the stablecoin AUR(Aurei) on XRP ledger in a
@@ -34,7 +35,8 @@
  *
  * Shine Lee @shine2lay - shine@trustline.co
  **/
-pragma solidity ^0.8.0;
+
+pragma solidity ^0.7.4;
 
 import "./Interfaces/IAurei.sol";
 import "./Interfaces/IStateConnector.sol";

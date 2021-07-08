@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.7.4;
 
 import "./Dependencies/Base.sol";
 import "./Dependencies/Ownable.sol";
@@ -226,8 +226,8 @@ contract Treasury is ITreasury, Ownable, Base, DSMath {
       "TREASURY: Not enough reserves."
     );
 
-    normalizedCapital[msg.sender] = 0;
-    initialCapital[msg.sender] = 0;
+    normalizedCapital[supplier] = 0;
+    initialCapital[supplier] = 0;
     _totalSupply = _totalSupply.sub(capitalMinusInterest);
 
     // Send capitalized collateral to liquidity provider

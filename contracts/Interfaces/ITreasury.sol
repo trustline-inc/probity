@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.7.4;
 
 /**
  * @notice Manages a treasury of Aurei.
@@ -35,7 +35,7 @@ interface ITreasury {
     uint256 liquidatorFee,
     uint256 protocolFee,
     uint256 timestamp,
-    address indexed borrower,
+    address indexed supplier,
     address indexed liquidator
   );
 
