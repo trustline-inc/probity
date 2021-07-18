@@ -29,7 +29,7 @@ Install dependencies:
 npm install
 ```
 
-Update the variables in `.env`
+Craete an `.env` file with `FLARE_DIR` set to the location of your local Flare directory.
 
 ## IDE
 
