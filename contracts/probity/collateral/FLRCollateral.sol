@@ -14,9 +14,15 @@ interface VaultLike {
 }
 
 contract FLRCollateral is Stateful, ICollateral {
+  /////////////////////////////////////////
+  // Data Storage
+  /////////////////////////////////////////
   bytes32 collateralId;
   VaultLike vault;
 
+  /////////////////////////////////////////
+  // Constructor
+  /////////////////////////////////////////
   constructor(
     address registryAddress,
     bytes32 collateralHash,
@@ -25,6 +31,10 @@ contract FLRCollateral is Stateful, ICollateral {
     collateralId = collateralHash;
     vault = vaultAddress;
   }
+
+  /////////////////////////////////////////
+  // External Functions
+  /////////////////////////////////////////
 
   function deposit() external payable onlyWhen("paused", false) {
     vault.modifyCollateral(collateralId, msg.sender, int256(msg.value));

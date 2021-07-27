@@ -24,10 +24,16 @@ interface TokenLike {
 }
 
 contract ERC20Collateral is Stateful, ICollateral {
+  /////////////////////////////////////////
+  // Data Storage
+  /////////////////////////////////////////
   bytes32 collateralId;
   VaultLike vault;
   TokenLike collateralToken;
 
+  /////////////////////////////////////////
+  // Constructor
+  /////////////////////////////////////////
   constructor(
     address registryAddress,
     bytes32 collateralHash,
@@ -38,6 +44,10 @@ contract ERC20Collateral is Stateful, ICollateral {
     vault = vaultAddress;
     collateralToken = collateral;
   }
+
+  /////////////////////////////////////////
+  // External Functions
+  /////////////////////////////////////////
 
   function deposit(uint256 amount) external onlyWhen("paused", false) {
     require(
