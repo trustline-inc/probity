@@ -6,19 +6,6 @@ pragma solidity ^0.8.0;
  * @notice Contains global system constants and common functions.
  */
 contract Base {
-  // --- Registered contracts ---
-
-  enum Contract {Aurei, Bridge, Ftso, TcnToken, Teller, Treasury, Vault}
-  enum Activity {
-    Borrow,
-    Repay,
-    Stake,
-    Redeem,
-    Withdraw,
-    LiquidateLoan,
-    LiquidateStake
-  }
-
   // --- Math constants ---
 
   // One as 1e18, or as 100%
