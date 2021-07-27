@@ -16,7 +16,7 @@ import "hardhat/console.sol";
  * @notice Manages vault collateral.
  *
  */
-contract Vault is IVault, Base, Ownable {
+contract VaultOld is IVault, Base, Ownable {
   using SafeMath for uint256;
 
   // --- Data ---

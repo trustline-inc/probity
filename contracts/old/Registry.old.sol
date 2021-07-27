@@ -9,7 +9,7 @@ import "hardhat/console.sol";
 /**
  * @notice Stores contract addresses.
  */
-contract Registry is IRegistry, Ownable {
+contract RegistryOld is IRegistry, Ownable {
   // --- Data ---
 
   mapping(Base.Contract => address) private contracts;

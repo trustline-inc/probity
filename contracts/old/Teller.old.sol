@@ -16,7 +16,7 @@ import "hardhat/console.sol";
 /**
  * @notice Creates loans and manages vault debt.
  */
-contract Teller is ITeller, Ownable, Base, DSMath {
+contract TellerOld is ITeller, Ownable, Base, DSMath {
   // --- Data ---
   uint256 public debtAccumulator; // Rate accumulator [ray]
   uint256 public capitalAccumulator; // Rate accumulator scaled by utilization

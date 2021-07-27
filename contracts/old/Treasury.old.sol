@@ -18,7 +18,7 @@ import "hardhat/console.sol";
 /**
  * @notice Manages capital for all vaults.
  */
-contract Treasury is ITreasury, Ownable, Base, DSMath {
+contract TreasuryOld is ITreasury, Ownable, Base, DSMath {
   using SafeMath for uint256;
 
   // --- Data ---
