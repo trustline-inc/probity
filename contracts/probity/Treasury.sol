@@ -22,7 +22,7 @@ interface TokenLike {
   ) external returns (bool);
 }
 
-contract Treasury is Stateful, ICollateral {
+contract Treasury is Stateful {
   /////////////////////////////////////////
   // Data Storage
   /////////////////////////////////////////

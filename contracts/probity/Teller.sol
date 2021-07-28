@@ -61,7 +61,7 @@ contract Teller is Stateful, DSMath, Base {
   // External Functions
   /////////////////////////////////////////
 
-  function initCollType(bytes32 collId) external {
+  function initCollType(bytes32 collId) external onlyByRegistered {
     collTypes[collId].lastUpdated = block.timestamp;
   }
 
