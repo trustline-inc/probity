@@ -75,10 +75,8 @@ contract Vault is Stateful, Eventful {
     address to,
     uint256 amount
   ) external onlyByRegistered {
-    vaults[collateral][from].freeColl =
-      vaults[collateral][from].freeColl -
-      amount;
-    vaults[collateral][to].freeColl = vaults[collateral][to].freeColl + amount;
+    vaults[collateral][from].freeColl -= amount;
+    vaults[collateral][to].freeColl += amount;
   }
 
   function moveAurei(
@@ -86,8 +84,8 @@ contract Vault is Stateful, Eventful {
     address to,
     uint256 amount
   ) external onlyByRegistered {
-    aur[from] = aur[from] - amount;
-    aur[to] = aur[to] + amount;
+    aur[from] -= amount;
+    aur[to] += amount;
   }
 
   function modifySupply(
@@ -114,10 +112,6 @@ contract Vault is Stateful, Eventful {
     int256 aurToModify = mul(collTypes[collId].suppAccu, supplyAmount);
     totalSupply = add(totalSupply, aurToModify);
 
-    aur[treasuryAddress] = add(aur[treasuryAddress], aurToModify);
-
-    vaults[collId][msg.sender] = vault;
-
     require(
       totalSupply <= collTypes[collId].ceiling,
       "VAULT: Supply ceiling reached"
@@ -127,6 +121,10 @@ contract Vault is Stateful, Eventful {
       "VAULT: SUPPLIED SMALLER THAN SMALLEST AMOUNT"
     );
     checkMinRatioMaintained(collId, vault);
+
+    aur[treasuryAddress] = add(aur[treasuryAddress], aurToModify);
+    vaults[collId][msg.sender] = vault;
+
     emit Log("vault", "modifySupply", msg.sender);
   }
 
@@ -155,11 +153,6 @@ contract Vault is Stateful, Eventful {
     int256 debtToModify = mul(collTypes[collId].debtAccu, loanAmount);
     totalDebt = add(totalDebt, loanAmount);
 
-    aur[msg.sender] = add(aur[msg.sender], debtToModify);
-    aur[treasuryAddress] = sub(aur[treasuryAddress], debtToModify);
-
-    vaults[collId][msg.sender] = vault;
-
     require(
       totalDebt <= collTypes[collId].ceiling,
       "VAULT: Debt ceiling reached"
@@ -169,6 +162,12 @@ contract Vault is Stateful, Eventful {
       "VAULT: Debt Smaller than floor"
     );
     checkMinRatioMaintained(collId, vault);
+
+    aur[msg.sender] = add(aur[msg.sender], debtToModify);
+    aur[treasuryAddress] = sub(aur[treasuryAddress], debtToModify);
+
+    vaults[collId][msg.sender] = vault;
+
     emit Log("vault", "modifyDebt", msg.sender);
   }
 
