@@ -35,7 +35,7 @@ const config: HardhatUserConfig = {
       chainId: 16,
     },
   },
-  solidity: "0.8.0",
+  solidity: "0.8.4",
 };
 
 export default config;

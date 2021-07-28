@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 import "../Dependencies/Stateful.sol";
+import "../Dependencies/Eventful.sol";
 
 // @todo this interface does come from flare team but may need to update after they launch FTSO
 interface ftsoLike {
@@ -10,7 +11,7 @@ interface ftsoLike {
     returns (uint256 _price, uint256 _timestamp);
 }
 
-contract Vault is Stateful {
+contract Vault is Stateful, Eventful {
   /////////////////////////////////////////
   // Data Structure
   /////////////////////////////////////////
@@ -111,7 +112,6 @@ contract Vault is Stateful {
     );
 
     int256 aurToModify = mul(collTypes[collId].suppAccu, supplyAmount);
-    uint256 aurInVault = collTypes[collId].suppAccu * vault.supplied;
     totalSupply = add(totalSupply, aurToModify);
 
     aur[treasuryAddress] = add(aur[treasuryAddress], aurToModify);
@@ -127,6 +127,7 @@ contract Vault is Stateful {
       "VAULT: SUPPLIED SMALLER THAN SMALLEST AMOUNT"
     );
     checkMinRatioMaintained(collId, vault);
+    emit Log("vault", "modifySupply", msg.sender);
   }
 
   function modifyDebt(
@@ -152,7 +153,6 @@ contract Vault is Stateful {
     collTypes[collId].normDebt = add(collTypes[collId].normDebt, loanAmount);
 
     int256 debtToModify = mul(collTypes[collId].debtAccu, loanAmount);
-    uint256 debtInVault = collTypes[collId].debtAccu * vault.debt;
     totalDebt = add(totalDebt, loanAmount);
 
     aur[msg.sender] = add(aur[msg.sender], debtToModify);
@@ -169,6 +169,7 @@ contract Vault is Stateful {
       "VAULT: Debt Smaller than floor"
     );
     checkMinRatioMaintained(collId, vault);
+    emit Log("vault", "modifyDebt", msg.sender);
   }
 
   function liquidateVault(
@@ -198,12 +199,16 @@ contract Vault is Stateful {
     );
     unBackedAUR[reservePool] = sub(unBackedAUR[reservePool], aurChanged);
     totalUnCollDebt = sub(totalUnCollDebt, aurChanged);
+
+    emit Log("vault", "liquidateVault", msg.sender);
   }
 
   // @todo do we also need to add a way to increase unCollDebt?
   function settle(uint256 amount) external onlyByRegistered {
     aur[msg.sender] = aur[msg.sender] - amount;
     unBackedAUR[msg.sender] = unBackedAUR[msg.sender] - amount;
+
+    emit Log("vault", "settle", msg.sender);
   }
 
   // Admin related functions
@@ -216,11 +221,19 @@ contract Vault is Stateful {
     external
     onlyBy("gov")
   {
+    emit LogVarUpdate(
+      "Vault",
+      collId,
+      "ceiling",
+      collTypes[collId].ceiling,
+      ceiling
+    );
     collTypes[collId].ceiling = ceiling;
   }
 
   function updateFloor(bytes32 collId, uint256 floor) external onlyBy("gov") {
-    collTypes[collId].floor;
+    emit LogVarUpdate("Vault", collId, "floor", collTypes[collId].floor, floor);
+    collTypes[collId].floor = floor;
   }
 
   function updateAccumulators(
@@ -228,6 +241,21 @@ contract Vault is Stateful {
     uint256 debtAccu,
     uint256 supplierAccu
   ) external onlyBy("teller") {
+    emit LogVarUpdate(
+      "Vault",
+      collId,
+      "debtAccu",
+      collTypes[collId].debtAccu,
+      debtAccu
+    );
+    emit LogVarUpdate(
+      "Vault",
+      collId,
+      "suppAccu",
+      collTypes[collId].suppAccu,
+      supplierAccu
+    );
+
     collTypes[collId].debtAccu = debtAccu;
     collTypes[collId].suppAccu = supplierAccu;
   }
@@ -236,6 +264,7 @@ contract Vault is Stateful {
     external
     onlyByRegistered
   {
+    emit LogVarUpdate("Vault", collId, "price", collTypes[collId].price, price);
     collTypes[collId].price = price;
   }
 
