@@ -132,26 +132,26 @@ contract Vault is Stateful, Eventful {
     bytes32 collId,
     address treasuryAddress,
     int256 collAmount,
-    int256 loanAmount
+    int256 debtAmount
   ) external {
     require(
       registry.checkIfValidContract("treasury", treasuryAddress),
       "VAULT: Treasury address is not valid"
     );
     require(
-      aur[treasuryAddress] >= uint256(loanAmount),
+      aur[treasuryAddress] >= uint256(debtAmount),
       "Treasury doesn't have enough supply to loan this amount"
     );
 
     UserVault memory vault = vaults[collId][msg.sender];
     vault.freeColl = sub(vault.freeColl, collAmount);
     vault.lockedColl = add(vault.lockedColl, collAmount);
-    vault.debt = add(vault.debt, loanAmount);
+    vault.debt = add(vault.debt, debtAmount);
 
-    collTypes[collId].normDebt = add(collTypes[collId].normDebt, loanAmount);
+    collTypes[collId].normDebt = add(collTypes[collId].normDebt, debtAmount);
 
-    int256 debtToModify = mul(collTypes[collId].debtAccu, loanAmount);
-    totalDebt = add(totalDebt, loanAmount);
+    int256 debtToModify = mul(collTypes[collId].debtAccu, debtAmount);
+    totalDebt = add(totalDebt, debtToModify);
 
     require(
       totalDebt <= collTypes[collId].ceiling,
@@ -189,15 +189,15 @@ contract Vault is Stateful, Eventful {
     coll.normDebt = add(coll.normDebt, debtAmount);
     coll.normSupply = add(coll.normSupply, suppAmount);
 
-    int256 aurChanged =
+    int256 aurToRaise =
       mul(coll.debtAccu, debtAmount) + mul(PRECISION_PRICE, suppAmount);
 
     vaults[collId][auctioneer].freeColl = sub(
       vaults[collId][auctioneer].freeColl,
       collateralAmount
     );
-    unBackedAUR[reservePool] = sub(unBackedAUR[reservePool], aurChanged);
-    totalUnCollDebt = sub(totalUnCollDebt, aurChanged);
+    unBackedAUR[reservePool] = sub(unBackedAUR[reservePool], aurToRaise);
+    totalUnCollDebt = sub(totalUnCollDebt, aurToRaise);
 
     emit Log("vault", "liquidateVault", msg.sender);
   }
