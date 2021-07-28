@@ -1,7 +1,7 @@
 pragma solidity ^0.8.0;
 
 import "../Dependencies/Stateful.sol";
-import "hardhat/console.sol";
+import "../Dependencies/Eventful.sol";
 
 interface VaultLike {
   function vaults(bytes32 collId, address user)
@@ -50,7 +50,7 @@ interface ReservePoolLike {
 // the auction will attempt to sell the collateral to raise 'debt + liquidation penalty' the excess collateral will be return to the original vault owner
 // surplus from the sales will be sent to the reserve pool, and when there are debt, reserve pool will be used to pay off the debt
 // if there are no reserve in the pool to pay off the debt, there will be a debt auction which will sell IOUs which can be redeemed as the pool is replenished
-contract Liquidator is Stateful {
+contract Liquidator is Stateful, Eventful {
   /////////////////////////////////////////
   // Data Structure
   /////////////////////////////////////////
@@ -88,7 +88,10 @@ contract Liquidator is Stateful {
   // External functions
   /////////////////////////////////////////
 
-  function init(bytes32 collId, AuctioneerLike auctioneer) external {
+  function init(bytes32 collId, AuctioneerLike auctioneer)
+    external
+    onlyBy("gov")
+  {
     collTypes[collId].auctioneer = auctioneer;
     collTypes[collId].debtPenaltyFee = 1.17E27;
     collTypes[collId].suppPenaltyFee = 1.05E27;
@@ -98,9 +101,38 @@ contract Liquidator is Stateful {
     bytes32 collId,
     uint256 debtPenalty,
     uint256 suppPenalty
-  ) external {
+  ) external onlyBy("gov") {
+    emit LogVarUpdate(
+      "liquidator",
+      collId,
+      "debtPenaltyFee",
+      collTypes[collId].debtPenaltyFee,
+      debtPenalty
+    );
+    emit LogVarUpdate(
+      "liquidator",
+      collId,
+      "suppPenaltyFee",
+      collTypes[collId].suppPenaltyFee,
+      suppPenaltyFee
+    );
+
     collTypes[collId].debtPenaltyFee = debtPenalty;
     collTypes[collId].suppPenaltyFee = suppPenalty;
+  }
+
+  function updateAuctioneer(bytes32 collId, AuctioneerLike newAuctioneer)
+    external
+    onlyBy("gov")
+  {
+    emit LogVarUpdate(
+      "priceFeed",
+      collId,
+      "auctioneer",
+      collTypes[collId].auctioneer,
+      newAuctioneer
+    );
+    collTypes[collId].auctioneer = newAuctioneer;
   }
 
   // @todo incentive for someone who calls liquidateVault?

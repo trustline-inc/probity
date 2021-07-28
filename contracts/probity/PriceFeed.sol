@@ -39,18 +39,43 @@ contract PriceFeed is Stateful, DSMath {
     vault = vaultAddress;
   }
 
+  /////////////////////////////////////////
+  // External functions
+  /////////////////////////////////////////
+
   function init(
     bytes32 collId,
     uint256 minCollRatio,
     ftsoLike ftso
-  ) external {
+  ) external onlyBy("gov") {
     collTypes[collId].minCollRatio = minCollRatio;
     collTypes[collId].ftso = ftso;
   }
 
-  /////////////////////////////////////////
-  // External functions
-  /////////////////////////////////////////
+  function updateMinCollRatio(bytes32 collId, uint256 newMinCollRatio)
+    onlyBy("gov")
+  {
+    emit LogVarUpdate(
+      "priceFeed",
+      collId,
+      "minCollRatio",
+      collTypes[collId].minCollRatio,
+      newMinCollRatio
+    );
+    collTypes[collId].minCollRatio = minCollRatio;
+  }
+
+  function updateFtso(bytes32 collId, ftsoLike newFtso) onlyBy("gov") {
+    emit LogVarUpdate(
+      "priceFeed",
+      collId,
+      "ftso",
+      collTypes[collId].ftso,
+      ftso
+    );
+    collTypes[collId].ftso = ftso;
+  }
+
   // @todo figure out how many places of precision the ftso provides and fix the math accordingly
   function updatePrice(bytes32 collId) external {
     require(

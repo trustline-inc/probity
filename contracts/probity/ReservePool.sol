@@ -20,7 +20,7 @@ interface VaultLike {
   ) external;
 }
 
-contract ReservePool is Stateful {
+contract ReservePool is Stateful, Eventful {
   /////////////////////////////////////////
   // Data Structure
   /////////////////////////////////////////
@@ -59,11 +59,54 @@ contract ReservePool is Stateful {
   // External functions
   /////////////////////////////////////////
 
-  function updateDebtThreshold(uint256 newThreshold) external {
+  function updateSaleMaxPrice(uint256 newMaxPrice) external onlyBy("gov") {
+    emit LogVarUpdate(
+      "reserve",
+      collId,
+      "saleMaxPrice",
+      saleMaxPrice,
+      newMaxPrice
+    );
+    saleMaxPrice = newMaxPrice;
+  }
+
+  function updateSaleStepPeriod(uint256 newStepPeriod) external onlyBy("gov") {
+    emit LogVarUpdate(
+      "reserve",
+      collId,
+      "saleStepPeriod",
+      saleStepPeriod,
+      newStepPeriod
+    );
+    saleStepPeriod = newStepPeriod;
+  }
+
+  function updateSalePriceIncreasePerStep(uint256 newPriceIncreasePerStep)
+    external
+    onlyBy("gov")
+  {
+    emit LogVarUpdate(
+      "reserve",
+      collId,
+      "salePriceIncreasePerStep",
+      salePriceIncreasePerStep,
+      newPriceIncreasePerStep
+    );
+    salePriceIncreasePerStep = newPriceIncreasePerStep;
+  }
+
+  function updateDebtThreshold(uint256 newThreshold) external onlyBy("gov") {
+    emit LogVarUpdate(
+      "reserve",
+      collId,
+      "minCollRatio",
+      collTypes[collId].minCollRatio,
+      newMinCollRatio
+    );
     debtThreshold = newThreshold;
   }
 
-  function addAuctionDebt(uint256 newDebt) external {
+  function addAuctionDebt(uint256 newDebt) external onlyBy("liquidator") {
     debtOnAuction = debtOnAuction + newDebt;
   }
 
@@ -130,7 +173,4 @@ contract ReservePool is Stateful {
     ious[msg.sender] = ious[msg.sender] - amount;
     vault.moveAurei(address(this), msg.sender, amount);
   }
-
-  // @todo calculate the accumulators and increase the reserve's balance
-  function collectProtocolFees() external {}
 }
