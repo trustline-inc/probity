@@ -1,6 +1,7 @@
 pragma solidity ^0.8.0;
 
 import "../Dependencies/Stateful.sol";
+import "../Dependencies/Eventful.sol";
 
 interface VaultLike {
   function moveCollateral(
@@ -33,7 +34,39 @@ interface LiquidatorLike {
   function reduce() external;
 }
 
-contract Auctioneer is Stateful {
+contract Auctioneer is Stateful, Eventful {
+  /////////////////////////////////////////
+  // Data Structures
+  /////////////////////////////////////////
+
+  event AuctionStarted(
+    bytes32 indexed collId,
+    uint256 indexed auctionId,
+    uint256 lotSize
+  );
+  event BidPlaced(
+    bytes32 indexed collId,
+    uint256 indexed auctionId,
+    address indexed user,
+    uint256 price,
+    uint256 lotSize
+  );
+  event Sale(
+    bytes32 indexed collId,
+    uint256 indexed auctionId,
+    address indexed user,
+    uint256 price,
+    uint256 lotSize
+  );
+  event BidRemoved(
+    bytes32 indexed collId,
+    uint256 indexed auctionId,
+    address indexed user,
+    uint256 price,
+    uint256 lotSize
+  );
+  event AuctionOver(bytes32 indexed collId, uint256 indexed auctionId);
+
   /////////////////////////////////////////
   // Data Structures
   /////////////////////////////////////////
@@ -72,7 +105,6 @@ contract Auctioneer is Stateful {
   // @todo check and fix these values
   uint256 constant ONE = 1.00E18;
   uint256 nextBidRatio = 1.05E18;
-  // @todo add buffer for startingPrice
   uint256 priceBuffer = 1.20E18;
 
   /////////////////////////////////////////
@@ -100,10 +132,11 @@ contract Auctioneer is Stateful {
     uint256 debtSize,
     address owner,
     address beneficiary
-  ) external {
+  ) external onlyBy("liquidator") {
     (uint256 currPrice, ) = ftso.getCurrentPrice();
     uint256 startingPrice = (currPrice * priceBuffer) / ONE;
-    auctions[auctionCount++] = Auction(
+    uint256 auctionId = auctionCount++;
+    auctions[auctionId] = Auction(
       collId,
       lotSize,
       debtSize,
@@ -113,9 +146,10 @@ contract Auctioneer is Stateful {
       block.timestamp,
       false
     );
+
+    emit AuctionStarted(collId, auctionId, lotSize);
   }
 
-  // amount = bidPrice * lot
   // check if there is enough lot available, if so, simply accept the bid and store it
   // if debt has already reach the required amount, check if the bidPrice is higher than current bids , if false return
   // store the new bid and release the bids that are no longer in contention
@@ -150,6 +184,13 @@ contract Auctioneer is Stateful {
     bids[auctionId][msg.sender] = Bid(bidPrice, lot);
     totalBidSize[auctionId] = totalBidSize[auctionId] + bidAmount;
 
+    emit BidPlaced(
+      auctions[auctionId].collId,
+      auctionId,
+      msg.sender,
+      bidPrice,
+      lot
+    );
     cancelOldBids(auctionId, totalBidValue, index);
   }
 
@@ -198,6 +239,13 @@ contract Auctioneer is Stateful {
     auctions[auctionId].lot = auctions[auctionId].lot - lotToBuy;
 
     checkIfAuctionOver(auctionId);
+    emit Sale(
+      auctions[auctionId].collId,
+      auctionId,
+      msg.sender,
+      currentPrice,
+      lotToBuy
+    );
     cancelOldBids(auctionId, bidValueAtCurrent, index);
   }
 
@@ -225,6 +273,13 @@ contract Auctioneer is Stateful {
       bids[auctionId][msg.sender].lot;
 
     removeIndex(auctionId, msg.sender);
+    emit Sale(
+      auctions[auctionId].collId,
+      auctionId,
+      msg.sender,
+      currentPrice,
+      lotToBuy
+    );
     checkIfAuctionOver(auctionId);
   }
 
@@ -239,7 +294,7 @@ contract Auctioneer is Stateful {
         auctions[auctionId].lot
       );
       auctions[auctionId].lot = 0;
-
+      emit AuctionOver(auctions[auctionId].collId, auctionId);
       return;
     }
   }
@@ -348,6 +403,13 @@ contract Auctioneer is Stateful {
         ];
         // set index.next = zero
         nextHighestBidder[auctionId][index] = address(0);
+        emit BidRemoved(
+          auctions[auctionId].collId,
+          auctionId,
+          msg.sender,
+          currentPrice,
+          lotToBuy
+        );
       }
 
       if (nextHighestBidder[auctionId][index] == address(0)) {
