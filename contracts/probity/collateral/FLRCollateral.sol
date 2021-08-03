@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 import "../../Dependencies/Stateful.sol";
-import "../../Interfaces/ICollateral.sol";
 
 interface VaultLike {
   function modifyCollateral(
@@ -13,7 +12,7 @@ interface VaultLike {
   ) external;
 }
 
-contract FLRCollateral is Stateful, ICollateral {
+contract FLRCollateral is Stateful {
   /////////////////////////////////////////
   // Data Storage
   /////////////////////////////////////////

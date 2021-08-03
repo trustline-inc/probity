@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 import "../../Dependencies/Stateful.sol";
-import "../../Interfaces/ICollateral.sol";
 
 interface VaultLike {
   function modifyCollateral(
@@ -23,7 +22,7 @@ interface TokenLike {
   ) external returns (bool);
 }
 
-contract ERC20Collateral is Stateful, ICollateral {
+contract ERC20Collateral is Stateful {
   /////////////////////////////////////////
   // Data Storage
   /////////////////////////////////////////
