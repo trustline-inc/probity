@@ -21,7 +21,7 @@ interface VaultLike {
 interface PriceCalc {
   function price(uint256 startingPrice, uint256 timeElapsed)
     external
-    returns (uint256 price);
+    returns (uint256 calculatedPrice);
 }
 
 interface FtsoLike {
@@ -44,6 +44,7 @@ contract Auctioneer is Stateful, Eventful {
     uint256 indexed auctionId,
     uint256 lotSize
   );
+
   event BidPlaced(
     bytes32 indexed collId,
     uint256 indexed auctionId,
@@ -51,6 +52,7 @@ contract Auctioneer is Stateful, Eventful {
     uint256 price,
     uint256 lotSize
   );
+
   event Sale(
     bytes32 indexed collId,
     uint256 indexed auctionId,
@@ -58,6 +60,7 @@ contract Auctioneer is Stateful, Eventful {
     uint256 price,
     uint256 lotSize
   );
+
   event BidRemoved(
     bytes32 indexed collId,
     uint256 indexed auctionId,
@@ -65,7 +68,7 @@ contract Auctioneer is Stateful, Eventful {
     uint256 price,
     uint256 lotSize
   );
-  event AuctionOver(bytes32 indexed collId, uint256 indexed auctionId);
+  event AuctionEnded(bytes32 indexed collId, uint256 indexed auctionId);
 
   /////////////////////////////////////////
   // Data Structures
@@ -238,7 +241,7 @@ contract Auctioneer is Stateful, Eventful {
     auctions[auctionId].debt = auctions[auctionId].debt - buyableAmount;
     auctions[auctionId].lot = auctions[auctionId].lot - lotToBuy;
 
-    checkIfAuctionOver(auctionId);
+    checkIfAuctionEnded(auctionId);
     emit Sale(
       auctions[auctionId].collId,
       auctionId,
@@ -277,13 +280,13 @@ contract Auctioneer is Stateful, Eventful {
       auctions[auctionId].collId,
       auctionId,
       msg.sender,
-      currentPrice,
-      lotToBuy
+      bids[auctionId][msg.sender].price,
+      bids[auctionId][msg.sender].lot
     );
-    checkIfAuctionOver(auctionId);
+    checkIfAuctionEnded(auctionId);
   }
 
-  function checkIfAuctionOver(uint256 auctionId) public {
+  function checkIfAuctionEnded(uint256 auctionId) public {
     if (auctions[auctionId].debt == 0 || auctions[auctionId].lot == 0) {
       auctions[auctionId].isOver = true;
 
@@ -294,7 +297,7 @@ contract Auctioneer is Stateful, Eventful {
         auctions[auctionId].lot
       );
       auctions[auctionId].lot = 0;
-      emit AuctionOver(auctions[auctionId].collId, auctionId);
+      emit AuctionEnded(auctions[auctionId].collId, auctionId);
       return;
     }
   }
@@ -393,6 +396,13 @@ contract Auctioneer is Stateful, Eventful {
           bids[auctionId][index].lot * bids[auctionId][index].price * ONE
         );
 
+        emit BidRemoved(
+          auctions[auctionId].collId,
+          auctionId,
+          msg.sender,
+          bids[auctionId][index].price,
+          bids[auctionId][index].lot
+        );
         // remove the index from the nextHighestBidder and reset the bids to zero
         bids[auctionId][index].lot = 0;
         bids[auctionId][index].price = 0;
@@ -403,13 +413,6 @@ contract Auctioneer is Stateful, Eventful {
         ];
         // set index.next = zero
         nextHighestBidder[auctionId][index] = address(0);
-        emit BidRemoved(
-          auctions[auctionId].collId,
-          auctionId,
-          msg.sender,
-          currentPrice,
-          lotToBuy
-        );
       }
 
       if (nextHighestBidder[auctionId][index] == address(0)) {

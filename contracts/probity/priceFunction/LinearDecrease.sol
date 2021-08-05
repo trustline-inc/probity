@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 interface PriceCalc {
   function price(uint256 startingPrice, uint256 timeElapsed)
     external
-    returns (uint256 price);
+    returns (uint256 calculatedPrice);
 }
 
 contract LinearDecrease is PriceCalc {
@@ -21,7 +21,7 @@ contract LinearDecrease is PriceCalc {
   function price(uint256 startingPrice, uint256 timeElapsed)
     external
     override
-    returns (uint256 price)
+    returns (uint256 calculatedPrice)
   {
     if (timeElapsed >= timeToZero) return 0;
     return rmul(startingPrice, mul(timeToZero - timeElapsed, RAY) / timeToZero);
