@@ -20,6 +20,10 @@ interface TokenLike {
     address recipient,
     uint256 amount
   ) external returns (bool);
+
+  function burn(address account, uint256 amount) external;
+
+  function mint(address account, uint256 amount) external;
 }
 
 contract Treasury is Stateful {
