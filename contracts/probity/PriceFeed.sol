@@ -1,7 +1,7 @@
 pragma solidity ^0.8.0;
 
 import "../Dependencies/Stateful.sol";
-import "../old/Dependencies/DSMath.sol";
+import "../Dependencies/DSMath.sol";
 
 interface VaultLike {
   function updatePrice(bytes32 collId, uint256 price) external;
@@ -53,6 +53,7 @@ contract PriceFeed is Stateful, DSMath {
   }
 
   function updateMinCollRatio(bytes32 collId, uint256 newMinCollRatio)
+    external
     onlyBy("gov")
   {
     emit LogVarUpdate(
@@ -65,7 +66,7 @@ contract PriceFeed is Stateful, DSMath {
     collTypes[collId].minCollRatio = minCollRatio;
   }
 
-  function updateFtso(bytes32 collId, ftsoLike newFtso) onlyBy("gov") {
+  function updateFtso(bytes32 collId, ftsoLike newFtso) external onlyBy("gov") {
     emit LogVarUpdate(
       "priceFeed",
       collId,
