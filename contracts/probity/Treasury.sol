@@ -28,6 +28,13 @@ interface TokenLike {
 
 contract Treasury is Stateful {
   /////////////////////////////////////////
+  // Events
+  /////////////////////////////////////////
+
+  event Deposit(address user, uint256 amount);
+  event Withdrawal(address user, uint256 amount);
+
+  /////////////////////////////////////////
   // Data Storage
   /////////////////////////////////////////
 
@@ -54,10 +61,12 @@ contract Treasury is Stateful {
   function deposit(uint256 amount) external {
     vault.moveAurei(address(this), msg.sender, amount);
     aurei.burn(msg.sender, amount);
+    emit Deposit(msg.sender, amount);
   }
 
   function withdraw(address destination, uint256 amount) external {
     vault.moveAurei(msg.sender, address(this), amount);
     aurei.mint(destination, amount);
+    emit Withdrawal(msg.sender, amount);
   }
 }
