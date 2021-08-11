@@ -4,13 +4,11 @@ import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-web3";
 
 import { Aurei, Bridge, StateConnector } from "../typechain";
-import { deployBridge } from "./fixtures/deploy";
+import { deployBridgeSystem } from "../lib/deploy";
 import { ethers, web3 } from "hardhat";
 import * as chai from "chai";
 import { errorTypes, ADDRESS_ZERO, BYTES32_ZERO } from "./utils/constants";
 import assertRevert from "./utils/assertRevert";
-import { STATUS_CODES } from "http";
-import { keccak256 } from "ethers/lib/utils";
 const expect = chai.expect;
 
 const AMOUNT_TO_ISSUE = 10;
@@ -40,7 +38,7 @@ describe("Bridge", function () {
     FRAUD,
   }
   beforeEach(async function () {
-    const { contracts, signers } = await deployBridge();
+    const { contracts, signers } = await deployBridgeSystem();
 
     // Set contracts
     aurei = contracts.aurei;

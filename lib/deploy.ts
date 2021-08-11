@@ -463,6 +463,7 @@ const deployProbity = async () => {
 const deployBridgeSystem = async () => {
   // Set signers
   const signers = await getSigners();
+  await deployRegistry();
   await deployAUR();
   await deployBridge();
 
