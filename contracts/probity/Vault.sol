@@ -88,6 +88,37 @@ contract Vault is Stateful, Eventful {
     aur[to] += amount;
   }
 
+  function reduceInterest(address user, uint256 amount)
+    external
+    onlyByRegistered
+  {
+    interests[user] -= amount;
+  }
+
+  function convertInterestToAurei(address user, uint256 amount)
+    external
+    onlyByRegistered
+  {
+    interests[user] -= amount;
+    aur[user] += amount;
+  }
+
+  function collectInterest(bytes32 collId, bool isTcn) public {
+    UserVault memory vault = vaults[collId][msg.sender];
+    Collateral memory collateral = collTypes[collId];
+    if (isTcn) {
+      interests[msg.sender] +=
+        vault.supplied *
+        (collateral.suppAccu - vault.lastSuppAccu);
+    } else {
+      aur[msg.sender] +=
+        vault.supplied *
+        (collateral.suppAccu - vault.lastSuppAccu);
+    }
+
+    vaults[collId][msg.sender].lastSuppAccu = collateral.suppAccu;
+  }
+
   function modifySupply(
     bytes32 collId,
     address treasuryAddress,
@@ -99,7 +130,9 @@ contract Vault is Stateful, Eventful {
       "VAULT: Treasury address is not valid"
     );
 
-    UserVault memory vault = vaults[collId][msg.sender];
+    collectInterest(collId, true);
+
+    UserVault storage vault = vaults[collId][msg.sender];
     vault.freeColl = sub(vault.freeColl, collAmount);
     vault.lockedColl = add(vault.lockedColl, collAmount);
     vault.supplied = add(vault.supplied, supplyAmount);
@@ -123,7 +156,6 @@ contract Vault is Stateful, Eventful {
     checkMinRatioMaintained(collId, vault);
 
     aur[treasuryAddress] = add(aur[treasuryAddress], aurToModify);
-    vaults[collId][msg.sender] = vault;
 
     emit Log("vault", "modifySupply", msg.sender);
   }

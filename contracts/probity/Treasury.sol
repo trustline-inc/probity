@@ -10,6 +10,8 @@ interface VaultLike {
     address to,
     uint256 amount
   ) external;
+
+  function reduceInterest(address user, uint256 amount) external;
 }
 
 interface TokenLike {
@@ -21,9 +23,9 @@ interface TokenLike {
     uint256 amount
   ) external returns (bool);
 
-  function burn(address account, uint256 amount) external;
+  function mint(address user, uint256 amount) external;
 
-  function mint(address account, uint256 amount) external;
+  function burn(address user, uint256 amount) external;
 }
 
 contract Treasury is Stateful {
@@ -39,6 +41,7 @@ contract Treasury is Stateful {
   /////////////////////////////////////////
 
   TokenLike aurei;
+  TokenLike tcn;
   VaultLike vault;
 
   /////////////////////////////////////////
@@ -48,10 +51,12 @@ contract Treasury is Stateful {
   constructor(
     address registryAddress,
     TokenLike aureiAddress,
+    TokenLike tcnAddress,
     VaultLike vaultAddress
   ) Stateful(registryAddress) {
     aurei = aureiAddress;
     vault = vaultAddress;
+    tcn = tcnAddress;
   }
 
   /////////////////////////////////////////
@@ -61,12 +66,20 @@ contract Treasury is Stateful {
   function deposit(uint256 amount) external {
     vault.moveAurei(address(this), msg.sender, amount);
     aurei.burn(msg.sender, amount);
-    emit Deposit(msg.sender, amount);
   }
 
-  function withdraw(address destination, uint256 amount) external {
+  function withdrawAurei(uint256 amount) external {
     vault.moveAurei(msg.sender, address(this), amount);
-    aurei.mint(destination, amount);
-    emit Withdrawal(msg.sender, amount);
+    aurei.mint(msg.sender, amount);
+  }
+
+  function withdrawTcn(uint256 amount) external {
+    vault.reduceInterest(msg.sender, amount);
+    tcn.mint(msg.sender, amount);
+  }
+
+  function tradeTcnforAurei(uint256 amount) external {
+    tcn.burn(msg.sender, amount);
+    aurei.mint(msg.sender, amount);
   }
 }
