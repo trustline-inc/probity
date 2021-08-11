@@ -5,6 +5,7 @@ import { ethers, web3 } from "hardhat";
 // Import contract factory types
 import {
   AureiFactory,
+  TcnTokenFactory,
   BridgeFactory,
   RegistryFactory,
   VaultFactory,
@@ -171,6 +172,25 @@ const deployAUR = async () => {
   return contracts;
 };
 
+const deployTCN = async () => {
+  // Set signers
+  const signers = await getSigners();
+
+  const tcnFactory = (await ethers.getContractFactory(
+    "TcnToken",
+    signers.owner
+  )) as TcnTokenFactory;
+  contracts.tcnToken = await tcnFactory.deploy();
+  await contracts.tcnToken.deployed();
+
+  await contracts.registry.setupContractAddress(
+    bytes32("tcn"),
+    contracts.tcnToken.address
+  );
+
+  return contracts;
+};
+
 const deployVault = async () => {
   // Set signers
   const signers = await getSigners();
@@ -281,6 +301,7 @@ const deployTreasury = async () => {
   contracts.treasury = await treasuryFactory.deploy(
     contracts.registry.address,
     contracts.aurei.address,
+    contracts.tcnToken.address,
     contracts.vault.address
   );
   await contracts.treasury.deployed();
@@ -445,6 +466,7 @@ const deployProbity = async () => {
   const signers = await getSigners();
   await deployRegistry();
   await deployAUR();
+  await deployTCN();
   await deployVault();
   await deployERC20();
   await deployCollateral();

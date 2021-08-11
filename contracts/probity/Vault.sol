@@ -31,6 +31,7 @@ contract Vault is Stateful, Eventful {
     uint256 lockedColl; // Collateral that is locked as collateral
     uint256 debt;
     uint256 supplied;
+    uint256 lastSuppAccu;
   }
 
   /////////////////////////////////////////
@@ -39,6 +40,7 @@ contract Vault is Stateful, Eventful {
 
   mapping(bytes32 => Collateral) public collTypes;
   mapping(bytes32 => mapping(address => UserVault)) public vaults;
+  mapping(address => uint256) public interests;
   mapping(address => uint256) public aur;
   mapping(address => uint256) public unBackedAUR;
 
