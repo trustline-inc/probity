@@ -307,7 +307,7 @@ const deployTreasury = async () => {
   await contracts.treasury.deployed();
 
   await contracts.registry.setupContractAddress(
-    bytes32("treasury"),
+    bytes32("treasury`"),
     contracts.treasury.address
   );
 
