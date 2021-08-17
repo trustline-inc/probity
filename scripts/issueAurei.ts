@@ -4,9 +4,9 @@ import { ethers } from "hardhat";
 import * as dotenv from "dotenv";
 dotenv.config();
 
-const aureiContractAbi = require("../artifacts/contracts/Aurei.sol/Aurei.json");
-const bridgeContractAbi = require("../artifacts/contracts/Bridge.sol/Bridge.json");
-const receiverXrpAddress = "rsBMHhHiDj2FAvhaCdAtc3wzic6vgyzrm6";
+const aureiContractAbi = require("../artifacts/contracts/probity/tokens/Aurei.old.sol/Aurei.json");
+const bridgeContractAbi = require("../artifacts/contracts/old/Bridge.old.sol/BridgeOld.json");
+const receiverXrpAddress = "rpBMYKXSpwjXmD2qkx1DnzxnCSRVoM5zM2";
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -22,7 +22,7 @@ async function main(xrpAddress: string) {
   [owner, personal] = await ethers.getSigners();
 
   const bridgeContract = new ethers.Contract(
-    process.env.BRIDGE,
+    process.env.BRIDGEOLD,
     bridgeContractAbi.abi,
     owner
   );
@@ -32,15 +32,18 @@ async function main(xrpAddress: string) {
     owner
   );
 
+  const amountToMint = "100000000000000000";
+  const amount = "3200000000000000";
+
   // fund 100 Aurei to personal address
-  await aureiContract.mint(personal.address, 100, {
+  await aureiContract.mint(personal.address, amountToMint, {
     gasPrice: 1000000000000,
   });
   await sleep(5000);
 
   // increase allowance from owner to the bridgeContract
   const aureiContractPersonal = aureiContract.connect(personal);
-  await aureiContractPersonal.increaseAllowance(bridgeContract.address, 30);
+  await aureiContractPersonal.increaseAllowance(bridgeContract.address, amount);
   await sleep(5000);
 
   // check allowance
@@ -50,7 +53,7 @@ async function main(xrpAddress: string) {
   console.log("Bridge contract allowance:", allowance);
 
   // transfer the aurei to the xrpl
-  const amount = 30;
+
   console.log(`Sumitting ${amount} Aurei to Bridge contract.`);
   console.log(`Receiving address: ${xrpAddress}`);
   const bridgeContractPersonal = bridgeContract.connect(personal);

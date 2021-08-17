@@ -21,6 +21,7 @@ import {
   LiquidatorFactory,
   ReservePoolFactory,
   Erc20TokenFactory,
+  BridgeOldFactory,
 } from "../typechain";
 
 // Import contract types
@@ -42,6 +43,7 @@ import {
   Liquidator,
   ReservePool,
   Erc20Token,
+  BridgeOld,
 } from "../typechain";
 
 /**
@@ -65,6 +67,7 @@ interface Contracts {
   liquidator: Liquidator;
   reserve: ReservePool;
   erc20: Erc20Token;
+  bridgeOld: BridgeOld;
 }
 
 const contracts: Contracts = {
@@ -85,6 +88,7 @@ const contracts: Contracts = {
   liquidator: null,
   reserve: null,
   erc20: null,
+  bridgeOld: null,
 };
 
 // Contracts submitted to the register
@@ -402,6 +406,24 @@ const deployBridge = async () => {
   return contracts;
 };
 
+const deployBridgeOld = async () => {
+  const signers = await getSigners();
+
+  const stateConnectorAddress = "0x1000000000000000000000000000000000000001";
+
+  const bridgeOldFactory = (await ethers.getContractFactory(
+    "BridgeOld",
+    signers.owner
+  )) as BridgeOldFactory;
+  contracts.bridgeOld = await bridgeOldFactory.deploy(
+    contracts.aurei.address,
+    stateConnectorAddress
+  );
+  await contracts.bridgeOld.deployed();
+
+  return contracts;
+};
+
 const deployReserve = async () => {
   const signers = await getSigners();
 
@@ -492,6 +514,16 @@ const deployBridgeSystem = async () => {
   return { contracts, signers };
 };
 
+const deployBridgeOldSystem = async () => {
+  // Set signers
+  const signers = await getSigners();
+  await deployRegistry();
+  await deployAUR();
+  await deployBridgeOld();
+
+  return { contracts, signers };
+};
+
 const deployAll = async () => {
   const signers = await getSigners();
   await deployProbity();
@@ -500,4 +532,4 @@ const deployAll = async () => {
   return { contracts, signers };
 };
 
-export { deployAll, deployProbity, deployBridgeSystem };
+export { deployAll, deployBridgeOldSystem, deployProbity, deployBridgeSystem };
