@@ -4,12 +4,6 @@ contract HighAPR {
   // Follows R^(1/31557600) * (1-U) * f(1/31557600) = 1
   mapping(uint256 => uint256) public APR_TO_MPR;
 
-  // Set max APR to 100%
-  uint256 public constant MAX_APR = ONE * 2 * 1e9;
-
-  // One as 1e18, or as 100%
-  uint256 constant ONE = 10**18;
-
   /**
    * Set storage for APR-MPR conversions at 0.25% APR increments.
    * @dev output generated from RATES.sh script

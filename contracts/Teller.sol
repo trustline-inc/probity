@@ -14,8 +14,6 @@ import "./Interfaces/IVault.sol";
 import "hardhat/console.sol";
 
 interface IAPR {
-  function MAX_APR() external returns (uint256);
-
   function APR_TO_MPR(uint256 APR) external returns (uint256);
 }
 
@@ -24,6 +22,13 @@ interface IAPR {
  */
 contract Teller is ITeller, Ownable, Base, DSMath {
   // --- Data ---
+
+  // Set max APR to 100%
+  uint256 public constant MAX_APR = ONE * 2 * 1e9;
+
+  // One as 1e18, or as 100%
+  uint256 constant ONE = 10**18;
+
   uint256 public debtAccumulator; // Rate accumulator [ray]
   uint256 public capitalAccumulator; // Rate accumulator scaled by utilization
   uint256 public utilization; // Aurei reserve utilization
@@ -216,7 +221,7 @@ contract Teller is ITeller, Ownable, Base, DSMath {
       rdiv(10**27 * 0.01, oneMinusUtilization);
     APR = add(oneDividedByOneMinusUtilization, RAY);
     APR = ((APR + round - 1) / round) * round;
-    require(APR <= lowAprRate.MAX_APR(), "TELLER: Max APR exceeed.");
+    require(APR <= MAX_APR, "TELLER: Max APR exceeed.");
 
     // Set new MPR
     if (APR > 1500000000000000000000000000) {
