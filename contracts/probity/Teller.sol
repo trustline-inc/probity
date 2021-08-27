@@ -96,6 +96,7 @@ contract Teller is Stateful, DSMath, Base {
     suppAccumulator = rmul(exponentiated, suppAccumulator);
 
     // Set new APR (round to nearest 0.25%)
+    // @todo we need to cap utilization at 100%, either hard capped it at 100% or we need to separate system debt from normal debt
     coll.lastUtilization = wdiv(totalDebt, totalSupply);
     uint256 round = 0.0025 * 10**27;
     uint256 oneMinusUtilization = sub(RAY, coll.lastUtilization * 1e9);

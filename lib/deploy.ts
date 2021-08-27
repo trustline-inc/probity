@@ -22,6 +22,7 @@ import {
   ReservePoolFactory,
   Erc20TokenFactory,
   BridgeOldFactory,
+  ShutdownFactory,
 } from "../typechain";
 
 // Import contract types
@@ -44,6 +45,7 @@ import {
   ReservePool,
   Erc20Token,
   BridgeOld,
+  Shutdown,
 } from "../typechain";
 
 /**
@@ -68,6 +70,7 @@ interface Contracts {
   reserve: ReservePool;
   erc20: Erc20Token;
   bridgeOld: BridgeOld;
+  shutdown: Shutdown;
 }
 
 const contracts: Contracts = {
@@ -89,18 +92,8 @@ const contracts: Contracts = {
   reserve: null,
   erc20: null,
   bridgeOld: null,
+  shutdown: null,
 };
-
-// Contracts submitted to the register
-enum Contract {
-  Aurei,
-  Bridge,
-  Ftso,
-  TcnToken,
-  Teller,
-  Treasury,
-  Vault,
-}
 
 interface Signers {
   owner: SignerWithAddress;
@@ -483,6 +476,30 @@ const deployLiquidator = async () => {
   return contracts;
 };
 
+const deployShutdown = async () => {
+  const signers = await getSigners();
+
+  const shutdownFactory = (await ethers.getContractFactory(
+    "Shutdown",
+    signers.owner
+  )) as ShutdownFactory;
+  contracts.shutdown = await shutdownFactory.deploy(
+    contracts.registry.address,
+    contracts.priceFeed.address,
+    contracts.vault.address,
+    contracts.reserve.address
+  );
+
+  await contracts.shutdown.deployed();
+
+  await contracts.registry.setupContractAddress(
+    bytes32("shutdown"),
+    contracts.shutdown.address
+  );
+
+  return contracts;
+};
+
 const deployProbity = async () => {
   // Set signers
   const signers = await getSigners();
@@ -494,12 +511,13 @@ const deployProbity = async () => {
   await deployCollateral();
   await deployFtso();
   await deployTeller();
+  await deployTreasury();
   await deployPriceCalc();
   await deployPriceFeed();
   await deployAuction();
-  await deployTreasury();
   await deployReserve();
   await deployLiquidator();
+  await deployShutdown();
 
   return { contracts, signers };
 };
@@ -532,4 +550,10 @@ const deployAll = async () => {
   return { contracts, signers };
 };
 
-export { deployAll, deployBridgeOldSystem, deployProbity, deployBridgeSystem };
+export {
+  deployAll,
+  deployBridgeOldSystem,
+  deployProbity,
+  deployBridgeSystem,
+  getSigners,
+};

@@ -22,7 +22,7 @@ interface VaultLike {
       uint256 price
     );
 
-  function liquidateVault(
+  function modifyVault(
     bytes32 collId,
     address user,
     address auctioneer,
@@ -150,7 +150,7 @@ contract Liquidator is Stateful, Eventful {
     // transfer the debt to reservePool
     reserve.addAuctionDebt(((debt + supplied) * PRECISION_PRICE) / 1E18);
 
-    vault.liquidateVault(
+    vault.modifyVault(
       collId,
       user,
       address(collTypes[collId].auctioneer),

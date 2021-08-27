@@ -127,11 +127,6 @@ contract Vault is Stateful, Eventful {
     int256 collAmount,
     int256 supplyAmount
   ) external {
-    require(
-      registry.checkIfValidContract("treasury", treasuryAddress),
-      "VAULT: Treasury address is not valid"
-    );
-
     collectInterest(collId, true);
 
     UserVault storage vault = vaults[collId][msg.sender];
@@ -169,10 +164,6 @@ contract Vault is Stateful, Eventful {
     int256 debtAmount
   ) external {
     require(
-      registry.checkIfValidContract("treasury", treasuryAddress),
-      "VAULT: Treasury address is not valid"
-    );
-    require(
       aur[treasuryAddress] >= uint256(debtAmount),
       "Treasury doesn't have enough supply to loan this amount"
     );
@@ -205,7 +196,8 @@ contract Vault is Stateful, Eventful {
     emit Log("vault", "modifyDebt", msg.sender);
   }
 
-  function liquidateVault(
+  // add access control
+  function modifyVault(
     bytes32 collId,
     address user,
     address auctioneer,
@@ -213,7 +205,7 @@ contract Vault is Stateful, Eventful {
     int256 collateralAmount,
     int256 debtAmount,
     int256 suppAmount
-  ) external onlyBy("liquidator") {
+  ) external {
     UserVault storage vault = vaults[collId][user];
     Collateral storage coll = collTypes[collId];
 
