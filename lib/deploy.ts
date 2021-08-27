@@ -13,6 +13,8 @@ import {
   TellerFactory,
   TreasuryFactory,
   VaultFactory,
+  LowAprFactory,
+  HighAprFactory,
 } from "../typechain";
 
 // Import contract types
@@ -25,6 +27,8 @@ import {
   Teller,
   Treasury,
   Vault,
+  LowApr,
+  HighApr,
 } from "../typechain";
 
 const STATE_CONNECTOR_ADDRESS = "0x1000000000000000000000000000000000000001";
@@ -41,6 +45,8 @@ interface Contracts {
   teller: Teller;
   treasury: Treasury;
   vault: Vault;
+  lowApr: LowApr;
+  highApr: HighApr;
 }
 
 const contracts: Contracts = {
@@ -52,6 +58,8 @@ const contracts: Contracts = {
   teller: null,
   treasury: null,
   vault: null,
+  lowApr: null,
+  highApr: null,
 };
 
 // Contracts submitted to the register
@@ -63,6 +71,8 @@ enum Contract {
   Teller,
   Treasury,
   Vault,
+  LOW_APR,
+  HIGH_APR,
 }
 
 interface Signers {
@@ -107,7 +117,6 @@ const deploy = async () => {
   ] = await ethers.getSigners();
 
   // Deploy contracts
-
   const registryFactory = (await ethers.getContractFactory(
     "Registry",
     signers.owner
@@ -130,19 +139,21 @@ const deploy = async () => {
   contracts.ftso = await ftsoFactory.deploy(initialPrice.toString());
   await contracts.ftso.deployed();
 
-  const vaultFactory = (await ethers.getContractFactory(
-    "Vault",
-    signers.owner
-  )) as VaultFactory;
-  contracts.vault = await vaultFactory.deploy(contracts.registry.address);
-  await contracts.vault.deployed();
-
   const tcnTokenFactory = (await ethers.getContractFactory(
     "TcnToken",
     signers.owner
   )) as TcnTokenFactory;
   contracts.tcnToken = await tcnTokenFactory.deploy();
   await contracts.tcnToken.deployed();
+
+  const vaultFactory = (await ethers.getContractFactory(
+    "Vault",
+    signers.owner
+  )) as VaultFactory;
+  contracts.vault = await vaultFactory.deploy(contracts.registry.address, {
+    gasLimit: 8000000,
+  });
+  await contracts.vault.deployed();
 
   const tellerFactory = (await ethers.getContractFactory(
     "Teller",
@@ -157,6 +168,20 @@ const deploy = async () => {
   )) as TreasuryFactory;
   contracts.treasury = await treasuryFactory.deploy(contracts.registry.address);
   await contracts.treasury.deployed();
+
+  const lowAprFactory = (await ethers.getContractFactory(
+    "LowAPR",
+    signers.owner
+  )) as LowAprFactory;
+  contracts.lowApr = await lowAprFactory.deploy();
+  await contracts.lowApr.deployed();
+
+  const aprFactory = (await ethers.getContractFactory(
+    "HighAPR",
+    signers.owner
+  )) as HighAprFactory;
+  contracts.highApr = await aprFactory.deploy();
+  await contracts.highApr.deployed();
 
   /**
    * Register contract addresses
@@ -184,6 +209,14 @@ const deploy = async () => {
   await contracts.registry.setupContractAddress(
     Contract.Vault,
     contracts.vault.address
+  );
+  await contracts.registry.setupContractAddress(
+    Contract.LOW_APR,
+    contracts.lowApr.address
+  );
+  await contracts.registry.setupContractAddress(
+    Contract.HIGH_APR,
+    contracts.highApr.address
   );
 
   const bridgeFactory = (await ethers.getContractFactory(
