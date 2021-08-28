@@ -13,11 +13,22 @@ import "./Interfaces/ITreasury.sol";
 import "./Interfaces/IVault.sol";
 import "hardhat/console.sol";
 
+interface IAPR {
+  function APR_TO_MPR(uint256 APR) external returns (uint256);
+}
+
 /**
  * @notice Creates loans and manages vault debt.
  */
 contract Teller is ITeller, Ownable, Base, DSMath {
   // --- Data ---
+
+  // Set max APR to 100%
+  uint256 public constant MAX_APR = ONE * 2 * 1e9;
+
+  // One as 1e18, or as 100%
+  uint256 constant ONE = 10**18;
+
   uint256 public debtAccumulator; // Rate accumulator [ray]
   uint256 public capitalAccumulator; // Rate accumulator scaled by utilization
   uint256 public utilization; // Aurei reserve utilization
@@ -33,6 +44,8 @@ contract Teller is ITeller, Ownable, Base, DSMath {
   IRegistry public registry;
   ITreasury public treasury;
   IVault public vault;
+  IAPR public lowAprRate;
+  IAPR public highAprRate;
 
   struct LiquidateLocalVars {
     uint256 collateralAmount;
@@ -65,6 +78,8 @@ contract Teller is ITeller, Ownable, Base, DSMath {
     ftso = IFtso(registry.getContractAddress(Contract.Ftso));
     treasury = ITreasury(registry.getContractAddress(Contract.Treasury));
     vault = IVault(registry.getContractAddress(Contract.Vault));
+    lowAprRate = IAPR(registry.getContractAddress(Contract.LOW_APR));
+    highAprRate = IAPR(registry.getContractAddress(Contract.HIGH_APR));
   }
 
   // --- Functions ---
@@ -209,7 +224,11 @@ contract Teller is ITeller, Ownable, Base, DSMath {
     require(APR <= MAX_APR, "TELLER: Max APR exceeed.");
 
     // Set new MPR
-    MPR = APR_TO_MPR[APR];
+    if (APR > 1500000000000000000000000000) {
+      MPR = highAprRate.APR_TO_MPR(APR);
+    } else {
+      MPR = lowAprRate.APR_TO_MPR(APR);
+    }
 
     // Update time index
     lastUpdate = block.timestamp;
