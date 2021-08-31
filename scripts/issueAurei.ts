@@ -5,8 +5,8 @@ import * as dotenv from "dotenv";
 dotenv.config();
 
 const aureiContractAbi = require("../artifacts/contracts/Aurei.sol/Aurei.json");
-const bridgeContractAbi = require("../artifacts/contracts/Bridge.sol/Bridge.json");
-const receiverXrpAddress = "rsBMHhHiDj2FAvhaCdAtc3wzic6vgyzrm6";
+const bridgeContractAbi = require("../artifacts/contracts/old/Bridge.old.sol/BridgeOld.json");
+const receiverXrpAddress = "rHz3vF67zTdMGtcCeEjxP6JbracH6RSZy6";
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -32,25 +32,34 @@ async function main(xrpAddress: string) {
     owner
   );
 
+  let res = await aureiContract.balanceOf(bridgeContract.address);
+  console.log(res.toString());
+
+  const amount = ethers.utils.parseEther("0.00442");
   // fund 100 Aurei to personal address
-  await aureiContract.mint(personal.address, 100, {
+  await aureiContract.mint(personal.address, amount, {
     gasPrice: 1000000000000,
   });
   await sleep(5000);
+  console.log("here");
+
+  console.log((await aureiContract.balanceOf(personal.address)).toString());
 
   // increase allowance from owner to the bridgeContract
   const aureiContractPersonal = aureiContract.connect(personal);
-  await aureiContractPersonal.increaseAllowance(bridgeContract.address, 30);
+  await aureiContractPersonal.increaseAllowance(bridgeContract.address, amount);
   await sleep(5000);
+  console.log("here");
+
+  console.log((await aureiContract.balanceOf(personal.address)).toString());
 
   // check allowance
   const allowance = (
     await aureiContract.allowance(personal.address, bridgeContract.address)
-  ).toNumber();
+  ).toString();
   console.log("Bridge contract allowance:", allowance);
-
+  console.log("here");
   // transfer the aurei to the xrpl
-  const amount = 30;
   console.log(`Sumitting ${amount} Aurei to Bridge contract.`);
   console.log(`Receiving address: ${xrpAddress}`);
   const bridgeContractPersonal = bridgeContract.connect(personal);
@@ -71,6 +80,8 @@ async function main(xrpAddress: string) {
     await bridgeContractPersonal.getToXRPTransferHashes()
   );
   await sleep(5000);
+  res = await aureiContract.balanceOf(bridgeContract.address);
+  console.log(res.toString());
 
   // get tx hash from above and pass in below
   // console.log(await bridgeContractPersonal.toXRPTransfers('0x4a22e9451ec0365fe33cf0ee7eaaad063cc014b2beeef61c80714784dfa34eb5'))

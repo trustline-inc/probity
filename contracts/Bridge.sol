@@ -413,9 +413,7 @@ contract Bridge {
       stateConnector.getPaymentFinality(
         uint32(0),
         txHash,
-        keccak256(abi.encodePacked(source)),
         keccak256(abi.encodePacked(issuer)),
-        destinationTag,
         amount,
         currencyHash
       );
