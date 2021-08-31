@@ -6,8 +6,8 @@ import "../Interfaces/IAurei.sol";
 import "../Interfaces/IStateConnector.sol";
 
 contract BridgeOld {
-  IAurei aurei;
-  IStateConnector stateConnector;
+  IAurei public aurei;
+  IStateConnector public stateConnector;
 
   event AureiTransferToFlareCompleted(
     bytes32 indexed txHashOnXRP,
@@ -23,10 +23,7 @@ contract BridgeOld {
 
   struct toFlareEntry {
     bool exists;
-    uint64 ledger;
-    bytes32 sourceHash;
     bytes32 destinationHash;
-    uint64 destinationTag;
     uint64 amount;
     address destinationAddress;
   }
@@ -104,28 +101,24 @@ contract BridgeOld {
 
   function completeToXRPTransfer(
     bytes32 txHash,
-    bytes32 txHashOnXRP,
-    uint64 ledger,
-    bytes32 sourceHash,
+    bytes32 txIdOnXRP,
     bytes32 destinationHash,
-    uint64 destinationTag,
-    uint64 amount
+    uint64 amount,
+    bytes32 currencyHash
   ) external {
-    // commented out to make this contract work with flare's coston testnet which is pointed at the XRPL mainnet
-    // (bool verified, uint256 timestamp) =
-    //   stateConnector.getPaymentFinality(
-    //     uint32(0),
-    //     txHashOnXRP,
-    //     ledger,
-    //     sourceHash,
-    //     destinationHash,
-    //     destinationTag,
-    //     amount
-    //   );
-    // require(
-    //   verified && timestamp < block.timestamp,
-    //   "This Transaction has not been proven in stateConnector contract"
-    // );
+    //     commented out to make this contract work with flare's coston testnet which is pointed at the XRPL mainnet
+    (, , bool verified) =
+      stateConnector.getPaymentFinality(
+        uint32(3),
+        txIdOnXRP,
+        destinationHash,
+        amount,
+        currencyHash
+      );
+    require(
+      verified,
+      "This Transaction has not been proven in stateConnector contract"
+    );
 
     toXRPTransfers[txHash].status = TransferStatus.COMPLETE;
     emit AureiTransferToXRPCompleted(txHash, amount);
@@ -133,42 +126,36 @@ contract BridgeOld {
 
   function transferAureiToFlare(
     bytes32 txHash,
-    uint64 ledger,
-    bytes32 sourceHash,
+    bytes32 txHashOnXRP,
     bytes32 destinationHash,
-    uint64 destinationTag,
     uint64 amount,
+    bytes32 currencyHash,
     address destAddress
   ) external {
     require(!toFlareTransfers[txHash].exists, "Tx hash already exists");
     require(
-      aurei.balanceOf(address(this)) > amount,
+      aurei.balanceOf(address(this)) >= amount,
       "Requested Aurei balance is higher than what the contract currently holds"
     );
     // commented out to make this contract work with flare's coston testnet which is pointed at the XRPL mainnet
-    //    (bool verified, uint256 timestamp) =
-    //      stateConnector.getPaymentFinality(
-    //        uint32(0),
-    //        txHash,
-    //        ledger,
-    //        sourceHash,
-    //        destinationHash,
-    //        destinationTag,
-    //        amount
-    //      );
-    //    require(
-    //      verified && timestamp < block.timestamp,
-    //      "This Transaction has not been proven in stateConnector contract"
-    //    );
+    (, , bool verified) =
+      stateConnector.getPaymentFinality(
+        uint32(3),
+        txHashOnXRP,
+        destinationHash,
+        amount,
+        currencyHash
+      );
+    require(
+      verified,
+      "This Transaction has not been proven in stateConnector contract"
+    );
 
     aurei.transfer(destAddress, amount);
 
     toFlareTransfers[txHash] = toFlareEntry(
       true,
-      ledger,
-      sourceHash,
       destinationHash,
-      destinationTag,
       amount,
       destAddress
     );

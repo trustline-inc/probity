@@ -6,7 +6,7 @@ import { ethers } from "hardhat";
 // Import contract factory types
 import {
   AureiFactory,
-  BridgeFactory,
+  BridgeOldFactory,
   FtsoFactory,
   RegistryFactory,
   TcnTokenFactory,
@@ -20,7 +20,7 @@ import {
 // Import contract types
 import {
   Aurei,
-  Bridge,
+  BridgeOld,
   Ftso,
   Registry,
   TcnToken,
@@ -38,7 +38,7 @@ const STATE_CONNECTOR_ADDRESS = "0x1000000000000000000000000000000000000001";
  */
 interface Contracts {
   aurei: Aurei;
-  bridge: Bridge;
+  bridge: BridgeOld;
   ftso: Ftso;
   registry: Registry;
   tcnToken: TcnToken;
@@ -220,9 +220,9 @@ const deploy = async () => {
   );
 
   const bridgeFactory = (await ethers.getContractFactory(
-    "Bridge",
+    "BridgeOld",
     signers.owner
-  )) as BridgeFactory;
+  )) as BridgeOldFactory;
   contracts.bridge = await bridgeFactory.deploy(
     contracts.aurei.address,
     STATE_CONNECTOR_ADDRESS

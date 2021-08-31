@@ -12,9 +12,7 @@ contract StateConnector is IStateConnector {
   function getPaymentFinality(
     uint32 chainId,
     bytes32 txId,
-    bytes32 sourceHash,
     bytes32 destinationHash,
-    uint64 destinationTag,
     uint64 amount,
     bytes32 currencyHash
   )

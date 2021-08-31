@@ -6,7 +6,7 @@ import { ethers } from "hardhat";
 // Import contract factory types
 import {
   AureiFactory,
-  BridgeFactory,
+  FaucetFactory,
   FtsoFactory,
   RegistryFactory,
   TcnTokenFactory,
@@ -122,7 +122,7 @@ const deployBridge = async () => {
   const bridgeFactory = (await ethers.getContractFactory(
     "Bridge",
     signers.owner
-  )) as BridgeFactory;
+  )) as FaucetFactory;
   contracts.bridge = await bridgeFactory.deploy(
     contracts.aurei.address,
     contracts.stateConnector.address
