@@ -3,7 +3,9 @@ import deploy from "../lib/deploy";
 import * as fs from "fs";
 
 async function main() {
-  const { contracts, signers } = await deploy();
+  if (!process.env.FLARE_DIR)
+    throw Error("Please set FLARE_DIR to your local Flare directory.");
+  const { contracts } = await deploy();
   console.log("Contracts deployed!");
 
   const addresses = [];
