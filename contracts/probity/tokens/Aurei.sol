@@ -2,10 +2,9 @@
 
 pragma solidity ^0.8.0;
 
-import "./Dependencies/Ownable.sol";
-import "./Dependencies/SafeMath.sol";
-import "./Interfaces/ITcnToken.sol";
-import "./Interfaces/ITeller.sol";
+import "../../Dependencies/Ownable.sol";
+import "../../Dependencies/SafeMath.sol";
+import "../../Interfaces/IAurei.sol";
 
 /**
  * Based upon OpenZeppelin's ERC20 contract:
@@ -14,14 +13,14 @@ import "./Interfaces/ITeller.sol";
  * and their EIP2612 (ERC20Permit / ERC712) functionality:
  * https://github.com/OpenZeppelin/openzeppelin-contracts/blob/53516bc555a454862470e7860a9b5254db4d00f5/contracts/token/ERC20/ERC20Permit.sol
  */
-contract TcnTokenOld is ITcnToken, Ownable {
+contract Aurei is IAurei, Ownable {
   using SafeMath for uint256;
 
   // --- Data ---
 
   uint256 private _totalSupply;
-  string internal constant _NAME = "Trustline Credit Network Token";
-  string internal constant _SYMBOL = "TCN";
+  string internal constant _NAME = "Aurei";
+  string internal constant _SYMBOL = "AUR";
   string internal constant _VERSION = "1.0.0";
   uint8 internal constant _DECIMALS = 18;
 
@@ -30,6 +29,7 @@ contract TcnTokenOld is ITcnToken, Ownable {
 
   // --- ERC2612 Data ---
 
+  // @dev commented out for now because of ProviderError: invalid opcode: CHAINID
   bytes32 private immutable _DOMAIN_SEPARATOR;
   bytes32 private constant _PERMIT_TYPEHASH =
     0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9; // keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
@@ -40,6 +40,7 @@ contract TcnTokenOld is ITcnToken, Ownable {
    * @dev Builds the domain separator
    */
   constructor() Ownable(msg.sender) {
+    // @dev commented out for now because of ProviderError: invalid opcode: CHAINID
     uint256 chainId;
     assembly {
       chainId := chainid()
@@ -198,28 +199,27 @@ contract TcnTokenOld is ITcnToken, Ownable {
     bytes32 r,
     bytes32 s
   ) external override {
-    require(deadline >= block.timestamp, "TCN: EXPIRED");
-    bytes32 digest =
-      keccak256(
-        abi.encodePacked(
-          "\x19\x01",
-          _DOMAIN_SEPARATOR,
-          keccak256(
-            abi.encode(
-              _PERMIT_TYPEHASH,
-              owner,
-              spender,
-              amount,
-              _nonces[owner]++,
-              deadline
-            )
+    require(deadline >= block.timestamp, "AUR: EXPIRED");
+    bytes32 digest = keccak256(
+      abi.encodePacked(
+        "\x19\x01",
+        _DOMAIN_SEPARATOR,
+        keccak256(
+          abi.encode(
+            _PERMIT_TYPEHASH,
+            owner,
+            spender,
+            amount,
+            _nonces[owner]++,
+            deadline
           )
         )
-      );
+      )
+    );
     address recoveredAddress = ecrecover(digest, v, r, s);
     require(
       recoveredAddress != address(0) && recoveredAddress == owner,
-      "TCN: INVALID_SIGNATURE"
+      "AUR: INVALID_SIGNATURE"
     );
     _approve(owner, spender, amount);
   }
@@ -268,7 +268,7 @@ contract TcnTokenOld is ITcnToken, Ownable {
   function _requireValidRecipient(address _recipient) internal view {
     require(
       _recipient != address(0) && _recipient != address(this),
-      "TCN: Cannot transfer tokens directly to the TCN token contract or the zero address"
+      "AUR: Cannot transfer tokens directly to the AUR token contract or the zero address"
     );
   }
 }
