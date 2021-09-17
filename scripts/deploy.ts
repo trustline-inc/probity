@@ -1,11 +1,11 @@
 import "@nomiclabs/hardhat-ethers";
-import deploy from "../lib/deploy";
+import { deployAll } from "../lib/deploy";
 import * as fs from "fs";
 
 async function main() {
   if (!process.env.FLARE_DIR)
     throw Error("Please set FLARE_DIR to your local Flare directory.");
-  const { contracts } = await deploy();
+  const { contracts } = await deployAll();
   console.log("Contracts deployed!");
 
   const addresses = [];

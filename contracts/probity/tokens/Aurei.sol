@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.7.4;
+pragma solidity ^0.8.0;
 
-import "./Dependencies/Ownable.sol";
-import "./Dependencies/SafeMath.sol";
-import "./Interfaces/IAurei.sol";
-import "./Interfaces/ITeller.sol";
+import "../../Dependencies/Ownable.sol";
+import "../../Dependencies/SafeMath.sol";
+import "../../Interfaces/IAurei.sol";
 
 /**
  * Based upon OpenZeppelin's ERC20 contract:
