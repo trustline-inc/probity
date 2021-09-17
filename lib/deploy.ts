@@ -1,5 +1,6 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import "@nomiclabs/hardhat-waffle";
+import "@nomiclabs/hardhat-web3";
 import { ethers, web3 } from "hardhat";
 
 // Import contract factory types
@@ -7,6 +8,7 @@ import {
   AureiFactory,
   TcnTokenFactory,
   BridgeFactory,
+  FtsoFactory,
   RegistryFactory,
   VaultFactory,
   StateConnectorFactory,
@@ -14,23 +16,23 @@ import {
   Erc20CollateralFactory,
   TellerFactory,
   TreasuryFactory,
-  FtsoFactory,
   PriceFeedFactory,
   AuctioneerFactory,
   LinearDecreaseFactory,
   LiquidatorFactory,
   ReservePoolFactory,
   Erc20TokenFactory,
+  LowAprFactory,
+  HighAprFactory,
 } from "../typechain";
 
 // Import contract types
 import {
   Aurei,
-  Bridge,
+  BridgeOld,
   Ftso,
   Registry,
   TcnToken,
-  Vault,
   StateConnector,
   NativeCollateral,
   Erc20Collateral,
@@ -42,6 +44,9 @@ import {
   Liquidator,
   ReservePool,
   Erc20Token,
+  Vault,
+  LowApr,
+  HighApr,
 } from "../typechain";
 
 /**
@@ -49,7 +54,7 @@ import {
  */
 interface Contracts {
   aurei: Aurei;
-  bridge: Bridge;
+  bridge: BridgeOld;
   ftso: Ftso;
   registry: Registry;
   tcnToken: TcnToken;
@@ -65,6 +70,8 @@ interface Contracts {
   liquidator: Liquidator;
   reserve: ReservePool;
   erc20: Erc20Token;
+  lowApr: LowApr;
+  highApr: HighApr;
 }
 
 const contracts: Contracts = {
@@ -85,6 +92,8 @@ const contracts: Contracts = {
   liquidator: null,
   reserve: null,
   erc20: null,
+  lowApr: null,
+  highApr: null,
 };
 
 // Contracts submitted to the register
@@ -96,6 +105,8 @@ enum Contract {
   Teller,
   Treasury,
   Vault,
+  LOW_APR,
+  HIGH_APR,
 }
 
 interface Signers {
@@ -272,6 +283,15 @@ const deployTeller = async () => {
   // Set signers
   const signers = await getSigners();
 
+  const vaultFactory = (await ethers.getContractFactory(
+    "Vault",
+    signers.owner
+  )) as VaultFactory;
+  contracts.vault = await vaultFactory.deploy(contracts.registry.address, {
+    gasLimit: 8000000,
+  });
+  await contracts.vault.deployed();
+
   const tellerFactory = (await ethers.getContractFactory(
     "Teller",
     signers.owner
@@ -375,6 +395,14 @@ const deployPriceCalc = async () => {
     bytes32("priceCalc"),
     contracts.linearDecrease.address
   );
+  await contracts.registry.setupContractAddress(
+    Contract.LOW_APR,
+    contracts.lowApr.address
+  );
+  await contracts.registry.setupContractAddress(
+    Contract.HIGH_APR,
+    contracts.highApr.address
+  );
 
   return contracts;
 };
@@ -390,9 +418,9 @@ const deployBridge = async () => {
   await contracts.stateConnector.deployed();
 
   const bridgeFactory = (await ethers.getContractFactory(
-    "Bridge",
+    "BridgeOld",
     signers.owner
-  )) as BridgeFactory;
+  )) as BridgeOldFactory;
   contracts.bridge = await bridgeFactory.deploy(
     contracts.aurei.address,
     contracts.stateConnector.address
@@ -461,6 +489,40 @@ const deployLiquidator = async () => {
   return contracts;
 };
 
+const deployLowApr = async () => {
+  const signers = await getSigners();
+  const lowAprFactory = (await ethers.getContractFactory(
+    "LowAPR",
+    signers.owner
+  )) as LowAprFactory;
+  contracts.lowApr = await lowAprFactory.deploy();
+  await contracts.lowApr.deployed();
+
+  await contracts.registry.setupContractAddress(
+    bytes32("lowApr"),
+    contracts.lowApr.address
+  );
+
+  return contracts;
+};
+
+const deployHighApr = async () => {
+  const signers = await getSigners();
+  const aprFactory = (await ethers.getContractFactory(
+    "HighAPR",
+    signers.owner
+  )) as HighAprFactory;
+  contracts.highApr = await aprFactory.deploy();
+  await contracts.highApr.deployed();
+
+  await contracts.registry.setupContractAddress(
+    bytes32("highApr"),
+    contracts.highApr.address
+  );
+
+  return contracts;
+};
+
 const deployProbity = async () => {
   // Set signers
   const signers = await getSigners();
@@ -478,6 +540,8 @@ const deployProbity = async () => {
   await deployTreasury();
   await deployReserve();
   await deployLiquidator();
+  await deployLowApr();
+  await deployHighApr();
 
   return { contracts, signers };
 };

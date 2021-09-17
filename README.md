@@ -1,4 +1,4 @@
-# Aurei Stablecoin
+# Probity
 
 [![Build](https://github.com/trustline-inc/aurei/actions/workflows/build.yml/badge.svg)](https://github.com/trustline-inc/aurei/actions/workflows/build.yml)
 
@@ -69,14 +69,16 @@ You can deploy in the local network following these steps:
 
 1. Run a local node.
 
-You can run a local Flare node by using the `local.sh` script in in [`flare`](https://gitlab.com/flarenetwork/flare).
+Run a local [`Flare`](https://gitlab.com/flarenetwork/flare) node.
 
 2. Deploy to the network.
 
 Open a new terminal and deploy the smart contract in the local network
 
+> `FLARE_DIR` may be read from a `.env` file or set in the shell
+
 ```
-npm run deploy:local
+FLARE_DIR=/Users/user/Desktop/flare npm run deploy:local
 ```
 
 ### Deploy on Coston Testnet

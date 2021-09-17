@@ -294,8 +294,11 @@ contract Bridge {
     string calldata issuer,
     uint64 destinationTag
   ) external {
-    bytes32 redemptionHash =
-      createRedemptionAttemptHash(source, issuer, destinationTag);
+    bytes32 redemptionHash = createRedemptionAttemptHash(
+      source,
+      issuer,
+      destinationTag
+    );
 
     // each preRedemptions entry last for 2 hours, within 2 hours, the redeemer don't need to redeem again
     require(
@@ -343,8 +346,11 @@ contract Bridge {
       redemptions[txHash].AURreleaseAddress == address(0),
       "This txHash has already been redeemed"
     );
-    bytes32 redemptionHash =
-      createRedemptionAttemptHash(source, issuer, destinationTag);
+    bytes32 redemptionHash = createRedemptionAttemptHash(
+      source,
+      issuer,
+      destinationTag
+    );
     require(
       preRedemptions[redemptionHash].redeemer == msg.sender,
       "Only the user that submitted the redemption attempt can submit redemption tx"
@@ -409,16 +415,13 @@ contract Bridge {
     uint64 amount,
     bytes32 currencyHash
   ) internal {
-    (, , bool isFinal) =
-      stateConnector.getPaymentFinality(
-        uint32(0),
-        txHash,
-        keccak256(abi.encodePacked(source)),
-        keccak256(abi.encodePacked(issuer)),
-        destinationTag,
-        amount,
-        currencyHash
-      );
+    (, , bool isFinal) = stateConnector.getPaymentFinality(
+      uint32(0),
+      txHash,
+      keccak256(abi.encodePacked(issuer)),
+      amount,
+      currencyHash
+    );
     require(
       isFinal,
       "This Transaction has not been proven in stateConnector contract"
