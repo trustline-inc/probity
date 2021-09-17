@@ -16,6 +16,7 @@
     "deploy:coston": "npx hardhat --network coston run ./scripts/deploy.ts",
     "deploy:hardhat": "npx hardhat --network localhost run ./scripts/deploy.ts",
     "test": "npx hardhat test --network hardhat",
+    "test:happy": "npx hardhat test test/happyFlow.test.ts --network hardhat",
     "test:bridge": "npx hardhat test test/bridge.test.ts --network hardhat",
     "coverage": "npm run build && npx hardhat coverage --temp artifacts --network coverage"
   },
@@ -44,7 +45,7 @@
     "dotenv": "^8.2.0",
     "ethereum-waffle": "^3.3.0",
     "ethers": "^5.0.31",
-    "hardhat": "^2.0.10",
+    "hardhat": "^2.4.3",
     "hardhat-typechain": "^0.3.5",
     "husky": "^4.3.8",
     "prettier": "^2.2.1",
