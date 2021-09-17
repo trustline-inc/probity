@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 interface PriceCalc {
   function price(uint256 startingPrice, uint256 timeElapsed)

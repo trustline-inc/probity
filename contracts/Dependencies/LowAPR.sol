@@ -1,4 +1,6 @@
-pragma solidity ^0.7.4;
+// SPDX-License-Identifier: MIT
+
+pragma solidity ^0.8.4;
 
 contract LowAPR {
   // Follows R^(1/31557600) * (1-U) * f(1/31557600) = 1

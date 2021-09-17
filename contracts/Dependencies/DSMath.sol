@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GNU General Public License
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 contract DSMath {
   function add(uint256 x, uint256 y) internal pure returns (uint256 z) {
