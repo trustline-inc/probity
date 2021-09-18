@@ -10,7 +10,7 @@ You can view the contract code in the [`contracts`](./contracts) folder. We will
    * [Installation](#installation)
    * [Usage](#usage)
    * [Development](#development)
-      * [Installation](#installation)
+      * [Installation](#installation-1)
       * [IDE](#ide)
       * [Testing](#testing)
       * [Publishing](#publishing)
