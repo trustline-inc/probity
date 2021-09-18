@@ -2,36 +2,64 @@
 
 [![Build](https://github.com/trustline-inc/aurei/actions/workflows/build.yml/badge.svg)](https://github.com/trustline-inc/aurei/actions/workflows/build.yml)
 
-Smart contract system for the Aurei crypto stablecoin.
-
 You can view the documentation [here](https://docs.trustline.co/trustline/-MX0imPEPxcvrbI-teLl/).
 
-## Quickstart
+## Usage
 
-Install Node.js. The recommended way to install Node with macOS is with [Homebrew](https://nodejs.org/en/download/package-manager/#macos).
+Below is a code snippet that shows how to import the contract ABIs. You can view all contracts in the [`contracts`](./contracts) folder. We will add a full API reference soon.
 
-Make sure the Solidity compiler is installed.
+```javascript
+import AureiABI from "@trustline-inc/aurei/artifacts/contracts/Aurei.sol/Aurei.json";
+import { Contract } from "ethers";
 
-```
-$ npm install -g solc
-```
+const AUREI_ADDRESS = "<ADDRESS>";
 
-The compiler version must be >= `0.8.0`.
-
-```
-$ solcjs --version
-0.8.0+commit.c7dfd78e.Emscripten.clang
+const aurei = new Contract(AUREI_ADDRESS, AureiABI.abi, library.getSigner());
+const totalSupply = await aurei.totalSupply();
+console.log(totalSupply);
 ```
 
-Install dependencies:
+## Development
+
+### Installation
+
+**1. Node.js Installation**
+
+Install [Node.js](https://nodejs.org/en/). The recommended way to install Node with macOS is with [Homebrew](https://nodejs.org/en/download/package-manager/#macos).
+
+**2. Solidity Installation**
+
+Make sure the Solidity compiler is installed. The compiler version must be >= `0.8.4`.
+
+To install `solc` run this command:
+
+```
+npm install -g solc
+```
+
+You can verify the version with like so:
+
+```
+solcjs --version
+```
+
+**3. Install NPM Modules**
+
+Install node dependencies:
 
 ```
 npm install
 ```
 
-Craete an `.env` file with `FLARE_DIR` set to the location of your local Flare directory.
+**4. Set Environment Variables**
 
-## IDE
+Create an `.env` file with `FLARE_DIR` set to the location of your local Flare directory. Example:
+
+```
+FLARE_DIR=/Users/satoshi/Desktop/flare
+```
+
+### IDE
 
 [Visual Studio Code](https://code.visualstudio.com/) is the recommended IDE. Here's how to install Solidity language support:
 
@@ -45,7 +73,7 @@ Also, get the Prettier VSCode plugin:
 code --install-extension esbenp.prettier-vscode
 ```
 
-## Testing
+### Testing
 
 Use the npm command to run tests on the local Hardhat network:
 
@@ -53,13 +81,23 @@ Use the npm command to run tests on the local Hardhat network:
 npm run test
 ```
 
-## Publishing
+### Publishing
 
-You can publish the `@trustline/aurei` npm package containing the contract ABIs using this command:
+These are the steps for publishing `@trustline/probity` to [npm](https://www.npmjs.com/). The package contains the contract ABIs.
+
+1. Create an `.npmrc` at the project root
+
+> See [authenticating with a personal access token](https://docs.github.com/en/packages/guides/configuring-npm-for-use-with-github-packages#authenticating-with-a-personal-access-token) for more info.
 
 ```
-npm publish
+//npm.pkg.github.com/:_authToken=TOKEN
 ```
+
+Replace `TOKEN` with your personal access token.
+
+2. Update `version` in `package.json`
+
+3. Run `npm publish`
 
 ## Deployment
 
@@ -73,15 +111,17 @@ Run a local [`Flare`](https://gitlab.com/flarenetwork/flare) node.
 
 2. Deploy to the network.
 
-Open a new terminal and deploy the smart contract in the local network
+Deploy the smart contract in the local network using `npm run deploy:local`.
 
 > `FLARE_DIR` may be read from a `.env` file or set in the shell
 
+For example:
+
 ```
-FLARE_DIR=/Users/user/Desktop/flare npm run deploy:local
+FLARE_DIR=/Users/satoshi/Desktop/flare npm run deploy:local
 ```
 
-### Deploy on Coston Testnet
+### Remote Deployment
 
 Create an `.env` file at the project root with the following contents:
 
@@ -89,12 +129,12 @@ Create an `.env` file at the project root with the following contents:
 PRIVATE_KEY=<INSERT_TESTNET_PK_HERE>
 ```
 
-Generate an Ethereum account and place the private key in the file. Ensure that the account is funded so you can deploy the contract.
+Generate a Flare account and place the private key in the file. Ensure that the account is funded so you can deploy the contract. Then deploy the contract to the remote network using the appropriate script.
 
 ```
 $ npm run deploy:coston
 
-> @trustline/aurei@0.1.0 deploy
+> @trustline/probity@1.0.0 deploy
 > npx hardhat --network coston run ./scripts/deploy.ts
 Compiling 1 file with 0.8.0
 Compilation finished successfully
@@ -103,36 +143,10 @@ Successfully generated Typechain artifacts!
 Contracts deployed!
 ```
 
-#### Testnet Contracts
+#### Coston Contracts
 
-| Contract | Address                                    |
-| -------- | ------------------------------------------ |
-| Aurei    | 0xCF089F2dDEa08213be33f8dd05787D568cA6E61d |
-| Registry | 0xcb285Ce3871AA7BDaf8991cA8E72332fda683cE8 |
-| Teller   | 0x3AE45E2cb7839aE239f14401894780A151Ebe617 |
-| Treasury | 0x00316Cc40E7D92b81C7b89777100159B13F128B9 |
-| Vault    | 0x3dA42377eee416d59389eb0dcEAE01Ad9eA0dc10 |
+Coston contract addresses will be listed here.
 
-## Publishing
+#### Songbird Contracts
 
-[Authenticating with a personal access token](https://docs.github.com/en/packages/guides/configuring-npm-for-use-with-github-packages#authenticating-with-a-personal-access-token)
-
-1. Create an `.npmrc` at the project root
-
-```
-//npm.pkg.github.com/:_authToken=TOKEN
-```
-
-2. Update `version` in `package.json`
-
-3. Run `npm publish`
-
-## Upgrades
-
-Required reading: [The State of Smart Contract Upgrades](https://blog.openzeppelin.com/the-state-of-smart-contract-upgrades/)
-
-[Use the same patterns as Dharma Smart Wallet](https://github.com/dharma-eng/dharma-smart-wallet).
-
-### Upgrade Governance
-
-For development, we will use EOAs (externally-owned accounts) as contract owners. For mainnet upgrades, we will adopt a voting process similar to MakerDAO and Compound.
+Songbird contract addresses will be listed here.
