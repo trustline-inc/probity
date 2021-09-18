@@ -2,11 +2,39 @@
 
 [![Build](https://github.com/trustline-inc/aurei/actions/workflows/build.yml/badge.svg)](https://github.com/trustline-inc/aurei/actions/workflows/build.yml)
 
-You can view the documentation [here](https://docs.trustline.co/trustline/-MX0imPEPxcvrbI-teLl/).
+You can view the contract code in the [`contracts`](./contracts) folder. We will add a full API reference soon. You can find everything else in the [documentation&nbsp;📖 ](https://docs.trustline.co/trustline/-MX0imPEPxcvrbI-teLl/)
+
+## Table of Contents
+
+<!--ts-->
+   * [Installation](#installation)
+   * [Usage](#usage)
+   * [Development](#development)
+      * [Installation](#installation)
+      * [IDE](#ide)
+      * [Testing](#testing)
+      * [Publishing](#publishing)
+   * [Deployment](#deployment)
+      * [Local](#local-deployment)
+      * [Remote](#remote-deployment)
+   * [Contract Addresses](#contract-addresses)
+     * [Coston](#coston-network)
+     * [Songbird](#songbird-network)
+<!--te-->
+
+## Installation
+
+This project uses [Node.js](https://nodejs.org/en/) and assumes you have it installed.
+
+Add `@trustline/probity` to your project with `npm` or `yarn`:
+
+```
+npm install @trustline-inc/probity --save
+```
 
 ## Usage
 
-Below is a code snippet that shows how to import the contract ABIs. You can view all contracts in the [`contracts`](./contracts) folder. We will add a full API reference soon.
+Below is a code snippet that shows how to import the contract ABIs and call a contract method using [`ethers`](https://docs.ethers.io/v5/).
 
 ```javascript
 import AureiABI from "@trustline-inc/aurei/artifacts/contracts/Aurei.sol/Aurei.json";
@@ -23,11 +51,7 @@ console.log(totalSupply);
 
 ### Installation
 
-**1. Node.js Installation**
-
-Install [Node.js](https://nodejs.org/en/). The recommended way to install Node with macOS is with [Homebrew](https://nodejs.org/en/download/package-manager/#macos).
-
-**2. Solidity Installation**
+**1. Solidity Installation**
 
 Make sure the Solidity compiler is installed. The compiler version must be >= `0.8.4`.
 
@@ -43,7 +67,7 @@ You can verify the version with like so:
 solcjs --version
 ```
 
-**3. Install NPM Modules**
+**2. Install NPM Modules**
 
 Install node dependencies:
 
@@ -51,7 +75,7 @@ Install node dependencies:
 npm install
 ```
 
-**4. Set Environment Variables**
+**3. Set Environment Variables**
 
 Create an `.env` file with `FLARE_DIR` set to the location of your local Flare directory. Example:
 
@@ -107,7 +131,7 @@ You can deploy in the local network following these steps:
 
 1. Run a local node.
 
-Run a local [`Flare`](https://gitlab.com/flarenetwork/flare) node.
+Run a local [Flare](https://gitlab.com/flarenetwork/flare) node.
 
 2. Deploy to the network.
 
@@ -143,10 +167,12 @@ Successfully generated Typechain artifacts!
 Contracts deployed!
 ```
 
-#### Coston Contracts
+## Contract Addresses
+
+### Coston Network
 
 Coston contract addresses will be listed here.
 
-#### Songbird Contracts
+### Songbird Network
 
 Songbird contract addresses will be listed here.
