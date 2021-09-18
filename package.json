@@ -1,8 +1,8 @@
 {
-  "name": "@trustline-inc/aurei",
-  "version": "0.11.0",
+  "name": "@trustline-inc/probity",
+  "version": "1.0.0",
   "license": "MIT",
-  "description": "Aurei crypto stablecoin",
+  "description": "Probity smart contracts",
   "scripts": {
     "node": "npx hardhat node",
     "build": "npm run clean && npm run compile",
@@ -20,12 +20,21 @@
     "test:bridge": "npx hardhat test test/bridge.test.ts --network hardhat",
     "coverage": "npm run build && npx hardhat coverage --temp artifacts --network coverage"
   },
-  "author": "Matthew Rosendin <matt@trustline.co>",
+  "contributors": [
+    {
+      "name": "Matthew Rosendin",
+      "email": "matt@trustline.co"
+    },
+    {
+      "name": "Shine Lee",
+      "email": "shine@trustline.co"
+    }
+  ],
   "files": [
     "artifacts"
   ],
   "repository": {
-    "url": "https://github.com/trustline-inc/aurei.git"
+    "url": "https://github.com/trustline-inc/probity.git"
   },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
