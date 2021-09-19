@@ -21,6 +21,8 @@ import {
   LiquidatorFactory,
   ReservePoolFactory,
   Erc20TokenFactory,
+  HighAprFactory,
+  LowAprFactory,
 } from "../typechain";
 
 // Import contract types
@@ -42,6 +44,8 @@ import {
   Liquidator,
   ReservePool,
   Erc20Token,
+  LowApr,
+  HighApr,
 } from "../typechain";
 
 /**
@@ -65,6 +69,8 @@ interface Contracts {
   liquidator: Liquidator;
   reserve: ReservePool;
   erc20: Erc20Token;
+  lowApr: LowApr;
+  highApr: HighApr;
 }
 
 const contracts: Contracts = {
@@ -85,6 +91,8 @@ const contracts: Contracts = {
   liquidator: null,
   reserve: null,
   erc20: null,
+  lowApr: null,
+  highApr: null,
 };
 
 // Contracts submitted to the register
@@ -191,6 +199,37 @@ const deployTCN = async () => {
   return contracts;
 };
 
+const deployApr = async () => {
+  // Set signers
+  const signers = await getSigners();
+
+  const lowAprFactory = (await ethers.getContractFactory(
+    "LowAPR",
+    signers.owner
+  )) as LowAprFactory;
+  contracts.lowApr = await lowAprFactory.deploy();
+  await contracts.lowApr.deployed();
+
+  await contracts.registry.setupContractAddress(
+    bytes32("lowApr"),
+    contracts.lowApr.address
+  );
+
+  const highAprFactory = (await ethers.getContractFactory(
+    "HighAPR",
+    signers.owner
+  )) as HighAprFactory;
+  contracts.highApr = await highAprFactory.deploy();
+  await contracts.highApr.deployed();
+
+  await contracts.registry.setupContractAddress(
+    bytes32("highApr"),
+    contracts.highApr.address
+  );
+
+  return contracts;
+};
+
 const deployVault = async () => {
   // Set signers
   const signers = await getSigners();
@@ -278,7 +317,9 @@ const deployTeller = async () => {
   )) as TellerFactory;
   contracts.teller = await tellerFactory.deploy(
     contracts.registry.address,
-    contracts.vault.address
+    contracts.vault.address,
+    contracts.lowApr.address,
+    contracts.highApr.address
   );
   await contracts.teller.deployed();
 
@@ -467,6 +508,7 @@ const deployProbity = async () => {
   await deployRegistry();
   await deployAUR();
   await deployTCN();
+  await deployApr();
   await deployVault();
   await deployERC20();
   await deployCollateral();

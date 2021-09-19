@@ -22,6 +22,10 @@ interface VaultLike {
   ) external;
 }
 
+interface IAPR {
+  function APR_TO_MPR(uint256 APR) external returns (uint256);
+}
+
 /**
  * @notice Creates loans and manages vault debt.
  */
@@ -44,15 +48,22 @@ contract Teller is Stateful, DSMath, Base {
   uint256 public APR; // Annualized percentage rate
   uint256 public MPR; // Momentized percentage rate
   VaultLike vault;
+  IAPR public lowAprRate;
+  IAPR public highAprRate;
 
   /////////////////////////////////////////
   // Constructor
   /////////////////////////////////////////
 
-  constructor(address registryAddress, VaultLike vaultAddress)
-    Stateful(registryAddress)
-  {
+  constructor(
+    address registryAddress,
+    VaultLike vaultAddress,
+    IAPR lowAprAddress,
+    IAPR highAprAddress
+  ) Stateful(registryAddress) {
     vault = vaultAddress;
+    lowAprRate = lowAprAddress;
+    highAprRate = highAprAddress;
     APR = RAY;
     MPR = RAY;
   }
@@ -106,7 +117,11 @@ contract Teller is Stateful, DSMath, Base {
     require(APR <= MAX_APR, "TELLER: Max APR exceeed");
 
     // Set new MPR
-    MPR = APR_TO_MPR[APR];
+    if (APR > 1500000000000000000000000000) {
+      MPR = highAprRate.APR_TO_MPR(APR);
+    } else {
+      MPR = lowAprRate.APR_TO_MPR(APR);
+    }
 
     // Update time index
     coll.lastUpdated = block.timestamp;
