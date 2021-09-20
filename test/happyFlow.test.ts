@@ -18,7 +18,7 @@ import {
   Registry,
   Erc20Token,
 } from "../typechain";
-import { deployProbity } from "../lib/deploy";
+import { deployProbity } from "../lib/deployer";
 import { ethers, web3 } from "hardhat";
 import * as chai from "chai";
 const expect = chai.expect;

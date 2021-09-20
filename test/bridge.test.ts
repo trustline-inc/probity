@@ -4,7 +4,7 @@ import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-web3";
 
 import { Aurei, Bridge, StateConnector } from "../typechain";
-import { deployBridgeSystem } from "../lib/deploy";
+import { deployBridgeSystem } from "../lib/deployer";
 import { ethers, web3 } from "hardhat";
 import * as chai from "chai";
 import { errorTypes, ADDRESS_ZERO, BYTES32_ZERO } from "./utils/constants";
