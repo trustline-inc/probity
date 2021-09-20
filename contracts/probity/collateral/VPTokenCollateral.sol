@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "../../Dependencies/Stateful.sol";
-import "./dependencies/Delegatable.sol";
+import "../../Dependencies/Delegatable.sol";
 
 contract VPTokenCollateral is Delegatable, Stateful {
   /////////////////////////////////////////

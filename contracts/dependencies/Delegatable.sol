@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "../../../Dependencies/DSMath.sol";
+import "./DSMath.sol";
 
 interface FtsoRewardManager {
   function claimRewardFromDataProviders(
@@ -79,18 +79,17 @@ contract Delegatable is DSMath {
       ftsoManager.getCurrentRewardEpoch() > lastClaimedEpoch,
       "No new epoch to claim"
     );
-    (uint256 startEpochId, uint256 endEpochId) =
-      ftsoRewardManager.getEpochsWithClaimableRewards();
+    (uint256 startEpochId, uint256 endEpochId) = ftsoRewardManager
+      .getEpochsWithClaimableRewards();
     for (uint256 epochId = startEpochId; epochId <= endEpochId; epochId++) {
       uint256[] memory epochs;
       epochs[0] = epochId;
 
-      uint256 rewardAmount =
-        ftsoRewardManager.claimRewardFromDataProviders(
-          payable(address(this)),
-          epochs,
-          dataProviders
-        );
+      uint256 rewardAmount = ftsoRewardManager.claimRewardFromDataProviders(
+        payable(address(this)),
+        epochs,
+        dataProviders
+      );
 
       rewardPerUnitAtEpoch[epochId] = rdiv(
         rewardAmount,
@@ -115,8 +114,8 @@ contract Delegatable is DSMath {
       userEpoch <= ftsoManager.getCurrentRewardEpoch();
       userEpoch++
     ) {
-      uint256 rewardableBalance =
-        currentBalance - recentTotalDeposit[msg.sender];
+      uint256 rewardableBalance = currentBalance -
+        recentTotalDeposit[msg.sender];
       recentTotalDeposit[msg.sender] -= recentDeposits[msg.sender][userEpoch];
       rewardBalance += rewardPerUnitAtEpoch[userEpoch] * rewardableBalance;
       delete recentDeposits[msg.sender][userEpoch];
