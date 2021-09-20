@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "../../Dependencies/Stateful.sol";
-import "../../Dependencies/Delegatable.sol";
+import "../../dependencies/Stateful.sol";
+import "../../dependencies/Delegatable.sol";
 
 contract VPTokenCollateral is Delegatable, Stateful {
   /////////////////////////////////////////

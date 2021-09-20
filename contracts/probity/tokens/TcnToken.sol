@@ -2,9 +2,9 @@
 
 pragma solidity ^0.8.0;
 
-import "../../Dependencies/Ownable.sol";
-import "../../Dependencies/SafeMath.sol";
-import "../../Interfaces/ITcnToken.sol";
+import "../../dependencies/Ownable.sol";
+import "../../dependencies/SafeMath.sol";
+import "../../interfaces/ITcnToken.sol";
 
 /**
  * Based upon OpenZeppelin's ERC20 contract:
@@ -198,23 +198,22 @@ contract TcnToken is ITcnToken, Ownable {
     bytes32 s
   ) external override {
     require(deadline >= block.timestamp, "TCN: EXPIRED");
-    bytes32 digest =
-      keccak256(
-        abi.encodePacked(
-          "\x19\x01",
-          _DOMAIN_SEPARATOR,
-          keccak256(
-            abi.encode(
-              _PERMIT_TYPEHASH,
-              owner,
-              spender,
-              amount,
-              _nonces[owner]++,
-              deadline
-            )
+    bytes32 digest = keccak256(
+      abi.encodePacked(
+        "\x19\x01",
+        _DOMAIN_SEPARATOR,
+        keccak256(
+          abi.encode(
+            _PERMIT_TYPEHASH,
+            owner,
+            spender,
+            amount,
+            _nonces[owner]++,
+            deadline
           )
         )
-      );
+      )
+    );
     address recoveredAddress = ecrecover(digest, v, r, s);
     require(
       recoveredAddress != address(0) && recoveredAddress == owner,

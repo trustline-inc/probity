@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "../Interfaces/IRegistry.sol";
+import "../interfaces/IRegistry.sol";
 
 /**
  * @notice Stores contract addresses.

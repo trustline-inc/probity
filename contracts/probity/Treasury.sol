@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-import "../Dependencies/Stateful.sol";
+import "../dependencies/Stateful.sol";
 
 interface VaultLike {
   function moveAurei(

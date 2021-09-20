@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "../Dependencies/Stateful.sol";
-import "../Dependencies/Eventful.sol";
+import "../dependencies/Stateful.sol";
+import "../dependencies/Eventful.sol";
 
 interface VaultLike {
   function vaults(bytes32 collId, address user)
@@ -140,8 +140,10 @@ contract Liquidator is Stateful, Eventful {
   function liquidateVault(bytes32 collId, address user) external {
     // check if vault can be liquidated
     (uint256 debtAccu, , uint256 price) = vault.collTypes(collId);
-    (, uint256 lockedColl, uint256 debt, uint256 supplied) =
-      vault.vaults(collId, user);
+    (, uint256 lockedColl, uint256 debt, uint256 supplied) = vault.vaults(
+      collId,
+      user
+    );
     require(
       debt * debtAccu + supplied * PRECISION_PRICE < lockedColl * price,
       "Liquidator: Vault collateral is still above required minimal ratio"
@@ -160,11 +162,10 @@ contract Liquidator is Stateful, Eventful {
       -int256(supplied)
     );
 
-    uint256 aurToRaise =
-      debt *
-        collTypes[collId].debtPenaltyFee +
-        supplied *
-        collTypes[collId].suppPenaltyFee;
+    uint256 aurToRaise = debt *
+      collTypes[collId].debtPenaltyFee +
+      supplied *
+      collTypes[collId].suppPenaltyFee;
 
     // start the auction
     collTypes[collId].auctioneer.startAuction(

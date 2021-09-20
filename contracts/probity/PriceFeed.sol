@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "../Dependencies/Stateful.sol";
-import "../Dependencies/DSMath.sol";
-import "../Dependencies/Eventful.sol";
+import "../dependencies/Stateful.sol";
+import "../dependencies/DSMath.sol";
+import "../dependencies/Eventful.sol";
 
 interface VaultLike {
   function updatePrice(bytes32 collId, uint256 price) external;
@@ -86,8 +86,10 @@ contract PriceFeed is Stateful, Eventful, DSMath {
       "PriceFeed: Collateral Type is not"
     );
     (uint256 price, ) = collTypes[collId].ftso.getCurrentPrice();
-    uint256 adjustedPrice =
-      rdiv(rdiv(price, 10**27), collTypes[collId].minCollRatio);
+    uint256 adjustedPrice = rdiv(
+      rdiv(price, 10**27),
+      collTypes[collId].minCollRatio
+    );
 
     vault.updatePrice(collId, adjustedPrice);
   }

@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "../Dependencies/Ownable.sol";
-import "../Dependencies/SafeMath.sol";
-import "../Interfaces/IAurei.sol";
-import "../Interfaces/ITeller.sol";
+import "../dependencies/Ownable.sol";
+import "../dependencies/SafeMath.sol";
+import "../interfaces/IAurei.sol";
+import "../interfaces/ITeller.sol";
 
 contract ERC20Token is IAurei, Ownable {
   using SafeMath for uint256;
@@ -193,23 +193,22 @@ contract ERC20Token is IAurei, Ownable {
     bytes32 s
   ) external override {
     require(deadline >= block.timestamp, "AUR: EXPIRED");
-    bytes32 digest =
-      keccak256(
-        abi.encodePacked(
-          "\x19\x01",
-          _DOMAIN_SEPARATOR,
-          keccak256(
-            abi.encode(
-              _PERMIT_TYPEHASH,
-              owner,
-              spender,
-              amount,
-              _nonces[owner]++,
-              deadline
-            )
+    bytes32 digest = keccak256(
+      abi.encodePacked(
+        "\x19\x01",
+        _DOMAIN_SEPARATOR,
+        keccak256(
+          abi.encode(
+            _PERMIT_TYPEHASH,
+            owner,
+            spender,
+            amount,
+            _nonces[owner]++,
+            deadline
           )
         )
-      );
+      )
+    );
     address recoveredAddress = ecrecover(digest, v, r, s);
     require(
       recoveredAddress != address(0) && recoveredAddress == owner,

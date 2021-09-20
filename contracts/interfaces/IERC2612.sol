@@ -11,7 +11,7 @@ pragma solidity ^0.8.0;
  *
  * See https://eips.ethereum.org/EIPS/eip-2612.
  *
- * Code adapted from https://github.com/liquity/beta/blob/main/contracts/Dependencies/IERC2612.sol
+ * Code adapted from https://github.com/liquity/beta/blob/main/contracts/dependencies/IERC2612.sol
  */
 interface IERC2612 {
   /**

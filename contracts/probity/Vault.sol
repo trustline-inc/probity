@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "../Dependencies/Stateful.sol";
-import "../Dependencies/Eventful.sol";
+import "../dependencies/Stateful.sol";
+import "../dependencies/Eventful.sol";
 
 // @todo this interface does come from flare team but may need to update after they launch FTSO
 interface ftsoLike {
@@ -223,8 +223,8 @@ contract Vault is Stateful, Eventful {
     coll.normDebt = add(coll.normDebt, debtAmount);
     coll.normSupply = add(coll.normSupply, suppAmount);
 
-    int256 aurToRaise =
-      mul(coll.debtAccu, debtAmount) + mul(PRECISION_PRICE, suppAmount);
+    int256 aurToRaise = mul(coll.debtAccu, debtAmount) +
+      mul(PRECISION_PRICE, suppAmount);
 
     vaults[collId][auctioneer].freeColl = sub(
       vaults[collId][auctioneer].freeColl,
