@@ -1,5 +1,5 @@
 import "@nomiclabs/hardhat-ethers";
-import { deployAll } from "../lib/deploy";
+import { deployAll } from "../lib/deployer";
 import * as fs from "fs";
 
 async function main() {
@@ -11,11 +11,16 @@ async function main() {
   const addresses = [];
   let fileOutput = "";
   for (let contract in contracts) {
+    // Convert contract identifiers from PascalCase to UPPER_CASE
+    const contractDisplayName = contract
+      .split(/(?=[A-Z])/)
+      .join("_")
+      .toUpperCase();
     addresses.push({
-      Contract: contract.toUpperCase(),
+      Contract: contractDisplayName,
       Address: contracts[contract].address,
     });
-    fileOutput += `${contract.toUpperCase()}=${contracts[contract].address}\n`;
+    fileOutput += `${contractDisplayName}=${contracts[contract].address}\n`;
   }
 
   fs.writeFileSync(".env", fileOutput);
