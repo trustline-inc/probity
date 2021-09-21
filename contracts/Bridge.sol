@@ -43,14 +43,16 @@ contract Bridge {
   /////////////////////////////////////////
 
   /**
-   * 0 = PENDING    - Tokens are locked but are not issued on the XRPL)
-   * 1 = CANCELLED  - Tokens are returned the issuer is cancelled)
-   * 2 = COMPLETE   - Tokens are issued but unverified for spending
-   * 3 = VERIFIED   - Tokens are verified for spending
-   * 4 = REDEEMED   - Tokens are fully redeemed and the issuer is no longer valid
-   * 5 = FRAUDULENT - Tokens are issued but the issuer is invalid
+   * 0 = NON_EXISTENT - There are no tokens locked for the issuer
+   * 1 = PENDING      - Tokens are locked but are not issued on the XRPL)
+   * 2 = CANCELLED    - Tokens are returned the issuer is cancelled)
+   * 3 = COMPLETE     - Tokens are issued but unverified for spending
+   * 4 = VERIFIED     - Tokens are verified for spending
+   * 5 = REDEEMED     - Tokens are fully redeemed and the issuer is no longer valid
+   * 6 = FRAUDULENT   - Tokens are issued but the issuer is invalid
    **/
   enum Status {
+    NON_EXISTENT,
     PENDING,
     CANCELED,
     COMPLETED,
@@ -206,7 +208,7 @@ contract Bridge {
   ) external {
     require(
       issuers[issuer].XrplTxId != txHash,
-      "The provided tx hash has already proven."
+      "The provided transaction is already proved."
     );
     verifyPaymentFinality(
       txHash,

@@ -1,12 +1,11 @@
 const errorTypes = {
-  ISSUER_EXISTS: "This issuer already exists",
-  ISSUER_NOT_EXISTS: "This issuer does not exists",
-  ISSUER_NOT_IN_PROGRESS: "issuer status is not longer IN_PROGRESS",
-  ONLY_ORIGINAL_SENDER:
-    "Only the original sender of the is issuer can cancel it",
-  NON_ZERO_AMOUNT: "amount must be a non zero amount",
+  ISSUER_EXISTS: "An issuer already exists with this address.",
+  ISSUER_NON_EXISTENT: "The issuer does not exist.",
+  ISSUER_NOT_PENDING: "The issuer is not in the PENDING state.",
+  ONLY_ORIGINAL_SENDER: "Only the originating account can cancel this issuer.",
+  NON_ZERO_AMOUNT: "Amount must be greater than zero.",
   AUR_NO_BALANCE: "ERC20: transfer amount exceeds balance",
-  TX_ID_ALREADY_PROVEN: "The provided txHash has already proven",
+  TX_ID_ALREADY_PROVEN: "The provided transaction is already proved.",
   TX_ID_ALREADY_REDEEMED: "This txHash has already been redeemed",
   TWO_HOURS_NOT_PASSED:
     "The previous redemption attempt for this parameter was submitted less than 2 hours ago",

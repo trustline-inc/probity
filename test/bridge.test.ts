@@ -29,13 +29,13 @@ let destinationTag: any;
 
 describe("Bridge", function () {
   enum statuses {
-    DOES_NOT_EXIST,
-    IN_PROGRESS,
+    NON_EXISTENT,
+    PENDING,
     CANCELED,
-    COMPLETE,
+    COMPLETED,
     VERIFIED,
     REDEEMED,
-    FRAUD,
+    FRAUDULENT,
   }
   beforeEach(async function () {
     const { contracts, signers } = await deployBridgeSystem();
@@ -59,36 +59,36 @@ describe("Bridge", function () {
     destinationTag = 0;
   });
 
-  describe("checkIssuerStatus", async function () {
-    it("checks that DOES_NOT_EXIST issuer status is returned correctly", async () => {
-      let status = await bridge.checkIssuerStatus(issuer);
-      expect(status).to.equal(statuses.DOES_NOT_EXIST);
+  describe("getIssuerStatus", async function () {
+    it("checks that NON_EXISTENT issuer status is returned correctly", async () => {
+      let status = await bridge.getIssuerStatus(issuer);
+      expect(status).to.equal(statuses.NON_EXISTENT);
 
-      await bridge.newIssuer(issuer, AMOUNT_TO_ISSUE);
+      await bridge.createIssuer(issuer, AMOUNT_TO_ISSUE);
 
-      status = await bridge.checkIssuerStatus(issuer);
-      expect(status).to.equal(statuses.IN_PROGRESS);
+      status = await bridge.getIssuerStatus(issuer);
+      expect(status).to.equal(statuses.PENDING);
     });
 
     it("checks that CANCELED issuer status is returned correctly", async () => {
-      await bridge.newIssuer(issuer, AMOUNT_TO_ISSUE);
+      await bridge.createIssuer(issuer, AMOUNT_TO_ISSUE);
 
-      let status = await bridge.checkIssuerStatus(issuer);
-      expect(status).to.equal(statuses.IN_PROGRESS);
+      let status = await bridge.getIssuerStatus(issuer);
+      expect(status).to.equal(statuses.PENDING);
 
       await bridge.cancelIssuer(issuer);
 
-      status = await bridge.checkIssuerStatus(issuer);
+      status = await bridge.getIssuerStatus(issuer);
       expect(status).to.equal(statuses.CANCELED);
     });
 
     it("checks that COMPLETE issuer status is returned correctly", async () => {
       const txHash = web3.utils.keccak256("some hash");
 
-      await bridge.newIssuer(issuer, AMOUNT_TO_ISSUE);
+      await bridge.createIssuer(issuer, AMOUNT_TO_ISSUE);
 
-      let status = await bridge.checkIssuerStatus(issuer);
-      expect(status).to.equal(statuses.IN_PROGRESS);
+      let status = await bridge.getIssuerStatus(issuer);
+      expect(status).to.equal(statuses.PENDING);
 
       await bridge.completeIssuance(
         txHash,
@@ -98,8 +98,8 @@ describe("Bridge", function () {
         AMOUNT_TO_ISSUE,
         currencyHash
       );
-      status = await bridge.checkIssuerStatus(issuer);
-      expect(status).to.equal(statuses.COMPLETE);
+      status = await bridge.getIssuerStatus(issuer);
+      expect(status).to.equal(statuses.COMPLETED);
     });
 
     it.skip("checks that VERIFIED issuer status is returned correctly", async () => {
@@ -107,7 +107,7 @@ describe("Bridge", function () {
     });
 
     it("checks that REDEEMED issuer status is returned correctly", async () => {
-      await bridge.newIssuer(issuer, AMOUNT_TO_ISSUE);
+      await bridge.createIssuer(issuer, AMOUNT_TO_ISSUE);
       await bridge.completeIssuance(
         txHash,
         source,
@@ -116,8 +116,8 @@ describe("Bridge", function () {
         AMOUNT_TO_ISSUE,
         currencyHash
       );
-      let status = await bridge.checkIssuerStatus(issuer);
-      expect(status).to.equal(statuses.COMPLETE);
+      let status = await bridge.getIssuerStatus(issuer);
+      expect(status).to.equal(statuses.COMPLETED);
 
       await bridge.redemptionAttempt(source, issuer, 0);
       await bridge.completeRedemption(
@@ -130,12 +130,12 @@ describe("Bridge", function () {
         redeemer.address
       );
 
-      status = await bridge.checkIssuerStatus(issuer);
+      status = await bridge.getIssuerStatus(issuer);
       expect(status).to.equal(statuses.REDEEMED);
     });
 
     it("checks that FRAUD issuer status is returned correctly", async () => {
-      await bridge.newIssuer(issuer, AMOUNT_TO_ISSUE);
+      await bridge.createIssuer(issuer, AMOUNT_TO_ISSUE);
       await bridge.completeIssuance(
         txHash,
         source,
@@ -153,40 +153,40 @@ describe("Bridge", function () {
         currencyHash
       );
 
-      let status = await bridge.checkIssuerStatus(issuer);
-      expect(status).to.equal(statuses.FRAUD);
+      let status = await bridge.getIssuerStatus(issuer);
+      expect(status).to.equal(statuses.FRAUDULENT);
     });
   });
 
-  describe("newIssuer", async function () {
+  describe("createIssuer", async function () {
     it("fails if issuer already exists", async () => {
-      let status = await bridge.checkIssuerStatus(issuer);
-      expect(status).to.equal(statuses.DOES_NOT_EXIST);
-      await bridge.newIssuer(issuer, AMOUNT_TO_ISSUE);
+      let status = await bridge.getIssuerStatus(issuer);
+      expect(status).to.equal(statuses.NON_EXISTENT);
+      await bridge.createIssuer(issuer, AMOUNT_TO_ISSUE);
 
-      status = await bridge.checkIssuerStatus(issuer);
-      expect(status).to.equal(statuses.IN_PROGRESS);
+      status = await bridge.getIssuerStatus(issuer);
+      expect(status).to.equal(statuses.PENDING);
       await assertRevert(
-        bridge.newIssuer(issuer, AMOUNT_TO_ISSUE),
+        bridge.createIssuer(issuer, AMOUNT_TO_ISSUE),
         errorTypes.ISSUER_EXISTS
       );
     });
 
-    it("fails if amount is zero", async () => {
+    it("fails if amount is non-zero", async () => {
       await assertRevert(
-        bridge.newIssuer(issuer, 0),
+        bridge.createIssuer(issuer, 0),
         errorTypes.NON_ZERO_AMOUNT
       );
-      await bridge.newIssuer(issuer, AMOUNT_TO_ISSUE);
+      await bridge.createIssuer(issuer, AMOUNT_TO_ISSUE);
     });
 
     it("fails if user doesn't have enough allowance", async () => {
-      await bridge.newIssuer(issuer, AMOUNT_TO_ISSUE);
+      await bridge.createIssuer(issuer, AMOUNT_TO_ISSUE);
       const bridgeUser = bridge.connect(user);
       const secondIssuer = "secondIssuer";
 
       await assertRevert(
-        bridgeUser.newIssuer(secondIssuer, AMOUNT_TO_ISSUE),
+        bridgeUser.createIssuer(secondIssuer, AMOUNT_TO_ISSUE),
         errorTypes.AUR_NO_BALANCE
       );
     });
@@ -196,14 +196,14 @@ describe("Bridge", function () {
       expect(issuerResult[0].toString()).to.equal("0");
       expect(issuerResult[1]).to.equal(ADDRESS_ZERO);
       expect(issuerResult[2]).to.equal(BYTES32_ZERO);
-      expect(issuerResult[3]).to.equal(statuses.DOES_NOT_EXIST);
-      await bridge.newIssuer(issuer, AMOUNT_TO_ISSUE);
+      expect(issuerResult[3]).to.equal(statuses.NON_EXISTENT);
+      await bridge.createIssuer(issuer, AMOUNT_TO_ISSUE);
 
       issuerResult = await bridge.issuers(issuer);
       expect(issuerResult[0].toString()).to.equal(AMOUNT_TO_ISSUE.toString());
       expect(issuerResult[1]).to.equal(owner.address);
       expect(issuerResult[2]).to.equal(BYTES32_ZERO);
-      expect(issuerResult[3]).to.equal(statuses.IN_PROGRESS);
+      expect(issuerResult[3]).to.equal(statuses.PENDING);
     });
   });
 
@@ -211,14 +211,14 @@ describe("Bridge", function () {
     it("fail if issuer does NOT exists", async () => {
       await assertRevert(
         bridge.cancelIssuer(issuer),
-        errorTypes.ISSUER_NOT_EXISTS
+        errorTypes.ISSUER_NON_EXISTENT
       );
-      await bridge.newIssuer(issuer, AMOUNT_TO_ISSUE);
+      await bridge.createIssuer(issuer, AMOUNT_TO_ISSUE);
       await bridge.cancelIssuer(issuer);
     });
 
-    it("fail if issuer is not in IN_PROGRESS status", async () => {
-      await bridge.newIssuer(issuer, AMOUNT_TO_ISSUE);
+    it("fail if issuer is not in PENDING status", async () => {
+      await bridge.createIssuer(issuer, AMOUNT_TO_ISSUE);
       await bridge.completeIssuance(
         txHash,
         source,
@@ -229,12 +229,12 @@ describe("Bridge", function () {
       );
       await assertRevert(
         bridge.cancelIssuer(issuer),
-        errorTypes.ISSUER_NOT_IN_PROGRESS
+        errorTypes.ISSUER_NOT_PENDING
       );
     });
 
     it("fail if caller is not the one that created the issuance", async () => {
-      await bridge.newIssuer(issuer, AMOUNT_TO_ISSUE);
+      await bridge.createIssuer(issuer, AMOUNT_TO_ISSUE);
       const bridgeUser = bridge.connect(user);
       await assertRevert(
         bridgeUser.cancelIssuer(issuer),
@@ -244,7 +244,7 @@ describe("Bridge", function () {
     });
 
     it("checks that AUR is transferred back to sender", async () => {
-      await bridge.newIssuer(issuer, AMOUNT_TO_ISSUE);
+      await bridge.createIssuer(issuer, AMOUNT_TO_ISSUE);
       const before = await aurei.balanceOf(owner.address);
       await bridge.cancelIssuer(issuer);
       const after = await aurei.balanceOf(owner.address);
@@ -252,20 +252,20 @@ describe("Bridge", function () {
     });
 
     it("checks that issuance is marked CANCELLED", async () => {
-      await bridge.newIssuer(issuer, AMOUNT_TO_ISSUE);
+      await bridge.createIssuer(issuer, AMOUNT_TO_ISSUE);
 
-      let status = await bridge.checkIssuerStatus(issuer);
-      expect(status).to.equal(statuses.IN_PROGRESS);
+      let status = await bridge.getIssuerStatus(issuer);
+      expect(status).to.equal(statuses.PENDING);
 
       await bridge.cancelIssuer(issuer);
 
-      status = await bridge.checkIssuerStatus(issuer);
+      status = await bridge.getIssuerStatus(issuer);
       expect(status).to.equal(statuses.CANCELED);
     });
   });
 
   describe("completeIssuance", async function () {
-    it("fails if issuance is not IN_PROGRESS state", async () => {
+    it("fails if issuance is not PENDING state", async () => {
       await assertRevert(
         bridge.completeIssuance(
           txHash,
@@ -275,9 +275,9 @@ describe("Bridge", function () {
           AMOUNT_TO_ISSUE,
           currencyHash
         ),
-        errorTypes.ISSUER_NOT_IN_PROGRESS
+        errorTypes.ISSUER_NOT_PENDING
       );
-      await bridge.newIssuer(issuer, AMOUNT_TO_ISSUE);
+      await bridge.createIssuer(issuer, AMOUNT_TO_ISSUE);
       await bridge.completeIssuance(
         txHash,
         source,
@@ -289,7 +289,7 @@ describe("Bridge", function () {
     });
 
     it("fails payment hasn't been proven on stateConnector", async () => {
-      await bridge.newIssuer(issuer, AMOUNT_TO_ISSUE);
+      await bridge.createIssuer(issuer, AMOUNT_TO_ISSUE);
       await stateConnector.setFinality(false);
       await assertRevert(
         bridge.completeIssuance(
@@ -314,13 +314,13 @@ describe("Bridge", function () {
     });
 
     it("check that the variables changed correctly", async () => {
-      await bridge.newIssuer(issuer, AMOUNT_TO_ISSUE);
+      await bridge.createIssuer(issuer, AMOUNT_TO_ISSUE);
 
       let issuerResult = await bridge.issuers(issuer);
       expect(issuerResult[0].toString()).to.equal(AMOUNT_TO_ISSUE.toString());
       expect(issuerResult[1]).to.equal(owner.address);
       expect(issuerResult[2]).to.equal(BYTES32_ZERO);
-      expect(issuerResult[3]).to.equal(statuses.IN_PROGRESS);
+      expect(issuerResult[3]).to.equal(statuses.PENDING);
 
       await bridge.completeIssuance(
         txHash,
@@ -335,11 +335,11 @@ describe("Bridge", function () {
       expect(issuerResult[0].toString()).to.equal(AMOUNT_TO_ISSUE.toString());
       expect(issuerResult[1]).to.equal(owner.address);
       expect(issuerResult[2]).to.equal(txHash);
-      expect(issuerResult[3]).to.equal(statuses.COMPLETE);
+      expect(issuerResult[3]).to.equal(statuses.COMPLETED);
     });
 
     it("checks that Issuance Completed is emitted properly", async () => {
-      await bridge.newIssuer(issuer, AMOUNT_TO_ISSUE);
+      await bridge.createIssuer(issuer, AMOUNT_TO_ISSUE);
       const tx = await bridge.completeIssuance(
         txHash,
         source,
@@ -360,7 +360,7 @@ describe("Bridge", function () {
 
   describe("proveFraud", async function () {
     it("fail if tx has already been proven", async () => {
-      await bridge.newIssuer(issuer, AMOUNT_TO_ISSUE);
+      await bridge.createIssuer(issuer, AMOUNT_TO_ISSUE);
       await bridge.completeIssuance(
         txHash,
         source,
@@ -394,7 +394,7 @@ describe("Bridge", function () {
 
     it("fails payment hasn't been proven on stateConnector", async () => {
       const secondtxHash = web3.utils.keccak256("second tx hash");
-      await bridge.newIssuer(issuer, AMOUNT_TO_ISSUE);
+      await bridge.createIssuer(issuer, AMOUNT_TO_ISSUE);
       await bridge.completeIssuance(
         txHash,
         source,
@@ -428,7 +428,7 @@ describe("Bridge", function () {
     });
 
     it("check that correct variables are updated", async () => {
-      await bridge.newIssuer(issuer, AMOUNT_TO_ISSUE);
+      await bridge.createIssuer(issuer, AMOUNT_TO_ISSUE);
       await bridge.completeIssuance(
         txHash,
         source,
@@ -442,7 +442,7 @@ describe("Bridge", function () {
       expect(issuerResult[0].toString()).to.equal(AMOUNT_TO_ISSUE.toString());
       expect(issuerResult[1]).to.equal(owner.address);
       expect(issuerResult[2]).to.equal(txHash);
-      expect(issuerResult[3]).to.equal(statuses.COMPLETE);
+      expect(issuerResult[3]).to.equal(statuses.COMPLETED);
 
       await bridge.proveFraud(
         web3.utils.keccak256("second tx hash"),
@@ -457,11 +457,11 @@ describe("Bridge", function () {
       expect(issuerResult[0].toString()).to.equal("0");
       expect(issuerResult[1]).to.equal(owner.address);
       expect(issuerResult[2]).to.equal(txHash);
-      expect(issuerResult[3]).to.equal(statuses.FRAUD);
+      expect(issuerResult[3]).to.equal(statuses.FRAUDULENT);
     });
 
     it("check that correct amount of AUR is sent to the caller", async () => {
-      await bridge.newIssuer(issuer, AMOUNT_TO_ISSUE);
+      await bridge.createIssuer(issuer, AMOUNT_TO_ISSUE);
       await bridge.completeIssuance(
         txHash,
         source,
@@ -489,7 +489,7 @@ describe("Bridge", function () {
 
   describe("redemptionAttempt", async function () {
     beforeEach(async function () {
-      await bridge.newIssuer(issuer, AMOUNT_TO_ISSUE);
+      await bridge.createIssuer(issuer, AMOUNT_TO_ISSUE);
       await bridge.completeIssuance(
         txHash,
         source,
@@ -533,7 +533,7 @@ describe("Bridge", function () {
 
   describe("completeRedemption", async function () {
     beforeEach(async function () {
-      await bridge.newIssuer(issuer, AMOUNT_TO_ISSUE);
+      await bridge.createIssuer(issuer, AMOUNT_TO_ISSUE);
       await bridge.completeIssuance(
         txHash,
         source,
@@ -686,7 +686,7 @@ describe("Bridge", function () {
     it("check that if redeem makes the issuer's amount zero, it's changed to REDEEMED", async () => {
       const AMOUNT_TO_WITHDRAW = 10;
       const before = await bridge.issuers(issuer);
-      expect(before[3]).to.equal(statuses.COMPLETE);
+      expect(before[3]).to.equal(statuses.COMPLETED);
       await bridge.completeRedemption(
         txHash,
         source,
