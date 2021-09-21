@@ -1,5 +1,5 @@
 import "@nomiclabs/hardhat-ethers";
-import { deployAll } from "../lib/deployerer";
+import { deployAll } from "../lib/deployer";
 import * as fs from "fs";
 
 async function main() {
