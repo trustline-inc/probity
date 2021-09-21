@@ -8,6 +8,7 @@
     "build": "npm run clean && npm run compile",
     "clean": "npx hardhat clean",
     "compile": "npx hardhat compile",
+    "initialize": "npx hardhat --network local run ./scripts/initialize.ts",
     "fund:local": "npx hardhat --network local run ./scripts/fund.ts",
     "demo:issue": "npx hardhat --network local run ./scripts/issueAurei.ts",
     "demo:redeem": "npx hardhat --network local run ./scripts/redeemAurei.ts",
