@@ -72,7 +72,7 @@ contract Teller is Stateful, DSMath, Base {
   // External Functions
   /////////////////////////////////////////
 
-  function initCollType(bytes32 collId) external onlyByRegistered {
+  function initCollType(bytes32 collId) external onlyBy("gov") {
     collTypes[collId].lastUpdated = block.timestamp;
   }
 
@@ -83,9 +83,8 @@ contract Teller is Stateful, DSMath, Base {
     );
 
     Collateral memory coll = collTypes[collId];
-    (uint256 debtAccumulator, uint256 suppAccumulator) = vault.collTypes(
-      collId
-    );
+    (uint256 debtAccumulator, uint256 suppAccumulator) =
+      vault.collTypes(collId);
     uint256 totalDebt = vault.totalDebt();
     uint256 totalSupply = vault.totalSupply();
 
@@ -97,25 +96,22 @@ contract Teller is Stateful, DSMath, Base {
       );
 
     // Update capital accumulator
-    uint256 multipliedByUtilization = rmul(
-      sub(MPR, RAY),
-      coll.lastUtilization * 1e9
-    );
+    uint256 multipliedByUtilization =
+      rmul(sub(MPR, RAY), coll.lastUtilization * 1e9);
     uint256 multipliedByUtilizationPlusOne = add(multipliedByUtilization, RAY);
-    uint256 exponentiated = rpow(
-      multipliedByUtilizationPlusOne,
-      (block.timestamp - coll.lastUpdated)
-    );
+    uint256 exponentiated =
+      rpow(
+        multipliedByUtilizationPlusOne,
+        (block.timestamp - coll.lastUpdated)
+      );
     suppAccumulator = rmul(exponentiated, suppAccumulator);
 
     // Set new APR (round to nearest 0.25%)
     coll.lastUtilization = wdiv(totalDebt, totalSupply);
     uint256 round = 0.0025 * 10**27;
     uint256 oneMinusUtilization = sub(RAY, coll.lastUtilization * 1e9);
-    uint256 oneDividedByOneMinusUtilization = rdiv(
-      10**27 * 0.01,
-      oneMinusUtilization
-    );
+    uint256 oneDividedByOneMinusUtilization =
+      rdiv(10**27 * 0.01, oneMinusUtilization);
     APR = add(oneDividedByOneMinusUtilization, RAY);
     APR = ((APR + round - 1) / round) * round;
     require(APR <= MAX_APR, "TELLER: Max APR exceeed");
