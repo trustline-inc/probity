@@ -260,7 +260,7 @@ const deployCollateral = async () => {
   )) as NativeCollateralFactory;
   contracts.flrCollateral = await flrCollateralFactory.deploy(
     contracts.registry.address,
-    web3.utils.keccak256("FLR Collateral"),
+    web3.utils.keccak256("FLR"),
     contracts.vault.address
   );
   await contracts.flrCollateral.deployed();
@@ -271,7 +271,7 @@ const deployCollateral = async () => {
   )) as Erc20CollateralFactory;
   contracts.fxrpCollateral = await fxrpCollateralFactory.deploy(
     contracts.registry.address,
-    web3.utils.keccak256("FXRP Collateral"),
+    web3.utils.keccak256("FXRP"),
     contracts.erc20.address,
     contracts.vault.address
   );
