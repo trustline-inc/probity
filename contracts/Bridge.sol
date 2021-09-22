@@ -71,7 +71,7 @@ contract Bridge {
     string issuer;
     uint64 destinationTag;
     uint64 amount;
-    address AURreleaseAddress;
+    address tokenReleaseAddress;
     address redeemer;
   }
 
@@ -282,8 +282,9 @@ contract Bridge {
       destAddress != address(0),
       "Destination address cannot be the zero address."
     );
+    // TODO: #65 @shine2lay tokenReleaseAddress is not assigned a value.
     require(
-      redemptions[txID].AURreleaseAddress == address(0),
+      redemptions[txID].tokenReleaseAddress == address(0),
       "This transaction ID has already been used to redeem tokens."
     );
     bytes32 redemptionHash = createRedemptionReservationHash(
