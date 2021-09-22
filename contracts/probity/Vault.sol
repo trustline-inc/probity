@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
+
 pragma solidity ^0.8.0;
 
 import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
 
-// @todo this interface does come from flare team but may need to update after they launch FTSO
 interface ftsoLike {
   function getCurrentPrice()
     external

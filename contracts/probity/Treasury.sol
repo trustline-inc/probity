@@ -33,8 +33,8 @@ contract Treasury is Stateful {
   // Events
   /////////////////////////////////////////
 
-  event Deposit(address user, uint256 amount);
-  event Withdrawal(address user, uint256 amount);
+  event Deposit(address indexed user, uint256 amount);
+  event Withdrawal(address indexed user, uint256 amount);
 
   /////////////////////////////////////////
   // Data Storage
@@ -66,16 +66,19 @@ contract Treasury is Stateful {
   function deposit(uint256 amount) external {
     vault.moveAurei(address(this), msg.sender, amount);
     aurei.burn(msg.sender, amount);
+    emit Deposit(msg.sender, amount);
   }
 
   function withdrawAurei(uint256 amount) external {
     vault.moveAurei(msg.sender, address(this), amount);
     aurei.mint(msg.sender, amount);
+    emit Withdrawal(msg.sender, amount);
   }
 
   function withdrawTcn(uint256 amount) external {
     vault.reduceInterest(msg.sender, amount);
     tcn.mint(msg.sender, amount);
+    // TODO: #69 Emit event for TCN withdrawal
   }
 
   function tradeTcnforAurei(uint256 amount) external {

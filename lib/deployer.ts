@@ -1,7 +1,7 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-web3";
-import { ethers, web3 } from "hardhat";
+import { ethers, network, web3 } from "hardhat";
 
 // Import contract factory types
 import {
@@ -50,6 +50,18 @@ import {
 } from "../typechain";
 
 /**
+ * Set native token for the deployment's target network
+ */
+const NETWORK_NATIVE_TOKENS = {
+  hardhat: "FLR",
+  coston: "CFLR",
+  songbird: "SGB",
+  flare: "FLR",
+};
+
+const NETWORK_NATIVE_TOKEN = NETWORK_NATIVE_TOKENS[network.name];
+
+/**
  * Contracts
  */
 interface Contracts {
@@ -60,7 +72,7 @@ interface Contracts {
   tcnToken: TcnToken;
   vault: Vault;
   stateConnector: StateConnector;
-  flrCollateral: NativeCollateral;
+  nativeCollateral: NativeCollateral;
   fxrpCollateral: Erc20Collateral;
   teller: Teller;
   treasury: Treasury;
@@ -82,7 +94,7 @@ const contracts: Contracts = {
   tcnToken: null,
   vault: null,
   stateConnector: null,
-  flrCollateral: null,
+  nativeCollateral: null,
   fxrpCollateral: null,
   teller: null,
   treasury: null,
@@ -254,16 +266,16 @@ const deployCollateral = async () => {
   // Set signers
   const signers = await getSigners();
 
-  const flrCollateralFactory = (await ethers.getContractFactory(
+  const nativeCollateralFactory = (await ethers.getContractFactory(
     "NativeCollateral",
     signers.owner
   )) as NativeCollateralFactory;
-  contracts.flrCollateral = await flrCollateralFactory.deploy(
+  contracts.nativeCollateral = await nativeCollateralFactory.deploy(
     contracts.registry.address,
-    web3.utils.keccak256("FLR"),
+    web3.utils.keccak256(NETWORK_NATIVE_TOKEN),
     contracts.vault.address
   );
-  await contracts.flrCollateral.deployed();
+  await contracts.nativeCollateral.deployed();
 
   const fxrpCollateralFactory = (await ethers.getContractFactory(
     "ERC20Collateral",
@@ -279,7 +291,7 @@ const deployCollateral = async () => {
 
   await contracts.registry.setupContractAddress(
     bytes32("collateral"),
-    contracts.flrCollateral.address
+    contracts.nativeCollateral.address
   );
   await contracts.registry.setupContractAddress(
     bytes32("collateral"),
