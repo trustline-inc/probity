@@ -65,7 +65,7 @@ describe("Probity Happy flow", function () {
 
     // Set contracts
     vault = contracts.vault;
-    flrColl = contracts.flrCollateral;
+    flrColl = contracts.nativeCollateral;
     fxrpColl = contracts.fxrpCollateral;
     aurei = contracts.aurei;
     teller = contracts.teller;
@@ -85,7 +85,7 @@ describe("Probity Happy flow", function () {
   it("test deposit and withdrawal of collateral", async () => {
     const WITHDRAW_AMOUNT = COLL_AMOUNT.div(3);
 
-    // FLR COLLATERAL
+    // Deposit FLR collateral
     let flrBalBefore = await ethers.provider.getBalance(owner.address);
     let vaultFlrBalBefore = await vault.vaults(flrCollId, owner.address);
 
@@ -108,7 +108,7 @@ describe("Probity Happy flow", function () {
       WITHDRAW_AMOUNT
     );
 
-    // FXRP COLLATERAL
+    // Deposit FXRP collateral
     await erc20.mint(owner.address, COLL_AMOUNT);
     await erc20.approve(fxrpColl.address, COLL_AMOUNT);
 
