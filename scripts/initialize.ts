@@ -20,8 +20,7 @@ ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
 const initialize = async () => {
   // Wallets
-  const signers: SignerWithAddress[] = await ethers.getSigners();
-  console.log(signers);
+  const [owner]: SignerWithAddress[] = await ethers.getSigners();
 
   // ABIs
   const NativeCollateralABI = await artifacts.readArtifact("NativeCollateral");
@@ -31,41 +30,36 @@ const initialize = async () => {
 
   // Contracts
   const flrColl = new ethers.Contract(
-    process.env.FLARE_COLLATERAL,
+    process.env.FLR_COLLATERAL,
     NativeCollateralABI.abi,
-    signers[0]
+    owner
   );
   const priceFeed = new ethers.Contract(
     process.env.PRICE_FEED,
     PriceFeedABI.abi,
-    signers[0]
+    owner
   );
-  const teller = new ethers.Contract(
-    process.env.TELLER,
-    TellerABI.abi,
-    signers[0]
-  );
-  const vault = new ethers.Contract(
-    process.env.VAULT,
-    VaultABI.abi,
-    signers[0]
-  );
-
-  // // FLR Collateral
-  await flrColl
-    .connect(signers[0])
-    .deposit({ value: PRECISION_COLL.mul(1000) });
+  const teller = new ethers.Contract(process.env.TELLER, TellerABI.abi, owner);
+  const vault = new ethers.Contract(process.env.VAULT, VaultABI.abi, owner);
 
   // // Initialize FLR collateral type
-  await vault.initCollType(COLLATERAL_ID["FLR"]);
-  await vault.updateCeiling(COLLATERAL_ID["FLR"], PRECISION_AUR.mul(10000000));
-  await teller.initCollType(COLLATERAL_ID["FLR"]);
-  await priceFeed.init(
-    COLLATERAL_ID["FLR"],
-    PRECISION_COLL.mul(150),
-    process.env.FTSO_ADDRESS
-  );
-  await priceFeed.updatePrice(COLLATERAL_ID["FLR"]);
+  console.log("Initializing FLR collateral type");
+  await vault.connect(owner).initCollType(COLLATERAL_ID["FLR"]);
+  console.log("Connected to vault, FLR initialized.");
+  await vault
+    .connect(owner)
+    .updateCeiling(COLLATERAL_ID["FLR"], PRECISION_AUR.mul(10000000));
+  console.log("Connected to vault, ceiling updated.");
+  await teller.connect(owner).initCollType(COLLATERAL_ID["FLR"]);
+  console.log("Connected to teller, FLR initialized.");
+  await priceFeed
+    .connect(owner)
+    .init(COLLATERAL_ID["FLR"], PRECISION_COLL.mul(150), process.env.FTSO);
+  console.log("Connected to price feed, FLR price initialized.");
+  await priceFeed
+    .connect(owner)
+    .updatePrice(COLLATERAL_ID["FLR"], { gasLimit: 300000 });
+  console.log("Connected to price feed, FLR price updated.");
 };
 
 initialize();

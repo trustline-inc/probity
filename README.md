@@ -7,19 +7,21 @@ You can view the contract code in the [`contracts`](./contracts) folder. We will
 ## Table of Contents
 
 <!--ts-->
-   * [Installation](#installation)
-   * [Usage](#usage)
-   * [Development](#development)
-      * [Installation](#installation-1)
-      * [IDE](#ide)
-      * [Testing](#testing)
-      * [Publishing](#publishing)
-   * [Deployment](#deployment)
-      * [Local](#local-deployment)
-      * [Remote](#remote-deployment)
-   * [Contract Addresses](#contract-addresses)
-     * [Coston](#coston-network)
-     * [Songbird](#songbird-network)
+
+- [Installation](#installation)
+- [Usage](#usage)
+- [Development](#development)
+  - [Installation](#installation-1)
+  - [IDE](#ide)
+  - [Testing](#testing)
+  - [Publishing](#publishing)
+- [Deployment](#deployment)
+  - [Local](#local-deployment)
+  - [Remote](#remote-deployment)
+- [Initialization](#initialization)
+- [Contract Addresses](#contract-addresses)
+_ [Coston](#coston-network)
+_ [Songbird](#songbird-network)
 <!--te-->
 
 ## Installation
@@ -165,6 +167,16 @@ Compilation finished successfully
 Creating Typechain artifacts in directory typechain for target ethers-v5
 Successfully generated Typechain artifacts!
 Contracts deployed!
+```
+
+## Initialization
+
+You can use the `initialize` script to configure a fresh deployment of the Probity system.
+
+The script currently only initializes a `FLR` collateral type.
+
+```
+FLARE_DIR=~/Desktop/flare yarn run initialize
 ```
 
 ## Contract Addresses
