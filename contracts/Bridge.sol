@@ -61,7 +61,7 @@ contract Bridge {
     FRAUDULENT
   }
 
-  struct PreRedemption {
+  struct Reservation {
     address redeemer;
     uint256 createdAt;
   }
@@ -86,7 +86,7 @@ contract Bridge {
   IStateConnector stateConnector;
 
   // redemption hash keccak256(source, issuer, destinationTag)
-  mapping(bytes32 => PreRedemption) public reservations;
+  mapping(bytes32 => Reservation) public reservations;
   // redemption hash (source, issuer, destinationTag)
   mapping(bytes32 => Redemption) public redemptions;
   // issuer address to the amount Issuer struct
