@@ -119,7 +119,7 @@ describe("Bridge", function () {
       let status = await bridge.getIssuerStatus(issuer);
       expect(status).to.equal(statuses.COMPLETED);
 
-      await bridge.redemptionAttempt(source, issuer, 0);
+      await bridge.createRedemptionReservation(source, issuer, 0);
       await bridge.completeRedemption(
         web3.utils.keccak256("second tx hash"),
         source,
@@ -487,7 +487,7 @@ describe("Bridge", function () {
     });
   });
 
-  describe("redemptionAttempt", async function () {
+  describe("redemptionReservation", async function () {
     beforeEach(async function () {
       await bridge.createIssuer(issuer, AMOUNT_TO_ISSUE);
       await bridge.completeIssuance(
@@ -500,31 +500,31 @@ describe("Bridge", function () {
       );
     });
 
-    it("fails if the redemptionAttempt has already be placing within the last hour", async () => {
-      await bridge.redemptionAttempt(source, issuer, 0);
+    it("fails if the redemptionReservation has already be placing within the last hour", async () => {
+      await bridge.createRedemptionReservation(source, issuer, 0);
       await assertRevert(
-        bridge.redemptionAttempt(source, issuer, 0),
+        bridge.createRedemptionReservation(source, issuer, 0),
         errorTypes.TWO_HOURS_NOT_PASSED
       );
       await ethers.provider.send("evm_increaseTime", [7201]);
       await ethers.provider.send("evm_mine", []);
 
-      await bridge.redemptionAttempt(source, issuer, 0);
+      await bridge.createRedemptionReservation(source, issuer, 0);
     });
 
     it("make sure proper variables are updated", async () => {
-      const redemptionHash = await bridge.createRedemptionAttemptHash(
+      const redemptionHash = await bridge.createRedemptionReservationHash(
         source,
         issuer,
         0
       );
-      let issuerResult = await bridge.preRedemptions(redemptionHash);
+      let issuerResult = await bridge.reservations(redemptionHash);
       expect(issuerResult[0]).to.equal(ADDRESS_ZERO);
       expect(issuerResult[1]).to.equal(0);
 
-      await bridge.redemptionAttempt(source, issuer, 0);
+      await bridge.createRedemptionReservation(source, issuer, 0);
 
-      issuerResult = await bridge.preRedemptions(redemptionHash);
+      issuerResult = await bridge.reservations(redemptionHash);
       expect(issuerResult[0]).to.equal(owner.address);
       // we'll accept it, as long as it's no longer zero because we have time skips, it's impossible to pinpoint the variable
       expect(issuerResult[1].toNumber()).to.be.greaterThan(0);
@@ -543,7 +543,7 @@ describe("Bridge", function () {
         currencyHash
       );
 
-      await bridge.redemptionAttempt(source, issuer, 0);
+      await bridge.createRedemptionReservation(source, issuer, 0);
     });
 
     it("fail if destination address is zero address", async () => {

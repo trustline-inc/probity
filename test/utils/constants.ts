@@ -5,15 +5,16 @@ const errorTypes = {
   ONLY_ORIGINAL_SENDER: "Only the originating account can cancel this issuer.",
   NON_ZERO_AMOUNT: "Amount must be greater than zero.",
   AUR_NO_BALANCE: "ERC20: transfer amount exceeds balance",
-  TX_ID_ALREADY_PROVEN: "The provided transaction is already proved.",
-  TX_ID_ALREADY_REDEEMED: "This txHash has already been redeemed",
+  TX_ID_ALREADY_PROVEN: "The provided transaction has already been proved.",
+  TX_ID_ALREADY_REDEEMED:
+    "This transaction ID has already been used to redeem tokens.",
   TWO_HOURS_NOT_PASSED:
-    "The previous redemption attempt for this parameter was submitted less than 2 hours ago",
-  NON_ZERO_DESTINATION_ADDRESS: "Destination address can not be zero Address",
+    "The previous redemption reservation for these parameters was submitted less than 2 hours ago.",
+  NON_ZERO_DESTINATION_ADDRESS:
+    "Destination address cannot be the zero address.",
   ONLY_REDEEMER:
-    "Only the user that submitted the redemption attempt can submit redemption tx",
-  PAYMENT_NOT_PROVEN:
-    "This Transaction has not been proven in stateConnector contract",
+    "Only the reservation holder can submit a redemption transaction.",
+  PAYMENT_NOT_PROVEN: "The state connector did not prove this transaction.",
 };
 const ADDRESS_ZERO = "0x0000000000000000000000000000000000000000";
 const BYTES32_ZERO =

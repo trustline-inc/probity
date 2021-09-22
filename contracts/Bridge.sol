@@ -86,7 +86,7 @@ contract Bridge {
   IStateConnector stateConnector;
 
   // redemption hash keccak256(source, issuer, destinationTag)
-  mapping(bytes32 => PreRedemption) public preRedemptions;
+  mapping(bytes32 => PreRedemption) public reservations;
   // redemption hash (source, issuer, destinationTag)
   mapping(bytes32 => Redemption) public redemptions;
   // issuer address to the amount Issuer struct
@@ -186,16 +186,15 @@ contract Bridge {
   }
 
   /**
-   * @dev Every issuer address is only allowed to do One issuer, by proving the 2nd issuer from the account,
-   *      you can prove that the issuer account is no longer legit and can be consider fraudulent
-   *      the one who submit the proof will be given a reward from some of the AUR that has been locked in by the
-   *      issuer address
-   *
-   * @param txHash the payment tx ID from XRPL
-   * @param source address of the tx
+   * @notice Every issuer is only allowed one issuance. By proving a second issuance,
+   * you can prove that the issuer account is invalid. The fraudulent issuer is penalized
+   * and the prover earns the penalty as a reward.
+   * @dev Currently sends all of the tokens as reward
+   * @param txHash the issuance tx ID from the XRPL
+   * @param source the source address of the tx
    * @param issuer the issuer address of the tx
-   * @param destinationTag the issuer Tag of tx
-   * @param amount sent in tx
+   * @param destinationTag the destination tag of the tx
+   * @param amount the amount sent in the tx
    * @param currencyHash hash of the currency code
    **/
   function proveFraud(
@@ -208,7 +207,7 @@ contract Bridge {
   ) external {
     require(
       issuers[issuer].XrplTxId != txHash,
-      "The provided transaction is already proved."
+      "The provided transaction has already been proved."
     );
     verifyPaymentFinality(
       txHash,
@@ -222,40 +221,38 @@ contract Bridge {
     issuers[issuer].status = Status.FRAUDULENT;
     uint256 amountToSend = issuers[issuer].amount;
     issuers[issuer].amount = 0;
-    // send all of the AUR to the sender of this call as reward
     aurei.transfer(msg.sender, amountToSend);
   }
 
   /**
-   * @dev Pre-register a redemption attempt, this will allow the msg.sender to be the only that can prove tx to redeem
-   *      and specify the issuer to where the AUR will be released
-   *
+   * @notice Creates a reservation for msg.sender to prove the XRPL redemption transaction.
+   * @dev The redemption reservation window is 2 hours long
    * @param source the source address in the tx
    * @param issuer the issuer address of the tx
-   * @param destinationTag the issuer Tag of tx
+   * @param destinationTag the destination tag of the tx
    **/
-  function redemptionAttempt(
+  function createRedemptionReservation(
     string calldata source,
     string calldata issuer,
     uint64 destinationTag
   ) external {
-    bytes32 redemptionHash = createRedemptionAttemptHash(
+    bytes32 redemptionHash = createRedemptionReservationHash(
       source,
       issuer,
       destinationTag
     );
 
-    // each preRedemptions entry last for 2 hours, within 2 hours, the redeemer don't need to redeem again
+    // Can't make another reservation while the reservation is already activated.
     require(
-      block.timestamp >= preRedemptions[redemptionHash].createdAt + 7200,
-      "The previous redemption attempt for this parameter was submitted less than 2 hours ago"
+      block.timestamp >= reservations[redemptionHash].createdAt + 7200,
+      "The previous redemption reservation for these parameters was submitted less than 2 hours ago."
     );
 
-    preRedemptions[redemptionHash].redeemer = msg.sender;
-    preRedemptions[redemptionHash].createdAt = block.timestamp;
+    reservations[redemptionHash].redeemer = msg.sender;
+    reservations[redemptionHash].createdAt = block.timestamp;
   }
 
-  function createRedemptionAttemptHash(
+  function createRedemptionReservationHash(
     string calldata source,
     string calldata issuer,
     uint64 destinationTag
@@ -264,10 +261,8 @@ contract Bridge {
   }
 
   /**
-   * @dev Prove that the AUR has been sent back to issuer on XRPL and the contract will release the AUR in the same
-   *      amount sent.
-   *
-   * @param txHash the payment tx ID from XRPL
+   * @notice Proves that trustless issued currency was redeemed on the XRPL and sends an equivalent amount to msg.sender.
+   * @param txID the payment tx ID from the XRPL
    * @param source the source address in the tx
    * @param issuer the issuer address of the tx
    * @param destinationTag the issuer Tag of tx
@@ -275,7 +270,7 @@ contract Bridge {
    * @param currencyHash hash of the currency code
    **/
   function completeRedemption(
-    bytes32 txHash,
+    bytes32 txID,
     string calldata source,
     string calldata issuer,
     uint64 destinationTag,
@@ -285,24 +280,24 @@ contract Bridge {
   ) external {
     require(
       destAddress != address(0),
-      "Destination address can not be zero Address"
+      "Destination address cannot be the zero address."
     );
     require(
-      redemptions[txHash].AURreleaseAddress == address(0),
-      "This txHash has already been redeemed"
+      redemptions[txID].AURreleaseAddress == address(0),
+      "This transaction ID has already been used to redeem tokens."
     );
-    bytes32 redemptionHash = createRedemptionAttemptHash(
+    bytes32 redemptionHash = createRedemptionReservationHash(
       source,
       issuer,
       destinationTag
     );
     require(
-      preRedemptions[redemptionHash].redeemer == msg.sender,
-      "Only the user that submitted the redemption attempt can submit redemption tx"
+      reservations[redemptionHash].redeemer == msg.sender,
+      "Only the reservation holder can submit a redemption transaction."
     );
 
     verifyPaymentFinality(
-      txHash,
+      txID,
       source,
       issuer,
       destinationTag,
@@ -311,7 +306,7 @@ contract Bridge {
     );
     issuers[issuer].amount = issuers[issuer].amount - amount;
     aurei.transfer(destAddress, amount);
-    redemptions[txHash] = Redemption(
+    redemptions[txID] = Redemption(
       source,
       issuer,
       destinationTag,
@@ -324,36 +319,30 @@ contract Bridge {
       issuers[issuer].status = Status.REDEEMED;
     }
 
-    emit RedemptionCompleted(txHash, amount);
+    emit RedemptionCompleted(txID, amount);
   }
 
   /**
-   * @dev The final step in issuer is to prove that Issuer can no longer issue anymore AUR, making it verified that
-   *      this particular issuer can no longer issue any more AUR thus can no longer gain the system.
-   *  NOTE: THIS FUNCTION CAN ONLY BE IMPLEMENTED AFTER FLARE TEAM IMPLEMENT THE FUNCTION THAT WILL HELP VERIFY
-   *        THAT AN ISSUER CAN NO LONGER ISSUE ANYMORE AUR
+   * TODO: The final step for trustless issued currency is proving that the issuing account is blackholed.
+   * Once this is proven, the issuing address can be verified.
+   *
+   * FLARE TEAM MUST IMPLEMENT STATE CONNECTOR FUNCTION TO VERIFY BLACKHOLED ISSUERS.
    **/
-  //  function proveIssuerRequiredSettings(
-  //  ) external {
-  //
-  //  }
+  function proveIssuingAccountSettingsCompliance() external {}
 
   /////////////////////////////////////////
   // Internal Functions
   /////////////////////////////////////////
 
   /**
-   * @dev Prove that the AUR issuer on XRPL has completed so that the issuer address can be marked as valid issuer
-   *
-   * @param txHash the payment tx ID from XRPL
-   * @param source address of the tx - @shine2lay to clarify
-   * @param issuer address of the issuer
-   * @param destinationTag the issuer Tag of tx
-   * @param amount sent in tx
+   * @dev Proves that the XRPL issuance is completed.
+   * @param txID the issuance transaction ID from the XRPL
+   * @param issuer the address of the issuing account
+   * @param amount the issuance amount
    * @param currencyHash hash of the currency code
    **/
   function verifyPaymentFinality(
-    bytes32 txHash,
+    bytes32 txID,
     string calldata source,
     string calldata issuer,
     uint64 destinationTag,
@@ -362,14 +351,11 @@ contract Bridge {
   ) internal {
     (, , bool isFinal) = stateConnector.getPaymentFinality(
       uint32(0),
-      txHash,
+      txID,
       keccak256(abi.encodePacked(issuer)),
       amount,
       currencyHash
     );
-    require(
-      isFinal,
-      "This Transaction has not been proven in stateConnector contract"
-    );
+    require(isFinal, "The state connector did not prove this transaction.");
   }
 }
