@@ -223,8 +223,8 @@ contract Vault is Stateful, Eventful {
     coll.normDebt = add(coll.normDebt, debtAmount);
     coll.normSupply = add(coll.normSupply, suppAmount);
 
-    int256 aurToRaise = mul(coll.debtAccu, debtAmount) +
-      mul(PRECISION_PRICE, suppAmount);
+    int256 aurToRaise =
+      mul(coll.debtAccu, debtAmount) + mul(PRECISION_PRICE, suppAmount);
 
     vaults[collId][auctioneer].freeColl = sub(
       vaults[collId][auctioneer].freeColl,
@@ -245,7 +245,7 @@ contract Vault is Stateful, Eventful {
   }
 
   // Admin related functions
-  function initCollType(bytes32 collId) external {
+  function initCollType(bytes32 collId) external onlyBy("gov") {
     collTypes[collId].debtAccu = PRECISION_PRICE;
     collTypes[collId].suppAccu = PRECISION_PRICE;
   }
