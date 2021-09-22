@@ -55,9 +55,10 @@ const SUPPLY_AMOUNT = PRECISION_COLL.mul(200);
 const LOAN_COLL_AMOUNT = PRECISION_COLL.mul(200);
 const LOAN_AMOUNT = PRECISION_COLL.mul(100);
 
-let flrCollId = web3.utils.keccak256("FLR Collateral");
-let fxrpCollId = web3.utils.keccak256("FXRP Collateral");
+const flrCollId = web3.utils.keccak256("FLR");
+const fxrpCollId = web3.utils.keccak256("FXRP");
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
+
 describe("Probity Happy flow", function () {
   beforeEach(async function () {
     const { contracts, signers } = await deployProbity();
@@ -79,8 +80,6 @@ describe("Probity Happy flow", function () {
 
     owner = signers.owner;
     user = signers.alice;
-
-    flrCollId = web3.utils.keccak256("FLR Collateral");
   });
 
   it("test deposit and withdrawal of collateral", async () => {
