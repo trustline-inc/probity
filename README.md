@@ -144,7 +144,7 @@ Deploy the smart contract in the local network using `npm run deploy:local`.
 For example:
 
 ```
-FLARE_DIR=/Users/satoshi/Desktop/flare npm run deploy:local
+FLARE_DIR=~/Desktop/flare npm run deploy:local
 ```
 
 ### Remote Deployment
