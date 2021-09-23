@@ -7,7 +7,6 @@ You can view the contract code in the [`contracts`](./contracts) folder. We will
 ## Table of Contents
 
 <!--ts-->
-
 - [Installation](#installation)
 - [Usage](#usage)
 - [Development](#development)
@@ -20,8 +19,8 @@ You can view the contract code in the [`contracts`](./contracts) folder. We will
   - [Remote](#remote-deployment)
 - [Initialization](#initialization)
 - [Contract Addresses](#contract-addresses)
-_ [Coston](#coston-network)
-_ [Songbird](#songbird-network)
+  - [Coston](#coston-network)
+  - [Songbird](#songbird-network)
 <!--te-->
 
 ## Installation
