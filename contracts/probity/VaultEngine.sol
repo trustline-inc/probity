@@ -420,7 +420,7 @@ contract VaultEngine is Stateful, Eventful {
       (vault.debt * collateralOptions[collId].interestIndex) +
         (vault.capital * PRECISION_PRICE) <=
         vault.lockedCollateral * collateralOptions[collId].price,
-      "VAULT: Not enough colla   teral"
+      "VAULT: Not enough collateral"
     );
   }
 
