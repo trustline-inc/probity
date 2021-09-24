@@ -11,7 +11,7 @@ interface VaultLike {
     uint256 amount
   ) external;
 
-  function reduceInterest(address user, uint256 amount) external;
+  function reduceYield(address user, uint256 amount) external;
 }
 
 interface TokenLike {
@@ -76,7 +76,7 @@ contract Treasury is Stateful {
   }
 
   function withdrawTcn(uint256 amount) external {
-    vault.reduceInterest(msg.sender, amount);
+    vault.reduceYield(msg.sender, amount);
     tcn.mint(msg.sender, amount);
     // TODO: #69 Emit event for TCN withdrawal
   }

@@ -6,7 +6,7 @@ import "@nomiclabs/hardhat-web3";
 import {
   Aurei,
   Erc20Collateral,
-  Vault,
+  VaultEngine,
   NativeCollateral,
   Teller,
   Treasury,
@@ -30,7 +30,7 @@ let user: SignerWithAddress;
 
 // Contracts
 let aurei: Aurei;
-let vault: Vault;
+let vault: VaultEngine;
 let registry: Registry;
 let flrColl: NativeCollateral;
 let fxrpColl: Erc20Collateral;
@@ -96,6 +96,7 @@ describe("Probity Happy flow", function () {
     expect(flrBalBefore.sub(flrBalAfter) >= COLL_AMOUNT).to.equal(true);
     expect(vaultFlrBalAfter[0].sub(vaultFlrBalBefore[0])).to.equal(COLL_AMOUNT);
 
+    // Withdraw FLR collateral
     flrBalBefore = await ethers.provider.getBalance(owner.address);
     vaultFlrBalBefore = await vault.vaults(flrCollId, owner.address);
 
@@ -125,6 +126,7 @@ describe("Probity Happy flow", function () {
       COLL_AMOUNT
     );
 
+    // Withdraw FXRP collateral
     fxrpBalBefore = await erc20.balanceOf(owner.address);
     vaultFxrpBalBefore = await vault.vaults(fxrpCollId, owner.address);
 
@@ -140,8 +142,10 @@ describe("Probity Happy flow", function () {
   });
 
   it("test modifySupply, modifyDebt and AUR withdrawal", async () => {
+    // Deposit FLR collateral
     await flrColl.deposit({ value: COLL_AMOUNT });
 
+    // Initialize the FLR collateral type
     await vault.initCollType(flrCollId);
     await vault.updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
     await teller.initCollType(flrCollId);
@@ -150,6 +154,7 @@ describe("Probity Happy flow", function () {
 
     let userVaultBefore = await vault.vaults(flrCollId, owner.address);
 
+    // Create Aurei
     await vault.modifySupply(
       flrCollId,
       treasury.address,
@@ -164,8 +169,9 @@ describe("Probity Happy flow", function () {
     expect(userVaultAfter[3].sub(userVaultBefore[3])).to.equal(SUPPLY_AMOUNT);
 
     userVaultBefore = await vault.vaults(flrCollId, owner.address);
-    let aurBefore = await vault.aur(owner.address);
+    let aurBefore = await vault.AUR(owner.address);
 
+    // Take out a loan
     await vault.modifyDebt(
       flrCollId,
       treasury.address,
@@ -173,7 +179,7 @@ describe("Probity Happy flow", function () {
       LOAN_AMOUNT
     );
 
-    let aurAfter = await vault.aur(owner.address);
+    let aurAfter = await vault.AUR(owner.address);
     expect(aurAfter.sub(aurBefore)).to.equal(LOAN_AMOUNT.mul(PRECISION_PRICE));
     userVaultAfter = await vault.vaults(flrCollId, owner.address);
     expect(userVaultBefore[0].sub(userVaultAfter[0])).to.equal(
@@ -196,7 +202,7 @@ describe("Probity Happy flow", function () {
 
     await priceFeed.updatePrice(flrCollId);
 
-    let collTypeAfter = await vault.collTypes(flrCollId);
+    let collTypeAfter = await vault.collateralOptions(flrCollId);
     let expectedPrice = PRECISION_PRICE.div(3).mul(2);
     // as long as the expectedPrice is within a buffer, call it success
     expect(collTypeAfter[2].sub(expectedPrice).toNumber() <= 10).to.equal(true);
@@ -230,13 +236,11 @@ describe("Probity Happy flow", function () {
       PRECISION_PRICE.mul(15).div(10)
     );
     await priceFeed.updatePrice(flrCollId);
-
-    let unBackedAurBefore = await vault.unBackedAUR(reserve.address);
+    let unBackedAurBefore = await vault.impairedAurei(reserve.address);
     let userVaultBefore = await vault.vaults(flrCollId, owner.address);
     await liquidator.liquidateVault(flrCollId, owner.address);
-    let unBackedAurAfter = await vault.unBackedAUR(reserve.address);
+    let unBackedAurAfter = await vault.impairedAurei(reserve.address);
     let userVaultAfter = await vault.vaults(flrCollId, owner.address);
-
     expect(unBackedAurAfter.sub(unBackedAurBefore)).to.equal(
       SUPPLY_AMOUNT.add(LOAN_AMOUNT).mul(PRECISION_PRICE)
     );
@@ -303,14 +307,14 @@ describe("Probity Happy flow", function () {
     expect(bidAfter[1]).to.equal(PRECISION_COLL.mul("100"));
 
     let userVaultBefore = await vault.vaults(flrCollId, user.address);
-    let userAurBefore = await vault.aur(user.address);
+    let userAurBefore = await vault.AUR(user.address);
     await auctioneerUser.buyItNow(
       0,
       PRECISION_PRICE.mul(12).div(10),
       PRECISION_AUR.mul("200")
     );
     let userVaultAfter = await vault.vaults(flrCollId, user.address);
-    let userAurAfter = await vault.aur(user.address);
+    let userAurAfter = await vault.AUR(user.address);
     let expectedLot = PRECISION_AUR.mul("200").div(
       PRECISION_PRICE.mul(12).div(10)
     );

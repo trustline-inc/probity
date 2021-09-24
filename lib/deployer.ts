@@ -9,7 +9,7 @@ import {
   TcnTokenFactory,
   BridgeFactory,
   RegistryFactory,
-  VaultFactory,
+  VaultEngineFactory,
   StateConnectorFactory,
   NativeCollateralFactory,
   Erc20CollateralFactory,
@@ -33,7 +33,7 @@ import {
   Ftso,
   Registry,
   TcnToken,
-  Vault,
+  VaultEngine,
   StateConnector,
   NativeCollateral,
   Erc20Collateral,
@@ -70,7 +70,7 @@ interface Contracts {
   ftso: Ftso;
   registry: Registry;
   tcnToken: TcnToken;
-  vault: Vault;
+  vault: VaultEngine;
   stateConnector: StateConnector;
   nativeCollateral: NativeCollateral;
   fxrpCollateral: Erc20Collateral;
@@ -116,7 +116,7 @@ enum Contract {
   TcnToken,
   Teller,
   Treasury,
-  Vault,
+  VaultEngine,
 }
 
 interface Signers {
@@ -243,14 +243,14 @@ const deployApr = async () => {
   return contracts;
 };
 
-const deployVault = async () => {
+const deployVaultEngine = async () => {
   // Set signers
   const signers = await getSigners();
 
   const vaultFactory = (await ethers.getContractFactory(
-    "Vault",
+    "VaultEngine",
     signers.owner
-  )) as VaultFactory;
+  )) as VaultEngineFactory;
   contracts.vault = await vaultFactory.deploy(contracts.registry.address);
   await contracts.vault.deployed();
 
@@ -522,7 +522,7 @@ const deployProbity = async () => {
   await deployAUR();
   await deployTCN();
   await deployApr();
-  await deployVault();
+  await deployVaultEngine();
   await deployERC20();
   await deployCollateral();
   await deployFtso();
