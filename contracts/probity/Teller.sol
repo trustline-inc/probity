@@ -7,7 +7,7 @@ import "../dependencies/DSMath.sol";
 import "../dependencies/Base.sol";
 
 interface VaultLike {
-  function collTypes(bytes32)
+  function collateralOptions(bytes32)
     external
     returns (uint256 debtAccumulator, uint256 suppAccumulator);
 
@@ -43,7 +43,7 @@ contract Teller is Stateful, DSMath, Base {
   // Data Storage
   /////////////////////////////////////////
 
-  mapping(bytes32 => Collateral) collTypes;
+  mapping(bytes32 => Collateral) collateralOptions;
 
   uint256 public APR; // Annualized percentage rate
   uint256 public MPR; // Momentized percentage rate
@@ -73,7 +73,7 @@ contract Teller is Stateful, DSMath, Base {
   /////////////////////////////////////////
 
   function initCollType(bytes32 collId) external onlyBy("gov") {
-    collTypes[collId].lastUpdated = block.timestamp;
+    collateralOptions[collId].lastUpdated = block.timestamp;
   }
 
   /**
@@ -81,14 +81,13 @@ contract Teller is Stateful, DSMath, Base {
    */
   function updateAccumulator(bytes32 collId) external {
     require(
-      collTypes[collId].lastUpdated != 0,
+      collateralOptions[collId].lastUpdated != 0,
       "TELLER: Collateral Type not initialized"
     );
 
-    Collateral memory coll = collTypes[collId];
-    (uint256 debtAccumulator, uint256 suppAccumulator) = vault.collTypes(
-      collId
-    );
+    Collateral memory coll = collateralOptions[collId];
+    (uint256 debtAccumulator, uint256 suppAccumulator) = vault
+      .collateralOptions(collId);
     uint256 totalDebt = vault.totalDebt();
     uint256 totalSupply = vault.totalSupply();
 
@@ -134,6 +133,6 @@ contract Teller is Stateful, DSMath, Base {
     coll.lastUpdated = block.timestamp;
 
     vault.updateAccumulators(collId, debtAccumulator, suppAccumulator);
-    collTypes[collId] = coll;
+    collateralOptions[collId] = coll;
   }
 }
