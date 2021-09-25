@@ -10,9 +10,9 @@ import "../dependencies/Eventful.sol";
 // if there are no more reserve to pay off the outstanding bad debt, the reserve will sell IOUs in order to cover it
 // people with IOU can redeem it after the reserve replenishes
 interface VaultLike {
-  function aur(address user) external returns (uint256 balance);
+  function AUR(address user) external returns (uint256 balance);
 
-  function unBackedAUR(address user) external returns (uint256 balance);
+  function unbackedAurei(address user) external returns (uint256 balance);
 
   function settle(uint256 balance) external;
 
@@ -101,11 +101,11 @@ contract ReservePool is Stateful, Eventful {
 
   function settle(uint256 amountToSettle) external {
     require(
-      vault.unBackedAUR(address(this)) <= amountToSettle,
+      vault.unbackedAurei(address(this)) <= amountToSettle,
       "Settlement amount is more than the debt"
     );
     require(
-      vault.aur(address(this)) >= amountToSettle,
+      vault.AUR(address(this)) >= amountToSettle,
       "Not enough balance to settle"
     );
     vault.settle(amountToSettle);
@@ -113,10 +113,10 @@ contract ReservePool is Stateful, Eventful {
 
   function startIOUSale() external {
     require(
-      vault.unBackedAUR(address(this)) - debtOnAuction > debtThreshold,
+      vault.unbackedAurei(address(this)) - debtOnAuction > debtThreshold,
       "Debt Threshold is not yet crossed"
     );
-    require(vault.aur(address(this)) == 0, "AUR balance is still positive");
+    require(vault.AUR(address(this)) == 0, "AUR balance is still positive");
     require(sale.active == false, "the current sale is not over yet");
     sale.active = true;
     sale.startTime = block.timestamp;
@@ -152,7 +152,7 @@ contract ReservePool is Stateful, Eventful {
 
   function redeemIOU(uint256 amount) external {
     require(
-      vault.aur(address(this)) >= amount,
+      vault.AUR(address(this)) >= amount,
       "The reserve pool doesn't have enough AUR"
     );
     require(
