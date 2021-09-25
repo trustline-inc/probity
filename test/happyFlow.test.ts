@@ -236,10 +236,10 @@ describe("Probity Happy flow", function () {
       PRECISION_PRICE.mul(15).div(10)
     );
     await priceFeed.updatePrice(flrCollId);
-    let unBackedAurBefore = await vault.impairedAurei(reserve.address);
+    let unBackedAurBefore = await vault.unbackedAurei(reserve.address);
     let userVaultBefore = await vault.vaults(flrCollId, owner.address);
     await liquidator.liquidateVault(flrCollId, owner.address);
-    let unBackedAurAfter = await vault.impairedAurei(reserve.address);
+    let unBackedAurAfter = await vault.unbackedAurei(reserve.address);
     let userVaultAfter = await vault.vaults(flrCollId, owner.address);
     expect(unBackedAurAfter.sub(unBackedAurBefore)).to.equal(
       SUPPLY_AMOUNT.add(LOAN_AMOUNT).mul(PRECISION_PRICE)

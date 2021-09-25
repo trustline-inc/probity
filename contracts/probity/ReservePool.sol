@@ -12,7 +12,7 @@ import "../dependencies/Eventful.sol";
 interface VaultLike {
   function AUR(address user) external returns (uint256 balance);
 
-  function impairedAurei(address user) external returns (uint256 balance);
+  function unbackedAurei(address user) external returns (uint256 balance);
 
   function settle(uint256 balance) external;
 
@@ -101,7 +101,7 @@ contract ReservePool is Stateful, Eventful {
 
   function settle(uint256 amountToSettle) external {
     require(
-      vault.impairedAurei(address(this)) <= amountToSettle,
+      vault.unbackedAurei(address(this)) <= amountToSettle,
       "Settlement amount is more than the debt"
     );
     require(
@@ -113,7 +113,7 @@ contract ReservePool is Stateful, Eventful {
 
   function startIOUSale() external {
     require(
-      vault.impairedAurei(address(this)) - debtOnAuction > debtThreshold,
+      vault.unbackedAurei(address(this)) - debtOnAuction > debtThreshold,
       "Debt Threshold is not yet crossed"
     );
     require(vault.AUR(address(this)) == 0, "AUR balance is still positive");

@@ -48,13 +48,13 @@ contract VaultEngine is Stateful, Eventful {
 
   mapping(address => uint256) public AUR;
   mapping(address => uint256) public TCN;
-  mapping(address => uint256) public impairedAurei;
+  mapping(address => uint256) public unbackedAurei;
   mapping(bytes32 => Collateral) public collateralOptions;
   mapping(bytes32 => mapping(address => Vault)) public vaults;
 
   uint256 public totalDebt;
   uint256 public totalCapital;
-  uint256 public totalImpairedAurei;
+  uint256 public totalunbackedAurei;
 
   uint256 constant PRECISION_PRICE = 10**27;
 
@@ -293,8 +293,8 @@ contract VaultEngine is Stateful, Eventful {
       vaults[collId][auctioneer].freeCollateral,
       collateralAmount
     );
-    impairedAurei[reservePool] = sub(impairedAurei[reservePool], aurToRaise);
-    totalImpairedAurei = sub(totalImpairedAurei, aurToRaise);
+    unbackedAurei[reservePool] = sub(unbackedAurei[reservePool], aurToRaise);
+    totalunbackedAurei = sub(totalunbackedAurei, aurToRaise);
 
     emit Log("vault", "liquidateVault", msg.sender);
   }
@@ -302,11 +302,11 @@ contract VaultEngine is Stateful, Eventful {
   /**
    * @notice Used for settlement by the reserve pool
    * @param amount The amount to settle
-   * TODO: Do we also need to add a way to increase totalImpairedAurei?
+   * TODO: Do we also need to add a way to increase totalunbackedAurei?
    */
   function settle(uint256 amount) external onlyByRegistered {
     AUR[msg.sender] = AUR[msg.sender] - amount;
-    impairedAurei[msg.sender] = impairedAurei[msg.sender] - amount;
+    unbackedAurei[msg.sender] = unbackedAurei[msg.sender] - amount;
     emit Log("vault", "settle", msg.sender);
   }
 
