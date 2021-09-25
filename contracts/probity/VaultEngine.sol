@@ -54,7 +54,7 @@ contract VaultEngine is Stateful, Eventful {
 
   uint256 public totalDebt;
   uint256 public totalCapital;
-  uint256 public totalunbackedAurei;
+  uint256 public totalUnbackedAurei;
 
   uint256 constant PRECISION_PRICE = 10**27;
 
@@ -294,7 +294,7 @@ contract VaultEngine is Stateful, Eventful {
       collateralAmount
     );
     unbackedAurei[reservePool] = sub(unbackedAurei[reservePool], aurToRaise);
-    totalunbackedAurei = sub(totalunbackedAurei, aurToRaise);
+    totalUnbackedAurei = sub(totalUnbackedAurei, aurToRaise);
 
     emit Log("vault", "liquidateVault", msg.sender);
   }
@@ -302,7 +302,7 @@ contract VaultEngine is Stateful, Eventful {
   /**
    * @notice Used for settlement by the reserve pool
    * @param amount The amount to settle
-   * TODO: Do we also need to add a way to increase totalunbackedAurei?
+   * TODO: Do we also need to add a way to increase totalUnbackedAurei?
    */
   function settle(uint256 amount) external onlyByRegistered {
     AUR[msg.sender] = AUR[msg.sender] - amount;
