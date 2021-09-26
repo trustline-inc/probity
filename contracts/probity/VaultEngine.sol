@@ -25,7 +25,7 @@ contract VaultEngine is Stateful, Eventful {
   // Vault data structure
   struct Vault {
     uint256 freeCollateral; // Collateral that is currently free
-    uint256 lockedCollateral; // Collateral that is being utilized
+    uint256 usedCollateral; // Collateral that is being utilized
     uint256 debt; // Vault's debt balance
     uint256 capital; // Vault's capital balance
     uint256 lastYieldIndex; // Most recent value of the capital rate accumulator
@@ -175,7 +175,7 @@ contract VaultEngine is Stateful, Eventful {
     collectInterest(collId);
     Vault storage vault = vaults[collId][msg.sender];
     vault.freeCollateral = sub(vault.freeCollateral, collAmount);
-    vault.lockedCollateral = add(vault.lockedCollateral, collAmount);
+    vault.usedCollateral = add(vault.usedCollateral, collAmount);
     vault.capital = add(vault.capital, capitalAmount);
 
     collateralTypes[collId].normCapital = add(
@@ -224,7 +224,7 @@ contract VaultEngine is Stateful, Eventful {
     );
     Vault memory vault = vaults[collId][msg.sender];
     vault.freeCollateral = sub(vault.freeCollateral, collAmount);
-    vault.lockedCollateral = add(vault.lockedCollateral, collAmount);
+    vault.usedCollateral = add(vault.usedCollateral, collAmount);
     vault.debt = add(vault.debt, debtAmount);
 
     collateralTypes[collId].normDebt = add(
@@ -278,7 +278,7 @@ contract VaultEngine is Stateful, Eventful {
     Vault storage vault = vaults[collId][user];
     Collateral storage coll = collateralTypes[collId];
 
-    vault.lockedCollateral = add(vault.lockedCollateral, collateralAmount);
+    vault.usedCollateral = add(vault.usedCollateral, collateralAmount);
     vault.debt = add(vault.debt, debtAmount);
     vault.capital = add(vault.capital, capitalAmount);
     coll.normDebt = add(coll.normDebt, debtAmount);
@@ -416,7 +416,7 @@ contract VaultEngine is Stateful, Eventful {
     require(
       (vault.debt * collateralTypes[collId].interestIndex) +
         (vault.capital * PRECISION_PRICE) <=
-        vault.lockedCollateral * collateralTypes[collId].price,
+        vault.usedCollateral * collateralTypes[collId].price,
       "VAULT: Not enough collateral"
     );
   }
