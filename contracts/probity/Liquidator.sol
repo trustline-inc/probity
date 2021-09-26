@@ -15,7 +15,7 @@ interface VaultEngineLike {
       uint256 supplied
     );
 
-  function collateralOptions(bytes32 collId)
+  function collateralTypes(bytes32 collId)
     external
     returns (
       uint256 debtAccu,
@@ -71,7 +71,7 @@ contract Liquidator is Stateful, Eventful {
   ReservePoolLike reserve;
 
   uint256 constant PRECISION_PRICE = 10**27;
-  mapping(bytes32 => Collateral) collateralOptions;
+  mapping(bytes32 => Collateral) collateralTypes;
 
   /////////////////////////////////////////
   // Constructor
@@ -94,9 +94,9 @@ contract Liquidator is Stateful, Eventful {
     external
     onlyBy("gov")
   {
-    collateralOptions[collId].auctioneer = auctioneer;
-    collateralOptions[collId].debtPenaltyFee = 1.17E27;
-    collateralOptions[collId].suppPenaltyFee = 1.05E27;
+    collateralTypes[collId].auctioneer = auctioneer;
+    collateralTypes[collId].debtPenaltyFee = 1.17E27;
+    collateralTypes[collId].suppPenaltyFee = 1.05E27;
   }
 
   function updatePenalties(
@@ -108,19 +108,19 @@ contract Liquidator is Stateful, Eventful {
       "liquidator",
       collId,
       "debtPenaltyFee",
-      collateralOptions[collId].debtPenaltyFee,
+      collateralTypes[collId].debtPenaltyFee,
       debtPenalty
     );
     emit LogVarUpdate(
       "liquidator",
       collId,
       "suppPenaltyFee",
-      collateralOptions[collId].suppPenaltyFee,
+      collateralTypes[collId].suppPenaltyFee,
       suppPenalty
     );
 
-    collateralOptions[collId].debtPenaltyFee = debtPenalty;
-    collateralOptions[collId].suppPenaltyFee = suppPenalty;
+    collateralTypes[collId].debtPenaltyFee = debtPenalty;
+    collateralTypes[collId].suppPenaltyFee = suppPenalty;
   }
 
   function updateAuctioneer(bytes32 collId, AuctioneerLike newAuctioneer)
@@ -131,16 +131,16 @@ contract Liquidator is Stateful, Eventful {
       "priceFeed",
       collId,
       "auctioneer",
-      address(collateralOptions[collId].auctioneer),
+      address(collateralTypes[collId].auctioneer),
       address(newAuctioneer)
     );
-    collateralOptions[collId].auctioneer = newAuctioneer;
+    collateralTypes[collId].auctioneer = newAuctioneer;
   }
 
   // @todo incentive for someone who calls liquidateVault?
   function liquidateVault(bytes32 collId, address user) external {
     // check if vault can be liquidated
-    (uint256 debtAccu, , uint256 price) = vaultEngine.collateralOptions(collId);
+    (uint256 debtAccu, , uint256 price) = vaultEngine.collateralTypes(collId);
     (, uint256 lockedColl, uint256 debt, uint256 supplied) = vaultEngine.vaults(
       collId,
       user
@@ -156,7 +156,7 @@ contract Liquidator is Stateful, Eventful {
     vaultEngine.liquidateVault(
       collId,
       user,
-      address(collateralOptions[collId].auctioneer),
+      address(collateralTypes[collId].auctioneer),
       address(reserve),
       -int256(lockedColl),
       -int256(debt),
@@ -164,12 +164,12 @@ contract Liquidator is Stateful, Eventful {
     );
 
     uint256 aurToRaise = debt *
-      collateralOptions[collId].debtPenaltyFee +
+      collateralTypes[collId].debtPenaltyFee +
       supplied *
-      collateralOptions[collId].suppPenaltyFee;
+      collateralTypes[collId].suppPenaltyFee;
 
     // start the auction
-    collateralOptions[collId].auctioneer.startAuction(
+    collateralTypes[collId].auctioneer.startAuction(
       collId,
       lockedColl,
       aurToRaise,

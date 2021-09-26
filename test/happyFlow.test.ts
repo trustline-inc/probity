@@ -205,7 +205,7 @@ describe("Probity Happy flow", function () {
 
     await priceFeed.updatePrice(flrCollId);
 
-    let collTypeAfter = await vaultEngine.collateralOptions(flrCollId);
+    let collTypeAfter = await vaultEngine.collateralTypes(flrCollId);
     let expectedPrice = PRECISION_PRICE.div(3).mul(2);
     // as long as the expectedPrice is within a buffer, call it success
     expect(collTypeAfter[2].sub(expectedPrice).toNumber() <= 10).to.equal(true);
@@ -234,7 +234,7 @@ describe("Probity Happy flow", function () {
       LOAN_AMOUNT
     );
 
-    await priceFeed.updateMinCollRatio(
+    await priceFeed.updateLiquidationRatio(
       flrCollId,
       PRECISION_PRICE.mul(15).div(10)
     );
@@ -275,7 +275,7 @@ describe("Probity Happy flow", function () {
       LOAN_AMOUNT
     );
 
-    await priceFeed.updateMinCollRatio(
+    await priceFeed.updateLiquidationRatio(
       flrCollId,
       PRECISION_PRICE.mul(15).div(10)
     );
@@ -351,7 +351,7 @@ describe("Probity Happy flow", function () {
       LOAN_AMOUNT
     );
 
-    await priceFeed.updateMinCollRatio(
+    await priceFeed.updateLiquidationRatio(
       flrCollId,
       PRECISION_PRICE.mul(15).div(10)
     );

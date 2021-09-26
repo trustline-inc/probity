@@ -49,7 +49,7 @@ contract VaultEngine is Stateful, Eventful {
   mapping(address => uint256) public AUR;
   mapping(address => uint256) public TCN;
   mapping(address => uint256) public unbackedAurei;
-  mapping(bytes32 => Collateral) public collateralOptions;
+  mapping(bytes32 => Collateral) public collateralTypes;
   mapping(bytes32 => mapping(address => Vault)) public vaults;
 
   uint256 public totalDebt;
@@ -146,7 +146,7 @@ contract VaultEngine is Stateful, Eventful {
    */
   function collectInterest(bytes32 collId) public {
     Vault memory vault = vaults[collId][msg.sender];
-    Collateral memory collateral = collateralOptions[collId];
+    Collateral memory collateral = collateralTypes[collId];
     TCN[msg.sender] +=
       vault.capital *
       (collateral.yieldIndex - vault.lastYieldIndex);
@@ -178,23 +178,20 @@ contract VaultEngine is Stateful, Eventful {
     vault.lockedCollateral = add(vault.lockedCollateral, collAmount);
     vault.capital = add(vault.capital, capitalAmount);
 
-    collateralOptions[collId].normCapital = add(
-      collateralOptions[collId].normCapital,
+    collateralTypes[collId].normCapital = add(
+      collateralTypes[collId].normCapital,
       capitalAmount
     );
 
-    int256 aurToModify = mul(
-      collateralOptions[collId].yieldIndex,
-      capitalAmount
-    );
+    int256 aurToModify = mul(collateralTypes[collId].yieldIndex, capitalAmount);
     totalCapital = add(totalCapital, aurToModify);
 
     require(
-      totalCapital <= collateralOptions[collId].ceiling,
+      totalCapital <= collateralTypes[collId].ceiling,
       "VAULT: Supply ceiling reached"
     );
     require(
-      vault.capital == 0 || vault.capital > collateralOptions[collId].floor,
+      vault.capital == 0 || vault.capital > collateralTypes[collId].floor,
       "VAULT: capital SMALLER THAN SMALLEST AMOUNT"
     );
     certify(collId, vault);
@@ -230,23 +227,23 @@ contract VaultEngine is Stateful, Eventful {
     vault.lockedCollateral = add(vault.lockedCollateral, collAmount);
     vault.debt = add(vault.debt, debtAmount);
 
-    collateralOptions[collId].normDebt = add(
-      collateralOptions[collId].normDebt,
+    collateralTypes[collId].normDebt = add(
+      collateralTypes[collId].normDebt,
       debtAmount
     );
 
     int256 debtToModify = mul(
-      collateralOptions[collId].interestIndex,
+      collateralTypes[collId].interestIndex,
       debtAmount
     );
     totalDebt = add(totalDebt, debtToModify);
 
     require(
-      totalDebt <= collateralOptions[collId].ceiling,
+      totalDebt <= collateralTypes[collId].ceiling,
       "VAULT: Debt ceiling reached"
     );
     require(
-      vault.debt == 0 || vault.debt > collateralOptions[collId].floor,
+      vault.debt == 0 || vault.debt > collateralTypes[collId].floor,
       "VAULT: Debt Smaller than floor"
     );
     certify(collId, vault);
@@ -279,7 +276,7 @@ contract VaultEngine is Stateful, Eventful {
     int256 capitalAmount
   ) external onlyBy("liquidator") {
     Vault storage vault = vaults[collId][user];
-    Collateral storage coll = collateralOptions[collId];
+    Collateral storage coll = collateralTypes[collId];
 
     vault.lockedCollateral = add(vault.lockedCollateral, collateralAmount);
     vault.debt = add(vault.debt, debtAmount);
@@ -317,8 +314,8 @@ contract VaultEngine is Stateful, Eventful {
    * @param collId The collateral type ID
    */
   function initCollType(bytes32 collId) external onlyBy("gov") {
-    collateralOptions[collId].interestIndex = PRECISION_PRICE;
-    collateralOptions[collId].yieldIndex = PRECISION_PRICE;
+    collateralTypes[collId].interestIndex = PRECISION_PRICE;
+    collateralTypes[collId].yieldIndex = PRECISION_PRICE;
   }
 
   /**
@@ -334,10 +331,10 @@ contract VaultEngine is Stateful, Eventful {
       "Vault",
       collId,
       "ceiling",
-      collateralOptions[collId].ceiling,
+      collateralTypes[collId].ceiling,
       ceiling
     );
-    collateralOptions[collId].ceiling = ceiling;
+    collateralTypes[collId].ceiling = ceiling;
   }
 
   /**
@@ -351,10 +348,10 @@ contract VaultEngine is Stateful, Eventful {
       "Vault",
       collId,
       "floor",
-      collateralOptions[collId].floor,
+      collateralTypes[collId].floor,
       floor
     );
-    collateralOptions[collId].floor = floor;
+    collateralTypes[collId].floor = floor;
   }
 
   /**
@@ -372,19 +369,19 @@ contract VaultEngine is Stateful, Eventful {
       "Vault",
       collId,
       "interestIndex",
-      collateralOptions[collId].interestIndex,
+      collateralTypes[collId].interestIndex,
       interestIndex
     );
     emit LogVarUpdate(
       "Vault",
       collId,
       "yieldIndex",
-      collateralOptions[collId].yieldIndex,
+      collateralTypes[collId].yieldIndex,
       yieldIndex
     );
 
-    collateralOptions[collId].interestIndex = interestIndex;
-    collateralOptions[collId].yieldIndex = yieldIndex;
+    collateralTypes[collId].interestIndex = interestIndex;
+    collateralTypes[collId].yieldIndex = yieldIndex;
   }
 
   /**
@@ -400,10 +397,10 @@ contract VaultEngine is Stateful, Eventful {
       "Vault",
       collId,
       "price",
-      collateralOptions[collId].price,
+      collateralTypes[collId].price,
       price
     );
-    collateralOptions[collId].price = price;
+    collateralTypes[collId].price = price;
   }
 
   /////////////////////////////////////////
@@ -417,9 +414,9 @@ contract VaultEngine is Stateful, Eventful {
    */
   function certify(bytes32 collId, Vault memory vault) internal view {
     require(
-      (vault.debt * collateralOptions[collId].interestIndex) +
+      (vault.debt * collateralTypes[collId].interestIndex) +
         (vault.capital * PRECISION_PRICE) <=
-        vault.lockedCollateral * collateralOptions[collId].price,
+        vault.lockedCollateral * collateralTypes[collId].price,
       "VAULT: Not enough collateral"
     );
   }

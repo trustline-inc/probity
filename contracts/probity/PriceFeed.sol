@@ -22,7 +22,7 @@ contract PriceFeed is Stateful, Eventful, DSMath {
   /////////////////////////////////////////
 
   struct Collateral {
-    uint256 minCollRatio;
+    uint256 liquidationRatio;
     ftsoLike ftso;
   }
 
@@ -30,7 +30,7 @@ contract PriceFeed is Stateful, Eventful, DSMath {
   // Data Variables
   /////////////////////////////////////////
   VaultEngineLike vaultEngine;
-  mapping(bytes32 => Collateral) collateralOptions;
+  mapping(bytes32 => Collateral) collateralTypes;
 
   /////////////////////////////////////////
   // Constructor
@@ -48,25 +48,25 @@ contract PriceFeed is Stateful, Eventful, DSMath {
 
   function init(
     bytes32 collId,
-    uint256 minCollRatio,
+    uint256 liquidationRatio,
     ftsoLike ftso
   ) external onlyBy("gov") {
-    collateralOptions[collId].minCollRatio = minCollRatio;
-    collateralOptions[collId].ftso = ftso;
+    collateralTypes[collId].liquidationRatio = liquidationRatio;
+    collateralTypes[collId].ftso = ftso;
   }
 
-  function updateMinCollRatio(bytes32 collId, uint256 newMinCollRatio)
+  function updateLiquidationRatio(bytes32 collId, uint256 liquidationRatio)
     external
     onlyBy("gov")
   {
     emit LogVarUpdate(
       "priceFeed",
       collId,
-      "minCollRatio",
-      collateralOptions[collId].minCollRatio,
-      newMinCollRatio
+      "liquidationRatio",
+      collateralTypes[collId].liquidationRatio,
+      liquidationRatio
     );
-    collateralOptions[collId].minCollRatio = newMinCollRatio;
+    collateralTypes[collId].liquidationRatio = liquidationRatio;
   }
 
   function updateFtso(bytes32 collId, ftsoLike newFtso) external onlyBy("gov") {
@@ -74,22 +74,22 @@ contract PriceFeed is Stateful, Eventful, DSMath {
       "priceFeed",
       collId,
       "ftso",
-      address(collateralOptions[collId].ftso),
+      address(collateralTypes[collId].ftso),
       address(newFtso)
     );
-    collateralOptions[collId].ftso = newFtso;
+    collateralTypes[collId].ftso = newFtso;
   }
 
   // @todo figure out how many places of precision the ftso provides and fix the math accordingly
   function updatePrice(bytes32 collId) external {
     require(
-      address(collateralOptions[collId].ftso) != address(0),
+      address(collateralTypes[collId].ftso) != address(0),
       "PriceFeed: Collateral Type is not"
     );
-    (uint256 price, ) = collateralOptions[collId].ftso.getCurrentPrice();
+    (uint256 price, ) = collateralTypes[collId].ftso.getCurrentPrice();
     uint256 adjustedPrice = rdiv(
       rdiv(price, 10**27),
-      collateralOptions[collId].minCollRatio
+      collateralTypes[collId].liquidationRatio
     );
 
     vaultEngine.updatePrice(collId, adjustedPrice);
