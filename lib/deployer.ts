@@ -53,6 +53,7 @@ import {
  * Set native token for the deployment's target network
  */
 const NETWORK_NATIVE_TOKENS = {
+  local: "FLR",
   hardhat: "FLR",
   coston: "CFLR",
   songbird: "SGB",
