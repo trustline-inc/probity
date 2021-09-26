@@ -6,7 +6,7 @@ import "../dependencies/Stateful.sol";
 import "../dependencies/DSMath.sol";
 import "../dependencies/Base.sol";
 
-interface VaultLike {
+interface VaultEngineLike {
   function collateralOptions(bytes32)
     external
     returns (uint256 debtAccumulator, uint256 suppAccumulator);
@@ -47,7 +47,7 @@ contract Teller is Stateful, DSMath, Base {
 
   uint256 public APR; // Annualized percentage rate
   uint256 public MPR; // Momentized percentage rate
-  VaultLike vault;
+  VaultEngineLike vaultEngine;
   IAPR public lowAprRate;
   IAPR public highAprRate;
 
@@ -57,11 +57,11 @@ contract Teller is Stateful, DSMath, Base {
 
   constructor(
     address registryAddress,
-    VaultLike vaultAddress,
+    VaultEngineLike vaultEngineAddress,
     IAPR lowAprAddress,
     IAPR highAprAddress
   ) Stateful(registryAddress) {
-    vault = vaultAddress;
+    vaultEngine = vaultEngineAddress;
     lowAprRate = lowAprAddress;
     highAprRate = highAprAddress;
     APR = RAY;
@@ -86,10 +86,10 @@ contract Teller is Stateful, DSMath, Base {
     );
 
     Collateral memory coll = collateralOptions[collId];
-    (uint256 debtAccumulator, uint256 suppAccumulator) = vault
+    (uint256 debtAccumulator, uint256 suppAccumulator) = vaultEngine
       .collateralOptions(collId);
-    uint256 totalDebt = vault.totalDebt();
-    uint256 totalSupply = vault.totalSupply();
+    uint256 totalDebt = vaultEngine.totalDebt();
+    uint256 totalSupply = vaultEngine.totalSupply();
 
     // Update debt accumulator
     if (coll.lastUtilization > 0)
@@ -132,7 +132,7 @@ contract Teller is Stateful, DSMath, Base {
     // Update time index
     coll.lastUpdated = block.timestamp;
 
-    vault.updateAccumulators(collId, debtAccumulator, suppAccumulator);
+    vaultEngine.updateAccumulators(collId, debtAccumulator, suppAccumulator);
     collateralOptions[collId] = coll;
   }
 }

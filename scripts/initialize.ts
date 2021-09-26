@@ -26,11 +26,11 @@ const initialize = async () => {
   const NativeCollateralABI = await artifacts.readArtifact("NativeCollateral");
   const PriceFeedABI = await artifacts.readArtifact("PriceFeed");
   const TellerABI = await artifacts.readArtifact("Teller");
-  const VaultABI = await artifacts.readArtifact("Vault");
+  const VaultEngineABI = await artifacts.readArtifact("VaultEngine");
 
   // Contracts
-  const flrColl = new ethers.Contract(
-    process.env.FLR_COLLATERAL,
+  const nativeCollateral = new ethers.Contract(
+    process.env.NATIVE_COLLATERAL,
     NativeCollateralABI.abi,
     owner
   );
@@ -40,13 +40,17 @@ const initialize = async () => {
     owner
   );
   const teller = new ethers.Contract(process.env.TELLER, TellerABI.abi, owner);
-  const vault = new ethers.Contract(process.env.VAULT, VaultABI.abi, owner);
+  const vaultEngine = new ethers.Contract(
+    process.env.VAULT_ENGINE,
+    VaultEngineABI.abi,
+    owner
+  );
 
   // // Initialize FLR collateral type
   console.log("Initializing FLR collateral type");
-  await vault.connect(owner).initCollType(COLLATERAL_ID["FLR"]);
+  await vaultEngine.connect(owner).initCollType(COLLATERAL_ID["FLR"]);
   console.log("Connected to vault, FLR initialized.");
-  await vault
+  await vaultEngine
     .connect(owner)
     .updateCeiling(COLLATERAL_ID["FLR"], PRECISION_AUR.mul(10000000));
   console.log("Connected to vault, ceiling updated.");

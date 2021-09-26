@@ -33,7 +33,7 @@ interface VPTokenLike {
   function delegate(address _to, uint256 _bips) external;
 }
 
-interface VaultLike {
+interface VaultEngineLike {
   function vaults(bytes32 collId, address user)
     external
     returns (uint256 freeColl, uint256 lockedColl);
@@ -48,7 +48,7 @@ interface VaultLike {
 contract Delegatable is DSMath {
   FtsoManager ftsoManager;
   FtsoRewardManager ftsoRewardManager;
-  VaultLike vault;
+  VaultEngineLike vaultEngine;
   VPTokenLike token;
   bytes32 collId;
   address[] dataProviders;
@@ -66,12 +66,12 @@ contract Delegatable is DSMath {
     FtsoManager ftsoManagerAddress,
     FtsoRewardManager rewardManagerAddress,
     VPTokenLike tokenAddress,
-    VaultLike vaultAddress
+    VaultEngineLike vaultEngineAddress
   ) {
     collId = collateralId;
     ftsoManager = ftsoManagerAddress;
     ftsoRewardManager = rewardManagerAddress;
-    vault = vaultAddress;
+    vaultEngine = vaultEngineAddress;
     token = tokenAddress;
   }
 
@@ -106,7 +106,10 @@ contract Delegatable is DSMath {
       lastClaimedEpoch > userLastClaimedEpoch[msg.sender],
       "No new epoch to claim"
     );
-    (uint256 freeColl, uint256 lockedColl) = vault.vaults(collId, msg.sender);
+    (uint256 freeColl, uint256 lockedColl) = vaultEngine.vaults(
+      collId,
+      msg.sender
+    );
     uint256 currentBalance = freeColl + lockedColl;
     uint256 rewardBalance = 0;
 

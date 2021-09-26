@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
 
-interface VaultLike {
+interface VaultEngineLike {
   function moveCollateral(
     bytes32 collateral,
     address from,
@@ -95,7 +95,7 @@ contract Auctioneer is Stateful, Eventful {
   // Data Storage
   /////////////////////////////////////////
 
-  VaultLike vault;
+  VaultEngineLike vaultEngine;
   FtsoLike ftso;
   LiquidatorLike liquidator;
   PriceCalc priceCalc;
@@ -118,11 +118,11 @@ contract Auctioneer is Stateful, Eventful {
 
   constructor(
     address registryAddress,
-    VaultLike vaultAddress,
+    VaultEngineLike vaultEngineAddress,
     PriceCalc priceCalcAddress,
     FtsoLike ftsoAddress
   ) Stateful(registryAddress) {
-    vault = vaultAddress;
+    vaultEngine = vaultEngineAddress;
     priceCalc = priceCalcAddress;
     ftso = ftsoAddress;
   }
@@ -177,7 +177,7 @@ contract Auctioneer is Stateful, Eventful {
       bidAmount = bidAbleAmount;
     }
 
-    vault.moveAurei(msg.sender, address(this), bidAmount);
+    vaultEngine.moveAurei(msg.sender, address(this), bidAmount);
     address indexToAdd = findIndex(auctionId, bidPrice);
 
     nextHighestBidder[auctionId][msg.sender] = nextHighestBidder[auctionId][
@@ -226,8 +226,12 @@ contract Auctioneer is Stateful, Eventful {
 
     uint256 lotToBuy = buyableAmount / currentPrice;
 
-    vault.moveAurei(msg.sender, auctions[auctionId].beneficiary, buyableAmount);
-    vault.moveCollateral(
+    vaultEngine.moveAurei(
+      msg.sender,
+      auctions[auctionId].beneficiary,
+      buyableAmount
+    );
+    vaultEngine.moveCollateral(
       auctions[auctionId].collId,
       address(this),
       msg.sender,
@@ -256,8 +260,12 @@ contract Auctioneer is Stateful, Eventful {
     );
     uint256 buyAmount = bids[auctionId][msg.sender].price *
       bids[auctionId][msg.sender].lot;
-    vault.moveAurei(msg.sender, auctions[auctionId].beneficiary, buyAmount);
-    vault.moveCollateral(
+    vaultEngine.moveAurei(
+      msg.sender,
+      auctions[auctionId].beneficiary,
+      buyAmount
+    );
+    vaultEngine.moveCollateral(
       auctions[auctionId].collId,
       address(this),
       msg.sender,
@@ -284,7 +292,7 @@ contract Auctioneer is Stateful, Eventful {
     if (auctions[auctionId].debt == 0 || auctions[auctionId].lot == 0) {
       auctions[auctionId].isOver = true;
 
-      vault.moveCollateral(
+      vaultEngine.moveCollateral(
         auctions[auctionId].collId,
         address(this),
         auctions[auctionId].owner,
@@ -371,7 +379,7 @@ contract Auctioneer is Stateful, Eventful {
         bids[auctionId][index].lot =
           (amountLeft / bids[auctionId][index].price) *
           ONE;
-        vault.moveAurei(
+        vaultEngine.moveAurei(
           address(this),
           index,
           lotDiff * bids[auctionId][index].price * ONE
@@ -380,7 +388,7 @@ contract Auctioneer is Stateful, Eventful {
         amountLeft = 0;
       } else {
         // amount left == 0, we remove the bidder and return the funds
-        vault.moveAurei(
+        vaultEngine.moveAurei(
           address(this),
           index,
           bids[auctionId][index].lot * bids[auctionId][index].price * ONE

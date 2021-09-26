@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import "../../dependencies/Stateful.sol";
 
-interface VaultLike {
+interface VaultEngineLike {
   function modifyCollateral(
     bytes32 collateral,
     address user,
@@ -17,7 +17,7 @@ contract NativeCollateral is Stateful {
   // Data Storage
   /////////////////////////////////////////
   bytes32 collateralId;
-  VaultLike vault;
+  VaultEngineLike vaultEngine;
 
   /////////////////////////////////////////
   // Constructor
@@ -25,10 +25,10 @@ contract NativeCollateral is Stateful {
   constructor(
     address registryAddress,
     bytes32 collId,
-    VaultLike vaultAddress
+    VaultEngineLike vaultEngineAddress
   ) Stateful(registryAddress) {
     collateralId = collId;
-    vault = vaultAddress;
+    vaultEngine = vaultEngineAddress;
   }
 
   /////////////////////////////////////////
@@ -36,11 +36,11 @@ contract NativeCollateral is Stateful {
   /////////////////////////////////////////
 
   function deposit() external payable onlyWhen("paused", false) {
-    vault.modifyCollateral(collateralId, msg.sender, int256(msg.value));
+    vaultEngine.modifyCollateral(collateralId, msg.sender, int256(msg.value));
   }
 
   function withdraw(uint256 amount) external onlyWhen("paused", false) {
     require(payable(msg.sender).send(amount), "FLR_COLL: fail to send FLR");
-    vault.modifyCollateral(collateralId, msg.sender, -int256(amount));
+    vaultEngine.modifyCollateral(collateralId, msg.sender, -int256(amount));
   }
 }
