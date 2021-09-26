@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
 
-interface VaultLike {
+interface VaultEngineLike {
   function vaults(bytes32 collId, address user)
     external
     returns (
@@ -67,7 +67,7 @@ contract Liquidator is Stateful, Eventful {
   // Data Variables
   /////////////////////////////////////////
 
-  VaultLike vault;
+  VaultEngineLike vaultEngine;
   ReservePoolLike reserve;
 
   uint256 constant PRECISION_PRICE = 10**27;
@@ -79,10 +79,10 @@ contract Liquidator is Stateful, Eventful {
 
   constructor(
     address registryAddress,
-    VaultLike vaultAddress,
+    VaultEngineLike vaultEngineAddress,
     ReservePoolLike reservePoolAddress
   ) Stateful(registryAddress) {
-    vault = vaultAddress;
+    vaultEngine = vaultEngineAddress;
     reserve = reservePoolAddress;
   }
 
@@ -140,8 +140,8 @@ contract Liquidator is Stateful, Eventful {
   // @todo incentive for someone who calls liquidateVault?
   function liquidateVault(bytes32 collId, address user) external {
     // check if vault can be liquidated
-    (uint256 debtAccu, , uint256 price) = vault.collateralOptions(collId);
-    (, uint256 lockedColl, uint256 debt, uint256 supplied) = vault.vaults(
+    (uint256 debtAccu, , uint256 price) = vaultEngine.collateralOptions(collId);
+    (, uint256 lockedColl, uint256 debt, uint256 supplied) = vaultEngine.vaults(
       collId,
       user
     );
@@ -153,7 +153,7 @@ contract Liquidator is Stateful, Eventful {
     // transfer the debt to reservePool
     reserve.addAuctionDebt(((debt + supplied) * PRECISION_PRICE) / 1E18);
 
-    vault.liquidateVault(
+    vaultEngine.liquidateVault(
       collId,
       user,
       address(collateralOptions[collId].auctioneer),

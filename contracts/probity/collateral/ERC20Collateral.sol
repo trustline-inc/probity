@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import "../../dependencies/Stateful.sol";
 
-interface VaultLike {
+interface VaultEngineLike {
   function modifyCollateral(
     bytes32 collateral,
     address user,
@@ -27,7 +27,7 @@ contract ERC20Collateral is Stateful {
   // Data Storage
   /////////////////////////////////////////
   bytes32 collateralId;
-  VaultLike vault;
+  VaultEngineLike vaultEngine;
   TokenLike collateralToken;
 
   /////////////////////////////////////////
@@ -37,10 +37,10 @@ contract ERC20Collateral is Stateful {
     address registryAddress,
     bytes32 collId,
     TokenLike collateral,
-    VaultLike vaultAddress
+    VaultEngineLike vaultEngineAddress
   ) Stateful(registryAddress) {
     collateralId = collId;
-    vault = vaultAddress;
+    vaultEngine = vaultEngineAddress;
     collateralToken = collateral;
   }
 
@@ -53,7 +53,7 @@ contract ERC20Collateral is Stateful {
       collateralToken.transferFrom(msg.sender, address(this), amount),
       "ERC20_COLL: transfer failed"
     );
-    vault.modifyCollateral(collateralId, msg.sender, int256(amount));
+    vaultEngine.modifyCollateral(collateralId, msg.sender, int256(amount));
   }
 
   function withdraw(uint256 amount) external onlyWhen("paused", false) {
@@ -61,6 +61,6 @@ contract ERC20Collateral is Stateful {
       collateralToken.transfer(msg.sender, amount),
       "ERC20_COLL: transfer failed"
     );
-    vault.modifyCollateral(collateralId, msg.sender, -int256(amount));
+    vaultEngine.modifyCollateral(collateralId, msg.sender, -int256(amount));
   }
 }

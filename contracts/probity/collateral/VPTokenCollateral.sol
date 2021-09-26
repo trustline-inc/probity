@@ -15,7 +15,7 @@ contract VPTokenCollateral is Delegatable, Stateful {
     FtsoManager ftsoManagerAddress,
     FtsoRewardManager rewardManagerAddress,
     VPTokenLike tokenAddress,
-    VaultLike vaultAddress
+    VaultEngineLike vaultEngineAddress
   )
     Stateful(registryAddress)
     Delegatable(
@@ -23,7 +23,7 @@ contract VPTokenCollateral is Delegatable, Stateful {
       ftsoManagerAddress,
       rewardManagerAddress,
       tokenAddress,
-      vaultAddress
+      vaultEngineAddress
     )
   {}
 
@@ -36,7 +36,7 @@ contract VPTokenCollateral is Delegatable, Stateful {
       token.transferFrom(msg.sender, address(this), amount),
       "VP_TOKEN_COLL: transfer failed"
     );
-    vault.modifyCollateral(collId, msg.sender, int256(amount));
+    vaultEngine.modifyCollateral(collId, msg.sender, int256(amount));
     recentDeposits[msg.sender][ftsoManager.getCurrentRewardEpoch()] += amount;
     recentTotalDeposit[msg.sender] += amount;
   }
@@ -47,7 +47,7 @@ contract VPTokenCollateral is Delegatable, Stateful {
       "VP_TOKEN_COLL: transfer failed"
     );
 
-    vault.modifyCollateral(collId, msg.sender, -int256(amount));
+    vaultEngine.modifyCollateral(collId, msg.sender, -int256(amount));
     // only reduce recentDeposits if it exists
     if (
       recentDeposits[msg.sender][ftsoManager.getCurrentRewardEpoch()] >= amount

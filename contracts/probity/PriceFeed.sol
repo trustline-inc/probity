@@ -6,7 +6,7 @@ import "../dependencies/Stateful.sol";
 import "../dependencies/DSMath.sol";
 import "../dependencies/Eventful.sol";
 
-interface VaultLike {
+interface VaultEngineLike {
   function updatePrice(bytes32 collId, uint256 price) external;
 }
 
@@ -29,17 +29,17 @@ contract PriceFeed is Stateful, Eventful, DSMath {
   /////////////////////////////////////////
   // Data Variables
   /////////////////////////////////////////
-  VaultLike vault;
+  VaultEngineLike vaultEngine;
   mapping(bytes32 => Collateral) collateralOptions;
 
   /////////////////////////////////////////
   // Constructor
   /////////////////////////////////////////
 
-  constructor(address registryAddress, VaultLike vaultAddress)
+  constructor(address registryAddress, VaultEngineLike vaultEngineAddress)
     Stateful(registryAddress)
   {
-    vault = vaultAddress;
+    vaultEngine = vaultEngineAddress;
   }
 
   /////////////////////////////////////////
@@ -92,6 +92,6 @@ contract PriceFeed is Stateful, Eventful, DSMath {
       collateralOptions[collId].minCollRatio
     );
 
-    vault.updatePrice(collId, adjustedPrice);
+    vaultEngine.updatePrice(collId, adjustedPrice);
   }
 }

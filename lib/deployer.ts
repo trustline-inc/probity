@@ -53,6 +53,7 @@ import {
  * Set native token for the deployment's target network
  */
 const NETWORK_NATIVE_TOKENS = {
+  local: "FLR",
   hardhat: "FLR",
   coston: "CFLR",
   songbird: "SGB",
@@ -70,7 +71,7 @@ interface Contracts {
   ftso: Ftso;
   registry: Registry;
   tcnToken: TcnToken;
-  vault: VaultEngine;
+  vaultEngine: VaultEngine;
   stateConnector: StateConnector;
   nativeCollateral: NativeCollateral;
   fxrpCollateral: Erc20Collateral;
@@ -92,7 +93,7 @@ const contracts: Contracts = {
   ftso: null,
   registry: null,
   tcnToken: null,
-  vault: null,
+  vaultEngine: null,
   stateConnector: null,
   nativeCollateral: null,
   fxrpCollateral: null,
@@ -247,16 +248,18 @@ const deployVaultEngine = async () => {
   // Set signers
   const signers = await getSigners();
 
-  const vaultFactory = (await ethers.getContractFactory(
+  const vaultEngineFactory = (await ethers.getContractFactory(
     "VaultEngine",
     signers.owner
   )) as VaultEngineFactory;
-  contracts.vault = await vaultFactory.deploy(contracts.registry.address);
-  await contracts.vault.deployed();
+  contracts.vaultEngine = await vaultEngineFactory.deploy(
+    contracts.registry.address
+  );
+  await contracts.vaultEngine.deployed();
 
   await contracts.registry.setupContractAddress(
-    bytes32("vault"),
-    contracts.vault.address
+    bytes32("vaultEngine"),
+    contracts.vaultEngine.address
   );
 
   return contracts;
@@ -273,7 +276,7 @@ const deployCollateral = async () => {
   contracts.nativeCollateral = await nativeCollateralFactory.deploy(
     contracts.registry.address,
     web3.utils.keccak256(NETWORK_NATIVE_TOKEN),
-    contracts.vault.address
+    contracts.vaultEngine.address
   );
   await contracts.nativeCollateral.deployed();
 
@@ -285,7 +288,7 @@ const deployCollateral = async () => {
     contracts.registry.address,
     web3.utils.keccak256("FXRP"),
     contracts.erc20.address,
-    contracts.vault.address
+    contracts.vaultEngine.address
   );
   await contracts.fxrpCollateral.deployed();
 
@@ -330,7 +333,7 @@ const deployTeller = async () => {
   )) as TellerFactory;
   contracts.teller = await tellerFactory.deploy(
     contracts.registry.address,
-    contracts.vault.address,
+    contracts.vaultEngine.address,
     contracts.lowApr.address,
     contracts.highApr.address
   );
@@ -356,7 +359,7 @@ const deployTreasury = async () => {
     contracts.registry.address,
     contracts.aurei.address,
     contracts.tcnToken.address,
-    contracts.vault.address
+    contracts.vaultEngine.address
   );
   await contracts.treasury.deployed();
 
@@ -378,7 +381,7 @@ const deployPriceFeed = async () => {
   )) as PriceFeedFactory;
   contracts.priceFeed = await priceFeedFactory.deploy(
     contracts.registry.address,
-    contracts.vault.address
+    contracts.vaultEngine.address
   );
   await contracts.priceFeed.deployed();
 
@@ -400,7 +403,7 @@ const deployAuction = async () => {
   )) as AuctioneerFactory;
   contracts.auctioneer = await auctionFactory.deploy(
     contracts.registry.address,
-    contracts.vault.address,
+    contracts.vaultEngine.address,
     contracts.linearDecrease.address,
     contracts.ftso.address
   );
@@ -465,7 +468,7 @@ const deployReserve = async () => {
   )) as ReservePoolFactory;
   contracts.reserve = await reserveFactory.deploy(
     contracts.registry.address,
-    contracts.vault.address
+    contracts.vaultEngine.address
   );
 
   await contracts.reserve.deployed();
@@ -501,7 +504,7 @@ const deployLiquidator = async () => {
   )) as LiquidatorFactory;
   contracts.liquidator = await liquidatorFactory.deploy(
     contracts.registry.address,
-    contracts.vault.address,
+    contracts.vaultEngine.address,
     contracts.reserve.address
   );
 

@@ -15,7 +15,7 @@ contract Base {
     TcnToken,
     Teller,
     Treasury,
-    Vault,
+    VaultEngine,
     LOW_APR,
     HIGH_APR
   }

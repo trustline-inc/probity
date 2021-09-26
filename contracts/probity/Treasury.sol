@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import "../dependencies/Stateful.sol";
 
-interface VaultLike {
+interface VaultEngineLike {
   function moveAurei(
     address from,
     address to,
@@ -42,7 +42,7 @@ contract Treasury is Stateful {
 
   TokenLike aurei;
   TokenLike tcn;
-  VaultLike vault;
+  VaultEngineLike vaultEngine;
 
   /////////////////////////////////////////
   // Constructor
@@ -52,10 +52,10 @@ contract Treasury is Stateful {
     address registryAddress,
     TokenLike aureiAddress,
     TokenLike tcnAddress,
-    VaultLike vaultAddress
+    VaultEngineLike vaultEngineAddress
   ) Stateful(registryAddress) {
     aurei = aureiAddress;
-    vault = vaultAddress;
+    vaultEngine = vaultEngineAddress;
     tcn = tcnAddress;
   }
 
@@ -64,19 +64,19 @@ contract Treasury is Stateful {
   /////////////////////////////////////////
 
   function deposit(uint256 amount) external {
-    vault.moveAurei(address(this), msg.sender, amount);
+    vaultEngine.moveAurei(address(this), msg.sender, amount);
     aurei.burn(msg.sender, amount);
     emit Deposit(msg.sender, amount);
   }
 
   function withdrawAurei(uint256 amount) external {
-    vault.moveAurei(msg.sender, address(this), amount);
+    vaultEngine.moveAurei(msg.sender, address(this), amount);
     aurei.mint(msg.sender, amount);
     emit Withdrawal(msg.sender, amount);
   }
 
   function withdrawTcn(uint256 amount) external {
-    vault.reduceYield(msg.sender, amount);
+    vaultEngine.reduceYield(msg.sender, amount);
     tcn.mint(msg.sender, amount);
     // TODO: #69 Emit event for TCN withdrawal
   }

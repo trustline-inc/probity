@@ -8,7 +8,7 @@ import "../dependencies/Base.sol";
  * @notice Contains logic for vault operations, including lifecycle management
  * and depositing or withdrawing collateral.
  */
-interface IVault {
+interface IVaultEngine {
   // --- Events ---
 
   event VaultUpdated(
