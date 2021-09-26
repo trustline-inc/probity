@@ -7,6 +7,7 @@ You can view the contract code in the [`contracts`](./contracts) folder. We will
 ## Table of Contents
 
 <!--ts-->
+
 - [Installation](#installation)
 - [Usage](#usage)
 - [Development](#development)
@@ -21,7 +22,7 @@ You can view the contract code in the [`contracts`](./contracts) folder. We will
 - [Contract Addresses](#contract-addresses)
   - [Coston](#coston-network)
   - [Songbird](#songbird-network)
-<!--te-->
+  <!--te-->
 
 ## Installation
 
@@ -108,21 +109,13 @@ npm run test
 
 ### Publishing
 
-These are the steps for publishing `@trustline/probity` to [npm](https://www.npmjs.com/). The package contains the contract ABIs.
+We use [GitHub Packages](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-npm-registry) to publish to the npm registry now. Below are the steps to publish a new version:
 
-1. Create an `.npmrc` at the project root
+1. Update `version` in `package.json` and commit the change
 
-> See [authenticating with a personal access token](https://docs.github.com/en/packages/guides/configuring-npm-for-use-with-github-packages#authenticating-with-a-personal-access-token) for more info.
+2. Create a tag that matches `version` for the commit and run `git push --tags`
 
-```
-//npm.pkg.github.com/:_authToken=TOKEN
-```
-
-Replace `TOKEN` with your personal access token.
-
-2. Update `version` in `package.json`
-
-3. Run `npm publish`
+3. [Create a new release](https://github.com/trustline-inc/probity/releases/new) for the tagged version
 
 ## Deployment
 
