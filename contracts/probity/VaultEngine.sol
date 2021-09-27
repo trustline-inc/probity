@@ -157,7 +157,7 @@ contract VaultEngine is Stateful, Eventful {
   /**
    * @notice Adds capital to the caller's vault
    * @param collId The ID of the collateral type being modified
-   * @param treasuryAddress The address of the treasury contract
+   * @param treasuryAddress A registered treasury contract address
    * @param collAmount The amount of collateral to add
    * @param capitalAmount The amount of capital to add
    */
@@ -192,7 +192,7 @@ contract VaultEngine is Stateful, Eventful {
     );
     require(
       vault.capital == 0 || vault.capital > collateralTypes[collId].floor,
-      "VAULT: capital SMALLER THAN SMALLEST AMOUNT"
+      "VAULT: Capital floor reached"
     );
     certify(collId, vault);
 
