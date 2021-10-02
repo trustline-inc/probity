@@ -218,10 +218,14 @@ contract VaultEngine is Stateful, Eventful {
       registry.checkIfValidContract("treasury", treasuryAddress),
       "VAULT: Treasury address is not valid"
     );
-    require(
-      AUR[treasuryAddress] >= uint256(debtAmount),
-      "Treasury doesn't have enough supply to loan this amount"
-    );
+
+    if (debtAmount > 0) {
+      require(
+        AUR[treasuryAddress] >= uint256(debtAmount),
+        "Treasury doesn't have enough supply to loan this amount"
+      );
+    }
+
     Vault memory vault = vaults[collId][msg.sender];
     vault.freeCollateral = sub(vault.freeCollateral, collAmount);
     vault.usedCollateral = add(vault.usedCollateral, collAmount);
@@ -232,10 +236,8 @@ contract VaultEngine is Stateful, Eventful {
       debtAmount
     );
 
-    int256 debtToModify = mul(
-      collateralTypes[collId].interestIndex,
-      debtAmount
-    );
+    int256 debtToModify =
+      mul(collateralTypes[collId].interestIndex, debtAmount);
     totalDebt = add(totalDebt, debtToModify);
 
     require(
@@ -283,8 +285,8 @@ contract VaultEngine is Stateful, Eventful {
     vault.capital = add(vault.capital, capitalAmount);
     coll.normDebt = add(coll.normDebt, debtAmount);
     coll.normCapital = add(coll.normCapital, capitalAmount);
-    int256 aurToRaise = mul(coll.interestIndex, debtAmount) +
-      mul(PRECISION_PRICE, capitalAmount);
+    int256 aurToRaise =
+      mul(coll.interestIndex, debtAmount) + mul(PRECISION_PRICE, capitalAmount);
 
     vaults[collId][auctioneer].freeCollateral = sub(
       vaults[collId][auctioneer].freeCollateral,
