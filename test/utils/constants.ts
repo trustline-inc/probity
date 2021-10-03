@@ -1,3 +1,5 @@
+import { ethers } from "hardhat";
+
 const errorTypes = {
   ISSUER_EXISTS: "An issuer already exists with this address.",
   ISSUER_NON_EXISTENT: "The issuer does not exist.",
@@ -20,4 +22,20 @@ const ADDRESS_ZERO = "0x0000000000000000000000000000000000000000";
 const BYTES32_ZERO =
   "0x0000000000000000000000000000000000000000000000000000000000000000";
 
-export { errorTypes, ADDRESS_ZERO, BYTES32_ZERO };
+const PRECISION_COLL = ethers.BigNumber.from("1000000000000000000");
+const PRECISION_PRICE = ethers.BigNumber.from("1000000000000000000000000000");
+const PRECISION_AUR = ethers.BigNumber.from(
+  "1000000000000000000000000000000000000000000000"
+);
+
+const bytes32 = (string) => ethers.utils.formatBytes32String(string);
+
+export {
+  errorTypes,
+  ADDRESS_ZERO,
+  BYTES32_ZERO,
+  PRECISION_COLL,
+  PRECISION_AUR,
+  PRECISION_PRICE,
+  bytes32,
+};

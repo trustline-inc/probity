@@ -183,7 +183,7 @@ const deployAUR = async () => {
     "Aurei",
     signers.owner
   )) as AureiFactory;
-  contracts.aurei = await aureiFactory.deploy();
+  contracts.aurei = await aureiFactory.deploy(contracts.registry.address);
   await contracts.aurei.deployed();
 
   await contracts.registry.setupContractAddress(
@@ -202,7 +202,7 @@ const deployTCN = async () => {
     "TcnToken",
     signers.owner
   )) as TcnTokenFactory;
-  contracts.tcnToken = await tcnFactory.deploy();
+  contracts.tcnToken = await tcnFactory.deploy(contracts.registry.address);
   await contracts.tcnToken.deployed();
 
   await contracts.registry.setupContractAddress(

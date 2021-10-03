@@ -2,9 +2,9 @@
 
 pragma solidity ^0.8.0;
 
-import "../../dependencies/Ownable.sol";
 import "../../dependencies/SafeMath.sol";
 import "../../interfaces/ITcnToken.sol";
+import "../../dependencies/Stateful.sol";
 
 /**
  * Based upon OpenZeppelin's ERC20 contract:
@@ -13,7 +13,7 @@ import "../../interfaces/ITcnToken.sol";
  * and their EIP2612 (ERC20Permit / ERC712) functionality:
  * https://github.com/OpenZeppelin/openzeppelin-contracts/blob/53516bc555a454862470e7860a9b5254db4d00f5/contracts/token/ERC20/ERC20Permit.sol
  */
-contract TcnToken is ITcnToken, Ownable {
+contract TcnToken is ITcnToken, Stateful {
   using SafeMath for uint256;
 
   // --- Data ---
@@ -38,7 +38,7 @@ contract TcnToken is ITcnToken, Ownable {
   /**
    * @dev Builds the domain separator
    */
-  constructor() Ownable(msg.sender) {
+  constructor(address registryAddress) Stateful(registryAddress) {
     uint256 chainId;
     assembly {
       chainId := chainid()
@@ -140,7 +140,11 @@ contract TcnToken is ITcnToken, Ownable {
     return true;
   }
 
-  function mint(address account, uint256 amount) external override {
+  function mint(address account, uint256 amount)
+    external
+    override
+    onlyBy("vault")
+  {
     assert(account != address(0));
 
     _totalSupply = _totalSupply.add(amount);
@@ -148,7 +152,11 @@ contract TcnToken is ITcnToken, Ownable {
     emit Transfer(address(0), account, amount);
   }
 
-  function burn(address account, uint256 amount) external override {
+  function burn(address account, uint256 amount)
+    external
+    override
+    onlyBy("vault")
+  {
     assert(account != address(0));
 
     _balances[account] = _balances[account].sub(
@@ -198,22 +206,23 @@ contract TcnToken is ITcnToken, Ownable {
     bytes32 s
   ) external override {
     require(deadline >= block.timestamp, "TCN: EXPIRED");
-    bytes32 digest = keccak256(
-      abi.encodePacked(
-        "\x19\x01",
-        _DOMAIN_SEPARATOR,
-        keccak256(
-          abi.encode(
-            _PERMIT_TYPEHASH,
-            owner,
-            spender,
-            amount,
-            _nonces[owner]++,
-            deadline
+    bytes32 digest =
+      keccak256(
+        abi.encodePacked(
+          "\x19\x01",
+          _DOMAIN_SEPARATOR,
+          keccak256(
+            abi.encode(
+              _PERMIT_TYPEHASH,
+              owner,
+              spender,
+              amount,
+              _nonces[owner]++,
+              deadline
+            )
           )
         )
-      )
-    );
+      );
     address recoveredAddress = ecrecover(digest, v, r, s);
     require(
       recoveredAddress != address(0) && recoveredAddress == owner,

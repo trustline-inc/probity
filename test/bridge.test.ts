@@ -3,11 +3,16 @@ import "@nomiclabs/hardhat-ethers";
 import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-web3";
 
-import { Aurei, Bridge, StateConnector } from "../typechain";
+import { Aurei, Bridge, Registry, StateConnector } from "../typechain";
 import { deployBridgeSystem } from "../lib/deployer";
 import { ethers, web3 } from "hardhat";
 import * as chai from "chai";
-import { errorTypes, ADDRESS_ZERO, BYTES32_ZERO } from "./utils/constants";
+import {
+  errorTypes,
+  ADDRESS_ZERO,
+  BYTES32_ZERO,
+  bytes32,
+} from "./utils/constants";
 import assertRevert from "./utils/assertRevert";
 const expect = chai.expect;
 
@@ -22,6 +27,7 @@ let user: SignerWithAddress;
 let aurei: Aurei;
 let bridge: Bridge;
 let stateConnector: StateConnector;
+let registry: Registry;
 let txHash: any;
 let currencyHash: any;
 let source: any;
@@ -44,7 +50,13 @@ describe("Bridge", function () {
     aurei = contracts.aurei;
     bridge = contracts.bridge;
     stateConnector = contracts.stateConnector;
+    registry = contracts.registry;
 
+    // we have to add the owner as 'vault' because aurei.mint can only be called by the vault address
+    await registry.setupContractAddress(
+      bytes32("vault"),
+      signers.owner.address
+    );
     await aurei.mint(signers.owner.address, 10000);
     await aurei.approve(bridge.address, 10000);
 
