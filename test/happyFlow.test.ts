@@ -54,6 +54,8 @@ const SUPPLY_COLL_AMOUNT = PRECISION_COLL.mul(400);
 const SUPPLY_AMOUNT = PRECISION_COLL.mul(200);
 const LOAN_COLL_AMOUNT = PRECISION_COLL.mul(200);
 const LOAN_AMOUNT = PRECISION_COLL.mul(100);
+const LOAN_REPAY_COLL_AMOUNT = PRECISION_COLL.mul(-200);
+const LOAN_REPAY_AMOUNT = PRECISION_COLL.mul(-100);
 
 const flrCollId = web3.utils.keccak256("FLR");
 const fxrpCollId = web3.utils.keccak256("FXRP");
@@ -189,6 +191,68 @@ describe("Probity Happy flow", function () {
       LOAN_COLL_AMOUNT
     );
     expect(userVaultAfter[2].sub(userVaultBefore[2])).to.equal(LOAN_AMOUNT);
+  });
+
+  it("test reducing modifyDebt", async () => {
+    // Deposit FLR collateral
+    await flrColl.deposit({ value: COLL_AMOUNT });
+
+    // Initialize the FLR collateral type
+    await vaultEngine.initCollType(flrCollId);
+    await vaultEngine.updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
+    await teller.initCollType(flrCollId);
+    await priceFeed.init(flrCollId, PRECISION_COLL.mul(150), ftso.address);
+    await priceFeed.updatePrice(flrCollId);
+
+    // Create Aurei
+    await vaultEngine.modifySupply(
+      flrCollId,
+      treasury.address,
+      SUPPLY_COLL_AMOUNT,
+      SUPPLY_AMOUNT
+    );
+
+    let userVaultBefore = await vaultEngine.vaults(flrCollId, owner.address);
+    let aurBefore = await vaultEngine.AUR(owner.address);
+
+    // Take out a loan
+    await vaultEngine.modifyDebt(
+      flrCollId,
+      treasury.address,
+      LOAN_COLL_AMOUNT,
+      LOAN_AMOUNT
+    );
+
+    let aurAfter = await vaultEngine.AUR(owner.address);
+    expect(aurAfter.sub(aurBefore)).to.equal(LOAN_AMOUNT.mul(PRECISION_PRICE));
+    let userVaultAfter = await vaultEngine.vaults(flrCollId, owner.address);
+    expect(userVaultBefore[0].sub(userVaultAfter[0])).to.equal(
+      LOAN_COLL_AMOUNT
+    );
+    expect(userVaultAfter[2].sub(userVaultBefore[2])).to.equal(LOAN_AMOUNT);
+
+    userVaultBefore = await vaultEngine.vaults(flrCollId, owner.address);
+    aurBefore = await vaultEngine.AUR(owner.address);
+
+    // repay loan
+    await vaultEngine.modifyDebt(
+      flrCollId,
+      treasury.address,
+      LOAN_REPAY_COLL_AMOUNT,
+      LOAN_REPAY_AMOUNT
+    );
+
+    aurAfter = await vaultEngine.AUR(owner.address);
+    expect(aurAfter.sub(aurBefore)).to.equal(
+      LOAN_REPAY_AMOUNT.mul(PRECISION_PRICE)
+    );
+    userVaultAfter = await vaultEngine.vaults(flrCollId, owner.address);
+    expect(userVaultBefore[0].sub(userVaultAfter[0])).to.equal(
+      LOAN_REPAY_COLL_AMOUNT
+    );
+    expect(userVaultAfter[2].sub(userVaultBefore[2])).to.equal(
+      LOAN_REPAY_AMOUNT
+    );
   });
 
   it("test priceFeed Update", async () => {
