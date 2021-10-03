@@ -3,6 +3,7 @@
 pragma solidity ^0.8.0;
 
 import "./DSMath.sol";
+import "./Stateful.sol";
 
 interface FtsoRewardManager {
   function claimRewardFromDataProviders(
@@ -45,7 +46,7 @@ interface VaultEngineLike {
   ) external;
 }
 
-contract Delegatable is DSMath {
+contract Delegatable is DSMath, Stateful {
   FtsoManager ftsoManager;
   FtsoRewardManager ftsoRewardManager;
   VaultEngineLike vaultEngine;
@@ -62,12 +63,13 @@ contract Delegatable is DSMath {
   mapping(address => mapping(uint256 => uint256)) recentDeposits; // maybe a different data structure?
 
   constructor(
+    address registryAddress,
     bytes32 collateralId,
     FtsoManager ftsoManagerAddress,
     FtsoRewardManager rewardManagerAddress,
     VPTokenLike tokenAddress,
     VaultEngineLike vaultEngineAddress
-  ) {
+  ) Stateful(registryAddress) {
     collId = collateralId;
     ftsoManager = ftsoManagerAddress;
     ftsoRewardManager = rewardManagerAddress;
@@ -80,17 +82,18 @@ contract Delegatable is DSMath {
       ftsoManager.getCurrentRewardEpoch() > lastClaimedEpoch,
       "No new epoch to claim"
     );
-    (uint256 startEpochId, uint256 endEpochId) = ftsoRewardManager
-      .getEpochsWithClaimableRewards();
+    (uint256 startEpochId, uint256 endEpochId) =
+      ftsoRewardManager.getEpochsWithClaimableRewards();
     for (uint256 epochId = startEpochId; epochId <= endEpochId; epochId++) {
       uint256[] memory epochs;
       epochs[0] = epochId;
 
-      uint256 rewardAmount = ftsoRewardManager.claimRewardFromDataProviders(
-        payable(address(this)),
-        epochs,
-        dataProviders
-      );
+      uint256 rewardAmount =
+        ftsoRewardManager.claimRewardFromDataProviders(
+          payable(address(this)),
+          epochs,
+          dataProviders
+        );
 
       rewardPerUnitAtEpoch[epochId] = rdiv(
         rewardAmount,
@@ -106,10 +109,8 @@ contract Delegatable is DSMath {
       lastClaimedEpoch > userLastClaimedEpoch[msg.sender],
       "No new epoch to claim"
     );
-    (uint256 freeColl, uint256 lockedColl) = vaultEngine.vaults(
-      collId,
-      msg.sender
-    );
+    (uint256 freeColl, uint256 lockedColl) =
+      vaultEngine.vaults(collId, msg.sender);
     uint256 currentBalance = freeColl + lockedColl;
     uint256 rewardBalance = 0;
 
@@ -118,8 +119,8 @@ contract Delegatable is DSMath {
       userEpoch <= ftsoManager.getCurrentRewardEpoch();
       userEpoch++
     ) {
-      uint256 rewardableBalance = currentBalance -
-        recentTotalDeposit[msg.sender];
+      uint256 rewardableBalance =
+        currentBalance - recentTotalDeposit[msg.sender];
       recentTotalDeposit[msg.sender] -= recentDeposits[msg.sender][userEpoch];
       rewardBalance += rewardPerUnitAtEpoch[userEpoch] * rewardableBalance;
       delete recentDeposits[msg.sender][userEpoch];
@@ -130,6 +131,7 @@ contract Delegatable is DSMath {
 
   function changeDataProviders(address[] memory providers, uint256[] memory pct)
     external
+    onlyBy("gov")
   {
     require(
       providers.length == pct.length,

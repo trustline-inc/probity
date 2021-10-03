@@ -2,10 +2,9 @@
 
 pragma solidity ^0.8.0;
 
-import "../../dependencies/Stateful.sol";
 import "../../dependencies/Delegatable.sol";
 
-contract VPTokenCollateral is Delegatable, Stateful {
+contract VPTokenCollateral is Delegatable {
   /////////////////////////////////////////
   // Constructor
   /////////////////////////////////////////
@@ -17,8 +16,8 @@ contract VPTokenCollateral is Delegatable, Stateful {
     VPTokenLike tokenAddress,
     VaultEngineLike vaultEngineAddress
   )
-    Stateful(registryAddress)
     Delegatable(
+      registryAddress,
       collateralHash,
       ftsoManagerAddress,
       rewardManagerAddress,
