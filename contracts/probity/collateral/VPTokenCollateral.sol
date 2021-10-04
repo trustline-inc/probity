@@ -6,6 +6,13 @@ import "../../dependencies/Delegatable.sol";
 
 contract VPTokenCollateral is Delegatable {
   /////////////////////////////////////////
+  // Events
+  /////////////////////////////////////////
+
+  event Deposit(address indexed user, uint256 amount);
+  event Withdrawal(address indexed user, uint256 amount);
+
+  /////////////////////////////////////////
   // Constructor
   /////////////////////////////////////////
   constructor(
@@ -38,6 +45,8 @@ contract VPTokenCollateral is Delegatable {
     vaultEngine.modifyCollateral(collId, msg.sender, int256(amount));
     recentDeposits[msg.sender][ftsoManager.getCurrentRewardEpoch()] += amount;
     recentTotalDeposit[msg.sender] += amount;
+
+    emit Deposit(msg.sender, amount);
   }
 
   function withdraw(uint256 amount) external onlyWhen("paused", false) {
@@ -61,5 +70,7 @@ contract VPTokenCollateral is Delegatable {
       ];
       recentDeposits[msg.sender][ftsoManager.getCurrentRewardEpoch()] -= 0;
     }
+
+    emit Withdrawal(msg.sender, amount);
   }
 }
