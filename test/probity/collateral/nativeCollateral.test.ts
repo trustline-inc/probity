@@ -1,13 +1,12 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import "@nomiclabs/hardhat-ethers";
 
-import { VaultEngine, Registry } from "../../../typechain";
+import { VaultEngine, Registry, NativeCollateral } from "../../../typechain";
 
 import { deployProbity } from "../../../lib/deployer";
 import { ethers } from "hardhat";
 import * as chai from "chai";
 import { PRECISION_COLL } from "../../utils/constants";
-import { FlrCollateral } from "../../../typechain/FlrCollateral";
 const expect = chai.expect;
 
 // Wallets
@@ -15,7 +14,7 @@ let owner: SignerWithAddress;
 let user: SignerWithAddress;
 
 // Contracts
-let nativeCollataral: FlrCollateral;
+let nativeCollataral: NativeCollateral;
 let vaultEngine: VaultEngine;
 let registry: Registry;
 
