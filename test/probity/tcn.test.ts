@@ -23,7 +23,7 @@ const AMOUNT_TO_MINT = PRECISION_COLL.mul(1000);
 const AMOUNT_TO_BURN = PRECISION_COLL.mul(230);
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
-describe("Aurei Token Unit Test", function () {
+describe("TCN Token Unit Test", function () {
   beforeEach(async function () {
     const { contracts, signers } = await deployProbity();
 
@@ -43,7 +43,7 @@ describe("Aurei Token Unit Test", function () {
     );
 
     // add owner to registry as 'vault' then check if owner can now mint
-    await registry.setupContractAddress(bytes32("vault"), owner.address);
+    await registry.setupContractAddress(bytes32("treasury"), owner.address);
 
     const balanceBefore = await tcn.balanceOf(user.address);
 
@@ -55,7 +55,7 @@ describe("Aurei Token Unit Test", function () {
 
   it("test burn can only be called by vault contract", async () => {
     // add owner to registry as 'vault' then check if owner can now mint
-    await registry.setupContractAddress(bytes32("vault"), owner.address);
+    await registry.setupContractAddress(bytes32("treasury"), owner.address);
 
     await tcn.mint(user.address, AMOUNT_TO_MINT);
 

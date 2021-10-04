@@ -54,7 +54,7 @@ describe("Bridge", function () {
 
     // we have to add the owner as 'vault' because aurei.mint can only be called by the vault address
     await registry.setupContractAddress(
-      bytes32("vault"),
+      bytes32("treasury"),
       signers.owner.address
     );
     await aurei.mint(signers.owner.address, 10000);

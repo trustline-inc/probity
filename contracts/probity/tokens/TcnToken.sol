@@ -143,7 +143,7 @@ contract TcnToken is ITcnToken, Stateful {
   function mint(address account, uint256 amount)
     external
     override
-    onlyBy("vault")
+    onlyBy("treasury")
   {
     assert(account != address(0));
 
@@ -155,7 +155,7 @@ contract TcnToken is ITcnToken, Stateful {
   function burn(address account, uint256 amount)
     external
     override
-    onlyBy("vault")
+    onlyBy("treasury")
   {
     assert(account != address(0));
 
