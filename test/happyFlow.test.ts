@@ -51,6 +51,8 @@ const PRECISION_AUR = ethers.BigNumber.from(
 
 const COLL_AMOUNT = PRECISION_COLL.mul(1000);
 const SUPPLY_COLL_AMOUNT = PRECISION_COLL.mul(400);
+const SUPPLY_COLL_TO_DECREASE = PRECISION_COLL.mul(-400);
+const SUPPLY_AMOUNT_TO_DECREASE = PRECISION_COLL.mul(-200);
 const SUPPLY_AMOUNT = PRECISION_COLL.mul(200);
 const LOAN_COLL_AMOUNT = PRECISION_COLL.mul(200);
 const LOAN_AMOUNT = PRECISION_COLL.mul(100);
@@ -252,6 +254,53 @@ describe("Probity Happy flow", function () {
     );
     expect(userVaultAfter[2].sub(userVaultBefore[2])).to.equal(
       LOAN_REPAY_AMOUNT
+    );
+  });
+
+  it("test that modifySupply can be reduced", async () => {
+    // Deposit FLR collateral
+    await flrColl.deposit({ value: COLL_AMOUNT });
+
+    // Initialize the FLR collateral type
+    await vaultEngine.initCollType(flrCollId);
+    await vaultEngine.updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
+    await teller.initCollType(flrCollId);
+    await priceFeed.init(flrCollId, PRECISION_COLL.mul(150), ftso.address);
+    await priceFeed.updatePrice(flrCollId);
+
+    let userVaultBefore = await vaultEngine.vaults(flrCollId, owner.address);
+
+    // Create Aurei
+    await vaultEngine.modifySupply(
+      flrCollId,
+      treasury.address,
+      SUPPLY_COLL_AMOUNT,
+      SUPPLY_AMOUNT
+    );
+
+    let userVaultAfter = await vaultEngine.vaults(flrCollId, owner.address);
+    expect(userVaultBefore[0].sub(userVaultAfter[0])).to.equal(
+      SUPPLY_COLL_AMOUNT
+    );
+    expect(userVaultAfter[3].sub(userVaultBefore[3])).to.equal(SUPPLY_AMOUNT);
+
+    // test that you can remove the supply
+    await vaultEngine.modifySupply(
+      flrCollId,
+      treasury.address,
+      SUPPLY_COLL_TO_DECREASE,
+      SUPPLY_AMOUNT_TO_DECREASE
+    );
+
+    let userVaultAfterDecrease = await vaultEngine.vaults(
+      flrCollId,
+      owner.address
+    );
+    expect(userVaultAfter[0].sub(userVaultAfterDecrease[0])).to.equal(
+      SUPPLY_COLL_TO_DECREASE
+    );
+    expect(userVaultAfterDecrease[3].sub(userVaultAfter[3])).to.equal(
+      SUPPLY_AMOUNT_TO_DECREASE
     );
   });
 
