@@ -350,7 +350,7 @@ describe("Bridge", function () {
       expect(issuerResult[3]).to.equal(statuses.COMPLETED);
     });
 
-    it("checks that Issuance Completed is emitted properly", async () => {
+    it.only("checks that Issuance Completed is emitted properly", async () => {
       await bridge.createIssuer(issuer, AMOUNT_TO_ISSUE);
       const tx = await bridge.completeIssuance(
         txHash,
@@ -362,11 +362,12 @@ describe("Bridge", function () {
       );
 
       let receipt = await tx.wait();
-      let event = receipt.events?.filter((x) => {
+      let events = receipt.events?.filter((x) => {
         return x.event == "IssuanceCompleted";
       });
-      expect(event[0].args[0]).to.equal(issuer);
-      expect(event[0].args[1]).to.equal(AMOUNT_TO_ISSUE);
+      let parsedEvents = events.map((e) => bridge.interface.parseLog(e));
+      expect(parsedEvents[0].args[0]).to.equal(issuer);
+      expect(parsedEvents[0].args[1]).to.equal(AMOUNT_TO_ISSUE);
     });
   });
 
