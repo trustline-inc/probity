@@ -350,7 +350,7 @@ describe("Bridge", function () {
       expect(issuerResult[3]).to.equal(statuses.COMPLETED);
     });
 
-    it.only("checks that Issuance Completed is emitted properly", async () => {
+    it("checks that Issuance Completed is emitted properly", async () => {
       await bridge.createIssuer(issuer, AMOUNT_TO_ISSUE);
       const tx = await bridge.completeIssuance(
         txHash,
