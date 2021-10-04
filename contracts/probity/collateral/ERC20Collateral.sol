@@ -24,6 +24,13 @@ interface TokenLike {
 
 contract ERC20Collateral is Stateful {
   /////////////////////////////////////////
+  // Events
+  /////////////////////////////////////////
+
+  event Deposit(address indexed user, uint256 amount);
+  event Withdrawal(address indexed user, uint256 amount);
+
+  /////////////////////////////////////////
   // Data Storage
   /////////////////////////////////////////
   bytes32 collateralId;
@@ -54,6 +61,7 @@ contract ERC20Collateral is Stateful {
       "ERC20_COLL: transfer failed"
     );
     vaultEngine.modifyCollateral(collateralId, msg.sender, int256(amount));
+    emit Deposit(msg.sender, amount);
   }
 
   function withdraw(uint256 amount) external onlyWhen("paused", false) {
@@ -62,5 +70,6 @@ contract ERC20Collateral is Stateful {
       "ERC20_COLL: transfer failed"
     );
     vaultEngine.modifyCollateral(collateralId, msg.sender, -int256(amount));
+    emit Withdrawal(msg.sender, amount);
   }
 }
