@@ -16,12 +16,16 @@ import {
   TellerFactory,
   TreasuryFactory,
   FtsoFactory,
+  FtsoManagerFactory,
+  FtsoRewardManagerFactory,
   PriceFeedFactory,
   AuctioneerFactory,
   LinearDecreaseFactory,
   LiquidatorFactory,
   ReservePoolFactory,
   Erc20TokenFactory,
+  VpTokenFactory,
+  VpTokenCollateralFactory,
   HighAprFactory,
   LowAprFactory,
 } from "../typechain";
@@ -37,6 +41,8 @@ import {
   StateConnector,
   NativeCollateral,
   Erc20Collateral,
+  FtsoManager,
+  FtsoRewardManager,
   Teller,
   Treasury,
   PriceFeed,
@@ -45,6 +51,8 @@ import {
   Liquidator,
   ReservePool,
   Erc20Token,
+  VpToken,
+  VpTokenCollateral,
   LowApr,
   HighApr,
 } from "../typechain";
@@ -75,6 +83,8 @@ interface Contracts {
   stateConnector: StateConnector;
   nativeCollateral: NativeCollateral;
   fxrpCollateral: Erc20Collateral;
+  ftsoManager: FtsoManager;
+  ftsoRewardManager: FtsoRewardManager;
   teller: Teller;
   treasury: Treasury;
   priceFeed: PriceFeed;
@@ -83,6 +93,8 @@ interface Contracts {
   liquidator: Liquidator;
   reserve: ReservePool;
   erc20: Erc20Token;
+  vpToken: VpToken;
+  vpTokenCollateral: VpTokenCollateral;
   lowApr: LowApr;
   highApr: HighApr;
 }
@@ -97,6 +109,8 @@ const contracts: Contracts = {
   stateConnector: null,
   nativeCollateral: null,
   fxrpCollateral: null,
+  ftsoManager: null,
+  ftsoRewardManager: null,
   teller: null,
   treasury: null,
   priceFeed: null,
@@ -105,6 +119,8 @@ const contracts: Contracts = {
   liquidator: null,
   reserve: null,
   erc20: null,
+  vpToken: null,
+  vpTokenCollateral: null,
   lowApr: null,
   highApr: null,
 };
@@ -265,6 +281,29 @@ const deployVaultEngine = async () => {
   return contracts;
 };
 
+const deployVPTokenCollateral = async () => {
+  const signers = await getSigners();
+
+  const vpTokenCollateralFactory = (await ethers.getContractFactory(
+    "VPTokenCollateral",
+    signers.owner
+  )) as VpTokenCollateralFactory;
+  contracts.vpTokenCollateral = await vpTokenCollateralFactory.deploy(
+    contracts.registry.address,
+    web3.utils.keccak256("VPToken"),
+    contracts.ftsoManager.address,
+    contracts.ftsoRewardManager.address,
+    contracts.vpToken.address,
+    contracts.vaultEngine.address
+  );
+  await contracts.vpTokenCollateral.deployed();
+
+  await contracts.registry.setupContractAddress(
+    bytes32("collateral"),
+    contracts.vpTokenCollateral.address
+  );
+};
+
 const deployCollateral = async () => {
   // Set signers
   const signers = await getSigners();
@@ -318,6 +357,44 @@ const deployFtso = async () => {
   await contracts.registry.setupContractAddress(
     bytes32("ftso"),
     contracts.ftso.address
+  );
+
+  return contracts;
+};
+
+const deployFtsoManager = async () => {
+  // Set signers
+  const signers = await getSigners();
+
+  const ftsoManagerFactory = (await ethers.getContractFactory(
+    "FtsoManager",
+    signers.owner
+  )) as FtsoManagerFactory;
+  contracts.ftsoManager = await ftsoManagerFactory.deploy();
+  await contracts.ftsoManager.deployed();
+
+  await contracts.registry.setupContractAddress(
+    bytes32("ftsoManager"),
+    contracts.ftsoManager.address
+  );
+
+  return contracts;
+};
+
+const deployFtsoRewardManager = async () => {
+  // Set signers
+  const signers = await getSigners();
+
+  const ftsoRewardManager = (await ethers.getContractFactory(
+    "FtsoRewardManager",
+    signers.owner
+  )) as FtsoRewardManagerFactory;
+  contracts.ftsoRewardManager = await ftsoRewardManager.deploy();
+  await contracts.ftsoRewardManager.deployed();
+
+  await contracts.registry.setupContractAddress(
+    bytes32("ftsoRewardManager"),
+    contracts.ftsoRewardManager.address
   );
 
   return contracts;
@@ -495,6 +572,20 @@ const deployERC20 = async () => {
   return contracts;
 };
 
+const deployVPToken = async () => {
+  const signers = await getSigners();
+
+  const vpTokenFactory = (await ethers.getContractFactory(
+    "VPToken",
+    signers.owner
+  )) as VpTokenFactory;
+  contracts.vpToken = await vpTokenFactory.deploy();
+
+  await contracts.vpToken.deployed();
+
+  return contracts;
+};
+
 const deployLiquidator = async () => {
   const signers = await getSigners();
 
@@ -527,8 +618,12 @@ const deployProbity = async () => {
   await deployApr();
   await deployVaultEngine();
   await deployERC20();
-  await deployCollateral();
+  await deployVPToken();
   await deployFtso();
+  await deployFtsoManager();
+  await deployFtsoRewardManager();
+  await deployCollateral();
+  await deployVPTokenCollateral();
   await deployTeller();
   await deployPriceCalc();
   await deployPriceFeed();
