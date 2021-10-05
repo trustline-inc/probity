@@ -18,8 +18,8 @@ contract VPTokenCollateral is Delegatable {
   constructor(
     address registryAddress,
     bytes32 collateralHash,
-    FtsoManager ftsoManagerAddress,
-    FtsoRewardManager rewardManagerAddress,
+    FtsoManagerLike ftsoManagerAddress,
+    FtsoRewardManagerLike rewardManagerAddress,
     VPTokenLike tokenAddress,
     VaultEngineLike vaultEngineAddress
   )

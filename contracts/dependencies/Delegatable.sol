@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import "./DSMath.sol";
 import "./Stateful.sol";
 
-interface FtsoRewardManager {
+interface FtsoRewardManagerLike {
   function claimRewardFromDataProviders(
     address payable _recipient,
     uint256[] memory _rewardEpochs,
@@ -18,7 +18,7 @@ interface FtsoRewardManager {
     returns (uint256 _startEpochId, uint256 _endEpochId);
 }
 
-interface FtsoManager {
+interface FtsoManagerLike {
   function getCurrentRewardEpoch() external view returns (uint256);
 }
 
@@ -47,8 +47,8 @@ interface VaultEngineLike {
 }
 
 contract Delegatable is DSMath, Stateful {
-  FtsoManager ftsoManager;
-  FtsoRewardManager ftsoRewardManager;
+  FtsoManagerLike ftsoManager;
+  FtsoRewardManagerLike ftsoRewardManager;
   VaultEngineLike vaultEngine;
   VPTokenLike token;
   bytes32 collId;
@@ -65,8 +65,8 @@ contract Delegatable is DSMath, Stateful {
   constructor(
     address registryAddress,
     bytes32 collateralId,
-    FtsoManager ftsoManagerAddress,
-    FtsoRewardManager rewardManagerAddress,
+    FtsoManagerLike ftsoManagerAddress,
+    FtsoRewardManagerLike rewardManagerAddress,
     VPTokenLike tokenAddress,
     VaultEngineLike vaultEngineAddress
   ) Stateful(registryAddress) {

@@ -1,10 +1,6 @@
-pragma solidity ^0.4.0;
+pragma solidity ^0.8.0;
 
-interface FtsoManager {
-  function getCurrentRewardEpoch() external view returns (uint256);
-}
-
-contract FTSOManager {
+contract FtsoManager {
   uint256 currentRewardEpoch;
 
   constructor() {

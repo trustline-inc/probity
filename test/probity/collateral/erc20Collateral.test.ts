@@ -49,11 +49,12 @@ describe("ERC20 Collateral Unit Test", function () {
     const tx = await erc20Collateral.deposit(AMOUNT_TO_MINT);
 
     let receipt = await tx.wait();
-    let event = receipt.events?.filter((x) => {
+    let events = receipt.events?.filter((x) => {
       return x.event == "Deposit";
     });
-    expect(event[0].args[0]).to.equal(owner.address);
-    expect(event[0].args[1]).to.equal(AMOUNT_TO_MINT);
+    let parsedEvents = events.map((e) => erc20Collateral.interface.parseLog(e));
+    expect(parsedEvents[0].args[0]).to.equal(owner.address);
+    expect(parsedEvents[0].args[1]).to.equal(AMOUNT_TO_MINT);
   });
 
   it("test Withdrawal event is emitted properly", async () => {
@@ -64,10 +65,11 @@ describe("ERC20 Collateral Unit Test", function () {
     const tx = await erc20Collateral.withdraw(AMOUNT_TO_WITHDRAW);
 
     let receipt = await tx.wait();
-    let event = receipt.events?.filter((x) => {
+    let events = receipt.events?.filter((x) => {
       return x.event == "Withdrawal";
     });
-    expect(event[0].args[0]).to.equal(owner.address);
-    expect(event[0].args[1]).to.equal(AMOUNT_TO_WITHDRAW);
+    let parsedEvents = events.map((e) => erc20Collateral.interface.parseLog(e));
+    expect(parsedEvents[0].args[0]).to.equal(owner.address);
+    expect(parsedEvents[0].args[1]).to.equal(AMOUNT_TO_WITHDRAW);
   });
 });

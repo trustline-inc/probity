@@ -40,11 +40,15 @@ describe("Native Collateral Unit Test", function () {
     const tx = await nativeCollataral.deposit({ value: AMOUNT_TO_DEPOSIT });
 
     let receipt = await tx.wait();
-    let event = receipt.events?.filter((x) => {
+
+    let events = receipt.events?.filter((x) => {
       return x.event == "Deposit";
     });
-    expect(event[0].args[0]).to.equal(owner.address);
-    expect(event[0].args[1]).to.equal(AMOUNT_TO_DEPOSIT);
+    let parsedEvents = events.map((e) =>
+      nativeCollataral.interface.parseLog(e)
+    );
+    expect(parsedEvents[0].args[0]).to.equal(owner.address);
+    expect(parsedEvents[0].args[1]).to.equal(AMOUNT_TO_DEPOSIT);
   });
 
   it("test Withdrawal event is emitted properly", async () => {
@@ -53,10 +57,13 @@ describe("Native Collateral Unit Test", function () {
     const tx = await nativeCollataral.withdraw(AMOUNT_TO_WITHDRAW);
 
     let receipt = await tx.wait();
-    let event = receipt.events?.filter((x) => {
+    let events = receipt.events?.filter((x) => {
       return x.event == "Withdrawal";
     });
-    expect(event[0].args[0]).to.equal(owner.address);
-    expect(event[0].args[1]).to.equal(AMOUNT_TO_WITHDRAW);
+    let parsedEvents = events.map((e) =>
+      nativeCollataral.interface.parseLog(e)
+    );
+    expect(parsedEvents[0].args[0]).to.equal(owner.address);
+    expect(parsedEvents[0].args[1]).to.equal(AMOUNT_TO_WITHDRAW);
   });
 });

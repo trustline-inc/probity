@@ -34,8 +34,8 @@ contract VPToken is IAurei, Ownable {
    * @dev Builds the domain separator
    */
   constructor() Ownable(msg.sender) {
-    address[] delegates;
-    uint256[] delegateBips;
+    address[] storage delegates;
+    uint256[] storage delegateBips;
     // @dev commented out for now because of ProviderError: invalid opcode: CHAINID
     uint256 chainId;
     assembly {
