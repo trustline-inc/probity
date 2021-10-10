@@ -6,15 +6,6 @@ import "@nomiclabs/hardhat-web3";
 import "@nomiclabs/hardhat-waffle";
 import { HardhatUserConfig } from "hardhat/config";
 
-// Add Flare local accounts from Flare config
-const flareLocalAccounts = [];
-const flareConfPath = `${process.env.FLARE_DIR}/client/config.json`;
-if (existsSync(flareConfPath)) {
-  const flareConf = require(flareConfPath);
-  flareLocalAccounts.push(flareConf.accounts[0].privateKey);
-  flareLocalAccounts.push(flareConf.accounts[1].privateKey);
-}
-
 const config: HardhatUserConfig = {
   defaultNetwork: "coston",
   networks: {
@@ -31,7 +22,10 @@ const config: HardhatUserConfig = {
     },
     local: {
       url: "http://127.0.0.1:9650/ext/bc/C/rpc",
-      accounts: flareLocalAccounts,
+      accounts: [
+        "44b8de040dec19cf810efe64919b481e05e2ba643efe003223662f1626b114f0",
+        "d77b743a0b9170c230e4a4be446b8605aa45f1d00da3d8cd5e5f778c287e1f22",
+      ],
       chainId: 16,
     },
   },
