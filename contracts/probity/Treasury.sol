@@ -40,9 +40,9 @@ contract Treasury is Stateful {
   // Data Storage
   /////////////////////////////////////////
 
-  TokenLike aurei;
-  TokenLike tcn;
-  VaultEngineLike vaultEngine;
+  TokenLike public aurei;
+  TokenLike public tcn;
+  VaultEngineLike public vaultEngine;
 
   /////////////////////////////////////////
   // Constructor

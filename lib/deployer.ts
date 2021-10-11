@@ -648,7 +648,7 @@ const deployBridgeSystem = async () => {
 const deployAll = async () => {
   const signers = await getSigners();
   await deployProbity();
-  await deployBridgeSystem();
+  await deployBridge();
 
   return { contracts, signers };
 };
