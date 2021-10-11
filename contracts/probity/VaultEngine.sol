@@ -168,7 +168,7 @@ contract VaultEngine is Stateful, Eventful {
     int256 capitalAmount
   ) external {
     require(
-      registry.checkIfValidContract("treasury", treasuryAddress),
+      registry.checkContractValidity("treasury", treasuryAddress),
       "VAULT: Treasury address is not valid"
     );
 
@@ -215,7 +215,7 @@ contract VaultEngine is Stateful, Eventful {
     int256 debtAmount
   ) external {
     require(
-      registry.checkIfValidContract("treasury", treasuryAddress),
+      registry.checkContractValidity("treasury", treasuryAddress),
       "VAULT: Treasury address is not valid"
     );
 
@@ -236,8 +236,10 @@ contract VaultEngine is Stateful, Eventful {
       debtAmount
     );
 
-    int256 debtToModify =
-      mul(collateralTypes[collId].interestIndex, debtAmount);
+    int256 debtToModify = mul(
+      collateralTypes[collId].interestIndex,
+      debtAmount
+    );
     totalDebt = add(totalDebt, debtToModify);
 
     require(
@@ -285,8 +287,8 @@ contract VaultEngine is Stateful, Eventful {
     vault.capital = add(vault.capital, capitalAmount);
     coll.normDebt = add(coll.normDebt, debtAmount);
     coll.normCapital = add(coll.normCapital, capitalAmount);
-    int256 aurToRaise =
-      mul(coll.interestIndex, debtAmount) + mul(PRECISION_PRICE, capitalAmount);
+    int256 aurToRaise = mul(coll.interestIndex, debtAmount) +
+      mul(PRECISION_PRICE, capitalAmount);
 
     vaults[collId][auctioneer].freeCollateral = sub(
       vaults[collId][auctioneer].freeCollateral,

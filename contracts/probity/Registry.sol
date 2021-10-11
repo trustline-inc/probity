@@ -56,7 +56,7 @@ contract Registry is IRegistry {
     emit ContractRemoved(name, addr);
   }
 
-  function checkIfValidContract(bytes32 name, address addr)
+  function checkContractValidity(bytes32 name, address addr)
     external
     view
     override
@@ -65,7 +65,7 @@ contract Registry is IRegistry {
     return addressToName[addr] == name;
   }
 
-  function checkIfValidContract(address addr)
+  function checkContractValidity(address addr)
     external
     view
     override

@@ -10,9 +10,9 @@ interface IRegistry {
 
   function removeContractAddress(address addr) external;
 
-  function checkIfValidContract(address addr) external returns (bool);
+  function checkContractValidity(address addr) external returns (bool);
 
-  function checkIfValidContract(bytes32 name, address addr)
+  function checkContractValidity(bytes32 name, address addr)
     external
     returns (bool);
 }
