@@ -15,7 +15,7 @@ interface VaultEngineLike {
 
   function totalSupply() external returns (uint256);
 
-  function updateAccumulators(
+  function updateIndices(
     bytes32 collId,
     uint256 debtAccumulator,
     uint256 suppAccumulator
@@ -79,7 +79,7 @@ contract Teller is Stateful, DSMath, Base {
   /**
    * @dev Updates the debt and capital indices
    */
-  function updateAccumulator(bytes32 collId) external {
+  function updateIndices(bytes32 collId) external {
     require(
       collateralTypes[collId].lastUpdated != 0,
       "TELLER: Collateral Type not initialized"
@@ -132,7 +132,7 @@ contract Teller is Stateful, DSMath, Base {
     // Update time index
     coll.lastUpdated = block.timestamp;
 
-    vaultEngine.updateAccumulators(collId, debtAccumulator, suppAccumulator);
+    vaultEngine.updateIndices(collId, debtAccumulator, suppAccumulator);
     collateralTypes[collId] = coll;
   }
 }
