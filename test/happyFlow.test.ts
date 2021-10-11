@@ -148,7 +148,7 @@ describe("Probity Happy flow", function () {
     );
   });
 
-  it("test modifySupply, modifyDebt and AUR withdrawal", async () => {
+  it.only("test modifySupply, modifyDebt and AUR withdrawal", async () => {
     // Deposit FLR collateral
     await flrColl.deposit({ value: COLL_AMOUNT });
 
@@ -194,8 +194,7 @@ describe("Probity Happy flow", function () {
     );
     expect(userVaultAfter[2].sub(userVaultBefore[2])).to.equal(LOAN_AMOUNT);
 
-    // test AUR withdrawal
-
+    // Test AUR withdrawal
     let ownerBalanceBefore = await aurei.balanceOf(owner.address);
     await treasury.withdrawAurei(aurAfter);
     let ownerBalanceAfter = await aurei.balanceOf(owner.address);

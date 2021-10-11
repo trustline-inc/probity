@@ -63,24 +63,39 @@ contract Treasury is Stateful {
   // External Functions
   /////////////////////////////////////////
 
+  /**
+   * @dev Expects `amount` in wad
+   * @param amount Amount to deposit
+   */
   function deposit(uint256 amount) external {
-    vaultEngine.moveAurei(address(this), msg.sender, amount);
+    vaultEngine.moveAurei(address(this), msg.sender, amount * 1e27);
     aurei.burn(msg.sender, amount);
     emit Deposit(msg.sender, amount);
   }
 
+  /**
+   * @dev Expects `amount` in wad
+   * @param amount Amount to deposit
+   */
   function withdrawAurei(uint256 amount) external {
-    vaultEngine.moveAurei(msg.sender, address(this), amount);
+    vaultEngine.moveAurei(msg.sender, address(this), amount * 1e27);
     aurei.mint(msg.sender, amount);
     emit Withdrawal(msg.sender, amount);
   }
 
+  /**
+   * @dev Expects `amount` in wad
+   * @param amount Amount to deposit
+   */
   function withdrawTcn(uint256 amount) external {
-    vaultEngine.reduceYield(msg.sender, amount);
+    vaultEngine.reduceYield(msg.sender, amount * 1e27);
     tcn.mint(msg.sender, amount);
     // TODO: #69 Emit event for TCN withdrawal
   }
 
+  /**
+   * @dev Expects `amount` in Ether units
+   */
   function tradeTcnforAurei(uint256 amount) external {
     tcn.burn(msg.sender, amount);
     aurei.mint(msg.sender, amount);
