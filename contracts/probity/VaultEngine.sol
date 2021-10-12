@@ -118,11 +118,32 @@ contract VaultEngine is Stateful, Eventful {
   }
 
   /**
+   * @dev Add Aurei to User vault.
+   * @param user The address of the beneficiary vault owner
+   * @param amount The amount of Aurei to add
+   */
+  function addAurei(address user, uint256 amount) external onlyBy("treasury") {
+    AUR[user] += amount;
+  }
+
+  /**
+   * @dev Remove Aurei from User vault.
+   * @param user The address of the beneficiary vault owner
+   * @param amount The amount of Aurei to remove
+   */
+  function removeAurei(address user, uint256 amount)
+    external
+    onlyBy("treasury")
+  {
+    AUR[user] -= amount;
+  }
+
+  /**
    * @dev Reduce a user's interest balance.
    * @param user The address of the vault to reduce interest from.
    * @param amount The amount of TCN to reduce.
    */
-  function reduceTCN(address user, uint256 amount) external onlyByRegistered {
+  function reduceTCN(address user, uint256 amount) external onlyBy("treasury") {
     TCN[user] -= amount;
   }
 

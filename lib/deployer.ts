@@ -28,6 +28,7 @@ import {
   MockErc20TokenFactory,
   MockVpTokenFactory,
   MockStateConnectorFactory,
+  MockVaultEngineFactory,
 } from "../typechain";
 
 // Import contract types
@@ -55,6 +56,7 @@ import {
   MockFtsoRewardManager,
   MockVpToken,
   MockStateConnector,
+  MockVaultEngine,
 } from "../typechain";
 
 /**
@@ -97,6 +99,7 @@ interface Contracts {
   vpTokenCollateral: VpTokenCollateral;
   lowApr: LowApr;
   highApr: HighApr;
+  mockVault: MockVaultEngine;
 }
 
 const contracts: Contracts = {
@@ -123,6 +126,7 @@ const contracts: Contracts = {
   vpTokenCollateral: null,
   lowApr: null,
   highApr: null,
+  mockVault: null,
 };
 
 // Contracts submitted to the register
@@ -424,7 +428,7 @@ const deployTeller = async () => {
   return contracts;
 };
 
-const deployTreasury = async () => {
+const deployTreasury = async (param?) => {
   // Set signers
   const signers = await getSigners();
 
@@ -432,12 +436,22 @@ const deployTreasury = async () => {
     "Treasury",
     signers.owner
   )) as TreasuryFactory;
-  contracts.treasury = await treasuryFactory.deploy(
-    contracts.registry.address,
-    contracts.aurei.address,
-    contracts.tcnToken.address,
-    contracts.vaultEngine.address
-  );
+  if (param === undefined) {
+    contracts.treasury = await treasuryFactory.deploy(
+      contracts.registry.address,
+      contracts.aurei.address,
+      contracts.tcnToken.address,
+      contracts.vaultEngine.address
+    );
+  } else {
+    contracts.treasury = await treasuryFactory.deploy(
+      param.registry.address,
+      param.aurei.address,
+      param.tcnToken.address,
+      param.vaultEngine.address
+    );
+  }
+
   await contracts.treasury.deployed();
 
   await contracts.registry.setupContractAddress(
@@ -558,7 +572,7 @@ const deployReserve = async () => {
   return contracts;
 };
 
-const deployERC20 = async () => {
+const deployMockERC20 = async () => {
   const signers = await getSigners();
 
   const erc20Factory = (await ethers.getContractFactory(
@@ -582,6 +596,20 @@ const deployMockVPToken = async () => {
   contracts.vpToken = await vpTokenFactory.deploy();
 
   await contracts.vpToken.deployed();
+
+  return contracts;
+};
+
+const deployMockVaultEngine = async () => {
+  const signers = await getSigners();
+
+  const mockVaultEngineFactory = (await ethers.getContractFactory(
+    "MockVaultEngine",
+    signers.owner
+  )) as MockVaultEngineFactory;
+  contracts.mockVault = await mockVaultEngineFactory.deploy();
+
+  await contracts.mockVault.deployed();
 
   return contracts;
 };
@@ -617,7 +645,7 @@ const deployProbity = async () => {
   await deployTCN();
   await deployApr();
   await deployVaultEngine();
-  await deployERC20();
+  await deployMockERC20();
   await deployMockVPToken();
   await deployMockFtso();
   await deployMockFtsoManager();
@@ -653,4 +681,31 @@ const deployAll = async () => {
   return { contracts, signers };
 };
 
-export { deployAll, deployProbity, deployBridgeSystem };
+const probity = {
+  deployRegistry,
+  deployAUR,
+  deployTCN,
+  deployApr,
+  deployVaultEngine,
+  deployCollateral,
+  deployVPTokenCollateral,
+  deployTeller,
+  deployPriceCalc,
+  deployPriceFeed,
+  deployAuction,
+  deployTreasury,
+  deployReserve,
+  deployLiquidator,
+  deployBridge,
+};
+
+const mock = {
+  deployMockERC20,
+  deployMockVPToken,
+  deployMockFtso,
+  deployMockFtsoManager,
+  deployMockFtsoRewardManager,
+  deployMockVaultEngine,
+};
+
+export { deployAll, deployProbity, deployBridgeSystem, probity, mock };
