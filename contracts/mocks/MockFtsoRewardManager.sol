@@ -1,6 +1,6 @@
 pragma solidity ^0.8.0;
 
-contract FtsoRewardManager {
+contract MockFtsoRewardManager {
   uint256 startEpochId;
   uint256 endEpochId;
   uint256 rewardAmount;

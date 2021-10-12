@@ -5,7 +5,7 @@ import {
   VaultEngine,
   Registry,
   Erc20Collateral,
-  Erc20Token,
+  MockErc20Token,
 } from "../../../typechain";
 
 import { deployProbity } from "../../../lib/deployer";
@@ -20,7 +20,7 @@ let user: SignerWithAddress;
 
 // Contracts
 let erc20Collateral: Erc20Collateral;
-let erc20: Erc20Token;
+let erc20: MockErc20Token;
 let vaultEngine: VaultEngine;
 let registry: Registry;
 

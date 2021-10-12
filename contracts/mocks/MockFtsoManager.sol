@@ -1,6 +1,6 @@
 pragma solidity ^0.8.0;
 
-contract FtsoManager {
+contract MockFtsoManager {
   uint256 currentRewardEpoch;
 
   constructor() {

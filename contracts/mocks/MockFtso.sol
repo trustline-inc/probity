@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-contract Ftso {
+contract MockFtso {
   uint256 price;
   uint256 lastUpdated;
 

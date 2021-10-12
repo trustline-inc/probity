@@ -10,39 +10,35 @@ import {
   BridgeFactory,
   RegistryFactory,
   VaultEngineFactory,
-  StateConnectorFactory,
   NativeCollateralFactory,
   Erc20CollateralFactory,
   TellerFactory,
   TreasuryFactory,
-  FtsoFactory,
-  FtsoManagerFactory,
-  FtsoRewardManagerFactory,
   PriceFeedFactory,
   AuctioneerFactory,
   LinearDecreaseFactory,
   LiquidatorFactory,
   ReservePoolFactory,
-  Erc20TokenFactory,
-  VpTokenFactory,
   VpTokenCollateralFactory,
   HighAprFactory,
   LowAprFactory,
+  MockFtsoFactory,
+  MockFtsoManagerFactory,
+  MockFtsoRewardManagerFactory,
+  MockErc20TokenFactory,
+  MockVpTokenFactory,
+  MockStateConnectorFactory,
 } from "../typechain";
 
 // Import contract types
 import {
   Aurei,
   Bridge,
-  Ftso,
   Registry,
   TcnToken,
   VaultEngine,
-  StateConnector,
   NativeCollateral,
   Erc20Collateral,
-  FtsoManager,
-  FtsoRewardManager,
   Teller,
   Treasury,
   PriceFeed,
@@ -50,11 +46,15 @@ import {
   LinearDecrease,
   Liquidator,
   ReservePool,
-  Erc20Token,
-  VpToken,
+  MockErc20Token,
   VpTokenCollateral,
   LowApr,
   HighApr,
+  MockFtso,
+  MockFtsoManager,
+  MockFtsoRewardManager,
+  MockVpToken,
+  MockStateConnector,
 } from "../typechain";
 
 /**
@@ -76,15 +76,15 @@ const NETWORK_NATIVE_TOKEN = NETWORK_NATIVE_TOKENS[network.name];
 interface Contracts {
   aurei: Aurei;
   bridge: Bridge;
-  ftso: Ftso;
+  ftso: MockFtso;
   registry: Registry;
   tcnToken: TcnToken;
   vaultEngine: VaultEngine;
-  stateConnector: StateConnector;
+  stateConnector: MockStateConnector;
   nativeCollateral: NativeCollateral;
   fxrpCollateral: Erc20Collateral;
-  ftsoManager: FtsoManager;
-  ftsoRewardManager: FtsoRewardManager;
+  ftsoManager: MockFtsoManager;
+  ftsoRewardManager: MockFtsoRewardManager;
   teller: Teller;
   treasury: Treasury;
   priceFeed: PriceFeed;
@@ -92,8 +92,8 @@ interface Contracts {
   linearDecrease: LinearDecrease;
   liquidator: Liquidator;
   reserve: ReservePool;
-  erc20: Erc20Token;
-  vpToken: VpToken;
+  erc20: MockErc20Token;
+  vpToken: MockVpToken;
   vpTokenCollateral: VpTokenCollateral;
   lowApr: LowApr;
   highApr: HighApr;
@@ -343,14 +343,14 @@ const deployCollateral = async () => {
   return contracts;
 };
 
-const deployFtso = async () => {
+const deployMockFtso = async () => {
   // Set signers
   const signers = await getSigners();
 
   const ftsoFactory = (await ethers.getContractFactory(
-    "Ftso",
+    "MockFtso",
     signers.owner
-  )) as FtsoFactory;
+  )) as MockFtsoFactory;
   contracts.ftso = await ftsoFactory.deploy();
   await contracts.ftso.deployed();
 
@@ -362,14 +362,14 @@ const deployFtso = async () => {
   return contracts;
 };
 
-const deployFtsoManager = async () => {
+const deployMockFtsoManager = async () => {
   // Set signers
   const signers = await getSigners();
 
   const ftsoManagerFactory = (await ethers.getContractFactory(
-    "FtsoManager",
+    "MockFtsoManager",
     signers.owner
-  )) as FtsoManagerFactory;
+  )) as MockFtsoManagerFactory;
   contracts.ftsoManager = await ftsoManagerFactory.deploy();
   await contracts.ftsoManager.deployed();
 
@@ -381,14 +381,14 @@ const deployFtsoManager = async () => {
   return contracts;
 };
 
-const deployFtsoRewardManager = async () => {
+const deployMockFtsoRewardManager = async () => {
   // Set signers
   const signers = await getSigners();
 
   const ftsoRewardManager = (await ethers.getContractFactory(
-    "FtsoRewardManager",
+    "MockFtsoRewardManager",
     signers.owner
-  )) as FtsoRewardManagerFactory;
+  )) as MockFtsoRewardManagerFactory;
   contracts.ftsoRewardManager = await ftsoRewardManager.deploy();
   await contracts.ftsoRewardManager.deployed();
 
@@ -517,9 +517,9 @@ const deployBridge = async () => {
   const signers = await getSigners();
 
   const stateConnectorFactory = (await ethers.getContractFactory(
-    "StateConnector",
+    "MockStateConnector",
     signers.owner
-  )) as StateConnectorFactory;
+  )) as MockStateConnectorFactory;
   contracts.stateConnector = await stateConnectorFactory.deploy();
   await contracts.stateConnector.deployed();
 
@@ -562,9 +562,9 @@ const deployERC20 = async () => {
   const signers = await getSigners();
 
   const erc20Factory = (await ethers.getContractFactory(
-    "ERC20Token",
+    "MockERC20Token",
     signers.owner
-  )) as Erc20TokenFactory;
+  )) as MockErc20TokenFactory;
   contracts.erc20 = await erc20Factory.deploy();
 
   await contracts.erc20.deployed();
@@ -572,13 +572,13 @@ const deployERC20 = async () => {
   return contracts;
 };
 
-const deployVPToken = async () => {
+const deployMockVPToken = async () => {
   const signers = await getSigners();
 
   const vpTokenFactory = (await ethers.getContractFactory(
-    "VPToken",
+    "MockVPToken",
     signers.owner
-  )) as VpTokenFactory;
+  )) as MockVpTokenFactory;
   contracts.vpToken = await vpTokenFactory.deploy();
 
   await contracts.vpToken.deployed();
@@ -618,10 +618,10 @@ const deployProbity = async () => {
   await deployApr();
   await deployVaultEngine();
   await deployERC20();
-  await deployVPToken();
-  await deployFtso();
-  await deployFtsoManager();
-  await deployFtsoRewardManager();
+  await deployMockVPToken();
+  await deployMockFtso();
+  await deployMockFtsoManager();
+  await deployMockFtsoRewardManager();
   await deployCollateral();
   await deployVPTokenCollateral();
   await deployTeller();

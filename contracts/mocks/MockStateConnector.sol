@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import "../interfaces/IStateConnector.sol";
 
-contract StateConnector is IStateConnector {
+contract MockStateConnector is IStateConnector {
   bool finalityToReturn;
 
   function setFinality(bool newFinality) public {

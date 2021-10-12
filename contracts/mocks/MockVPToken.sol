@@ -7,7 +7,7 @@ import "../dependencies/SafeMath.sol";
 import "../interfaces/IAurei.sol";
 import "../interfaces/ITeller.sol";
 
-contract VPToken is IAurei, Ownable {
+contract MockVPToken is IAurei, Ownable {
   using SafeMath for uint256;
 
   // --- Data ---
