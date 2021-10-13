@@ -42,7 +42,7 @@ describe("Aurei Token Unit Test", function () {
       "ACCESS: Caller does not have authority to call this"
     );
 
-    // add owner to registry as 'vault' then check if owner can now mint
+    // add owner to registry as 'treasury' then check if owner can now mint
     await registry.setupContractAddress(bytes32("treasury"), owner.address);
 
     const balanceBefore = await aurei.balanceOf(user.address);
@@ -54,7 +54,7 @@ describe("Aurei Token Unit Test", function () {
   });
 
   it("test burn can only be called by vault contract", async () => {
-    // add owner to registry as 'vault' then check if owner can now mint
+    // add owner to registry as 'treasury' then check if owner can now mint
     await registry.setupContractAddress(bytes32("treasury"), owner.address);
 
     await aurei.mint(user.address, AMOUNT_TO_MINT);

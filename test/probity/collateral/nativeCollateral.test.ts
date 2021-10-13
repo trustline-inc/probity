@@ -7,6 +7,7 @@ import { deployProbity } from "../../../lib/deployer";
 import { ethers } from "hardhat";
 import * as chai from "chai";
 import { PRECISION_COLL } from "../../utils/constants";
+import parseEvents from "../../utils/parseEvents";
 const expect = chai.expect;
 
 // Wallets
@@ -37,15 +38,10 @@ describe("Native Collateral Unit Test", function () {
   });
 
   it("test Deposit event is emitted properly", async () => {
-    const tx = await nativeCollataral.deposit({ value: AMOUNT_TO_DEPOSIT });
-
-    let receipt = await tx.wait();
-
-    let events = receipt.events?.filter((x) => {
-      return x.event == "Deposit";
-    });
-    let parsedEvents = events.map((e) =>
-      nativeCollataral.interface.parseLog(e)
+    let parsedEvents = await parseEvents(
+      nativeCollataral.deposit({ value: AMOUNT_TO_DEPOSIT }),
+      "Deposit",
+      nativeCollataral
     );
     expect(parsedEvents[0].args[0]).to.equal(owner.address);
     expect(parsedEvents[0].args[1]).to.equal(AMOUNT_TO_DEPOSIT);
@@ -54,14 +50,10 @@ describe("Native Collateral Unit Test", function () {
   it("test Withdrawal event is emitted properly", async () => {
     await nativeCollataral.deposit({ value: AMOUNT_TO_DEPOSIT });
 
-    const tx = await nativeCollataral.withdraw(AMOUNT_TO_WITHDRAW);
-
-    let receipt = await tx.wait();
-    let events = receipt.events?.filter((x) => {
-      return x.event == "Withdrawal";
-    });
-    let parsedEvents = events.map((e) =>
-      nativeCollataral.interface.parseLog(e)
+    let parsedEvents = await parseEvents(
+      nativeCollataral.withdraw(AMOUNT_TO_WITHDRAW),
+      "Withdrawal",
+      nativeCollataral
     );
     expect(parsedEvents[0].args[0]).to.equal(owner.address);
     expect(parsedEvents[0].args[1]).to.equal(AMOUNT_TO_WITHDRAW);

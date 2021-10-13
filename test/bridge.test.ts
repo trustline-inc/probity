@@ -3,7 +3,7 @@ import "@nomiclabs/hardhat-ethers";
 import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-web3";
 
-import { Aurei, Bridge, Registry, StateConnector } from "../typechain";
+import { Aurei, Bridge, Registry, MockStateConnector } from "../typechain";
 import { deployBridgeSystem } from "../lib/deployer";
 import { ethers, web3 } from "hardhat";
 import * as chai from "chai";
@@ -26,7 +26,7 @@ let user: SignerWithAddress;
 // Contracts
 let aurei: Aurei;
 let bridge: Bridge;
-let stateConnector: StateConnector;
+let stateConnector: MockStateConnector;
 let registry: Registry;
 let txHash: any;
 let currencyHash: any;

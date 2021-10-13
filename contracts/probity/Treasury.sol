@@ -5,13 +5,11 @@ pragma solidity ^0.8.0;
 import "../dependencies/Stateful.sol";
 
 interface VaultEngineLike {
-  function moveAurei(
-    address from,
-    address to,
-    uint256 amount
-  ) external;
+  function addAurei(address user, uint256 amount) external;
 
-  function reduceYield(address user, uint256 amount) external;
+  function removeAurei(address user, uint256 amount) external;
+
+  function removeTcn(address user, uint256 amount) external;
 }
 
 interface TokenLike {
@@ -35,6 +33,8 @@ contract Treasury is Stateful {
 
   event Deposit(address indexed user, uint256 amount);
   event Withdrawal(address indexed user, uint256 amount);
+  event TcnWithdrawal(address indexed user, uint256 amount);
+  event TcnForAur(address indexed user, uint256 amount);
 
   /////////////////////////////////////////
   // Data Storage
@@ -64,25 +64,27 @@ contract Treasury is Stateful {
   /////////////////////////////////////////
 
   function deposit(uint256 amount) external {
-    vaultEngine.moveAurei(address(this), msg.sender, amount);
+    vaultEngine.addAurei(msg.sender, amount);
     aurei.burn(msg.sender, amount);
     emit Deposit(msg.sender, amount);
   }
 
   function withdrawAurei(uint256 amount) external {
-    vaultEngine.moveAurei(msg.sender, address(this), amount);
+    vaultEngine.removeAurei(msg.sender, amount);
     aurei.mint(msg.sender, amount);
     emit Withdrawal(msg.sender, amount);
   }
 
   function withdrawTcn(uint256 amount) external {
-    vaultEngine.reduceYield(msg.sender, amount);
+    vaultEngine.removeTcn(msg.sender, amount);
     tcn.mint(msg.sender, amount);
-    // TODO: #69 Emit event for TCN withdrawal
+
+    emit TcnWithdrawal(msg.sender, amount);
   }
 
   function tradeTcnforAurei(uint256 amount) external {
     tcn.burn(msg.sender, amount);
     aurei.mint(msg.sender, amount);
+    emit TcnForAur(msg.sender, amount);
   }
 }

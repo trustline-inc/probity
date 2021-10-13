@@ -10,13 +10,13 @@ import {
   NativeCollateral,
   Teller,
   Treasury,
-  Ftso,
+  MockFtso,
   PriceFeed,
   Auctioneer,
   Liquidator,
   ReservePool,
   Registry,
-  Erc20Token,
+  MockErc20Token,
 } from "../typechain";
 import { deployProbity } from "../lib/deployer";
 import { ethers, web3 } from "hardhat";
@@ -36,12 +36,12 @@ let flrColl: NativeCollateral;
 let fxrpColl: Erc20Collateral;
 let teller: Teller;
 let treasury: Treasury;
-let ftso: Ftso;
+let ftso: MockFtso;
 let priceFeed: PriceFeed;
 let auctioneer: Auctioneer;
 let liquidator: Liquidator;
 let reserve: ReservePool;
-let erc20: Erc20Token;
+let erc20: MockErc20Token;
 
 const PRECISION_COLL = ethers.BigNumber.from("1000000000000000000");
 const PRECISION_PRICE = ethers.BigNumber.from("1000000000000000000000000000");
