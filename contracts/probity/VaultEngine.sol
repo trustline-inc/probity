@@ -364,7 +364,7 @@ contract VaultEngine is Stateful, Eventful {
    * @param interestIndex The new rate accumulator for debt
    * @param yieldIndex The new rate accumulator for capital
    */
-  function updateIndices(
+  function updateAccumulators(
     bytes32 collId,
     uint256 interestIndex,
     uint256 yieldIndex
