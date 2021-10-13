@@ -650,6 +650,7 @@ const deployProbity = async () => {
   await deployMockFtso();
   await deployMockFtsoManager();
   await deployMockFtsoRewardManager();
+  await deployMockVaultEngine();
   await deployCollateral();
   await deployVPTokenCollateral();
   await deployTeller();
