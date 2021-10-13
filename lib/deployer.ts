@@ -99,7 +99,7 @@ interface Contracts {
   vpTokenCollateral: VpTokenCollateral;
   lowApr: LowApr;
   highApr: HighApr;
-  mockVault: MockVaultEngine;
+  mockVaultEngine: MockVaultEngine;
 }
 
 const contracts: Contracts = {
@@ -126,7 +126,7 @@ const contracts: Contracts = {
   vpTokenCollateral: null,
   lowApr: null,
   highApr: null,
-  mockVault: null,
+  mockVaultEngine: null,
 };
 
 // Contracts submitted to the register
@@ -607,9 +607,9 @@ const deployMockVaultEngine = async () => {
     "MockVaultEngine",
     signers.owner
   )) as MockVaultEngineFactory;
-  contracts.mockVault = await mockVaultEngineFactory.deploy();
+  contracts.mockVaultEngine = await mockVaultEngineFactory.deploy();
 
-  await contracts.mockVault.deployed();
+  await contracts.mockVaultEngine.deployed();
 
   return contracts;
 };

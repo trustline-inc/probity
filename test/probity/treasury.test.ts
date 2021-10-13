@@ -55,10 +55,10 @@ describe("Treasury Unit Tests", function () {
     };
 
     contracts = await mock.deployMockVaultEngine();
-    param.vaultEngine = contracts.mockVault;
+    param.vaultEngine = contracts.mockVaultEngine;
     contracts = await probity.deployTreasury(param);
     treasury = contracts.treasury;
-    vaultEngine = contracts.mockVault;
+    vaultEngine = contracts.mockVaultEngine;
 
     await registry.setupContractAddress(bytes32("treasury"), owner.address);
   });

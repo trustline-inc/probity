@@ -16,6 +16,8 @@ async function main() {
       .split(/(?=[A-Z])/)
       .join("_")
       .toUpperCase();
+    console.log(contract);
+    console.log(contracts[contract]);
     addresses.push({
       Contract: contractDisplayName,
       Address: contracts[contract].address,
