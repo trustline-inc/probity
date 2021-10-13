@@ -12,7 +12,7 @@ contract MockVaultEngine {
     AUR[user] -= amount;
   }
 
-  function reduceYield(address user, uint256 amount) external {
+  function removeTcn(address user, uint256 amount) external {
     TCN[user] -= amount;
   }
 

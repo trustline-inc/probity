@@ -143,7 +143,7 @@ describe("Treasury Unit Tests", function () {
       await vaultEngine.addTcn(owner.address, AMOUNT_TO_MINT);
     });
 
-    it("tests that withdrawTcn call vaultEngine.reduceYield function", async () => {
+    it("tests that withdrawTcn call vaultEngine.removeTcn function", async () => {
       const tcnBalanceBefore = await vaultEngine.TCN(owner.address);
       await treasury.withdrawTcn(AMOUNT_TO_WITHDRAW);
       const tcnBalanceAfter = await vaultEngine.TCN(owner.address);

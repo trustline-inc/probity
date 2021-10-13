@@ -9,7 +9,7 @@ interface VaultEngineLike {
 
   function removeAurei(address user, uint256 amount) external;
 
-  function reduceYield(address user, uint256 amount) external;
+  function removeTcn(address user, uint256 amount) external;
 }
 
 interface TokenLike {
@@ -76,7 +76,7 @@ contract Treasury is Stateful {
   }
 
   function withdrawTcn(uint256 amount) external {
-    vaultEngine.reduceYield(msg.sender, amount);
+    vaultEngine.removeTcn(msg.sender, amount);
     tcn.mint(msg.sender, amount);
 
     emit TcnWithdrawal(msg.sender, amount);
