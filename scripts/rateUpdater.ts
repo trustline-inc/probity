@@ -1,5 +1,5 @@
 /**
- * Script that perpetually calls Teller.updateIndices()
+ * Script that perpetually calls Teller.updateAccumulators()
  */
 import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-web3";
@@ -13,7 +13,7 @@ import { Contract } from "ethers";
 
   setInterval(async () => {
     console.log("Updating rates...");
-    const tx = await teller.updateIndices(web3.utils.keccak256("FLR"), {
+    const tx = await teller.updateAccumulators(web3.utils.keccak256("FLR"), {
       gasLimit: 400000,
     });
     console.log(tx);
