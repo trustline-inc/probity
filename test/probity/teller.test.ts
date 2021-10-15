@@ -39,7 +39,7 @@ let DEBT_TO_SET = PRECISION_AUR.mul(1000);
 
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
-describe.only("Treasury Unit Tests", function () {
+describe("Treasury Unit Tests", function () {
   beforeEach(async function () {
     let { contracts, signers } = await deployProbity();
     // Set contracts
