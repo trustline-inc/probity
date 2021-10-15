@@ -2,12 +2,10 @@
 
 pragma solidity ^0.8.0;
 
-import "../dependencies/Ownable.sol";
 import "../dependencies/SafeMath.sol";
 import "../interfaces/IAurei.sol";
-import "../interfaces/ITeller.sol";
 
-contract MockERC20Token is IAurei, Ownable {
+contract MockERC20Token is IAurei {
   using SafeMath for uint256;
 
   // --- Data ---
@@ -33,7 +31,7 @@ contract MockERC20Token is IAurei, Ownable {
   /**
    * @dev Builds the domain separator
    */
-  constructor() Ownable(msg.sender) {
+  constructor() {
     // @dev commented out for now because of ProviderError: invalid opcode: CHAINID
     uint256 chainId;
     assembly {
