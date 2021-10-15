@@ -26,7 +26,6 @@ import {
   MockFtsoRewardManagerFactory,
   MockErc20TokenFactory,
   MockVpTokenFactory,
-  MockStateConnectorFactory,
   MockVaultEngineFactory,
 } from "../typechain";
 
@@ -53,7 +52,6 @@ import {
   MockFtsoManager,
   MockFtsoRewardManager,
   MockVpToken,
-  MockStateConnector,
   MockVaultEngine,
 } from "../typechain";
 
@@ -79,7 +77,6 @@ interface Contracts {
   registry: Registry;
   tcnToken: TcnToken;
   vaultEngine: VaultEngine;
-  stateConnector: MockStateConnector;
   nativeCollateral: NativeCollateral;
   fxrpCollateral: Erc20Collateral;
   ftsoManager: MockFtsoManager;
@@ -105,7 +102,6 @@ const contracts: Contracts = {
   registry: null,
   tcnToken: null,
   vaultEngine: null,
-  stateConnector: null,
   nativeCollateral: null,
   fxrpCollateral: null,
   ftsoManager: null,
