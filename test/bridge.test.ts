@@ -14,6 +14,7 @@ import {
   bytes32,
 } from "./utils/constants";
 import assertRevert from "./utils/assertRevert";
+import increaseTime from "./utils/increaseTime";
 const expect = chai.expect;
 
 const AMOUNT_TO_ISSUE = 10;
@@ -519,8 +520,8 @@ describe("Bridge", function () {
         bridge.createRedemptionReservation(source, issuer, 0),
         errorTypes.TWO_HOURS_NOT_PASSED
       );
-      await ethers.provider.send("evm_increaseTime", [7201]);
-      await ethers.provider.send("evm_mine", []);
+
+      await increaseTime(7201);
 
       await bridge.createRedemptionReservation(source, issuer, 0);
     });
