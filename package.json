@@ -18,7 +18,6 @@
     "deploy:hardhat": "npx hardhat --network localhost run ./scripts/deploy.ts",
     "test": "npx hardhat test --network hardhat",
     "test:happy": "npx hardhat test test/happyFlow.test.ts --network hardhat",
-    "test:bridge": "npx hardhat test test/bridge.test.ts --network hardhat",
     "coverage": "npm run build && npx hardhat coverage --temp artifacts --network coverage"
   },
   "contributors": [
