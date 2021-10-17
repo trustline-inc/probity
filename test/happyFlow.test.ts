@@ -199,7 +199,9 @@ describe("Probity Happy flow", function () {
     let ownerBalanceBefore = await aurei.balanceOf(owner.address);
     await treasury.withdrawAurei(aurAfter);
     let ownerBalanceAfter = await aurei.balanceOf(owner.address);
-    expect(ownerBalanceAfter.sub(ownerBalanceBefore)).to.equal(aurAfter);
+    expect(
+      ownerBalanceAfter.sub(ownerBalanceBefore).mul(PRECISION_PRICE)
+    ).to.equal(aurAfter);
   });
 
   it("test reducing modifyDebt", async () => {

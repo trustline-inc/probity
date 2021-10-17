@@ -44,27 +44,27 @@ describe("ERC20 Collateral Unit Test", function () {
     user = signers.alice;
   });
 
-  it("test Deposit event is emitted properly", async () => {
+  it("test DepositToken event is emitted properly", async () => {
     await erc20.mint(owner.address, AMOUNT_TO_MINT);
     await erc20.approve(erc20Collateral.address, AMOUNT_TO_MINT);
 
     let parsedEvents = await parseEvents(
       erc20Collateral.deposit(AMOUNT_TO_MINT),
-      "Deposit",
+      "DepositToken",
       erc20Collateral
     );
     expect(parsedEvents[0].args[0]).to.equal(owner.address);
     expect(parsedEvents[0].args[1]).to.equal(AMOUNT_TO_MINT);
   });
 
-  it("test Withdrawal event is emitted properly", async () => {
+  it("test WithdrawToken event is emitted properly", async () => {
     await erc20.mint(owner.address, AMOUNT_TO_MINT);
     await erc20.approve(erc20Collateral.address, AMOUNT_TO_MINT);
     await erc20Collateral.deposit(AMOUNT_TO_MINT);
 
     let parsedEvents = await parseEvents(
       erc20Collateral.withdraw(AMOUNT_TO_WITHDRAW),
-      "Withdrawal",
+      "WithdrawToken",
       erc20Collateral
     );
     expect(parsedEvents[0].args[0]).to.equal(owner.address);

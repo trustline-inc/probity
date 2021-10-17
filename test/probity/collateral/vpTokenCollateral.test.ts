@@ -45,12 +45,12 @@ describe("VP Token Collateral Unit Test", function () {
     user = signers.alice;
   });
 
-  it("test Deposit event is emitted properly", async () => {
+  it("test DepositVPToken event is emitted properly", async () => {
     await vpToken.mint(owner.address, AMOUNT_TO_MINT);
     await vpToken.approve(vpTokenCollateral.address, AMOUNT_TO_MINT);
     let parsedEvents = await parseEvents(
       vpTokenCollateral.deposit(AMOUNT_TO_MINT),
-      "Deposit",
+      "DepositVPToken",
       vpTokenCollateral
     );
 
@@ -58,14 +58,14 @@ describe("VP Token Collateral Unit Test", function () {
     expect(parsedEvents[0].args[1]).to.equal(AMOUNT_TO_MINT);
   });
 
-  it("test Withdrawal event is emitted properly", async () => {
+  it("test WithdrawVPToken event is emitted properly", async () => {
     await vpToken.mint(owner.address, AMOUNT_TO_MINT);
     await vpToken.approve(vpTokenCollateral.address, AMOUNT_TO_MINT);
     await vpTokenCollateral.deposit(AMOUNT_TO_MINT);
 
     let parsedEvents = await parseEvents(
       vpTokenCollateral.withdraw(AMOUNT_TO_WITHDRAW),
-      "Withdrawal",
+      "WithdrawVPToken",
       vpTokenCollateral
     );
     expect(parsedEvents[0].args[0]).to.equal(owner.address);
