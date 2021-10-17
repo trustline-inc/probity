@@ -17,8 +17,8 @@ contract NativeCollateral is Stateful {
   // Events
   /////////////////////////////////////////
 
-  event Deposit(address indexed user, uint256 amount);
-  event Withdrawal(address indexed user, uint256 amount);
+  event DepositNativeCrypto(address indexed user, uint256 amount);
+  event WithdrawNativeCrypto(address indexed user, uint256 amount);
 
   /////////////////////////////////////////
   // Data Storage
@@ -44,13 +44,12 @@ contract NativeCollateral is Stateful {
 
   function deposit() external payable onlyWhen("paused", false) {
     vaultEngine.modifyCollateral(collateralId, msg.sender, int256(msg.value));
-    emit Deposit(msg.sender, msg.value);
+    emit DepositNativeCrypto(msg.sender, msg.value);
   }
 
   function withdraw(uint256 amount) external onlyWhen("paused", false) {
     vaultEngine.modifyCollateral(collateralId, msg.sender, -int256(amount));
     require(payable(msg.sender).send(amount), "FLR_COLL: fail to send FLR");
-
-    emit Withdrawal(msg.sender, amount);
+    emit WithdrawNativeCrypto(msg.sender, amount);
   }
 }
