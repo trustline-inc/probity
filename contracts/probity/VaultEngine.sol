@@ -18,12 +18,16 @@ interface ftsoLike {
  * @notice The core accounting module for the Probity system
  */
 contract VaultEngine is Stateful, Eventful {
-  event ModifySupply(
+  event SupplyModified(
     address indexed user,
     int256 collAmount,
     int256 capitalAmount
   );
-  event ModifyDebt(address indexed user, int256 collAmount, int256 debtAmount);
+  event DebtModified(
+    address indexed user,
+    int256 collAmount,
+    int256 debtAmount
+  );
 
   /////////////////////////////////////////
   // Data Structure
@@ -230,7 +234,7 @@ contract VaultEngine is Stateful, Eventful {
 
     AUR[treasuryAddress] = add(AUR[treasuryAddress], aurToModify);
 
-    emit ModifySupply(msg.sender, collAmount, capitalAmount);
+    emit SupplyModified(msg.sender, collAmount, capitalAmount);
   }
 
   /**
@@ -289,7 +293,7 @@ contract VaultEngine is Stateful, Eventful {
 
     vaults[collId][msg.sender] = vault;
 
-    emit ModifyDebt(msg.sender, collAmount, debtAmount);
+    emit DebtModified(msg.sender, collAmount, debtAmount);
   }
 
   /**
