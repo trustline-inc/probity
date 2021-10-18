@@ -160,16 +160,17 @@ contract Auctioneer is Stateful, Eventful {
     uint256 bidPrice,
     uint256 lot
   ) external {
-    require(!auctions[auctionId].isOver, "Auction is over");
+    require(
+      !auctions[auctionId].isOver,
+      "Auctioneer/placeBid: Auction is over"
+    );
     require(
       bids[auctionId][msg.sender].price == 0,
-      "AUCTIONEER: this user has already placed a bid"
+      "Auctioneer/placeBid: this user has already placed a bid"
     );
 
-    (uint256 totalBidValue, address index) = totalBidsAtPrice(
-      auctionId,
-      bidPrice * ONE
-    );
+    (uint256 totalBidValue, address index) =
+      totalBidsAtPrice(auctionId, bidPrice * ONE);
     uint256 bidAbleAmount = auctions[auctionId].debt - totalBidValue;
     uint256 bidAmount = bidPrice * lot;
     if (bidAbleAmount < bidAmount) {
@@ -202,23 +203,24 @@ contract Auctioneer is Stateful, Eventful {
     uint256 maxPrice,
     uint256 amount
   ) external {
-    require(!auctions[auctionId].isOver, "Auction is over");
+    require(
+      !auctions[auctionId].isOver,
+      "Auctioneer/buyItNow: Auction is over"
+    );
     // fail if currentPrice <= max Price
     uint256 currentPrice = calculatePrice(auctionId);
     require(
       currentPrice <= maxPrice,
-      "Auctioneer: current price is higher than max price"
+      "Auctioneer/buyItNow: current price is higher than max price"
     );
-    require(currentPrice != 0, "Current Price is now 0");
+    require(currentPrice != 0, "Auctioneer/buyItNow: Current Price is now 0");
     uint256 buyableAmount = amount;
 
-    (uint256 bidValueAtCurrent, address index) = totalBidsAtPrice(
-      auctionId,
-      currentPrice * ONE
-    );
+    (uint256 bidValueAtCurrent, address index) =
+      totalBidsAtPrice(auctionId, currentPrice * ONE);
     require(
       bidValueAtCurrent < auctions[auctionId].debt,
-      "Auctioneer: Price has reach a point where BuyItNow is no longer available"
+      "Auctioneer/buyItNow: Price has reach a point where BuyItNow is no longer available"
     );
     if (bidValueAtCurrent + amount > auctions[auctionId].debt) {
       buyableAmount = auctions[auctionId].debt - bidValueAtCurrent;
@@ -256,10 +258,10 @@ contract Auctioneer is Stateful, Eventful {
     require(
       calculatePrice(auctionId) * nextBidRatio >=
         bids[auctionId][msg.sender].price * ONE,
-      "can't finalize sale because the current price has not passed the bid price"
+      "Auctioneer/finalizeSale: can't finalize sale because the current price has not passed the bid price"
     );
-    uint256 buyAmount = bids[auctionId][msg.sender].price *
-      bids[auctionId][msg.sender].lot;
+    uint256 buyAmount =
+      bids[auctionId][msg.sender].price * bids[auctionId][msg.sender].lot;
     vaultEngine.moveAurei(
       msg.sender,
       auctions[auctionId].beneficiary,
@@ -324,7 +326,7 @@ contract Auctioneer is Stateful, Eventful {
         removed = true;
       }
     }
-    require(removed, "The index could not be found");
+    require(removed, "Auctioneer/removeIndex: The index could not be found");
   }
 
   function findIndex(uint256 auctionId, uint256 newPrice)
@@ -374,8 +376,9 @@ contract Auctioneer is Stateful, Eventful {
         amountLeft = amountLeft - bids[auctionId][index].price * ONE;
       } else if (amountLeft > 0) {
         // this bidder's lot is going to change to amountLeftOver
-        uint256 lotDiff = bids[auctionId][index].lot -
-          ((amountLeft / bids[auctionId][index].price) * ONE);
+        uint256 lotDiff =
+          bids[auctionId][index].lot -
+            ((amountLeft / bids[auctionId][index].price) * ONE);
         bids[auctionId][index].lot =
           (amountLeft / bids[auctionId][index].price) *
           ONE;

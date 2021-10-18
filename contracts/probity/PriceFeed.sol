@@ -84,13 +84,11 @@ contract PriceFeed is Stateful, Eventful, DSMath {
   function updatePrice(bytes32 collId) external {
     require(
       address(collateralTypes[collId].ftso) != address(0),
-      "PriceFeed: Collateral Type is not"
+      "PriceFeed/UpdatePrice: Collateral Type is not initialized"
     );
     (uint256 price, ) = collateralTypes[collId].ftso.getCurrentPrice();
-    uint256 adjustedPrice = rdiv(
-      rdiv(price, 10**27),
-      collateralTypes[collId].liquidationRatio
-    );
+    uint256 adjustedPrice =
+      rdiv(rdiv(price, 10**27), collateralTypes[collId].liquidationRatio);
 
     vaultEngine.updatePrice(collId, adjustedPrice);
   }

@@ -93,7 +93,7 @@ contract Teller is Stateful, DSMath {
   function updateAccumulator(bytes32 collId) external {
     require(
       collateralTypes[collId].lastUpdated != 0,
-      "TELLER: Collateral Type not initialized"
+      "Teller/updateAccumulator: Collateral Type not initialized"
     );
 
     Collateral memory coll = collateralTypes[collId];

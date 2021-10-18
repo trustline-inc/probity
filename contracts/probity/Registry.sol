@@ -20,7 +20,10 @@ contract Registry is IRegistry {
   /////////////////////////////////////////
 
   modifier onlyByGov() {
-    require(addressToName[msg.sender] == "gov");
+    require(
+      addressToName[msg.sender] == "gov",
+      "Registry/onlyByGov: caller is not from 'gov' address"
+    );
     _;
   }
 

@@ -66,7 +66,7 @@ contract ERC20Collateral is Stateful {
   function deposit(uint256 amount) external onlyWhen("paused", false) {
     require(
       collateralToken.transferFrom(msg.sender, address(this), amount),
-      "ERC20_COLL: transfer failed"
+      "ERC20Collateral/deposit: transfer failed"
     );
     vaultEngine.modifyCollateral(collateralId, msg.sender, int256(amount));
     emit DepositToken(msg.sender, amount, address(collateralToken));
@@ -75,7 +75,7 @@ contract ERC20Collateral is Stateful {
   function withdraw(uint256 amount) external onlyWhen("paused", false) {
     require(
       collateralToken.transfer(msg.sender, amount),
-      "ERC20_COLL: transfer failed"
+      "ERC20Collateral/withdraw: transfer failed"
     );
     vaultEngine.modifyCollateral(collateralId, msg.sender, -int256(amount));
     emit WithdrawToken(msg.sender, amount, address(collateralToken));
