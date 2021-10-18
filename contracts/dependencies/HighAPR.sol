@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 
 contract HighAPR {
   // Follows R^(1/31557600) * (1-U) * f(1/31557600) = 1
+  // solhint-disable-next-line
   mapping(uint256 => uint256) public APR_TO_MPR;
 
   /**

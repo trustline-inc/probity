@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import "../interfaces/IRegistry.sol";
 
 contract AccessControl {
-  IRegistry registry;
+  IRegistry public registry;
 
   constructor(address registryAddress) {
     registry = IRegistry(registryAddress);

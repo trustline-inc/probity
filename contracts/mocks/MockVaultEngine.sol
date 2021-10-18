@@ -7,27 +7,27 @@ contract MockVaultEngine {
   }
 
   mapping(bytes32 => Collateral) public collateralTypes;
-  mapping(address => uint256) public AUR;
-  mapping(address => uint256) public TCN;
+  mapping(address => uint256) public aur;
+  mapping(address => uint256) public tcn;
 
   uint256 public totalDebt;
   uint256 public totalCapital;
 
   function addAurei(address user, uint256 amount) external {
-    AUR[user] += amount;
+    aur[user] += amount;
   }
 
   function removeAurei(address user, uint256 amount) external {
-    AUR[user] -= amount;
+    aur[user] -= amount;
   }
 
   function removeTcn(address user, uint256 amount) external {
-    TCN[user] -= amount;
+    tcn[user] -= amount;
   }
 
   // added for testing purposes
   function addTcn(address user, uint256 amount) external {
-    TCN[user] += amount;
+    tcn[user] += amount;
   }
 
   //added for testing purposes

@@ -112,41 +112,40 @@ describe("Teller Unit Tests", function () {
     });
 
     it("tests that APR is set properly", async () => {
-      // test APR at 25%, 50%, 75%, 90% and 95%
       await vaultEngine.setTotalDebt(PRECISION_AUR.mul(25));
       await vaultEngine.setTotalCapital(PRECISION_AUR.mul(100));
 
       await teller.updateAccumulator(flrCollId);
-      let APR = await teller.APR();
-      expect(APR).to.equal("1015000000000000000000000000");
+      let apr = await teller.apr();
+      expect(apr).to.equal("1015000000000000000000000000");
 
       await vaultEngine.setTotalDebt(PRECISION_AUR.mul(50));
       await vaultEngine.setTotalCapital(PRECISION_AUR.mul(100));
 
       await teller.updateAccumulator(flrCollId);
-      APR = await teller.APR();
-      expect(APR).to.equal("1020000000000000000000000000");
+      apr = await teller.apr();
+      expect(apr).to.equal("1020000000000000000000000000");
 
       await vaultEngine.setTotalDebt(PRECISION_AUR.mul(75));
       await vaultEngine.setTotalCapital(PRECISION_AUR.mul(100));
 
       await teller.updateAccumulator(flrCollId);
-      APR = await teller.APR();
-      expect(APR).to.equal("1040000000000000000000000000");
+      apr = await teller.apr();
+      expect(apr).to.equal("1040000000000000000000000000");
 
       await vaultEngine.setTotalDebt(PRECISION_AUR.mul(90));
       await vaultEngine.setTotalCapital(PRECISION_AUR.mul(100));
 
       await teller.updateAccumulator(flrCollId);
-      APR = await teller.APR();
-      expect(APR).to.equal("1100000000000000000000000000");
+      apr = await teller.apr();
+      expect(apr).to.equal("1100000000000000000000000000");
 
       await vaultEngine.setTotalDebt(PRECISION_AUR.mul(95));
       await vaultEngine.setTotalCapital(PRECISION_AUR.mul(100));
 
       await teller.updateAccumulator(flrCollId);
-      APR = await teller.APR();
-      expect(APR).to.equal("1200000000000000000000000000");
+      apr = await teller.apr();
+      expect(apr).to.equal("1200000000000000000000000000");
     });
 
     it("tests that APR won't go over MAX_APR", async () => {
@@ -154,29 +153,29 @@ describe("Teller Unit Tests", function () {
       await vaultEngine.setTotalCapital(PRECISION_AUR.mul(1000));
 
       await teller.updateAccumulator(flrCollId);
-      let APR = await teller.APR();
-      expect(APR).to.equal("2000000000000000000000000000");
+      let apr = await teller.apr();
+      expect(apr).to.equal("2000000000000000000000000000");
 
       await vaultEngine.setTotalDebt(PRECISION_AUR.mul(995));
       await vaultEngine.setTotalCapital(PRECISION_AUR.mul(1000));
 
       await teller.updateAccumulator(flrCollId);
-      APR = await teller.APR();
-      expect(APR).to.equal("2000000000000000000000000000");
+      apr = await teller.apr();
+      expect(apr).to.equal("2000000000000000000000000000");
 
       await vaultEngine.setTotalDebt(PRECISION_AUR.mul(1000));
       await vaultEngine.setTotalCapital(PRECISION_AUR.mul(1000));
 
       await teller.updateAccumulator(flrCollId);
-      APR = await teller.APR();
-      expect(APR).to.equal("2000000000000000000000000000");
+      apr = await teller.apr();
+      expect(apr).to.equal("2000000000000000000000000000");
 
       await vaultEngine.setTotalDebt(PRECISION_AUR.mul(1100));
       await vaultEngine.setTotalCapital(PRECISION_AUR.mul(1000));
 
       await teller.updateAccumulator(flrCollId);
-      APR = await teller.APR();
-      expect(APR).to.equal("2000000000000000000000000000");
+      apr = await teller.apr();
+      expect(apr).to.equal("2000000000000000000000000000");
     });
 
     it("tests that debtAccumulator is calculated properly", async () => {
@@ -185,7 +184,7 @@ describe("Teller Unit Tests", function () {
 
       await teller.updateAccumulator(flrCollId);
       let vaultColl = await vaultEngine.collateralTypes(flrCollId);
-      let MPR = await teller.MPR();
+      let mpr = await teller.mpr();
 
       let lastUpdatedBefore = (await teller.collateralTypes(flrCollId))[0];
       const before = await vaultEngine.collateralTypes(flrCollId);
@@ -196,7 +195,7 @@ describe("Teller Unit Tests", function () {
       let lastUpdatedAfter = (await teller.collateralTypes(flrCollId))[0];
 
       let EXPECTED_DEBT_ACCUMULATOR = rmul(
-        rpow(MPR, lastUpdatedAfter.sub(lastUpdatedBefore)),
+        rpow(mpr, lastUpdatedAfter.sub(lastUpdatedBefore)),
         vaultColl[0]
       );
 
@@ -204,7 +203,7 @@ describe("Teller Unit Tests", function () {
       expect(after[0]).to.equal(EXPECTED_DEBT_ACCUMULATOR);
 
       vaultColl = await vaultEngine.collateralTypes(flrCollId);
-      MPR = await teller.MPR();
+      mpr = await teller.mpr();
       TIME_TO_INCREASE = 23000;
 
       lastUpdatedBefore = lastUpdatedAfter;
@@ -214,7 +213,7 @@ describe("Teller Unit Tests", function () {
       lastUpdatedAfter = (await teller.collateralTypes(flrCollId))[0];
 
       EXPECTED_DEBT_ACCUMULATOR = rmul(
-        rpow(MPR, lastUpdatedAfter.sub(lastUpdatedBefore)),
+        rpow(mpr, lastUpdatedAfter.sub(lastUpdatedBefore)),
         vaultColl[0]
       );
 
@@ -236,11 +235,11 @@ describe("Teller Unit Tests", function () {
       await teller.updateAccumulator(flrCollId);
 
       let lastUpdatedAfter = (await teller.collateralTypes(flrCollId))[0];
-      let MPR = await teller.MPR();
+      let mpr = await teller.mpr();
       let utilitization = (await teller.collateralTypes(flrCollId))
         .lastUtilization;
       let multipledByUtilization = rmul(
-        MPR.sub(PRECISION_PRICE),
+        mpr.sub(PRECISION_PRICE),
         utilitization.mul(1e9)
       );
       let exponentiated = rpow(
@@ -257,7 +256,7 @@ describe("Teller Unit Tests", function () {
 
       // to know if utilization is zero, how will it act?
       await vaultEngine.setTotalDebt(0);
-      MPR = await teller.MPR();
+      mpr = await teller.mpr();
       await teller.updateAccumulator(flrCollId);
       vaultColl = await vaultEngine.collateralTypes(flrCollId);
       lastUpdatedBefore = (await teller.collateralTypes(flrCollId))[0];
@@ -267,7 +266,7 @@ describe("Teller Unit Tests", function () {
       lastUpdatedAfter = (await teller.collateralTypes(flrCollId))[0];
       utilitization = (await teller.collateralTypes(flrCollId)).lastUtilization;
       multipledByUtilization = rmul(
-        MPR.sub(PRECISION_PRICE),
+        mpr.sub(PRECISION_PRICE),
         utilitization.mul(1e9)
       );
       exponentiated = rpow(

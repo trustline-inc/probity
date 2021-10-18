@@ -67,11 +67,11 @@ contract Liquidator is Stateful, Eventful {
   // Data Variables
   /////////////////////////////////////////
 
-  VaultEngineLike vaultEngine;
-  ReservePoolLike reserve;
+  VaultEngineLike public vaultEngine;
+  ReservePoolLike public reserve;
 
-  uint256 constant PRECISION_PRICE = 10**27;
-  mapping(bytes32 => Collateral) collateralTypes;
+  uint256 private constant PRECISION_PRICE = 10**27;
+  mapping(bytes32 => Collateral) public collateralTypes;
 
   /////////////////////////////////////////
   // Constructor
