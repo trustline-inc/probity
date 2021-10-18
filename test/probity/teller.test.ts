@@ -1,12 +1,7 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import "@nomiclabs/hardhat-ethers";
 
-import {
-  MockVaultEngine,
-  Registry,
-  Teller,
-  VaultEngine,
-} from "../../typechain";
+import { MockVaultEngine, Registry, Teller } from "../../typechain";
 
 import { deployProbity, probity, mock } from "../../lib/deployer";
 import { ethers } from "hardhat";
@@ -17,11 +12,9 @@ import {
   PRECISION_COLL,
   PRECISION_PRICE,
 } from "../utils/constants";
-import parseEvents from "../utils/parseEvents";
 import assertRevert from "../utils/assertRevert";
 import increaseTime from "../utils/increaseTime";
 import { rmul, rpow, wdiv } from "../utils/math";
-import { BigNumber } from "ethers";
 const expect = chai.expect;
 
 // Wallets
@@ -47,9 +40,9 @@ describe("Teller Unit Tests", function () {
 
     contracts = await mock.deployMockVaultEngine();
     contracts = await probity.deployTeller({
-      vaultEngine: contracts.mockVault,
+      vaultEngine: contracts.mockVaultEngine,
     });
-    vaultEngine = contracts.mockVault;
+    vaultEngine = contracts.mockVaultEngine;
 
     teller = contracts.teller;
 
