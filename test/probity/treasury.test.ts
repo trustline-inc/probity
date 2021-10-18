@@ -10,7 +10,7 @@ import {
   MockVaultEngine,
 } from "../../typechain";
 
-import { deployTest, probity, mock } from "../../lib/deployer";
+import { deployTest, probity } from "../../lib/deployer";
 import { ethers } from "hardhat";
 import * as chai from "chai";
 import { bytes32, PRECISION_COLL } from "../utils/constants";
