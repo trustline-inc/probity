@@ -8,13 +8,14 @@ async function main() {
   const [owner]: SignerWithAddress[] = await ethers.getSigners();
 
   if (
-    !process.env.FTSO ||
-    !process.env.LINEAR_DECREASE ||
+    !process.env.VP_TOKEN ||
+    !process.env.FTSO_MANAGER ||
+    !process.env.FTSO_REWARD_MANAGER ||
     !process.env.VAULT_ENGINE ||
     !process.env.REGISTRY
   ) {
     console.error(
-      "Please provide FTSO, LINEAR_DECREASE, VAULT_ENGINE and REGISTRY contract addresses in .env"
+      "Please provide VP_TOKEN, FTSO_MANAGER, FTSO_REWARD_MANAGER, VAULT_ENGINE and REGISTRY contract addresses in .env"
     );
     process.exit(1);
   }
