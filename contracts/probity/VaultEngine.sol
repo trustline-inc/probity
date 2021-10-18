@@ -189,7 +189,7 @@ contract VaultEngine is Stateful, Eventful {
     int256 capitalAmount
   ) external {
     require(
-      registry.checkIfValidContract("treasury", treasuryAddress),
+      registry.checkContractValidity("treasury", treasuryAddress),
       "VAULT: Treasury address is not valid"
     );
 
@@ -236,7 +236,7 @@ contract VaultEngine is Stateful, Eventful {
     int256 debtAmount
   ) external {
     require(
-      registry.checkIfValidContract("treasury", treasuryAddress),
+      registry.checkContractValidity("treasury", treasuryAddress),
       "VAULT: Treasury address is not valid"
     );
 

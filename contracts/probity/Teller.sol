@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 
 import "../dependencies/Stateful.sol";
 import "../dependencies/DSMath.sol";
-import "../dependencies/Base.sol";
 
 interface VaultEngineLike {
   function collateralTypes(bytes32)
@@ -29,7 +28,7 @@ interface IAPR {
 /**
  * @notice Creates loans and manages vault debt.
  */
-contract Teller is Stateful, DSMath, Base {
+contract Teller is Stateful, DSMath {
   /////////////////////////////////////////
   // Data Structure
   /////////////////////////////////////////
@@ -50,6 +49,12 @@ contract Teller is Stateful, DSMath, Base {
   VaultEngineLike public vaultEngine;
   IAPR public lowAprRate;
   IAPR public highAprRate;
+
+  // One as 1e18, or as 100%
+  uint256 constant ONE = 10**18;
+
+  // Set max APR to 100%
+  uint256 constant MAX_APR = ONE * 2 * 1e9;
 
   /////////////////////////////////////////
   // Constructor

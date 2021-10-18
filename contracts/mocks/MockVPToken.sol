@@ -2,12 +2,10 @@
 
 pragma solidity ^0.8.0;
 
-import "../dependencies/Ownable.sol";
 import "../dependencies/SafeMath.sol";
 import "../interfaces/IAurei.sol";
-import "../interfaces/ITeller.sol";
 
-contract MockVPToken is IAurei, Ownable {
+contract MockVPToken is IAurei {
   using SafeMath for uint256;
 
   // --- Data ---
@@ -32,7 +30,7 @@ contract MockVPToken is IAurei, Ownable {
   /**
    * @dev Builds the domain separator
    */
-  constructor() Ownable(msg.sender) {
+  constructor() {
     address[] storage delegates;
     uint256[] storage delegateBips;
     uint256 chainId;

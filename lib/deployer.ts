@@ -7,7 +7,6 @@ import { ethers, network, web3 } from "hardhat";
 import {
   AureiFactory,
   TcnTokenFactory,
-  BridgeFactory,
   RegistryFactory,
   VaultEngineFactory,
   NativeCollateralFactory,
@@ -27,14 +26,12 @@ import {
   MockFtsoRewardManagerFactory,
   MockErc20TokenFactory,
   MockVpTokenFactory,
-  MockStateConnectorFactory,
   MockVaultEngineFactory,
 } from "../typechain";
 
 // Import contract types
 import {
   Aurei,
-  Bridge,
   Registry,
   TcnToken,
   VaultEngine,
@@ -55,7 +52,6 @@ import {
   MockFtsoManager,
   MockFtsoRewardManager,
   MockVpToken,
-  MockStateConnector,
   MockVaultEngine,
 } from "../typechain";
 
@@ -77,12 +73,10 @@ const NETWORK_NATIVE_TOKEN = NETWORK_NATIVE_TOKENS[network.name];
  */
 interface Contracts {
   aurei: Aurei;
-  bridge: Bridge;
   ftso: MockFtso;
   registry: Registry;
   tcnToken: TcnToken;
   vaultEngine: VaultEngine;
-  stateConnector: MockStateConnector;
   nativeCollateral: NativeCollateral;
   fxrpCollateral: Erc20Collateral;
   ftsoManager: MockFtsoManager;
@@ -99,17 +93,15 @@ interface Contracts {
   vpTokenCollateral: VpTokenCollateral;
   lowApr: LowApr;
   highApr: HighApr;
-  mockVault: MockVaultEngine;
+  mockVaultEngine: MockVaultEngine;
 }
 
 const contracts: Contracts = {
   aurei: null,
-  bridge: null,
   ftso: null,
   registry: null,
   tcnToken: null,
   vaultEngine: null,
-  stateConnector: null,
   nativeCollateral: null,
   fxrpCollateral: null,
   ftsoManager: null,
@@ -126,19 +118,8 @@ const contracts: Contracts = {
   vpTokenCollateral: null,
   lowApr: null,
   highApr: null,
-  mockVault: null,
+  mockVaultEngine: null,
 };
-
-// Contracts submitted to the register
-enum Contract {
-  Aurei,
-  Bridge,
-  Ftso,
-  TcnToken,
-  Teller,
-  Treasury,
-  VaultEngine,
-}
 
 interface Signers {
   owner: SignerWithAddress;
@@ -539,29 +520,6 @@ const deployPriceCalc = async () => {
   return contracts;
 };
 
-const deployBridge = async () => {
-  const signers = await getSigners();
-
-  const stateConnectorFactory = (await ethers.getContractFactory(
-    "MockStateConnector",
-    signers.owner
-  )) as MockStateConnectorFactory;
-  contracts.stateConnector = await stateConnectorFactory.deploy();
-  await contracts.stateConnector.deployed();
-
-  const bridgeFactory = (await ethers.getContractFactory(
-    "Bridge",
-    signers.owner
-  )) as BridgeFactory;
-  contracts.bridge = await bridgeFactory.deploy(
-    contracts.aurei.address,
-    contracts.stateConnector.address
-  );
-  await contracts.bridge.deployed();
-
-  return contracts;
-};
-
 const deployReserve = async () => {
   const signers = await getSigners();
 
@@ -619,9 +577,9 @@ const deployMockVaultEngine = async () => {
     "MockVaultEngine",
     signers.owner
   )) as MockVaultEngineFactory;
-  contracts.mockVault = await mockVaultEngineFactory.deploy();
+  contracts.mockVaultEngine = await mockVaultEngineFactory.deploy();
 
-  await contracts.mockVault.deployed();
+  await contracts.mockVaultEngine.deployed();
 
   return contracts;
 };
@@ -662,6 +620,7 @@ const deployProbity = async () => {
   await deployMockFtso();
   await deployMockFtsoManager();
   await deployMockFtsoRewardManager();
+  await deployMockVaultEngine();
   await deployCollateral();
   await deployVPTokenCollateral();
   await deployTeller();
@@ -675,20 +634,9 @@ const deployProbity = async () => {
   return { contracts, signers };
 };
 
-const deployBridgeSystem = async () => {
-  // Set signers
-  const signers = await getSigners();
-  await deployRegistry();
-  await deployAUR();
-  await deployBridge();
-
-  return { contracts, signers };
-};
-
 const deployAll = async () => {
   const signers = await getSigners();
   await deployProbity();
-  await deployBridge();
 
   return { contracts, signers };
 };
@@ -708,7 +656,6 @@ const probity = {
   deployTreasury,
   deployReserve,
   deployLiquidator,
-  deployBridge,
 };
 
 const mock = {
@@ -720,4 +667,4 @@ const mock = {
   deployMockVaultEngine,
 };
 
-export { deployAll, deployProbity, deployBridgeSystem, probity, mock };
+export { deployAll, deployProbity, probity, mock };
