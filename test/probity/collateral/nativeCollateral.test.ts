@@ -37,22 +37,22 @@ describe("Native Collateral Unit Test", function () {
     user = signers.alice;
   });
 
-  it("test Deposit event is emitted properly", async () => {
+  it("test DepositNativeCrypto event is emitted properly", async () => {
     let parsedEvents = await parseEvents(
       nativeCollataral.deposit({ value: AMOUNT_TO_DEPOSIT }),
-      "Deposit",
+      "DepositNativeCrypto",
       nativeCollataral
     );
     expect(parsedEvents[0].args[0]).to.equal(owner.address);
     expect(parsedEvents[0].args[1]).to.equal(AMOUNT_TO_DEPOSIT);
   });
 
-  it("test Withdrawal event is emitted properly", async () => {
+  it("test WithdrawNativeCrypto event is emitted properly", async () => {
     await nativeCollataral.deposit({ value: AMOUNT_TO_DEPOSIT });
 
     let parsedEvents = await parseEvents(
       nativeCollataral.withdraw(AMOUNT_TO_WITHDRAW),
-      "Withdrawal",
+      "WithdrawNativeCrypto",
       nativeCollataral
     );
     expect(parsedEvents[0].args[0]).to.equal(owner.address);

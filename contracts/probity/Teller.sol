@@ -29,6 +29,12 @@ interface IAPR {
  * @notice Creates loans and manages vault debt.
  */
 contract Teller is Stateful, DSMath {
+  event RatesUpdated(
+    uint256 timestamp,
+    uint256 debtAccumulator,
+    uint256 suppAccumulator
+  );
+
   /////////////////////////////////////////
   // Data Structure
   /////////////////////////////////////////
@@ -82,7 +88,7 @@ contract Teller is Stateful, DSMath {
   }
 
   /**
-   * @dev Updates the debt and capital indices
+   * @dev Updates the debt and capital rate accumulators
    */
   function updateAccumulator(bytes32 collId) external {
     require(

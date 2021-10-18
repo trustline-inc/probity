@@ -31,10 +31,10 @@ contract Treasury is Stateful {
   // Events
   /////////////////////////////////////////
 
-  event Deposit(address indexed user, uint256 amount);
-  event Withdrawal(address indexed user, uint256 amount);
-  event TcnWithdrawal(address indexed user, uint256 amount);
-  event TcnForAur(address indexed user, uint256 amount);
+  event DepositAurei(address indexed user, uint256 amount);
+  event WithdrawAurei(address indexed user, uint256 amount);
+  event WithdrawTcn(address indexed user, uint256 amount);
+  event ExchangeTcn(address indexed user, uint256 amount);
 
   /////////////////////////////////////////
   // Data Storage
@@ -64,27 +64,26 @@ contract Treasury is Stateful {
   /////////////////////////////////////////
 
   function deposit(uint256 amount) external {
-    vaultEngine.addAurei(msg.sender, amount);
+    vaultEngine.addAurei(msg.sender, amount * 1e27);
     aurei.burn(msg.sender, amount);
-    emit Deposit(msg.sender, amount);
+    emit DepositAurei(msg.sender, amount);
   }
 
   function withdrawAurei(uint256 amount) external {
-    vaultEngine.removeAurei(msg.sender, amount);
+    vaultEngine.removeAurei(msg.sender, amount * 1e27);
     aurei.mint(msg.sender, amount);
-    emit Withdrawal(msg.sender, amount);
+    emit WithdrawAurei(msg.sender, amount);
   }
 
   function withdrawTcn(uint256 amount) external {
-    vaultEngine.removeTcn(msg.sender, amount);
+    vaultEngine.removeTcn(msg.sender, amount * 1e27);
     tcn.mint(msg.sender, amount);
-
-    emit TcnWithdrawal(msg.sender, amount);
+    emit WithdrawTcn(msg.sender, amount);
   }
 
-  function tradeTcnforAurei(uint256 amount) external {
+  function exchangeTcn(uint256 amount) external {
     tcn.burn(msg.sender, amount);
     aurei.mint(msg.sender, amount);
-    emit TcnForAur(msg.sender, amount);
+    emit ExchangeTcn(msg.sender, amount);
   }
 }
