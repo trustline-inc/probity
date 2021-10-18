@@ -64,7 +64,7 @@ describe("Teller Unit Tests", function () {
     it("can only be called by gov address", async () => {
       await assertRevert(
         teller.connect(user).initCollType(bytes32("new coll")),
-        "ACCESS: Caller does not have authority to call this"
+        "ACCESS: Caller does not have permission"
       );
       await registry.setupContractAddress(bytes32("gov"), user.address);
       await teller.connect(user).initCollType(flrCollId);
