@@ -12,7 +12,7 @@ interface VaultEngineLike {
 
   function totalDebt() external returns (uint256);
 
-  function totalSupply() external returns (uint256);
+  function totalCapital() external returns (uint256);
 
   function updateAccumulators(
     bytes32 collId,
@@ -48,11 +48,11 @@ contract Teller is Stateful, DSMath {
   // Data Storage
   /////////////////////////////////////////
 
-  mapping(bytes32 => Collateral) collateralTypes;
+  mapping(bytes32 => Collateral) public collateralTypes;
 
   uint256 public APR; // Annualized percentage rate
   uint256 public MPR; // Momentized percentage rate
-  VaultEngineLike vaultEngine;
+  VaultEngineLike public vaultEngine;
   IAPR public lowAprRate;
   IAPR public highAprRate;
 
@@ -97,42 +97,50 @@ contract Teller is Stateful, DSMath {
     );
 
     Collateral memory coll = collateralTypes[collId];
-    (uint256 debtAccumulator, uint256 suppAccumulator) = vaultEngine
-      .collateralTypes(collId);
+    (uint256 debtAccumulator, uint256 suppAccumulator) =
+      vaultEngine.collateralTypes(collId);
     uint256 totalDebt = vaultEngine.totalDebt();
-    uint256 totalSupply = vaultEngine.totalSupply();
+    uint256 totalSupply = vaultEngine.totalCapital();
+
+    require(
+      totalSupply > 0,
+      "Teller/UpdateAccumulator: total Capital can not be zero"
+    );
 
     // Update debt accumulator
-    if (coll.lastUtilization > 0)
-      debtAccumulator = rmul(
-        rpow(MPR, (block.timestamp - coll.lastUpdated)),
-        debtAccumulator
-      );
+    debtAccumulator = rmul(
+      rpow(MPR, (block.timestamp - coll.lastUpdated)),
+      debtAccumulator
+    );
 
     // Update capital accumulator
-    uint256 multipliedByUtilization = rmul(
-      sub(MPR, RAY),
-      coll.lastUtilization * 1e9
-    );
+    uint256 multipliedByUtilization =
+      rmul(sub(MPR, RAY), coll.lastUtilization * 1e9);
     uint256 multipliedByUtilizationPlusOne = add(multipliedByUtilization, RAY);
-    uint256 exponentiated = rpow(
-      multipliedByUtilizationPlusOne,
-      (block.timestamp - coll.lastUpdated)
-    );
+    uint256 exponentiated =
+      rpow(
+        multipliedByUtilizationPlusOne,
+        (block.timestamp - coll.lastUpdated)
+      );
     suppAccumulator = rmul(exponentiated, suppAccumulator);
 
     // Set new APR (round to nearest 0.25%)
     coll.lastUtilization = wdiv(totalDebt, totalSupply);
-    uint256 round = 0.0025 * 10**27;
-    uint256 oneMinusUtilization = sub(RAY, coll.lastUtilization * 1e9);
-    uint256 oneDividedByOneMinusUtilization = rdiv(
-      10**27 * 0.01,
-      oneMinusUtilization
-    );
-    APR = add(oneDividedByOneMinusUtilization, RAY);
-    APR = ((APR + round - 1) / round) * round;
-    require(APR <= MAX_APR, "TELLER: Max APR exceeed");
+    if (coll.lastUtilization >= 1e18) {
+      APR = MAX_APR;
+    } else {
+      uint256 oneMinusUtilization = sub(RAY, coll.lastUtilization * 1e9);
+      uint256 oneDividedByOneMinusUtilization =
+        rdiv(10**27 * 0.01, oneMinusUtilization);
 
+      uint256 round = 0.0025 * 10**27;
+      APR = add(oneDividedByOneMinusUtilization, RAY);
+      APR = ((APR + round - 1) / round) * round;
+
+      if (APR > MAX_APR) {
+        APR = MAX_APR;
+      }
+    }
     // Set new MPR
     if (APR > 1500000000000000000000000000) {
       MPR = highAprRate.APR_TO_MPR(APR);
@@ -142,10 +150,7 @@ contract Teller is Stateful, DSMath {
 
     // Update time index
     coll.lastUpdated = block.timestamp;
-
     vaultEngine.updateAccumulators(collId, debtAccumulator, suppAccumulator);
     collateralTypes[collId] = coll;
-
-    emit RatesUpdated(block.timestamp, debtAccumulator, suppAccumulator);
   }
 }

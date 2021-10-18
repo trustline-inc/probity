@@ -385,7 +385,19 @@ const deployMockFtsoRewardManager = async () => {
   return contracts;
 };
 
-const deployTeller = async () => {
+const deployTeller = async (param?: {
+  registry?: Registry;
+  vaultEngine?: any;
+  lowApr?: LowApr;
+  highApr?: HighApr;
+}) => {
+  const registry =
+    param && param.registry ? param.registry : contracts.registry;
+  const vaultEngine =
+    param && param.vaultEngine ? param.vaultEngine : contracts.vaultEngine;
+  const lowApr = param && param.lowApr ? param.lowApr : contracts.lowApr;
+  const highApr = param && param.highApr ? param.highApr : contracts.highApr;
+
   // Set signers
   const signers = await getSigners();
 
@@ -394,10 +406,10 @@ const deployTeller = async () => {
     signers.owner
   )) as TellerFactory;
   contracts.teller = await tellerFactory.deploy(
-    contracts.registry.address,
-    contracts.vaultEngine.address,
-    contracts.lowApr.address,
-    contracts.highApr.address
+    registry.address,
+    vaultEngine.address,
+    lowApr.address,
+    highApr.address
   );
   await contracts.teller.deployed();
 
