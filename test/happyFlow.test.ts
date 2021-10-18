@@ -18,7 +18,7 @@ import {
   Registry,
   MockErc20Token,
 } from "../typechain";
-import { deployProbity } from "../lib/deployer";
+import { deployTest } from "../lib/deployer";
 import { ethers, web3 } from "hardhat";
 import * as chai from "chai";
 const expect = chai.expect;
@@ -65,7 +65,7 @@ ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
 describe("Probity Happy flow", function () {
   beforeEach(async function () {
-    const { contracts, signers } = await deployProbity();
+    const { contracts, signers } = await deployTest();
 
     // Set contracts
     vaultEngine = contracts.vaultEngine;

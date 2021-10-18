@@ -3,7 +3,7 @@ import "@nomiclabs/hardhat-ethers";
 
 import { VaultEngine, Registry, NativeCollateral } from "../../../typechain";
 
-import { deployProbity } from "../../../lib/deployer";
+import { deployTest } from "../../../lib/deployer";
 import { ethers } from "hardhat";
 import * as chai from "chai";
 import { PRECISION_COLL } from "../../utils/constants";
@@ -26,7 +26,7 @@ ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
 describe("Native Collateral Unit Test", function () {
   beforeEach(async function () {
-    const { contracts, signers } = await deployProbity();
+    const { contracts, signers } = await deployTest();
 
     // Set contracts
     vaultEngine = contracts.vaultEngine;

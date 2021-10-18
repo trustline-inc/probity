@@ -81,7 +81,7 @@ contract Delegatable is Stateful {
   function claimReward() external {
     require(
       ftsoManager.getCurrentRewardEpoch() > lastClaimedEpoch,
-      "No new epoch to claim"
+      "Delegatable/claimReward: No new epoch to claim"
     );
     (uint256 startEpochId, uint256 endEpochId) =
       ftsoRewardManager.getEpochsWithClaimableRewards();
@@ -108,7 +108,7 @@ contract Delegatable is Stateful {
   function userCollectReward() external {
     require(
       lastClaimedEpoch > userLastClaimedEpoch[msg.sender],
-      "No new epoch to claim"
+      "Delegatable/userCollectReward: No new epoch to claim"
     );
     (uint256 freeColl, uint256 lockedColl) =
       vaultEngine.vaults(collId, msg.sender);
@@ -136,7 +136,7 @@ contract Delegatable is Stateful {
   {
     require(
       providers.length == pct.length,
-      "Length of providers and pct mismatch"
+      "Delegatable/changeDataProviders: Length of providers and pct mismatch"
     );
     uint256 totalPct = 0;
     for (uint256 index = 0; index <= providers.length; index++) {
@@ -145,7 +145,7 @@ contract Delegatable is Stateful {
     }
     require(
       totalPct == HUNDRED_PERCENT,
-      "Provided percentages does not add up to 100%"
+      "Delegatable/changeDataProviders: Provided percentages does not add up to 100%"
     );
     dataProviders = providers;
   }

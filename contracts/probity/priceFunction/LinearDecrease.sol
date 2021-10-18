@@ -35,16 +35,19 @@ contract LinearDecrease is PriceCalc {
   /////////////////////////////////////////
 
   function add(uint256 a, uint256 b) internal pure returns (uint256 c) {
-    require((c = a + b) >= a);
+    require((c = a + b) >= a, "LinearDecrease/add: add op failed");
   }
 
   function mul(uint256 a, uint256 b) internal pure returns (uint256 c) {
-    require(b == 0 || (c = a * b) / b == a);
+    require(
+      b == 0 || (c = a * b) / b == a,
+      "LinearDecrease/mul: mul op failed"
+    );
   }
 
   function rmul(uint256 a, uint256 b) internal pure returns (uint256 c) {
     c = a * b;
-    require(b == 0 || c / b == a);
+    require(b == 0 || c / b == a, "LinearDecrease/rmul: rmul op failed");
     c = c / RAY;
   }
 }

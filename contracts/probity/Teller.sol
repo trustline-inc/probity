@@ -55,9 +55,6 @@ contract Teller is Stateful {
   IAPR public lowAprRate;
   IAPR public highAprRate;
 
-  //  uint256 constant WAD = 10**18;
-  //  uint256 constant RAY = 10**27;
-
   uint256 constant WAD = 10**18;
   uint256 constant RAY = 10**27;
 
@@ -95,7 +92,7 @@ contract Teller is Stateful {
   function updateAccumulator(bytes32 collId) external {
     require(
       collateralTypes[collId].lastUpdated != 0,
-      "TELLER: Collateral Type not initialized"
+      "Teller/updateAccumulator: Collateral Type not initialized"
     );
 
     Collateral memory coll = collateralTypes[collId];

@@ -3,7 +3,7 @@ import "@nomiclabs/hardhat-ethers";
 
 import { Aurei, VaultEngine, Registry } from "../../../typechain";
 
-import { deployProbity } from "../../../lib/deployer";
+import { deployTest } from "../../../lib/deployer";
 import { ethers } from "hardhat";
 import * as chai from "chai";
 import assertRevert from "../../utils/assertRevert";
@@ -25,7 +25,7 @@ ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
 describe("Aurei Token Unit Test", function () {
   beforeEach(async function () {
-    const { contracts, signers } = await deployProbity();
+    const { contracts, signers } = await deployTest();
 
     // Set contracts
     vaultEngine = contracts.vaultEngine;
@@ -39,7 +39,7 @@ describe("Aurei Token Unit Test", function () {
   it("test mint can only be called by vault contract", async () => {
     await assertRevert(
       aurei.mint(user.address, AMOUNT_TO_MINT),
-      "ACCESS: Caller does not have permission"
+      "AccessControl/OnlyBy: Caller does not have permission"
     );
 
     // add owner to registry as 'treasury' then check if owner can now mint
@@ -61,7 +61,7 @@ describe("Aurei Token Unit Test", function () {
 
     await assertRevert(
       aurei.connect(user).burn(user.address, AMOUNT_TO_BURN),
-      "ACCESS: Caller does not have permission"
+      "AccessControl/OnlyBy: Caller does not have permission"
     );
 
     const balanceBefore = await aurei.balanceOf(user.address);

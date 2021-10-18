@@ -163,20 +163,25 @@ const getSigners = async () => {
 
 const bytes32 = (string) => ethers.utils.formatBytes32String(string);
 
-const deployRegistry = async () => {
+const deployRegistry = async (param?: { govAddress?: string }) => {
   const signers = await getSigners();
+  const govAddress =
+    param && param.govAddress ? param.govAddress : signers.owner.address;
 
   const registryFactory = (await ethers.getContractFactory(
     "Registry",
     signers.owner
   )) as RegistryFactory;
-  contracts.registry = await registryFactory.deploy(signers.owner.address);
+  contracts.registry = await registryFactory.deploy(govAddress);
   await contracts.registry.deployed();
 
   return contracts;
 };
 
-const deployAUR = async () => {
+const deployAUR = async (param?: { registry?: string }) => {
+  const registry =
+    param && param.registry ? param.registry : contracts.registry.address;
+
   // Set signers
   const signers = await getSigners();
 
@@ -184,7 +189,7 @@ const deployAUR = async () => {
     "Aurei",
     signers.owner
   )) as AureiFactory;
-  contracts.aurei = await aureiFactory.deploy(contracts.registry.address);
+  contracts.aurei = await aureiFactory.deploy(registry);
   await contracts.aurei.deployed();
 
   await contracts.registry.setupContractAddress(
@@ -195,7 +200,9 @@ const deployAUR = async () => {
   return contracts;
 };
 
-const deployTCN = async () => {
+const deployTCN = async (param?: { registry?: string }) => {
+  const registry =
+    param && param.registry ? param.registry : contracts.registry.address;
   // Set signers
   const signers = await getSigners();
 
@@ -203,7 +210,7 @@ const deployTCN = async () => {
     "TcnToken",
     signers.owner
   )) as TcnTokenFactory;
-  contracts.tcnToken = await tcnFactory.deploy(contracts.registry.address);
+  contracts.tcnToken = await tcnFactory.deploy(registry);
   await contracts.tcnToken.deployed();
 
   await contracts.registry.setupContractAddress(
@@ -245,7 +252,9 @@ const deployApr = async () => {
   return contracts;
 };
 
-const deployVaultEngine = async () => {
+const deployVaultEngine = async (param?: { registry?: string }) => {
+  const registry =
+    param && param.registry ? param.registry : contracts.registry.address;
   // Set signers
   const signers = await getSigners();
 
@@ -253,9 +262,7 @@ const deployVaultEngine = async () => {
     "VaultEngine",
     signers.owner
   )) as VaultEngineFactory;
-  contracts.vaultEngine = await vaultEngineFactory.deploy(
-    contracts.registry.address
-  );
+  contracts.vaultEngine = await vaultEngineFactory.deploy(registry);
   await contracts.vaultEngine.deployed();
 
   await contracts.registry.setupContractAddress(
@@ -266,7 +273,35 @@ const deployVaultEngine = async () => {
   return contracts;
 };
 
-const deployVPTokenCollateral = async () => {
+const deployVPTokenCollateral = async (param?: {
+  registry?: Registry;
+  collateralId?: string;
+  ftsoManager?: string;
+  ftsoRewardManager?: string;
+  vpToken?: string;
+  vaultEngine?: string;
+}) => {
+  const registry =
+    param && param.registry ? param.registry : contracts.registry;
+  const collateralId =
+    param && param.collateralId
+      ? param.collateralId
+      : web3.utils.keccak256("VPToken");
+  const ftsoManager =
+    param && param.ftsoManager
+      ? param.ftsoManager
+      : contracts.ftsoManager.address;
+  const ftsoRewardManager =
+    param && param.ftsoRewardManager
+      ? param.ftsoRewardManager
+      : contracts.ftsoRewardManager.address;
+  const vpToken =
+    param && param.vpToken ? param.vpToken : contracts.vpToken.address;
+  const vaultEngine =
+    param && param.vaultEngine
+      ? param.vaultEngine
+      : contracts.vaultEngine.address;
+
   const signers = await getSigners();
 
   const vpTokenCollateralFactory = (await ethers.getContractFactory(
@@ -274,22 +309,78 @@ const deployVPTokenCollateral = async () => {
     signers.owner
   )) as VpTokenCollateralFactory;
   contracts.vpTokenCollateral = await vpTokenCollateralFactory.deploy(
-    contracts.registry.address,
-    web3.utils.keccak256("VPToken"),
-    contracts.ftsoManager.address,
-    contracts.ftsoRewardManager.address,
-    contracts.vpToken.address,
-    contracts.vaultEngine.address
+    registry.address,
+    collateralId,
+    ftsoManager,
+    ftsoRewardManager,
+    vpToken,
+    vaultEngine
   );
   await contracts.vpTokenCollateral.deployed();
 
-  await contracts.registry.setupContractAddress(
+  await registry.setupContractAddress(
     bytes32("collateral"),
     contracts.vpTokenCollateral.address
   );
+
+  return contracts;
 };
 
-const deployCollateral = async () => {
+const deployERC20Collateral = async (param?: {
+  registry?: Registry;
+  collateralId?: string;
+  erc20?: string;
+  vaultEngine?: string;
+}) => {
+  const registry =
+    param && param.registry ? param.registry : contracts.registry;
+  const collateralId =
+    param && param.collateralId
+      ? param.collateralId
+      : web3.utils.keccak256("FXRP");
+  const erc20 = param && param.erc20 ? param.erc20 : contracts.erc20.address;
+  const vaultEngine =
+    param && param.vaultEngine
+      ? param.vaultEngine
+      : contracts.vaultEngine.address;
+
+  const signers = await getSigners();
+
+  const fxrpCollateralFactory = (await ethers.getContractFactory(
+    "ERC20Collateral",
+    signers.owner
+  )) as Erc20CollateralFactory;
+  contracts.fxrpCollateral = await fxrpCollateralFactory.deploy(
+    registry.address,
+    collateralId,
+    erc20,
+    vaultEngine
+  );
+  await contracts.fxrpCollateral.deployed();
+  await registry.setupContractAddress(
+    bytes32("collateral"),
+    contracts.fxrpCollateral.address
+  );
+
+  return contracts;
+};
+
+const deployNativeCollateral = async (param?: {
+  registry?: string;
+  collateralId?: string;
+  vaultEngine?: string;
+}) => {
+  const registry =
+    param && param.registry ? param.registry : contracts.registry.address;
+  const collateralId =
+    param && param.collateralId
+      ? param.collateralId
+      : web3.utils.keccak256(NETWORK_NATIVE_TOKEN);
+  const vaultEngine =
+    param && param.vaultEngine
+      ? param.vaultEngine
+      : contracts.vaultEngine.address;
+
   // Set signers
   const signers = await getSigners();
 
@@ -298,32 +389,291 @@ const deployCollateral = async () => {
     signers.owner
   )) as NativeCollateralFactory;
   contracts.nativeCollateral = await nativeCollateralFactory.deploy(
-    contracts.registry.address,
-    web3.utils.keccak256(NETWORK_NATIVE_TOKEN),
-    contracts.vaultEngine.address
+    registry,
+    collateralId,
+    vaultEngine
   );
   await contracts.nativeCollateral.deployed();
-
-  const fxrpCollateralFactory = (await ethers.getContractFactory(
-    "ERC20Collateral",
-    signers.owner
-  )) as Erc20CollateralFactory;
-  contracts.fxrpCollateral = await fxrpCollateralFactory.deploy(
-    contracts.registry.address,
-    web3.utils.keccak256("FXRP"),
-    contracts.erc20.address,
-    contracts.vaultEngine.address
-  );
-  await contracts.fxrpCollateral.deployed();
 
   await contracts.registry.setupContractAddress(
     bytes32("collateral"),
     contracts.nativeCollateral.address
   );
-  await contracts.registry.setupContractAddress(
-    bytes32("collateral"),
-    contracts.fxrpCollateral.address
+
+  return contracts;
+};
+
+const deployTeller = async (param?: {
+  registry?: string;
+  vaultEngine?: string;
+  lowApr?: string;
+  highApr?: string;
+}) => {
+  const registry =
+    param && param.registry ? param.registry : contracts.registry.address;
+  const vaultEngine =
+    param && param.vaultEngine
+      ? param.vaultEngine
+      : contracts.vaultEngine.address;
+  const lowApr =
+    param && param.lowApr ? param.lowApr : contracts.lowApr.address;
+  const highApr =
+    param && param.highApr ? param.highApr : contracts.highApr.address;
+
+  // Set signers
+  const signers = await getSigners();
+
+  const tellerFactory = (await ethers.getContractFactory(
+    "Teller",
+    signers.owner
+  )) as TellerFactory;
+  contracts.teller = await tellerFactory.deploy(
+    registry,
+    vaultEngine,
+    lowApr,
+    highApr
   );
+  await contracts.teller.deployed();
+
+  await contracts.registry.setupContractAddress(
+    bytes32("teller"),
+    contracts.teller.address
+  );
+
+  return contracts;
+};
+
+const deployTreasury = async (param?: {
+  registry?: string;
+  vaultEngine?: string;
+  aurei?: string;
+  tcnToken?: string;
+}) => {
+  const registry =
+    param && param.registry ? param.registry : contracts.registry.address;
+  const vaultEngine =
+    param && param.vaultEngine
+      ? param.vaultEngine
+      : contracts.vaultEngine.address;
+  const aurei = param && param.aurei ? param.aurei : contracts.aurei.address;
+  const tcnToken =
+    param && param.tcnToken ? param.tcnToken : contracts.tcnToken.address;
+  // Set signers
+  const signers = await getSigners();
+
+  const treasuryFactory = (await ethers.getContractFactory(
+    "Treasury",
+    signers.owner
+  )) as TreasuryFactory;
+
+  contracts.treasury = await treasuryFactory.deploy(
+    registry,
+    aurei,
+    tcnToken,
+    vaultEngine
+  );
+
+  await contracts.treasury.deployed();
+
+  await contracts.registry.setupContractAddress(
+    bytes32("treasury"),
+    contracts.treasury.address
+  );
+
+  return contracts;
+};
+
+const deployPriceFeed = async (param?: {
+  registry?: string;
+  vaultEngine?: string;
+}) => {
+  const registry =
+    param && param.registry ? param.registry : contracts.registry.address;
+  const vaultEngine =
+    param && param.vaultEngine
+      ? param.vaultEngine
+      : contracts.vaultEngine.address;
+
+  // Set signers
+  const signers = await getSigners();
+
+  const priceFeedFactory = (await ethers.getContractFactory(
+    "PriceFeed",
+    signers.owner
+  )) as PriceFeedFactory;
+  contracts.priceFeed = await priceFeedFactory.deploy(registry, vaultEngine);
+  await contracts.priceFeed.deployed();
+
+  await contracts.registry.setupContractAddress(
+    bytes32("priceFeed"),
+    contracts.priceFeed.address
+  );
+
+  return contracts;
+};
+
+const deployAuction = async (param?: {
+  registry?: Registry;
+  vaultEngine?: string;
+  priceCalc?: string;
+  ftso?: string;
+}) => {
+  const registry =
+    param && param.registry ? param.registry : contracts.registry;
+  const vaultEngine =
+    param && param.vaultEngine
+      ? param.vaultEngine
+      : contracts.vaultEngine.address;
+  const linearDecrease =
+    param && param.priceCalc
+      ? param.priceCalc
+      : contracts.linearDecrease.address;
+  const ftso = param && param.ftso ? param.ftso : contracts.ftso.address;
+  // Set signers
+  const signers = await getSigners();
+
+  const auctionFactory = (await ethers.getContractFactory(
+    "Auctioneer",
+    signers.owner
+  )) as AuctioneerFactory;
+  contracts.auctioneer = await auctionFactory.deploy(
+    registry.address,
+    vaultEngine,
+    linearDecrease,
+    ftso
+  );
+  await contracts.auctioneer.deployed();
+
+  await registry.setupContractAddress(
+    bytes32("auctioneer"),
+    contracts.auctioneer.address
+  );
+
+  return contracts;
+};
+
+const deployPriceCalc = async () => {
+  // Set signers
+  const signers = await getSigners();
+
+  const linearDecreaseFactory = (await ethers.getContractFactory(
+    "LinearDecrease",
+    signers.owner
+  )) as LinearDecreaseFactory;
+  contracts.linearDecrease = await linearDecreaseFactory.deploy();
+  await contracts.linearDecrease.deployed();
+
+  await contracts.registry.setupContractAddress(
+    bytes32("priceCalc"),
+    contracts.linearDecrease.address
+  );
+
+  return contracts;
+};
+
+const deployReserve = async (param?: {
+  registry?: string;
+  vaultEngine?: string;
+}) => {
+  const registry =
+    param && param.registry ? param.registry : contracts.registry.address;
+  const vaultEngine =
+    param && param.vaultEngine
+      ? param.vaultEngine
+      : contracts.vaultEngine.address;
+
+  const signers = await getSigners();
+
+  const reserveFactory = (await ethers.getContractFactory(
+    "ReservePool",
+    signers.owner
+  )) as ReservePoolFactory;
+  contracts.reserve = await reserveFactory.deploy(registry, vaultEngine);
+
+  await contracts.reserve.deployed();
+
+  await contracts.registry.setupContractAddress(
+    bytes32("reserve"),
+    contracts.reserve.address
+  );
+
+  return contracts;
+};
+
+const deployLiquidator = async (param?: {
+  registry?: string;
+  vaultEngine?: string;
+  reserve?: string;
+}) => {
+  const registry =
+    param && param.registry ? param.registry : contracts.registry.address;
+  const vaultEngine =
+    param && param.vaultEngine
+      ? param.vaultEngine
+      : contracts.vaultEngine.address;
+  const reserve =
+    param && param.reserve ? param.reserve : contracts.reserve.address;
+
+  const signers = await getSigners();
+
+  const liquidatorFactory = (await ethers.getContractFactory(
+    "Liquidator",
+    signers.owner
+  )) as LiquidatorFactory;
+  contracts.liquidator = await liquidatorFactory.deploy(
+    registry,
+    vaultEngine,
+    reserve
+  );
+
+  await contracts.liquidator.deployed();
+
+  await contracts.registry.setupContractAddress(
+    bytes32("liquidator"),
+    contracts.liquidator.address
+  );
+
+  return contracts;
+};
+
+const deployMockERC20 = async () => {
+  const signers = await getSigners();
+
+  const erc20Factory = (await ethers.getContractFactory(
+    "MockERC20Token",
+    signers.owner
+  )) as MockErc20TokenFactory;
+  contracts.erc20 = await erc20Factory.deploy();
+
+  await contracts.erc20.deployed();
+
+  return contracts;
+};
+
+const deployMockVPToken = async () => {
+  const signers = await getSigners();
+
+  const vpTokenFactory = (await ethers.getContractFactory(
+    "MockVPToken",
+    signers.owner
+  )) as MockVpTokenFactory;
+  contracts.vpToken = await vpTokenFactory.deploy();
+
+  await contracts.vpToken.deployed();
+
+  return contracts;
+};
+
+const deployMockVaultEngine = async () => {
+  const signers = await getSigners();
+
+  const mockVaultEngineFactory = (await ethers.getContractFactory(
+    "MockVaultEngine",
+    signers.owner
+  )) as MockVaultEngineFactory;
+  contracts.mockVaultEngine = await mockVaultEngineFactory.deploy();
+
+  await contracts.mockVaultEngine.deployed();
 
   return contracts;
 };
@@ -385,248 +735,29 @@ const deployMockFtsoRewardManager = async () => {
   return contracts;
 };
 
-const deployTeller = async (param?: {
-  registry?: Registry;
-  vaultEngine?: any;
-  lowApr?: LowApr;
-  highApr?: HighApr;
-}) => {
-  const registry =
-    param && param.registry ? param.registry : contracts.registry;
-  const vaultEngine =
-    param && param.vaultEngine ? param.vaultEngine : contracts.vaultEngine;
-  const lowApr = param && param.lowApr ? param.lowApr : contracts.lowApr;
-  const highApr = param && param.highApr ? param.highApr : contracts.highApr;
-
+const deployMocks = async () => {
   // Set signers
   const signers = await getSigners();
-
-  const tellerFactory = (await ethers.getContractFactory(
-    "Teller",
-    signers.owner
-  )) as TellerFactory;
-  contracts.teller = await tellerFactory.deploy(
-    registry.address,
-    vaultEngine.address,
-    lowApr.address,
-    highApr.address
-  );
-  await contracts.teller.deployed();
-
-  await contracts.registry.setupContractAddress(
-    bytes32("teller"),
-    contracts.teller.address
-  );
-
-  return contracts;
-};
-
-const deployTreasury = async (param?) => {
-  // Set signers
-  const signers = await getSigners();
-
-  const treasuryFactory = (await ethers.getContractFactory(
-    "Treasury",
-    signers.owner
-  )) as TreasuryFactory;
-  if (param === undefined) {
-    contracts.treasury = await treasuryFactory.deploy(
-      contracts.registry.address,
-      contracts.aurei.address,
-      contracts.tcnToken.address,
-      contracts.vaultEngine.address
-    );
-  } else {
-    contracts.treasury = await treasuryFactory.deploy(
-      param.registry.address,
-      param.aurei.address,
-      param.tcnToken.address,
-      param.vaultEngine.address
-    );
-  }
-
-  await contracts.treasury.deployed();
-
-  await contracts.registry.setupContractAddress(
-    bytes32("treasury"),
-    contracts.treasury.address
-  );
-
-  return contracts;
-};
-
-const deployPriceFeed = async () => {
-  // Set signers
-  const signers = await getSigners();
-
-  const priceFeedFactory = (await ethers.getContractFactory(
-    "PriceFeed",
-    signers.owner
-  )) as PriceFeedFactory;
-  contracts.priceFeed = await priceFeedFactory.deploy(
-    contracts.registry.address,
-    contracts.vaultEngine.address
-  );
-  await contracts.priceFeed.deployed();
-
-  await contracts.registry.setupContractAddress(
-    bytes32("priceFeed"),
-    contracts.priceFeed.address
-  );
-
-  return contracts;
-};
-
-const deployAuction = async () => {
-  // Set signers
-  const signers = await getSigners();
-
-  const auctionFactory = (await ethers.getContractFactory(
-    "Auctioneer",
-    signers.owner
-  )) as AuctioneerFactory;
-  contracts.auctioneer = await auctionFactory.deploy(
-    contracts.registry.address,
-    contracts.vaultEngine.address,
-    contracts.linearDecrease.address,
-    contracts.ftso.address
-  );
-  await contracts.auctioneer.deployed();
-
-  await contracts.registry.setupContractAddress(
-    bytes32("auctioneer"),
-    contracts.auctioneer.address
-  );
-
-  return contracts;
-};
-
-const deployPriceCalc = async () => {
-  // Set signers
-  const signers = await getSigners();
-
-  const linearDecreaseFactory = (await ethers.getContractFactory(
-    "LinearDecrease",
-    signers.owner
-  )) as LinearDecreaseFactory;
-  contracts.linearDecrease = await linearDecreaseFactory.deploy();
-  await contracts.linearDecrease.deployed();
-
-  await contracts.registry.setupContractAddress(
-    bytes32("priceCalc"),
-    contracts.linearDecrease.address
-  );
-
-  return contracts;
-};
-
-const deployReserve = async () => {
-  const signers = await getSigners();
-
-  const reserveFactory = (await ethers.getContractFactory(
-    "ReservePool",
-    signers.owner
-  )) as ReservePoolFactory;
-  contracts.reserve = await reserveFactory.deploy(
-    contracts.registry.address,
-    contracts.vaultEngine.address
-  );
-
-  await contracts.reserve.deployed();
-
-  await contracts.registry.setupContractAddress(
-    bytes32("reserve"),
-    contracts.reserve.address
-  );
-
-  return contracts;
-};
-
-const deployMockERC20 = async () => {
-  const signers = await getSigners();
-
-  const erc20Factory = (await ethers.getContractFactory(
-    "MockERC20Token",
-    signers.owner
-  )) as MockErc20TokenFactory;
-  contracts.erc20 = await erc20Factory.deploy();
-
-  await contracts.erc20.deployed();
-
-  return contracts;
-};
-
-const deployMockVPToken = async () => {
-  const signers = await getSigners();
-
-  const vpTokenFactory = (await ethers.getContractFactory(
-    "MockVPToken",
-    signers.owner
-  )) as MockVpTokenFactory;
-  contracts.vpToken = await vpTokenFactory.deploy();
-
-  await contracts.vpToken.deployed();
-
-  return contracts;
-};
-
-const deployMockVaultEngine = async () => {
-  const signers = await getSigners();
-
-  const mockVaultEngineFactory = (await ethers.getContractFactory(
-    "MockVaultEngine",
-    signers.owner
-  )) as MockVaultEngineFactory;
-  contracts.mockVaultEngine = await mockVaultEngineFactory.deploy();
-
-  await contracts.mockVaultEngine.deployed();
-
-  return contracts;
-};
-
-const deployLiquidator = async () => {
-  const signers = await getSigners();
-
-  const liquidatorFactory = (await ethers.getContractFactory(
-    "Liquidator",
-    signers.owner
-  )) as LiquidatorFactory;
-  contracts.liquidator = await liquidatorFactory.deploy(
-    contracts.registry.address,
-    contracts.vaultEngine.address,
-    contracts.reserve.address
-  );
-
-  await contracts.liquidator.deployed();
-
-  await contracts.registry.setupContractAddress(
-    bytes32("liquidator"),
-    contracts.liquidator.address
-  );
-
-  return contracts;
-};
-
-const deployProbity = async () => {
-  // Set signers
-  const signers = await getSigners();
-  await deployRegistry();
-  await deployAUR();
-  await deployTCN();
-  await deployApr();
-  await deployVaultEngine();
   await deployMockERC20();
   await deployMockVPToken();
   await deployMockFtso();
   await deployMockFtsoManager();
   await deployMockFtsoRewardManager();
-  await deployMockVaultEngine();
-  await deployCollateral();
-  await deployVPTokenCollateral();
+
+  return { contracts, signers };
+};
+
+const deployProbity = async () => {
+  // Set signers
+  const signers = await getSigners();
+  await deployAUR();
+  await deployTCN();
+  await deployApr();
+  await deployVaultEngine();
+  await deployNativeCollateral();
   await deployTeller();
   await deployPriceCalc();
   await deployPriceFeed();
-  await deployAuction();
   await deployTreasury();
   await deployReserve();
   await deployLiquidator();
@@ -634,8 +765,34 @@ const deployProbity = async () => {
   return { contracts, signers };
 };
 
-const deployAll = async () => {
+const deployLocal = async () => {
   const signers = await getSigners();
+  await deployRegistry();
+  await deployMocks();
+  await deployProbity();
+  await deployAuction();
+  await deployERC20Collateral();
+  await deployVPTokenCollateral();
+
+  return { contracts, signers };
+};
+
+const deployTest = async () => {
+  const signers = await getSigners();
+  await deployRegistry();
+  await deployMocks();
+  await deployProbity();
+  await deployAuction();
+  await deployERC20Collateral();
+  await deployVPTokenCollateral();
+  await deployMockVaultEngine();
+
+  return { contracts, signers };
+};
+
+const deployProd = async () => {
+  const signers = await getSigners();
+  await deployRegistry();
   await deployProbity();
 
   return { contracts, signers };
@@ -647,7 +804,8 @@ const probity = {
   deployTCN,
   deployApr,
   deployVaultEngine,
-  deployCollateral,
+  deployNativeCollateral,
+  deployERC20Collateral,
   deployVPTokenCollateral,
   deployTeller,
   deployPriceCalc,
@@ -667,4 +825,4 @@ const mock = {
   deployMockVaultEngine,
 };
 
-export { deployAll, deployProbity, probity, mock };
+export { deployLocal, deployProd, deployTest, probity, mock };

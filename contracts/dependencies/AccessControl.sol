@@ -14,7 +14,7 @@ contract AccessControl {
   modifier onlyBy(bytes32 name) {
     require(
       registry.checkContractValidity(name, msg.sender),
-      "ACCESS: Caller does not have permission"
+      "AccessControl/OnlyBy: Caller does not have permission"
     );
     _;
   }
@@ -22,7 +22,7 @@ contract AccessControl {
   modifier onlyByRegistered() {
     require(
       registry.checkContractValidity(msg.sender),
-      "ACCESS: Caller is not a registered contract"
+      "AccessControl/onlyByRegistered: Caller is not a registered contract"
     );
     _;
   }

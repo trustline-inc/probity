@@ -102,11 +102,11 @@ contract ReservePool is Stateful, Eventful {
   function settle(uint256 amountToSettle) external {
     require(
       vaultEngine.unbackedAurei(address(this)) <= amountToSettle,
-      "Settlement amount is more than the debt"
+      "ReservePool/settle: Settlement amount is more than the debt"
     );
     require(
       vaultEngine.AUR(address(this)) >= amountToSettle,
-      "Not enough balance to settle"
+      "ReservePool/settle: Not enough balance to settle"
     );
     vaultEngine.settle(amountToSettle);
   }
@@ -114,23 +114,26 @@ contract ReservePool is Stateful, Eventful {
   function startIOUSale() external {
     require(
       vaultEngine.unbackedAurei(address(this)) - debtOnAuction > debtThreshold,
-      "Debt Threshold is not yet crossed"
+      "ReservePool/startIOUSale: Debt Threshold is not yet crossed"
     );
     require(
       vaultEngine.AUR(address(this)) == 0,
-      "AUR balance is still positive"
+      "ReservePool/startIOUSale: AUR balance is still positive"
     );
-    require(sale.active == false, "the current sale is not over yet");
+    require(
+      sale.active == false,
+      "ReservePool/startIOUSale: the current sale is not over yet"
+    );
     sale.active = true;
     sale.startTime = block.timestamp;
     sale.saleAmount = debtThreshold;
   }
 
   function buyIOU(uint256 amount) external {
-    require(sale.active, "There are no IOU on sale");
+    require(sale.active, "ReservePool/buyIOU: IOUs are not currently on sale");
     require(
       sale.saleAmount >= amount,
-      "Can't buy more amount than what's available"
+      "ReservePool/buyIOU: Can't buy more amount than what's available"
     );
 
     vaultEngine.moveAurei(msg.sender, address(this), amount);
@@ -156,11 +159,11 @@ contract ReservePool is Stateful, Eventful {
   function redeemIOU(uint256 amount) external {
     require(
       vaultEngine.AUR(address(this)) >= amount,
-      "The reserve pool doesn't have enough AUR"
+      "ReservePool/redeemIOU: The reserve pool doesn't have enough AUR"
     );
     require(
       ious[msg.sender] >= amount,
-      "User doesn't have enough IOU to redeem this much"
+      "ReservePool/redeemIOU: User doesn't have enough IOU to redeem this much"
     );
     ious[msg.sender] = ious[msg.sender] - amount;
     vaultEngine.moveAurei(address(this), msg.sender, amount);
