@@ -5,10 +5,10 @@
   "description": "Probity smart contracts",
   "scripts": {
     "node": "npx hardhat node",
-    "build": "npm run clean && npm run compile",
+    "build": "npm run clean && npm run solhint && npm run compile",
     "clean": "npx hardhat clean",
     "compile": "npx hardhat compile",
-    "solhint": "./node_modules/.bin/solhint -f table contracts/**/*.sol",
+    "solhint": "./node_modules/.bin/solhint contracts/**/*.sol",
     "solhint:fix": "./node_modules/.bin/solhint --fix contracts/**/*.sol",
     "prettier:solidity": "./node_modules/.bin/prettier --write contracts/**/*.sol",
     "initialize": "npx hardhat --network local run ./scripts/initialize.ts",
