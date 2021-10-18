@@ -18,6 +18,17 @@ interface ftsoLike {
  * @notice The core accounting module for the Probity system
  */
 contract VaultEngine is Stateful, Eventful {
+  event SupplyModified(
+    address indexed user,
+    int256 collAmount,
+    int256 capitalAmount
+  );
+  event DebtModified(
+    address indexed user,
+    int256 collAmount,
+    int256 debtAmount
+  );
+
   /////////////////////////////////////////
   // Data Structure
   /////////////////////////////////////////
@@ -28,13 +39,13 @@ contract VaultEngine is Stateful, Eventful {
     uint256 usedCollateral; // Collateral that is being utilized
     uint256 debt; // Vault's debt balance
     uint256 capital; // Vault's capital balance
-    uint256 lastYieldIndex; // Most recent value of the capital rate accumulator
+    uint256 lastCapitalAccumulator; // Most recent value of the capital rate accumulator
   }
 
   // Collateral data structure
   struct Collateral {
-    uint256 interestIndex; // Cumulative interest index
-    uint256 yieldIndex; // Cumulative yield index
+    uint256 debtAccumulator; // Cumulative debt rate
+    uint256 capitalAccumulator; // Cumulative capital rate
     uint256 price; // Price adjusted for collateral ratio
     uint256 normDebt; // Normalized debt
     uint256 normCapital; // Normalized supply
@@ -139,8 +150,8 @@ contract VaultEngine is Stateful, Eventful {
   }
 
   /**
-   * @dev Reduce a user's interest balance.
-   * @param user The address of the vault to reduce interest from.
+   * @dev Reduce a user's TCN balance.
+   * @param user The address of the vault to reduce TCN from.
    * @param amount The amount of TCN to reduce.
    */
   function reduceTCN(address user, uint256 amount) external onlyBy("treasury") {
@@ -162,7 +173,7 @@ contract VaultEngine is Stateful, Eventful {
   }
 
   /**
-   * @dev Accrues vault interest
+   * @dev Accrues vault TCN
    * @param collId The ID of the vault collateral type
    */
   function collectInterest(bytes32 collId) public {
@@ -170,9 +181,10 @@ contract VaultEngine is Stateful, Eventful {
     Collateral memory collateral = collateralTypes[collId];
     TCN[msg.sender] +=
       vault.capital *
-      (collateral.yieldIndex - vault.lastYieldIndex);
+      (collateral.capitalAccumulator - vault.lastCapitalAccumulator);
 
-    vaults[collId][msg.sender].lastYieldIndex = collateral.yieldIndex;
+    vaults[collId][msg.sender].lastCapitalAccumulator = collateral
+      .capitalAccumulator;
   }
 
   /**
@@ -204,7 +216,8 @@ contract VaultEngine is Stateful, Eventful {
       capitalAmount
     );
 
-    int256 aurToModify = mul(collateralTypes[collId].yieldIndex, capitalAmount);
+    int256 aurToModify =
+      mul(collateralTypes[collId].capitalAccumulator, capitalAmount);
     totalCapital = add(totalCapital, aurToModify);
 
     require(
@@ -219,7 +232,7 @@ contract VaultEngine is Stateful, Eventful {
 
     AUR[treasuryAddress] = add(AUR[treasuryAddress], aurToModify);
 
-    emit Log("vault", "modifySupply", msg.sender);
+    emit SupplyModified(msg.sender, collAmount, capitalAmount);
   }
 
   /**
@@ -258,7 +271,7 @@ contract VaultEngine is Stateful, Eventful {
     );
 
     int256 debtToModify =
-      mul(collateralTypes[collId].interestIndex, debtAmount);
+      mul(collateralTypes[collId].debtAccumulator, debtAmount);
     totalDebt = add(totalDebt, debtToModify);
 
     require(
@@ -276,7 +289,7 @@ contract VaultEngine is Stateful, Eventful {
 
     vaults[collId][msg.sender] = vault;
 
-    emit Log("vault", "modifyDebt", msg.sender);
+    emit DebtModified(msg.sender, collAmount, debtAmount);
   }
 
   /**
@@ -307,7 +320,8 @@ contract VaultEngine is Stateful, Eventful {
     coll.normDebt = add(coll.normDebt, debtAmount);
     coll.normCapital = add(coll.normCapital, capitalAmount);
     int256 aurToRaise =
-      mul(coll.interestIndex, debtAmount) + mul(PRECISION_PRICE, capitalAmount);
+      mul(coll.debtAccumulator, debtAmount) +
+        mul(PRECISION_PRICE, capitalAmount);
 
     vaults[collId][auctioneer].freeCollateral = sub(
       vaults[collId][auctioneer].freeCollateral,
@@ -337,8 +351,8 @@ contract VaultEngine is Stateful, Eventful {
    * @param collId The collateral type ID
    */
   function initCollType(bytes32 collId) external onlyBy("gov") {
-    collateralTypes[collId].interestIndex = PRECISION_PRICE;
-    collateralTypes[collId].yieldIndex = PRECISION_PRICE;
+    collateralTypes[collId].debtAccumulator = PRECISION_PRICE;
+    collateralTypes[collId].capitalAccumulator = PRECISION_PRICE;
   }
 
   /**
@@ -380,31 +394,31 @@ contract VaultEngine is Stateful, Eventful {
   /**
    * @dev Updates cumulative indices for the specified collateral type
    * @param collId The collateral type ID
-   * @param interestIndex The new rate accumulator for debt
-   * @param yieldIndex The new rate accumulator for capital
+   * @param debtAccumulator The new rate accumulator for debt
+   * @param capitalAccumulator The new rate accumulator for capital
    */
   function updateAccumulators(
     bytes32 collId,
-    uint256 interestIndex,
-    uint256 yieldIndex
+    uint256 debtAccumulator,
+    uint256 capitalAccumulator
   ) external onlyBy("teller") {
     emit LogVarUpdate(
       "Vault",
       collId,
-      "interestIndex",
-      collateralTypes[collId].interestIndex,
-      interestIndex
+      "debtAccumulator",
+      collateralTypes[collId].debtAccumulator,
+      debtAccumulator
     );
     emit LogVarUpdate(
       "Vault",
       collId,
-      "yieldIndex",
-      collateralTypes[collId].yieldIndex,
-      yieldIndex
+      "capitalAccumulator",
+      collateralTypes[collId].capitalAccumulator,
+      capitalAccumulator
     );
 
-    collateralTypes[collId].interestIndex = interestIndex;
-    collateralTypes[collId].yieldIndex = yieldIndex;
+    collateralTypes[collId].debtAccumulator = debtAccumulator;
+    collateralTypes[collId].capitalAccumulator = capitalAccumulator;
   }
 
   /**
@@ -437,7 +451,7 @@ contract VaultEngine is Stateful, Eventful {
    */
   function certify(bytes32 collId, Vault memory vault) internal view {
     require(
-      (vault.debt * collateralTypes[collId].interestIndex) +
+      (vault.debt * collateralTypes[collId].debtAccumulator) +
         (vault.capital * PRECISION_PRICE) <=
         vault.usedCollateral * collateralTypes[collId].price,
       "Vault/certify: Not enough collateral"

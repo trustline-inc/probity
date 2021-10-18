@@ -21,7 +21,6 @@ contract MockERC20Token is IAurei {
 
   // --- ERC2612 Data ---
 
-  // @dev commented out for now because of ProviderError: invalid opcode: CHAINID
   bytes32 private immutable _DOMAIN_SEPARATOR;
   bytes32 private constant _PERMIT_TYPEHASH =
     0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9; // keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
@@ -32,7 +31,6 @@ contract MockERC20Token is IAurei {
    * @dev Builds the domain separator
    */
   constructor() {
-    // @dev commented out for now because of ProviderError: invalid opcode: CHAINID
     uint256 chainId;
     assembly {
       chainId := chainid()
@@ -177,9 +175,8 @@ contract MockERC20Token is IAurei {
 
   // --- ERC2612 Functions ---
 
-  // @dev commented out for now because of `ProviderError: invalid opcode: CHAINID`
   function DOMAIN_SEPARATOR() external view override returns (bytes32) {
-    // return _DOMAIN_SEPARATOR;
+    return _DOMAIN_SEPARATOR;
   }
 
   function permit(

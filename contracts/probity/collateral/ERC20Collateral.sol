@@ -27,8 +27,16 @@ contract ERC20Collateral is Stateful {
   // Events
   /////////////////////////////////////////
 
-  event Deposit(address indexed user, uint256 amount);
-  event Withdrawal(address indexed user, uint256 amount);
+  event DepositToken(
+    address indexed user,
+    uint256 amount,
+    address indexed token
+  );
+  event WithdrawToken(
+    address indexed user,
+    uint256 amount,
+    address indexed token
+  );
 
   /////////////////////////////////////////
   // Data Storage
@@ -61,7 +69,7 @@ contract ERC20Collateral is Stateful {
       "ERC20Collateral/deposit: transfer failed"
     );
     vaultEngine.modifyCollateral(collateralId, msg.sender, int256(amount));
-    emit Deposit(msg.sender, amount);
+    emit DepositToken(msg.sender, amount, address(collateralToken));
   }
 
   function withdraw(uint256 amount) external onlyWhen("paused", false) {
@@ -70,6 +78,6 @@ contract ERC20Collateral is Stateful {
       "ERC20Collateral/withdraw: transfer failed"
     );
     vaultEngine.modifyCollateral(collateralId, msg.sender, -int256(amount));
-    emit Withdrawal(msg.sender, amount);
+    emit WithdrawToken(msg.sender, amount, address(collateralToken));
   }
 }

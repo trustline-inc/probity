@@ -177,9 +177,8 @@ contract MockVPToken is IAurei {
 
   // --- ERC2612 Functions ---
 
-  // @dev commented out for now because of `ProviderError: invalid opcode: CHAINID`
   function DOMAIN_SEPARATOR() external view override returns (bytes32) {
-    // return _DOMAIN_SEPARATOR;
+    return _DOMAIN_SEPARATOR;
   }
 
   function permit(
