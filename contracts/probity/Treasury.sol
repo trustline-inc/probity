@@ -64,26 +64,26 @@ contract Treasury is Stateful {
   /////////////////////////////////////////
 
   function deposit(uint256 amount) external {
-    vaultEngine.addAurei(msg.sender, amount);
-    aurei.burn(msg.sender, amount / 1e27);
+    vaultEngine.addAurei(msg.sender, amount * 1e27);
+    aurei.burn(msg.sender, amount);
     emit DepositAurei(msg.sender, amount);
   }
 
   function withdrawAurei(uint256 amount) external {
-    vaultEngine.removeAurei(msg.sender, amount);
-    aurei.mint(msg.sender, amount / 1e27);
+    vaultEngine.removeAurei(msg.sender, amount * 1e27);
+    aurei.mint(msg.sender, amount);
     emit WithdrawAurei(msg.sender, amount);
   }
 
   function withdrawTcn(uint256 amount) external {
-    vaultEngine.removeTcn(msg.sender, amount);
-    tcn.mint(msg.sender, amount / 1e27);
+    vaultEngine.removeTcn(msg.sender, amount * 1e27);
+    tcn.mint(msg.sender, amount);
     emit WithdrawTcn(msg.sender, amount);
   }
 
   function exchangeTcn(uint256 amount) external {
-    tcn.burn(msg.sender, amount / 1e27);
-    aurei.mint(msg.sender, amount / 1e27);
+    tcn.burn(msg.sender, amount);
+    aurei.mint(msg.sender, amount);
     emit ExchangeTcn(msg.sender, amount);
   }
 }

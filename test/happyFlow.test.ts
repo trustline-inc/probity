@@ -197,7 +197,7 @@ describe("Probity Happy flow", function () {
     // test AUR withdrawal
 
     let ownerBalanceBefore = await aurei.balanceOf(owner.address);
-    await treasury.withdrawAurei(aurAfter);
+    await treasury.withdrawAurei(aurAfter.div(PRECISION_PRICE));
     let ownerBalanceAfter = await aurei.balanceOf(owner.address);
     expect(
       ownerBalanceAfter.sub(ownerBalanceBefore).mul(PRECISION_PRICE)

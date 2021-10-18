@@ -36,7 +36,7 @@ let registry: Registry;
 let flrCollateral: NativeCollateral;
 
 const AMOUNT_TO_MINT = PRECISION_COLL.mul(100);
-const AMOUNT_TO_WITHDRAW = PRECISION_AUR.mul(50);
+const AMOUNT_TO_WITHDRAW = PRECISION_COLL.mul(50);
 
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
@@ -75,7 +75,7 @@ describe("Treasury Unit Tests", function () {
 
     it("tests that deposit calls vaultEngine.addAurei function", async () => {
       const aurBalanceBefore = await vaultEngine.AUR(owner.address);
-      await treasury.deposit(AMOUNT_TO_MINT.mul(PRECISION_PRICE));
+      await treasury.deposit(AMOUNT_TO_MINT);
       const aurBalanceAfter = await vaultEngine.AUR(owner.address);
       expect(aurBalanceAfter.sub(aurBalanceBefore)).to.equal(
         AMOUNT_TO_MINT.mul(PRECISION_PRICE)
@@ -84,38 +84,36 @@ describe("Treasury Unit Tests", function () {
 
     it("tests that aurei is burned from user's balance", async () => {
       const aurBalanceBefore = await aurei.balanceOf(owner.address);
-      await treasury.deposit(AMOUNT_TO_MINT.mul(PRECISION_PRICE));
+      await treasury.deposit(AMOUNT_TO_MINT);
       const aurBalanceAfter = await aurei.balanceOf(owner.address);
       expect(aurBalanceBefore.sub(aurBalanceAfter)).to.equal(AMOUNT_TO_MINT);
     });
 
     it("tests that DepositAurei event is emitted properly", async () => {
       const parsedEvents = await parseEvents(
-        treasury.deposit(AMOUNT_TO_MINT.mul(PRECISION_PRICE)),
+        treasury.deposit(AMOUNT_TO_MINT),
         "DepositAurei",
         treasury
       );
 
       expect(parsedEvents[0].args[0]).to.equal(owner.address);
-      expect(parsedEvents[0].args[1]).to.equal(
-        AMOUNT_TO_MINT.mul(PRECISION_PRICE)
-      );
+      expect(parsedEvents[0].args[1]).to.equal(AMOUNT_TO_MINT);
     });
   });
 
   describe("withdrawAurei Unit Tests", function () {
     beforeEach(async function () {
       await aurei.mint(owner.address, AMOUNT_TO_MINT);
-      await treasury.deposit(AMOUNT_TO_MINT.mul(PRECISION_PRICE));
+      await treasury.deposit(AMOUNT_TO_MINT);
     });
 
     it("tests that withdrawAurei calls vaultEngine.removeAurei function", async () => {
       const aurBalanceBefore = await vaultEngine.AUR(owner.address);
       await treasury.withdrawAurei(AMOUNT_TO_WITHDRAW);
       const aurBalanceAfter = await vaultEngine.AUR(owner.address);
-      expect(aurBalanceBefore.sub(aurBalanceAfter)).to.equal(
-        AMOUNT_TO_WITHDRAW
-      );
+      expect(
+        aurBalanceBefore.sub(aurBalanceAfter).div(PRECISION_PRICE)
+      ).to.equal(AMOUNT_TO_WITHDRAW);
     });
 
     it("fails when user doesn't have enough AUR to be withdrawn", async () => {
@@ -130,9 +128,9 @@ describe("Treasury Unit Tests", function () {
       const aurBalanceBefore = await aurei.balanceOf(owner.address);
       await treasury.withdrawAurei(AMOUNT_TO_WITHDRAW);
       const aurBalanceAfter = await aurei.balanceOf(owner.address);
-      expect(
-        aurBalanceAfter.sub(aurBalanceBefore).mul(PRECISION_PRICE)
-      ).to.equal(AMOUNT_TO_WITHDRAW);
+      expect(aurBalanceAfter.sub(aurBalanceBefore)).to.equal(
+        AMOUNT_TO_WITHDRAW
+      );
     });
 
     it("tests that WithdrawAurei event is emitted properly", async () => {
@@ -159,18 +157,18 @@ describe("Treasury Unit Tests", function () {
       const tcnBalanceBefore = await vaultEngine.TCN(owner.address);
       await treasury.withdrawTcn(AMOUNT_TO_WITHDRAW);
       const tcnBalanceAfter = await vaultEngine.TCN(owner.address);
-      expect(tcnBalanceBefore.sub(tcnBalanceAfter)).to.equal(
-        AMOUNT_TO_WITHDRAW
-      );
+      expect(
+        tcnBalanceBefore.sub(tcnBalanceAfter).div(PRECISION_PRICE)
+      ).to.equal(AMOUNT_TO_WITHDRAW);
     });
 
     it("tests that tcn is minted for user's balance", async () => {
       const tcnBalanceBefore = await tcn.balanceOf(owner.address);
       await treasury.withdrawTcn(AMOUNT_TO_WITHDRAW);
       const tcnBalanceAfter = await tcn.balanceOf(owner.address);
-      expect(
-        tcnBalanceAfter.sub(tcnBalanceBefore).mul(PRECISION_PRICE)
-      ).to.equal(AMOUNT_TO_WITHDRAW);
+      expect(tcnBalanceAfter.sub(tcnBalanceBefore)).to.equal(
+        AMOUNT_TO_WITHDRAW
+      );
     });
 
     it("tests that WithdrawTcn event is emitted properly", async () => {
@@ -193,7 +191,7 @@ describe("Treasury Unit Tests", function () {
     it("tests that tcn is burned and aurei is minted properly", async () => {
       const aurBalanceBefore = await aurei.balanceOf(owner.address);
       const tcnBalanceBefore = await tcn.balanceOf(owner.address);
-      await treasury.exchangeTcn(AMOUNT_TO_MINT.mul(PRECISION_PRICE));
+      await treasury.exchangeTcn(AMOUNT_TO_MINT);
       const aurBalanceAfter = await aurei.balanceOf(owner.address);
       const tcnBalanceAfter = await tcn.balanceOf(owner.address);
       expect(aurBalanceAfter.sub(aurBalanceBefore)).to.equal(AMOUNT_TO_MINT);
