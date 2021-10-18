@@ -3,7 +3,6 @@
 pragma solidity ^0.8.0;
 
 import "../dependencies/Stateful.sol";
-import "../dependencies/DSMath.sol";
 
 interface VaultEngineLike {
   function collateralTypes(bytes32)
@@ -28,7 +27,7 @@ interface IAPR {
 /**
  * @notice Creates loans and manages vault debt.
  */
-contract Teller is Stateful, DSMath {
+contract Teller is Stateful {
   event RatesUpdated(
     uint256 timestamp,
     uint256 debtAccumulator,
@@ -56,11 +55,14 @@ contract Teller is Stateful, DSMath {
   IAPR public lowAprRate;
   IAPR public highAprRate;
 
-  // One as 1e18, or as 100%
-  uint256 constant ONE = 10**18;
+  //  uint256 constant WAD = 10**18;
+  //  uint256 constant RAY = 10**27;
+
+  uint256 constant WAD = 10**18;
+  uint256 constant RAY = 10**27;
 
   // Set max APR to 100%
-  uint256 constant MAX_APR = ONE * 2 * 1e9;
+  uint256 constant MAX_APR = WAD * 2 * 1e9;
 
   /////////////////////////////////////////
   // Constructor
@@ -115,8 +117,8 @@ contract Teller is Stateful, DSMath {
 
     // Update capital accumulator
     uint256 multipliedByUtilization =
-      rmul(sub(MPR, RAY), coll.lastUtilization * 1e9);
-    uint256 multipliedByUtilizationPlusOne = add(multipliedByUtilization, RAY);
+      rmul(MPR - RAY, coll.lastUtilization * 1e9);
+    uint256 multipliedByUtilizationPlusOne = multipliedByUtilization + RAY;
     uint256 exponentiated =
       rpow(
         multipliedByUtilizationPlusOne,
@@ -129,12 +131,12 @@ contract Teller is Stateful, DSMath {
     if (coll.lastUtilization >= 1e18) {
       APR = MAX_APR;
     } else {
-      uint256 oneMinusUtilization = sub(RAY, coll.lastUtilization * 1e9);
+      uint256 oneMinusUtilization = RAY - (coll.lastUtilization * 1e9);
       uint256 oneDividedByOneMinusUtilization =
         rdiv(10**27 * 0.01, oneMinusUtilization);
 
       uint256 round = 0.0025 * 10**27;
-      APR = add(oneDividedByOneMinusUtilization, RAY);
+      APR = oneDividedByOneMinusUtilization + RAY;
       APR = ((APR + round - 1) / round) * round;
 
       if (APR > MAX_APR) {
@@ -152,5 +154,48 @@ contract Teller is Stateful, DSMath {
     coll.lastUpdated = block.timestamp;
     vaultEngine.updateAccumulators(collId, debtAccumulator, suppAccumulator);
     collateralTypes[collId] = coll;
+  }
+
+  /////////////////////////////////////////
+  // Internal Functions
+  /////////////////////////////////////////
+
+  function rmul(uint256 x, uint256 y) internal pure returns (uint256 z) {
+    z = ((x * y) + (RAY / 2)) / RAY;
+  }
+
+  function wdiv(uint256 x, uint256 y) internal pure returns (uint256 z) {
+    z = ((x * WAD) + (y / 2)) / y;
+  }
+
+  function rdiv(uint256 x, uint256 y) internal pure returns (uint256 z) {
+    z = ((x * RAY) + (y / 2)) / y;
+  }
+
+  // This famous algorithm is called "exponentiation by squaring"
+  // and calculates x^n with x as fixed-point and n as regular unsigned.
+  //
+  // It's O(log n), instead of O(n) for naive repeated multiplication.
+  //
+  // These facts are why it works:
+  //
+  //  If n is even, then x^n = (x^2)^(n/2).
+  //  If n is odd,  then x^n = x * x^(n-1),
+  //   and applying the equation for even x gives
+  //    x^n = x * (x^2)^((n-1) / 2).
+  //
+  //  Also, EVM division is flooring and
+  //    floor[(n-1) / 2] = floor[n / 2].
+  //
+  function rpow(uint256 x, uint256 n) internal pure returns (uint256 z) {
+    z = n % 2 != 0 ? x : RAY;
+
+    for (n /= 2; n != 0; n /= 2) {
+      x = rmul(x, x);
+
+      if (n % 2 != 0) {
+        z = rmul(z, x);
+      }
+    }
   }
 }
