@@ -3,7 +3,7 @@ import "@nomiclabs/hardhat-ethers";
 
 import { Aurei, VaultEngine, Registry } from "../../../typechain";
 
-import { deployProbity } from "../../../lib/deployer";
+import { deployTest } from "../../../lib/deployer";
 import { ethers } from "hardhat";
 import * as chai from "chai";
 import assertRevert from "../../utils/assertRevert";
@@ -25,7 +25,7 @@ ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
 describe("Aurei Token Unit Test", function () {
   beforeEach(async function () {
-    const { contracts, signers } = await deployProbity();
+    const { contracts, signers } = await deployTest();
 
     // Set contracts
     vaultEngine = contracts.vaultEngine;

@@ -3,7 +3,7 @@ import "@nomiclabs/hardhat-ethers";
 
 import { MockVaultEngine, Registry, Teller } from "../../typechain";
 
-import { deployProbity, probity, mock } from "../../lib/deployer";
+import { deployTest, probity, mock } from "../../lib/deployer";
 import { ethers } from "hardhat";
 import * as chai from "chai";
 import {
@@ -34,13 +34,12 @@ ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
 describe("Teller Unit Tests", function () {
   beforeEach(async function () {
-    let { contracts, signers } = await deployProbity();
+    let { contracts, signers } = await deployTest();
     // Set contracts
     registry = contracts.registry;
 
-    contracts = await mock.deployMockVaultEngine();
     contracts = await probity.deployTeller({
-      vaultEngine: contracts.mockVaultEngine,
+      vaultEngine: contracts.mockVaultEngine.address,
     });
     vaultEngine = contracts.mockVaultEngine;
 

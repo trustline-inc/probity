@@ -1,21 +1,38 @@
 import "@nomiclabs/hardhat-ethers";
-import { deployLocal, deployProd, probity } from "../lib/deployer";
+import { probity } from "../lib/deployer";
 import * as fs from "fs";
+import { ethers } from "hardhat";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 async function main() {
-  let deployed;
-  if (process.env.NETWORK === "local") {
-    console.log("Deploying in Local Mode");
-    deployed = await deployLocal();
-  } else {
-    console.log("Deploying in Production Mode");
-    deployed = await deployProd();
-    console.log(
-      "Warning: this deployment of Probity in Production does not include ERC20Collateral, VPTokenCollateral and Auction please deploy them separately"
-    );
-  }
+  const [owner]: SignerWithAddress[] = await ethers.getSigners();
 
-  let { contracts } = deployed;
+  if (
+    !process.env.ERC20 ||
+    !process.env.LINEAR_DECREASE ||
+    !process.env.VAULT_ENGINE ||
+    !process.env.REGISTRY
+  ) {
+    console.error(
+      "Please provide FTSO, LINEAR_DECREASE, VAULT_ENGINE and REGISTRY contract addresses in .env"
+    );
+    process.exit(1);
+  }
+  const registry = await ethers.getContractAt(
+    "Registry",
+    process.env.REGISTRY,
+    owner
+  );
+
+  const param = {
+    registry,
+    vaultEngine: process.env.VAULT_ENGINE,
+    priceCalc: process.env.LINEAR_DECREASE,
+    ftso: process.env.FTSO,
+  };
+
+  //@ts-ignore
+  let contracts = await probity.deployAuction(param);
 
   console.log("Contracts deployed!");
 
@@ -35,7 +52,7 @@ async function main() {
     fileOutput += `${contractDisplayName}=${contracts[contractName].address}\n`;
   }
 
-  fs.writeFileSync(".env", fileOutput);
+  fs.appendFileSync(".env", fileOutput);
   console.table(addresses);
 }
 

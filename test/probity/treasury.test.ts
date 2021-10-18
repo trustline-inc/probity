@@ -10,7 +10,7 @@ import {
   MockVaultEngine,
 } from "../../typechain";
 
-import { deployProbity, probity, mock } from "../../lib/deployer";
+import { deployTest, probity } from "../../lib/deployer";
 import { ethers } from "hardhat";
 import * as chai from "chai";
 import {
@@ -42,7 +42,7 @@ ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
 describe("Treasury Unit Tests", function () {
   beforeEach(async function () {
-    let { contracts, signers } = await deployProbity();
+    let { contracts, signers } = await deployTest();
     // Set contracts
     registry = contracts.registry;
     aurei = contracts.aurei;
@@ -53,14 +53,10 @@ describe("Treasury Unit Tests", function () {
     user = signers.alice;
 
     let param = {
-      registry,
-      aurei,
-      tcnToken: tcn,
       vaultEngine: null,
     };
 
-    contracts = await mock.deployMockVaultEngine();
-    param.vaultEngine = contracts.mockVaultEngine;
+    param.vaultEngine = contracts.mockVaultEngine.address;
     contracts = await probity.deployTreasury(param);
     treasury = contracts.treasury;
     vaultEngine = contracts.mockVaultEngine;
