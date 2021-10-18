@@ -64,7 +64,7 @@ describe("Teller Unit Tests", function () {
     it("can only be called by gov address", async () => {
       await assertRevert(
         teller.connect(user).initCollType(bytes32("new coll")),
-        "ACCESS: Caller does not have authority to call this"
+        "AccessControl/OnlyBy: Caller does not have authority to call this"
       );
       await registry.setupContractAddress(bytes32("gov"), user.address);
       await teller.connect(user).initCollType(flrCollId);
@@ -83,7 +83,7 @@ describe("Teller Unit Tests", function () {
       const newCollId = bytes32("new coll");
       await assertRevert(
         teller.updateAccumulator(newCollId),
-        "TELLER: Collateral Type not initialized"
+        "Teller/updateAccumulator: Collateral Type not initialized"
       );
       await teller.initCollType(newCollId);
       await teller.updateAccumulator(newCollId);

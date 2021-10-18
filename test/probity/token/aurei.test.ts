@@ -39,7 +39,7 @@ describe("Aurei Token Unit Test", function () {
   it("test mint can only be called by vault contract", async () => {
     await assertRevert(
       aurei.mint(user.address, AMOUNT_TO_MINT),
-      "ACCESS: Caller does not have authority to call this"
+      "AccessControl/OnlyBy: Caller does not have authority to call this"
     );
 
     // add owner to registry as 'treasury' then check if owner can now mint
@@ -61,7 +61,7 @@ describe("Aurei Token Unit Test", function () {
 
     await assertRevert(
       aurei.connect(user).burn(user.address, AMOUNT_TO_BURN),
-      "ACCESS: Caller does not have authority to call this"
+      "AccessControl/OnlyBy: Caller does not have authority to call this"
     );
 
     const balanceBefore = await aurei.balanceOf(user.address);
