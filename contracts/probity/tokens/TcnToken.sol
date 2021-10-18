@@ -205,7 +205,7 @@ contract TcnToken is ITcnToken, Stateful {
     bytes32 r,
     bytes32 s
   ) external override {
-    require(deadline >= block.timestamp, "TCN: EXPIRED");
+    require(deadline >= block.timestamp, "TCN/permit: EXPIRED");
     bytes32 digest =
       keccak256(
         abi.encodePacked(
@@ -226,7 +226,7 @@ contract TcnToken is ITcnToken, Stateful {
     address recoveredAddress = ecrecover(digest, v, r, s);
     require(
       recoveredAddress != address(0) && recoveredAddress == owner,
-      "TCN: INVALID_SIGNATURE"
+      "TCN/permit: INVALID_SIGNATURE"
     );
     _approve(owner, spender, amount);
   }
@@ -275,7 +275,7 @@ contract TcnToken is ITcnToken, Stateful {
   function _requireValidRecipient(address _recipient) internal view {
     require(
       _recipient != address(0) && _recipient != address(this),
-      "TCN: Cannot transfer tokens directly to the TCN token contract or the zero address"
+      "TCN/_requireValidRecipient: Cannot transfer tokens directly to the TCN token contract or the zero address"
     );
   }
 }

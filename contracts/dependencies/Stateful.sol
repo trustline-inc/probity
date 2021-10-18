@@ -10,7 +10,7 @@ contract Stateful is AccessControl {
   mapping(bytes32 => bool) states;
 
   modifier onlyWhen(bytes32 name, bool set) {
-    require(states[name] == set, "State check failed");
+    require(states[name] == set, "Stateful/onlyWhen: State check failed");
     _;
   }
 

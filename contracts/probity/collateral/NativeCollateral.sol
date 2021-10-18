@@ -49,7 +49,10 @@ contract NativeCollateral is Stateful {
 
   function withdraw(uint256 amount) external onlyWhen("paused", false) {
     vaultEngine.modifyCollateral(collateralId, msg.sender, -int256(amount));
-    require(payable(msg.sender).send(amount), "FLR_COLL: fail to send FLR");
+    require(
+      payable(msg.sender).send(amount),
+      "NativeCollateral/withdraw: fail to send FLR"
+    );
 
     emit Withdrawal(msg.sender, amount);
   }

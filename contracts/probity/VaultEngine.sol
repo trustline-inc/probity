@@ -190,7 +190,7 @@ contract VaultEngine is Stateful, Eventful {
   ) external {
     require(
       registry.checkContractValidity("treasury", treasuryAddress),
-      "VAULT: Treasury address is not valid"
+      "Vault/modifySupply: Treasury address is not valid"
     );
 
     collectInterest(collId);
@@ -209,11 +209,11 @@ contract VaultEngine is Stateful, Eventful {
 
     require(
       totalCapital <= collateralTypes[collId].ceiling,
-      "VAULT: Supply ceiling reached"
+      "Vault/modifySupply: Supply ceiling reached"
     );
     require(
       vault.capital == 0 || vault.capital > collateralTypes[collId].floor,
-      "VAULT: Capital floor reached"
+      "Vault/modifySupply: Capital floor reached"
     );
     certify(collId, vault);
 
@@ -237,13 +237,13 @@ contract VaultEngine is Stateful, Eventful {
   ) external {
     require(
       registry.checkContractValidity("treasury", treasuryAddress),
-      "VAULT: Treasury address is not valid"
+      "Vault/modifyDebt: Treasury address is not valid"
     );
 
     if (debtAmount > 0) {
       require(
         AUR[treasuryAddress] >= uint256(debtAmount),
-        "Treasury doesn't have enough supply to loan this amount"
+        "Vault/modifyDebt: Treasury doesn't have enough supply to loan this amount"
       );
     }
 
@@ -263,11 +263,11 @@ contract VaultEngine is Stateful, Eventful {
 
     require(
       totalDebt <= collateralTypes[collId].ceiling,
-      "VAULT: Debt ceiling reached"
+      "Vault/modifyDebt: Debt ceiling reached"
     );
     require(
       vault.debt == 0 || vault.debt > collateralTypes[collId].floor,
-      "VAULT: Debt Smaller than floor"
+      "Vault/modifyDebt: Debt Smaller than floor"
     );
     certify(collId, vault);
 
@@ -440,7 +440,7 @@ contract VaultEngine is Stateful, Eventful {
       (vault.debt * collateralTypes[collId].interestIndex) +
         (vault.capital * PRECISION_PRICE) <=
         vault.usedCollateral * collateralTypes[collId].price,
-      "VAULT: Not enough collateral"
+      "Vault/certify: Not enough collateral"
     );
   }
 
@@ -448,21 +448,21 @@ contract VaultEngine is Stateful, Eventful {
     unchecked {
       c = a - uint256(b);
     }
-    require(b <= 0 || c <= a, "Vault: sub op failed");
-    require(b >= 0 || c >= a, "Vault: sub op failed");
+    require(b <= 0 || c <= a, "Vault/sub: sub op failed");
+    require(b >= 0 || c >= a, "Vault/sub: sub op failed");
   }
 
   function add(uint256 a, int256 b) internal pure returns (uint256 c) {
     unchecked {
       c = a + uint256(b);
     }
-    require(b >= 0 || c <= a, "Vault: add op failed");
-    require(b <= 0 || c >= a, "Vault: add op failed");
+    require(b >= 0 || c <= a, "Vault/add: add op failed");
+    require(b <= 0 || c >= a, "Vault/add: add op failed");
   }
 
   function mul(uint256 a, int256 b) internal pure returns (int256 c) {
     c = int256(a) * b;
-    require(int256(a) >= 0);
-    require(b == 0 || c / b == int256(a));
+    require(int256(a) >= 0, "Vault/mul: mul op failed");
+    require(b == 0 || c / b == int256(a), "Vault/mul: mul op failed");
   }
 }

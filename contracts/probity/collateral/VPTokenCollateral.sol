@@ -40,7 +40,7 @@ contract VPTokenCollateral is Delegatable {
   function deposit(uint256 amount) external onlyWhen("paused", false) {
     require(
       token.transferFrom(msg.sender, address(this), amount),
-      "VP_TOKEN_COLL: transfer failed"
+      "VPTokenCollateral/deposit: transfer failed"
     );
     vaultEngine.modifyCollateral(collId, msg.sender, int256(amount));
     recentDeposits[msg.sender][ftsoManager.getCurrentRewardEpoch()] += amount;
@@ -52,7 +52,7 @@ contract VPTokenCollateral is Delegatable {
   function withdraw(uint256 amount) external onlyWhen("paused", false) {
     require(
       token.transfer(msg.sender, amount),
-      "VP_TOKEN_COLL: transfer failed"
+      "VPTokenCollateral/withdraw: transfer failed"
     );
 
     vaultEngine.modifyCollateral(collId, msg.sender, -int256(amount));
