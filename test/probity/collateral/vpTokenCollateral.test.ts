@@ -8,7 +8,7 @@ import {
   VpTokenCollateral,
 } from "../../../typechain";
 
-import { deployProbity } from "../../../lib/deployer";
+import { deployTest } from "../../../lib/deployer";
 import parseEvents from "../../utils/parseEvents";
 import { ethers } from "hardhat";
 import * as chai from "chai";
@@ -33,7 +33,7 @@ ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
 describe("VP Token Collateral Unit Test", function () {
   beforeEach(async function () {
-    const { contracts, signers } = await deployProbity();
+    const { contracts, signers } = await deployTest();
 
     // Set contracts
     vaultEngine = contracts.vaultEngine;

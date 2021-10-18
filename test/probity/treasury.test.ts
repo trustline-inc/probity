@@ -10,7 +10,7 @@ import {
   MockVaultEngine,
 } from "../../typechain";
 
-import { deployProbity, probity, mock } from "../../lib/deployer";
+import { deployTest, probity, mock } from "../../lib/deployer";
 import { ethers } from "hardhat";
 import * as chai from "chai";
 import { bytes32, PRECISION_COLL } from "../utils/constants";
@@ -37,7 +37,7 @@ ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
 describe("Treasury Unit Tests", function () {
   beforeEach(async function () {
-    let { contracts, signers } = await deployProbity();
+    let { contracts, signers } = await deployTest();
     // Set contracts
     registry = contracts.registry;
     aurei = contracts.aurei;
