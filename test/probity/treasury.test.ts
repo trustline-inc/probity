@@ -48,14 +48,10 @@ describe("Treasury Unit Tests", function () {
     user = signers.alice;
 
     let param = {
-      registry,
-      aurei,
-      tcnToken: tcn,
       vaultEngine: null,
     };
 
-    contracts = await mock.deployMockVaultEngine();
-    param.vaultEngine = contracts.mockVaultEngine;
+    param.vaultEngine = contracts.mockVaultEngine.address;
     contracts = await probity.deployTreasury(param);
     treasury = contracts.treasury;
     vaultEngine = contracts.mockVaultEngine;

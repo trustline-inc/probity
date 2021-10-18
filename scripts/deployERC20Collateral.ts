@@ -1,7 +1,7 @@
 import "@nomiclabs/hardhat-ethers";
 import { probity } from "../lib/deployer";
 import * as fs from "fs";
-import { ethers } from "hardhat";
+import { artifacts, ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 async function main() {
@@ -9,12 +9,11 @@ async function main() {
 
   if (
     !process.env.ERC20 ||
-    !process.env.LINEAR_DECREASE ||
     !process.env.VAULT_ENGINE ||
     !process.env.REGISTRY
   ) {
     console.error(
-      "Please provide FTSO, LINEAR_DECREASE, VAULT_ENGINE and REGISTRY contract addresses in .env"
+      "Please provide ERC20, VAULT_ENGINE and REGISTRY contract addresses in .env"
     );
     process.exit(1);
   }
@@ -27,12 +26,11 @@ async function main() {
   const param = {
     registry,
     vaultEngine: process.env.VAULT_ENGINE,
-    priceCalc: process.env.LINEAR_DECREASE,
-    ftso: process.env.FTSO,
+    erc20: process.env.ERC20,
   };
 
   //@ts-ignore
-  let contracts = await probity.deployAuction(param);
+  let contracts = await probity.deployERC20Collateral(param);
 
   console.log("Contracts deployed!");
 

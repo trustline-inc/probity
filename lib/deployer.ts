@@ -274,7 +274,7 @@ const deployVaultEngine = async (param?: { registry?: string }) => {
 };
 
 const deployVPTokenCollateral = async (param?: {
-  registry?: string;
+  registry?: Registry;
   collateralId?: string;
   ftsoManager?: string;
   ftsoRewardManager?: string;
@@ -282,7 +282,7 @@ const deployVPTokenCollateral = async (param?: {
   vaultEngine?: string;
 }) => {
   const registry =
-    param && param.registry ? param.registry : contracts.registry.address;
+    param && param.registry ? param.registry : contracts.registry;
   const collateralId =
     param && param.collateralId
       ? param.collateralId
@@ -309,7 +309,7 @@ const deployVPTokenCollateral = async (param?: {
     signers.owner
   )) as VpTokenCollateralFactory;
   contracts.vpTokenCollateral = await vpTokenCollateralFactory.deploy(
-    registry,
+    registry.address,
     collateralId,
     ftsoManager,
     ftsoRewardManager,
@@ -318,7 +318,7 @@ const deployVPTokenCollateral = async (param?: {
   );
   await contracts.vpTokenCollateral.deployed();
 
-  await contracts.registry.setupContractAddress(
+  await registry.setupContractAddress(
     bytes32("collateral"),
     contracts.vpTokenCollateral.address
   );
@@ -327,13 +327,13 @@ const deployVPTokenCollateral = async (param?: {
 };
 
 const deployERC20Collateral = async (param?: {
-  registry?: string;
+  registry?: Registry;
   collateralId?: string;
   erc20?: string;
   vaultEngine?: string;
 }) => {
   const registry =
-    param && param.registry ? param.registry : contracts.registry.address;
+    param && param.registry ? param.registry : contracts.registry;
   const collateralId =
     param && param.collateralId
       ? param.collateralId
@@ -351,16 +351,18 @@ const deployERC20Collateral = async (param?: {
     signers.owner
   )) as Erc20CollateralFactory;
   contracts.fxrpCollateral = await fxrpCollateralFactory.deploy(
-    registry,
+    registry.address,
     collateralId,
     erc20,
     vaultEngine
   );
   await contracts.fxrpCollateral.deployed();
-  await contracts.registry.setupContractAddress(
+  await registry.setupContractAddress(
     bytes32("collateral"),
     contracts.fxrpCollateral.address
   );
+
+  return contracts;
 };
 
 const deployNativeCollateral = async (param?: {
@@ -511,13 +513,13 @@ const deployPriceFeed = async (param?: {
 };
 
 const deployAuction = async (param?: {
-  registry?: string;
+  registry?: Registry;
   vaultEngine?: string;
   priceCalc?: string;
   ftso?: string;
 }) => {
   const registry =
-    param && param.registry ? param.registry : contracts.registry.address;
+    param && param.registry ? param.registry : contracts.registry;
   const vaultEngine =
     param && param.vaultEngine
       ? param.vaultEngine
@@ -535,14 +537,14 @@ const deployAuction = async (param?: {
     signers.owner
   )) as AuctioneerFactory;
   contracts.auctioneer = await auctionFactory.deploy(
-    registry,
+    registry.address,
     vaultEngine,
     linearDecrease,
     ftso
   );
   await contracts.auctioneer.deployed();
 
-  await contracts.registry.setupContractAddress(
+  await registry.setupContractAddress(
     bytes32("auctioneer"),
     contracts.auctioneer.address
   );

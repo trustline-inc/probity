@@ -14,6 +14,8 @@
     "demo:redeem": "npx hardhat --network local run ./scripts/redeemAurei.ts",
     "script:markComplete": "npx hardhat --network local run ./scripts/markTransferComplete.ts",
     "deployAuction:local": "npx hardhat --network local run ./scripts/deployAuction.ts",
+    "deployERC20Collateral:local": "npx hardhat --network local run ./scripts/deployERC20Collateral.ts",
+    "deployVpTokenCollateral:local": "npx hardhat --network local run ./scripts/deployVpTokenCollateral.ts",
     "deploy:local": "export NETWORK=local && npx hardhat --network local run ./scripts/deploy.ts",
     "deploy:coston": "npx hardhat --network coston run ./scripts/deploy.ts",
     "deploy:hardhat": "npx hardhat --network localhost run ./scripts/deploy.ts",

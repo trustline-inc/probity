@@ -1,14 +1,14 @@
 import "@nomiclabs/hardhat-ethers";
 import { probity } from "../lib/deployer";
 import * as fs from "fs";
-import { ethers } from "hardhat";
+import { artifacts, ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 async function main() {
   const [owner]: SignerWithAddress[] = await ethers.getSigners();
 
   if (
-    !process.env.ERC20 ||
+    !process.env.FTSO ||
     !process.env.LINEAR_DECREASE ||
     !process.env.VAULT_ENGINE ||
     !process.env.REGISTRY
@@ -27,12 +27,13 @@ async function main() {
   const param = {
     registry,
     vaultEngine: process.env.VAULT_ENGINE,
-    priceCalc: process.env.LINEAR_DECREASE,
-    ftso: process.env.FTSO,
+    vpToken: process.env.VP_TOKEN,
+    ftsoManager: process.env.FTSO_MANAGER,
+    ftsoRewardManager: process.env.FTSO_REWARD_MANAGER,
   };
 
   //@ts-ignore
-  let contracts = await probity.deployAuction(param);
+  let contracts = await probity.deployVPTokenCollateral(param);
 
   console.log("Contracts deployed!");
 
