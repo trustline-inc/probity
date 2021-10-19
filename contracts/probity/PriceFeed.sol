@@ -3,7 +3,6 @@
 pragma solidity ^0.8.0;
 
 import "../dependencies/Stateful.sol";
-import "../dependencies/DSMath.sol";
 import "../dependencies/Eventful.sol";
 
 interface VaultEngineLike {
@@ -16,7 +15,7 @@ interface FtsoLike {
     returns (uint256 _price, uint256 _timestamp);
 }
 
-contract PriceFeed is Stateful, Eventful, DSMath {
+contract PriceFeed is Stateful, Eventful {
   /////////////////////////////////////////
   // Data Structure
   /////////////////////////////////////////
@@ -31,6 +30,8 @@ contract PriceFeed is Stateful, Eventful, DSMath {
   /////////////////////////////////////////
   VaultEngineLike public vaultEngine;
   mapping(bytes32 => Collateral) public collateralTypes;
+
+  uint256 constant RAY = 1e27;
 
   /////////////////////////////////////////
   // Constructor
@@ -88,8 +89,15 @@ contract PriceFeed is Stateful, Eventful, DSMath {
     );
     (uint256 price, ) = collateralTypes[collId].ftso.getCurrentPrice();
     uint256 adjustedPrice =
-      rdiv(rdiv(price, 10**27), collateralTypes[collId].liquidationRatio);
+      rdiv(rdiv(price, RAY), collateralTypes[collId].liquidationRatio);
 
     vaultEngine.updatePrice(collId, adjustedPrice);
+  }
+
+  /////////////////////////////////////////
+  // Internal functions
+  /////////////////////////////////////////
+  function rdiv(uint256 x, uint256 y) internal pure returns (uint256 z) {
+    z = ((x * RAY) + (y / 2)) / y;
   }
 }

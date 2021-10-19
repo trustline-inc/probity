@@ -2,7 +2,6 @@
 
 pragma solidity ^0.8.0;
 
-import "./DSMath.sol";
 import "./Stateful.sol";
 
 interface FtsoRewardManagerLike {
@@ -46,7 +45,7 @@ interface VaultEngineLike {
   ) external;
 }
 
-contract Delegatable is DSMath, Stateful {
+contract Delegatable is Stateful {
   FtsoManagerLike public ftsoManager;
   FtsoRewardManagerLike public ftsoRewardManager;
   VaultEngineLike public vaultEngine;
@@ -57,6 +56,7 @@ contract Delegatable is DSMath, Stateful {
   mapping(uint256 => uint256) public contractBalanceByEpoch;
   mapping(uint256 => uint256) public rewardPerUnitAtEpoch;
   uint256 private constant HUNDRED_PERCENT = 10000;
+  uint256 constant RAY = 1e27;
 
   mapping(address => uint256) public userLastClaimedEpoch;
   mapping(address => uint256) public recentTotalDeposit;
@@ -147,5 +147,9 @@ contract Delegatable is DSMath, Stateful {
       "Delegatable/changeDataProviders: Provided percentages does not add up to 100%"
     );
     dataProviders = providers;
+  }
+
+  function rdiv(uint256 x, uint256 y) internal pure returns (uint256 z) {
+    z = ((x * RAY) + (y / 2)) / y;
   }
 }
