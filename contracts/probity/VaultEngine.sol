@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
 
-interface ftsoLike {
+interface FtsoLike {
   function getCurrentPrice()
     external
     returns (uint256 _price, uint256 _timestamp);
@@ -17,6 +17,7 @@ interface ftsoLike {
  * @author Shine Lee <shine@trustline.co, @shine2lay>
  * @notice The core accounting module for the Probity system
  */
+
 contract VaultEngine is Stateful, Eventful {
   event SupplyModified(
     address indexed user,
@@ -57,8 +58,8 @@ contract VaultEngine is Stateful, Eventful {
   // Data Variables
   /////////////////////////////////////////
 
-  mapping(address => uint256) public AUR;
-  mapping(address => uint256) public TCN;
+  mapping(address => uint256) public aur;
+  mapping(address => uint256) public tcn;
   mapping(address => uint256) public unbackedAurei;
   mapping(bytes32 => Collateral) public collateralTypes;
   mapping(bytes32 => mapping(address => Vault)) public vaults;
@@ -67,12 +68,13 @@ contract VaultEngine is Stateful, Eventful {
   uint256 public totalCapital;
   uint256 public totalUnbackedAurei;
 
-  uint256 constant PRECISION_PRICE = 10**27;
+  uint256 private constant PRECISION_PRICE = 10**27;
 
   /////////////////////////////////////////
   // Constructor
   /////////////////////////////////////////
 
+  // solhint-disable-next-line
   constructor(address registryAddress) Stateful(registryAddress) {}
 
   /////////////////////////////////////////
@@ -124,8 +126,8 @@ contract VaultEngine is Stateful, Eventful {
     address to,
     uint256 amount
   ) external onlyByRegistered {
-    AUR[from] -= amount;
-    AUR[to] += amount;
+    aur[from] -= amount;
+    aur[to] += amount;
   }
 
   /**
@@ -134,7 +136,7 @@ contract VaultEngine is Stateful, Eventful {
    * @param amount The amount of Aurei to add
    */
   function addAurei(address user, uint256 amount) external onlyBy("treasury") {
-    AUR[user] += amount;
+    aur[user] += amount;
   }
 
   /**
@@ -146,7 +148,7 @@ contract VaultEngine is Stateful, Eventful {
     external
     onlyBy("treasury")
   {
-    AUR[user] -= amount;
+    aur[user] -= amount;
   }
 
   /**
@@ -155,7 +157,7 @@ contract VaultEngine is Stateful, Eventful {
    * @param amount The amount of TCN to reduce.
    */
   function reduceTCN(address user, uint256 amount) external onlyBy("treasury") {
-    TCN[user] -= amount;
+    tcn[user] -= amount;
   }
 
   /**
@@ -168,8 +170,8 @@ contract VaultEngine is Stateful, Eventful {
     external
     onlyByRegistered
   {
-    TCN[user] -= amount;
-    AUR[user] += amount;
+    tcn[user] -= amount;
+    aur[user] += amount;
   }
 
   /**
@@ -179,7 +181,7 @@ contract VaultEngine is Stateful, Eventful {
   function collectInterest(bytes32 collId) public {
     Vault memory vault = vaults[collId][msg.sender];
     Collateral memory collateral = collateralTypes[collId];
-    TCN[msg.sender] +=
+    tcn[msg.sender] +=
       vault.capital *
       (collateral.capitalAccumulator - vault.lastCapitalAccumulator);
 
@@ -230,7 +232,7 @@ contract VaultEngine is Stateful, Eventful {
     );
     certify(collId, vault);
 
-    AUR[treasuryAddress] = add(AUR[treasuryAddress], aurToModify);
+    aur[treasuryAddress] = add(aur[treasuryAddress], aurToModify);
 
     emit SupplyModified(msg.sender, collAmount, capitalAmount);
   }
@@ -255,7 +257,7 @@ contract VaultEngine is Stateful, Eventful {
 
     if (debtAmount > 0) {
       require(
-        AUR[treasuryAddress] >= uint256(debtAmount),
+        aur[treasuryAddress] >= uint256(debtAmount),
         "Vault/modifyDebt: Treasury doesn't have enough supply to loan this amount"
       );
     }
@@ -284,8 +286,8 @@ contract VaultEngine is Stateful, Eventful {
     );
     certify(collId, vault);
 
-    AUR[msg.sender] = add(AUR[msg.sender], debtToModify);
-    AUR[treasuryAddress] = sub(AUR[treasuryAddress], debtToModify);
+    aur[msg.sender] = add(aur[msg.sender], debtToModify);
+    aur[treasuryAddress] = sub(aur[treasuryAddress], debtToModify);
 
     vaults[collId][msg.sender] = vault;
 
@@ -339,7 +341,7 @@ contract VaultEngine is Stateful, Eventful {
    * TODO: Do we also need to add a way to increase totalUnbackedAurei?
    */
   function settle(uint256 amount) external onlyByRegistered {
-    AUR[msg.sender] = AUR[msg.sender] - amount;
+    aur[msg.sender] = aur[msg.sender] - amount;
     unbackedAurei[msg.sender] = unbackedAurei[msg.sender] - amount;
     emit Log("vault", "settle", msg.sender);
   }

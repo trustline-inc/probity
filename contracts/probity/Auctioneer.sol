@@ -95,22 +95,22 @@ contract Auctioneer is Stateful, Eventful {
   // Data Storage
   /////////////////////////////////////////
 
-  VaultEngineLike vaultEngine;
-  FtsoLike ftso;
-  LiquidatorLike liquidator;
-  PriceCalc priceCalc;
+  VaultEngineLike public vaultEngine;
+  FtsoLike public ftso;
+  LiquidatorLike public liquidator;
+  PriceCalc public priceCalc;
 
   // @todo add smallest possible bid as to avoid tiny amounts
   mapping(uint256 => Auction) public auctions;
   mapping(uint256 => mapping(address => Bid)) public bids;
   mapping(uint256 => mapping(address => address)) public nextHighestBidder; // sorted linked list of bidders
-  mapping(uint256 => uint256) totalBidSize;
-  address constant HEAD = address(1);
-  uint256 auctionCount;
+  mapping(uint256 => uint256) public totalBidSize;
+  address private constant HEAD = address(1);
+  uint256 public auctionCount;
   // @todo check and fix these values
-  uint256 constant ONE = 1.00E18;
-  uint256 nextBidRatio = 1.05E18;
-  uint256 priceBuffer = 1.20E18;
+  uint256 private constant ONE = 1.00E18;
+  uint256 public nextBidRatio = 1.05E18;
+  uint256 public priceBuffer = 1.20E18;
 
   /////////////////////////////////////////
   // Constructor
@@ -258,7 +258,7 @@ contract Auctioneer is Stateful, Eventful {
     require(
       calculatePrice(auctionId) * nextBidRatio >=
         bids[auctionId][msg.sender].price * ONE,
-      "Auctioneer/finalizeSale: can't finalize sale because the current price has not passed the bid price"
+      "Auctioneer/finalizeSale: the current price has not passed the bid price"
     );
     uint256 buyAmount =
       bids[auctionId][msg.sender].price * bids[auctionId][msg.sender].lot;

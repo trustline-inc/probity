@@ -21,6 +21,7 @@ interface VaultEngineLike {
 }
 
 interface IAPR {
+  // solhint-disable-next-line
   function APR_TO_MPR(uint256 APR) external returns (uint256);
 }
 
@@ -49,8 +50,8 @@ contract Teller is Stateful {
 
   mapping(bytes32 => Collateral) public collateralTypes;
 
-  uint256 public APR; // Annualized percentage rate
-  uint256 public MPR; // Momentized percentage rate
+  uint256 public apr; // Annualized percentage rate
+  uint256 public mpr; // Momentized percentage rate
   VaultEngineLike public vaultEngine;
   IAPR public lowAprRate;
   IAPR public highAprRate;
@@ -59,7 +60,7 @@ contract Teller is Stateful {
   uint256 constant RAY = 10**27;
 
   // Set max APR to 100%
-  uint256 constant MAX_APR = WAD * 2 * 1e9;
+  uint256 public constant MAX_APR = WAD * 2 * 1e9;
 
   /////////////////////////////////////////
   // Constructor
@@ -74,8 +75,8 @@ contract Teller is Stateful {
     vaultEngine = vaultEngineAddress;
     lowAprRate = lowAprAddress;
     highAprRate = highAprAddress;
-    APR = RAY;
-    MPR = RAY;
+    apr = RAY;
+    mpr = RAY;
   }
 
   /////////////////////////////////////////
@@ -108,13 +109,13 @@ contract Teller is Stateful {
 
     // Update debt accumulator
     debtAccumulator = rmul(
-      rpow(MPR, (block.timestamp - coll.lastUpdated)),
+      rpow(mpr, (block.timestamp - coll.lastUpdated)),
       debtAccumulator
     );
 
     // Update capital accumulator
     uint256 multipliedByUtilization =
-      rmul(MPR - RAY, coll.lastUtilization * 1e9);
+      rmul(mpr - RAY, coll.lastUtilization * 1e9);
     uint256 multipliedByUtilizationPlusOne = multipliedByUtilization + RAY;
     uint256 exponentiated =
       rpow(
@@ -126,25 +127,25 @@ contract Teller is Stateful {
     // Set new APR (round to nearest 0.25%)
     coll.lastUtilization = wdiv(totalDebt, totalSupply);
     if (coll.lastUtilization >= 1e18) {
-      APR = MAX_APR;
+      apr = MAX_APR;
     } else {
       uint256 oneMinusUtilization = RAY - (coll.lastUtilization * 1e9);
       uint256 oneDividedByOneMinusUtilization =
         rdiv(10**27 * 0.01, oneMinusUtilization);
 
       uint256 round = 0.0025 * 10**27;
-      APR = oneDividedByOneMinusUtilization + RAY;
-      APR = ((APR + round - 1) / round) * round;
+      apr = oneDividedByOneMinusUtilization + RAY;
+      apr = ((apr + round - 1) / round) * round;
 
-      if (APR > MAX_APR) {
-        APR = MAX_APR;
+      if (apr > MAX_APR) {
+        apr = MAX_APR;
       }
     }
     // Set new MPR
-    if (APR > 1500000000000000000000000000) {
-      MPR = highAprRate.APR_TO_MPR(APR);
+    if (apr > 1500000000000000000000000000) {
+      mpr = highAprRate.APR_TO_MPR(apr);
     } else {
-      MPR = lowAprRate.APR_TO_MPR(APR);
+      mpr = lowAprRate.APR_TO_MPR(apr);
     }
 
     // Update time index

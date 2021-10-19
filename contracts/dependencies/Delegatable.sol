@@ -46,22 +46,21 @@ interface VaultEngineLike {
 }
 
 contract Delegatable is Stateful {
-  FtsoManagerLike ftsoManager;
-  FtsoRewardManagerLike ftsoRewardManager;
-  VaultEngineLike vaultEngine;
-  VPTokenLike token;
-  bytes32 collId;
-  address[] dataProviders;
-  uint256 lastClaimedEpoch;
-  mapping(uint256 => uint256) contractBalanceByEpoch;
-  mapping(uint256 => uint256) rewardPerUnitAtEpoch;
-  uint256 constant HUNDRED_PERCENT = 10000;
-
+  FtsoManagerLike public ftsoManager;
+  FtsoRewardManagerLike public ftsoRewardManager;
+  VaultEngineLike public vaultEngine;
+  VPTokenLike public token;
+  bytes32 public collId;
+  address[] public dataProviders;
+  uint256 public lastClaimedEpoch;
+  mapping(uint256 => uint256) public contractBalanceByEpoch;
+  mapping(uint256 => uint256) public rewardPerUnitAtEpoch;
+  uint256 private constant HUNDRED_PERCENT = 10000;
   uint256 constant RAY = 1e27;
 
-  mapping(address => uint256) userLastClaimedEpoch;
-  mapping(address => uint256) recentTotalDeposit;
-  mapping(address => mapping(uint256 => uint256)) recentDeposits; // maybe a different data structure?
+  mapping(address => uint256) public userLastClaimedEpoch;
+  mapping(address => uint256) public recentTotalDeposit;
+  mapping(address => mapping(uint256 => uint256)) public recentDeposits; // maybe a different data structure?
 
   constructor(
     address registryAddress,

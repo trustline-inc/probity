@@ -10,7 +10,7 @@ import "../dependencies/Eventful.sol";
 // if there are no more reserve to pay off the outstanding bad debt, the reserve will sell IOUs in order to cover it
 // people with IOU can redeem it after the reserve replenishes
 interface VaultEngineLike {
-  function AUR(address user) external returns (uint256 balance);
+  function aur(address user) external returns (uint256 balance);
 
   function unbackedAurei(address user) external returns (uint256 balance);
 
@@ -36,17 +36,17 @@ contract ReservePool is Stateful, Eventful {
   /////////////////////////////////////////
   // Data Variables
   /////////////////////////////////////////
-  VaultEngineLike vaultEngine;
+  VaultEngineLike public vaultEngine;
   IOUSale public sale;
 
   uint256 public debtThreshold; // the bad debt threshold, after which to start selling IOU
   uint256 public debtOnAuction;
   // every Y hours , IOU received per AUR goes up by X% @todo evaluate these values
-  uint256 ONE = 1E18;
-  uint256 salePriceIncreasePerStep = 5E16;
-  uint256 saleStepPeriod = 6 hours;
+  uint256 private constant ONE = 1E18;
+  uint256 public salePriceIncreasePerStep = 5E16;
+  uint256 public saleStepPeriod = 6 hours;
   // max IOU received per AUR is 50% @todo evaluate this max value
-  uint256 saleMaxPrice = 1.5E18;
+  uint256 public saleMaxPrice = 1.5E18;
   mapping(address => uint256) public ious;
 
   /////////////////////////////////////////
@@ -105,7 +105,7 @@ contract ReservePool is Stateful, Eventful {
       "ReservePool/settle: Settlement amount is more than the debt"
     );
     require(
-      vaultEngine.AUR(address(this)) >= amountToSettle,
+      vaultEngine.aur(address(this)) >= amountToSettle,
       "ReservePool/settle: Not enough balance to settle"
     );
     vaultEngine.settle(amountToSettle);
@@ -117,7 +117,7 @@ contract ReservePool is Stateful, Eventful {
       "ReservePool/startIOUSale: Debt Threshold is not yet crossed"
     );
     require(
-      vaultEngine.AUR(address(this)) == 0,
+      vaultEngine.aur(address(this)) == 0,
       "ReservePool/startIOUSale: AUR balance is still positive"
     );
     require(
@@ -158,7 +158,7 @@ contract ReservePool is Stateful, Eventful {
 
   function redeemIOU(uint256 amount) external {
     require(
-      vaultEngine.AUR(address(this)) >= amount,
+      vaultEngine.aur(address(this)) >= amount,
       "ReservePool/redeemIOU: The reserve pool doesn't have enough AUR"
     );
     require(

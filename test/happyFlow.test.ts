@@ -148,7 +148,7 @@ describe("Probity Happy flow", function () {
     );
   });
 
-  it("test modifySupply, modifyDebt and AUR withdrawal", async () => {
+  it("test modifySupply, modifyDebt and aur withdrawal", async () => {
     // Deposit FLR collateral
     await flrColl.deposit({ value: COLL_AMOUNT });
 
@@ -176,7 +176,7 @@ describe("Probity Happy flow", function () {
     expect(userVaultAfter[3].sub(userVaultBefore[3])).to.equal(SUPPLY_AMOUNT);
 
     userVaultBefore = await vaultEngine.vaults(flrCollId, owner.address);
-    let aurBefore = await vaultEngine.AUR(owner.address);
+    let aurBefore = await vaultEngine.aur(owner.address);
 
     // Take out a loan
     await vaultEngine.modifyDebt(
@@ -186,7 +186,7 @@ describe("Probity Happy flow", function () {
       LOAN_AMOUNT
     );
 
-    let aurAfter = await vaultEngine.AUR(owner.address);
+    let aurAfter = await vaultEngine.aur(owner.address);
     expect(aurAfter.sub(aurBefore)).to.equal(LOAN_AMOUNT.mul(PRECISION_PRICE));
     userVaultAfter = await vaultEngine.vaults(flrCollId, owner.address);
     expect(userVaultBefore[0].sub(userVaultAfter[0])).to.equal(
@@ -194,7 +194,7 @@ describe("Probity Happy flow", function () {
     );
     expect(userVaultAfter[2].sub(userVaultBefore[2])).to.equal(LOAN_AMOUNT);
 
-    // test AUR withdrawal
+    // test aur withdrawal
 
     let ownerBalanceBefore = await aurei.balanceOf(owner.address);
     await treasury.withdrawAurei(aurAfter.div(PRECISION_PRICE));
@@ -224,7 +224,7 @@ describe("Probity Happy flow", function () {
     );
 
     let userVaultBefore = await vaultEngine.vaults(flrCollId, owner.address);
-    let aurBefore = await vaultEngine.AUR(owner.address);
+    let aurBefore = await vaultEngine.aur(owner.address);
 
     // Take out a loan
     await vaultEngine.modifyDebt(
@@ -234,7 +234,7 @@ describe("Probity Happy flow", function () {
       LOAN_AMOUNT
     );
 
-    let aurAfter = await vaultEngine.AUR(owner.address);
+    let aurAfter = await vaultEngine.aur(owner.address);
     expect(aurAfter.sub(aurBefore)).to.equal(LOAN_AMOUNT.mul(PRECISION_PRICE));
     let userVaultAfter = await vaultEngine.vaults(flrCollId, owner.address);
     expect(userVaultBefore[0].sub(userVaultAfter[0])).to.equal(
@@ -243,7 +243,7 @@ describe("Probity Happy flow", function () {
     expect(userVaultAfter[2].sub(userVaultBefore[2])).to.equal(LOAN_AMOUNT);
 
     userVaultBefore = await vaultEngine.vaults(flrCollId, owner.address);
-    aurBefore = await vaultEngine.AUR(owner.address);
+    aurBefore = await vaultEngine.aur(owner.address);
 
     // repay loan
     await vaultEngine.modifyDebt(
@@ -253,7 +253,7 @@ describe("Probity Happy flow", function () {
       LOAN_REPAY_AMOUNT
     );
 
-    aurAfter = await vaultEngine.AUR(owner.address);
+    aurAfter = await vaultEngine.aur(owner.address);
     expect(aurAfter.sub(aurBefore)).to.equal(
       LOAN_REPAY_AMOUNT.mul(PRECISION_PRICE)
     );
@@ -432,14 +432,14 @@ describe("Probity Happy flow", function () {
     expect(bidAfter[1]).to.equal(PRECISION_COLL.mul("100"));
 
     let userVaultBefore = await vaultEngine.vaults(flrCollId, user.address);
-    let userAurBefore = await vaultEngine.AUR(user.address);
+    let userAurBefore = await vaultEngine.aur(user.address);
     await auctioneerUser.buyItNow(
       0,
       PRECISION_PRICE.mul(12).div(10),
       PRECISION_AUR.mul("200")
     );
     let userVaultAfter = await vaultEngine.vaults(flrCollId, user.address);
-    let userAurAfter = await vaultEngine.AUR(user.address);
+    let userAurAfter = await vaultEngine.aur(user.address);
     let expectedLot = PRECISION_AUR.mul("200").div(
       PRECISION_PRICE.mul(12).div(10)
     );

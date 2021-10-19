@@ -9,7 +9,7 @@ interface VaultEngineLike {
   function updatePrice(bytes32 collId, uint256 price) external;
 }
 
-interface ftsoLike {
+interface FtsoLike {
   function getCurrentPrice()
     external
     returns (uint256 _price, uint256 _timestamp);
@@ -22,14 +22,14 @@ contract PriceFeed is Stateful, Eventful {
 
   struct Collateral {
     uint256 liquidationRatio;
-    ftsoLike ftso;
+    FtsoLike ftso;
   }
 
   /////////////////////////////////////////
   // Data Variables
   /////////////////////////////////////////
-  VaultEngineLike vaultEngine;
-  mapping(bytes32 => Collateral) collateralTypes;
+  VaultEngineLike public vaultEngine;
+  mapping(bytes32 => Collateral) public collateralTypes;
 
   uint256 constant RAY = 1e27;
 
@@ -50,7 +50,7 @@ contract PriceFeed is Stateful, Eventful {
   function init(
     bytes32 collId,
     uint256 liquidationRatio,
-    ftsoLike ftso
+    FtsoLike ftso
   ) external onlyBy("gov") {
     collateralTypes[collId].liquidationRatio = liquidationRatio;
     collateralTypes[collId].ftso = ftso;
@@ -70,7 +70,7 @@ contract PriceFeed is Stateful, Eventful {
     collateralTypes[collId].liquidationRatio = liquidationRatio;
   }
 
-  function updateFtso(bytes32 collId, ftsoLike newFtso) external onlyBy("gov") {
+  function updateFtso(bytes32 collId, FtsoLike newFtso) external onlyBy("gov") {
     emit LogVarUpdate(
       "priceFeed",
       collId,
