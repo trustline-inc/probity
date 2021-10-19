@@ -9,11 +9,11 @@ import "./IERC2612.sol";
  * @notice Common interface for the TCN token.
  */
 interface ITcnToken is IERC20, IERC2612 {
-  // --- Events ---
+    // --- Events ---
 
-  // --- Functions ---
+    // --- Functions ---
 
-  function mint(address _account, uint256 _amount) external;
+    function mint(address _account, uint256 _amount) external;
 
-  function burn(address _account, uint256 _amount) external;
+    function burn(address _account, uint256 _amount) external;
 }
