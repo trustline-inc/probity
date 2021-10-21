@@ -8,6 +8,7 @@
     "build": "npm run clean && npm run solhint && npm run compile",
     "clean": "npx hardhat clean",
     "compile": "npx hardhat compile",
+    "lint": "npm run prettier:solidity && npm run solhint:fix",
     "solhint": "./node_modules/.bin/solhint contracts/**/*.sol contracts/**/**/*.sol",
     "solhint:fix": "./node_modules/.bin/solhint --fix contracts/**/*.sol contracts/**/**/*.sol",
     "prettier:solidity": "./node_modules/.bin/prettier --write contracts",
