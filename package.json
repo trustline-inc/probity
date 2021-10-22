@@ -1,33 +1,46 @@
 {
-  "name": "@trustline-inc/aurei",
-  "version": "0.11.0",
+  "name": "@trustline-inc/probity",
+  "version": "0.7.0-alpha1",
   "license": "MIT",
-  "description": "Aurei crypto stablecoin",
+  "description": "Probity smart contracts",
   "scripts": {
     "node": "npx hardhat node",
-    "build": "npm run clean && npm run compile",
+    "build": "npm run clean && npm run solhint && npm run compile",
     "clean": "npx hardhat clean",
     "compile": "npx hardhat compile",
+    "solhint": "./node_modules/.bin/solhint contracts/**/*.sol contracts/**/**/*.sol",
+    "solhint:fix": "./node_modules/.bin/solhint --fix contracts/**/*.sol contracts/**/**/*.sol",
+    "prettier:solidity": "./node_modules/.bin/prettier --write contracts",
+    "initialize": "npx hardhat --network local run ./scripts/initialize.ts",
     "fund:local": "npx hardhat --network local run ./scripts/fund.ts",
     "demo:issue": "npx hardhat --network local run ./scripts/issueAurei.ts",
     "demo:redeem": "npx hardhat --network local run ./scripts/redeemAurei.ts",
     "script:markComplete": "npx hardhat --network local run ./scripts/markTransferComplete.ts",
-    "deploy:local": "npx hardhat --network local run ./scripts/deploy.ts",
-    "deploy:bridgeOld": "npx hardhat --network local run ./scripts/deployBridgeOld.ts",
+    "deployAuction:local": "npx hardhat --network local run ./scripts/deployAuction.ts",
+    "deployERC20Collateral:local": "npx hardhat --network local run ./scripts/deployERC20Collateral.ts",
+    "deployVpTokenCollateral:local": "npx hardhat --network local run ./scripts/deployVpTokenCollateral.ts",
+    "deploy:local": "export NETWORK=local && npx hardhat --network local run ./scripts/deploy.ts",
     "deploy:coston": "npx hardhat --network coston run ./scripts/deploy.ts",
     "deploy:hardhat": "npx hardhat --network localhost run ./scripts/deploy.ts",
     "test": "npx hardhat test --network hardhat",
-    "test:shutdown": "npx hardhat test test/shutdown.test.ts --network hardhat",
     "test:happy": "npx hardhat test test/happyFlow.test.ts --network hardhat",
-    "test:bridge": "npx hardhat test test/bridge.test.ts --network hardhat",
     "coverage": "npm run build && npx hardhat coverage --temp artifacts --network coverage"
   },
-  "author": "Matthew Rosendin <matt@trustline.co>",
+  "contributors": [
+    {
+      "name": "Matthew Rosendin",
+      "email": "matt@trustline.co"
+    },
+    {
+      "name": "Shine Lee",
+      "email": "shine@trustline.co"
+    }
+  ],
   "files": [
     "artifacts"
   ],
   "repository": {
-    "url": "https://github.com/trustline-inc/aurei.git"
+    "url": "https://github.com/trustline-inc/probity.git"
   },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
@@ -53,6 +66,8 @@
     "prettier": "^2.2.1",
     "prettier-plugin-solidity": "^1.0.0-beta.5",
     "pretty-quick": "^3.1.0",
+    "solhint": "^3.3.6",
+    "solhint-plugin-prettier": "^0.0.5",
     "ts-generator": "^0.1.1",
     "ts-node": "^9.1.1",
     "typechain": "^3.0.0",

@@ -1,19 +1,38 @@
 import "@nomiclabs/hardhat-ethers";
-import { deployAll } from "../lib/deploy";
+import { deployLocal, deployProd, probity } from "../lib/deployer";
 import * as fs from "fs";
 
 async function main() {
-  const { contracts, signers } = await deployAll();
+  let deployed;
+  if (process.env.NETWORK === "local") {
+    console.log("Deploying in Local Mode");
+    deployed = await deployLocal();
+  } else {
+    console.log("Deploying in Production Mode");
+    deployed = await deployProd();
+    console.log(
+      "Warning: this deployment of Probity in Production does not include ERC20Collateral, VPTokenCollateral and Auction please deploy them separately"
+    );
+  }
+
+  let { contracts } = deployed;
+
   console.log("Contracts deployed!");
 
   const addresses = [];
   let fileOutput = "";
-  for (let contract in contracts) {
+  for (let contractName in contracts) {
+    if (contracts[contractName] == null) continue;
+    // Convert contract identifiers from PascalCase to UPPER_CASE
+    const contractDisplayName = contractName
+      .split(/(?=[A-Z])/)
+      .join("_")
+      .toUpperCase();
     addresses.push({
-      Contract: contract.toUpperCase(),
-      Address: contracts[contract].address,
+      Contract: contractDisplayName,
+      Address: contracts[contractName].address,
     });
-    fileOutput += `${contract.toUpperCase()}=${contracts[contract].address}\n`;
+    fileOutput += `${contractDisplayName}=${contracts[contractName].address}\n`;
   }
 
   fs.writeFileSync(".env", fileOutput);

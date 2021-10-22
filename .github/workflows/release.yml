@@ -18,7 +18,7 @@ jobs:
       - name: Archive contract ABI artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: aurei-abi-artifacts
+          name: probity-abi-artifacts
           path: |
             artifacts
   release:
@@ -28,15 +28,15 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/download-artifact@v2
         with:
-          name: aurei-abi-artifacts
+          name: probity-abi-artifacts
           path: artifacts
       # Setup .npmrc file to publish to GitHub Packages
       - uses: actions/setup-node@v2
         with:
-          node-version: '12.x'
-          registry-url: 'https://npm.pkg.github.com'
-          scope: '@trustline'
+          node-version: "12.x"
+          registry-url: "https://npm.pkg.github.com"
+          scope: "@trustline"
       # Publish to GitHub Packages
-      - run: npm publish
+      - run: npm publish --tag alpha
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

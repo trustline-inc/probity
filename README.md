@@ -1,37 +1,91 @@
-# Aurei Stablecoin
+# Probity
 
 [![Build](https://github.com/trustline-inc/aurei/actions/workflows/build.yml/badge.svg)](https://github.com/trustline-inc/aurei/actions/workflows/build.yml)
 
-Smart contract system for the Aurei crypto stablecoin.
+You can view the contract code in the [`contracts`](./contracts) folder. We will add a full API reference soon. You can find everything else in the [documentation&nbsp;📖 ](https://docs.trustline.co/trustline/-MX0imPEPxcvrbI-teLl/)
 
-You can view the documentation [here](https://docs.trustline.co/trustline/-MX0imPEPxcvrbI-teLl/).
+## Table of Contents
 
-## Quickstart
+<!--ts-->
 
-Install Node.js. The recommended way to install Node with macOS is with [Homebrew](https://nodejs.org/en/download/package-manager/#macos).
+- [Installation](#installation)
+- [Usage](#usage)
+- [Development](#development)
+  - [Installation](#installation-1)
+  - [IDE](#ide)
+  - [Testing](#testing)
+  - [Publishing](#publishing)
+- [Deployment](#deployment)
+  - [Local](#local-deployment)
+  - [Remote](#remote-deployment)
+- [Initialization](#initialization)
+- [Contract Addresses](#contract-addresses)
+  - [Coston](#coston-network)
+  - [Songbird](#songbird-network)
+  <!--te-->
 
-Make sure the Solidity compiler is installed.
+## Installation
+
+This project uses [Node.js](https://nodejs.org/en/) and assumes you have it installed.
+
+Add `@trustline/probity` to your project with `npm` or `yarn`:
 
 ```
-$ npm install -g solc
+npm install @trustline-inc/probity --save
 ```
 
-The compiler version must be >= `0.8.0`.
+## Usage
+
+Below is a code snippet that shows how to import the contract ABIs and call a contract method using [`ethers`](https://docs.ethers.io/v5/).
+
+```javascript
+import AureiABI from "@trustline-inc/aurei/artifacts/contracts/Aurei.sol/Aurei.json";
+import { Contract } from "ethers";
+
+const AUREI_ADDRESS = "<ADDRESS>";
+
+const aurei = new Contract(AUREI_ADDRESS, AureiABI.abi, library.getSigner());
+const totalSupply = await aurei.totalSupply();
+console.log(totalSupply);
+```
+
+## Development
+
+### Installation
+
+**1. Solidity Installation**
+
+Make sure the Solidity compiler is installed. The compiler version must be >= `0.8.4`.
+
+To install `solc` run this command:
 
 ```
-$ solcjs --version
-0.8.0+commit.c7dfd78e.Emscripten.clang
+npm install -g solc
 ```
 
-Install dependencies:
+You can verify the version with like so:
+
+```
+solcjs --version
+```
+
+**2. Install NPM Modules**
+
+Install node dependencies:
 
 ```
 npm install
 ```
 
-Craete an `.env` file with `FLARE_DIR` set to the location of your local Flare directory.
+**3. Set Environment Variables**
 
-## IDE
+Create an `.env` file with `FLARE_DIR` set to the location of your local Flare directory. Example:
+
+```
+FLARE_DIR=/Users/satoshi/Desktop/flare
+```
+
+### IDE
 
 [Visual Studio Code](https://code.visualstudio.com/) is the recommended IDE. Here's how to install Solidity language support:
 
@@ -45,7 +99,7 @@ Also, get the Prettier VSCode plugin:
 code --install-extension esbenp.prettier-vscode
 ```
 
-## Testing
+### Testing
 
 Use the npm command to run tests on the local Hardhat network:
 
@@ -53,13 +107,15 @@ Use the npm command to run tests on the local Hardhat network:
 npm run test
 ```
 
-## Publishing
+### Publishing
 
-You can publish the `@trustline/aurei` npm package containing the contract ABIs using this command:
+We use [GitHub Packages](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-npm-registry) to publish to the npm registry now. Below are the steps to publish a new version:
 
-```
-npm publish
-```
+1. Update `version` in `package.json` and commit the change
+
+2. Create a tag that matches `version` for the commit and run `git push --tags`
+
+3. [Create a new release](https://github.com/trustline-inc/probity/releases/new) for the tagged version
 
 ## Deployment
 
@@ -69,17 +125,21 @@ You can deploy in the local network following these steps:
 
 1. Run a local node.
 
-You can run a local Flare node by using the `local.sh` script in in [`flare`](https://gitlab.com/flarenetwork/flare).
+Run a local [Flare](https://gitlab.com/flarenetwork/flare) node.
 
 2. Deploy to the network.
 
-Open a new terminal and deploy the smart contract in the local network
+Deploy the smart contract in the local network using `npm run deploy:local`.
+
+> `FLARE_DIR` may be read from a `.env` file or set in the shell
+
+For example:
 
 ```
-npm run deploy:local
+FLARE_DIR=~/Desktop/flare npm run deploy:local
 ```
 
-### Deploy on Coston Testnet
+### Remote Deployment
 
 Create an `.env` file at the project root with the following contents:
 
@@ -87,12 +147,12 @@ Create an `.env` file at the project root with the following contents:
 PRIVATE_KEY=<INSERT_TESTNET_PK_HERE>
 ```
 
-Generate an Ethereum account and place the private key in the file. Ensure that the account is funded so you can deploy the contract.
+Generate a Flare account and place the private key in the file. Ensure that the account is funded so you can deploy the contract. Then deploy the contract to the remote network using the appropriate script.
 
 ```
 $ npm run deploy:coston
 
-> @trustline/aurei@0.1.0 deploy
+> @trustline/probity@1.0.0 deploy
 > npx hardhat --network coston run ./scripts/deploy.ts
 Compiling 1 file with 0.8.0
 Compilation finished successfully
@@ -101,36 +161,22 @@ Successfully generated Typechain artifacts!
 Contracts deployed!
 ```
 
-#### Testnet Contracts
+## Initialization
 
-| Contract | Address                                    |
-| -------- | ------------------------------------------ |
-| Aurei    | 0xCF089F2dDEa08213be33f8dd05787D568cA6E61d |
-| Registry | 0xcb285Ce3871AA7BDaf8991cA8E72332fda683cE8 |
-| Teller   | 0x3AE45E2cb7839aE239f14401894780A151Ebe617 |
-| Treasury | 0x00316Cc40E7D92b81C7b89777100159B13F128B9 |
-| Vault    | 0x3dA42377eee416d59389eb0dcEAE01Ad9eA0dc10 |
+You can use the `initialize` script to configure a fresh deployment of the Probity system.
 
-## Publishing
-
-[Authenticating with a personal access token](https://docs.github.com/en/packages/guides/configuring-npm-for-use-with-github-packages#authenticating-with-a-personal-access-token)
-
-1. Create an `.npmrc` at the project root
+The script currently only initializes a `FLR` collateral type.
 
 ```
-//npm.pkg.github.com/:_authToken=TOKEN
+FLARE_DIR=~/Desktop/flare yarn run initialize
 ```
 
-2. Update `version` in `package.json`
+## Contract Addresses
 
-3. Run `npm publish`
+### Coston Network
 
-## Upgrades
+Coston contract addresses will be listed here.
 
-Required reading: [The State of Smart Contract Upgrades](https://blog.openzeppelin.com/the-state-of-smart-contract-upgrades/)
+### Songbird Network
 
-[Use the same patterns as Dharma Smart Wallet](https://github.com/dharma-eng/dharma-smart-wallet).
-
-### Upgrade Governance
-
-For development, we will use EOAs (externally-owned accounts) as contract owners. For mainnet upgrades, we will adopt a voting process similar to MakerDAO and Compound.
+Songbird contract addresses will be listed here.

@@ -1,0 +1,14 @@
+# See https://npm.github.io/publishing-pkgs-docs/publishing/the-npmignore-file.html
+
+# Keystore file
+keystore.json
+
+# IDE config
+.idea
+
+# Hardhat files (allow artifacts!)
+cache
+typechain
+
+# Dotenv file
+.env

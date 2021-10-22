@@ -1,23 +1,41 @@
+import { ethers } from "hardhat";
+
 const errorTypes = {
-  ISSUER_EXISTS: "This issuer already exists",
-  ISSUER_NOT_EXISTS: "This issuer does not exists",
-  ISSUER_NOT_IN_PROGRESS: "issuer status is not longer IN_PROGRESS",
-  ONLY_ORIGINAL_SENDER:
-    "Only the original sender of the is issuer can cancel it",
-  NON_ZERO_AMOUNT: "amount must be a non zero amount",
+  ISSUER_EXISTS: "An issuer already exists with this address.",
+  ISSUER_NON_EXISTENT: "The issuer does not exist.",
+  ISSUER_NOT_PENDING: "The issuer is not in the PENDING state.",
+  ONLY_ORIGINAL_SENDER: "Only the originating account can cancel this issuer.",
+  NON_ZERO_AMOUNT: "Amount must be greater than zero.",
   AUR_NO_BALANCE: "ERC20: transfer amount exceeds balance",
-  TX_ID_ALREADY_PROVEN: "The provided txHash has already proven",
-  TX_ID_ALREADY_REDEEMED: "This txHash has already been redeemed",
+  TX_ID_ALREADY_PROVEN: "The provided transaction has already been proved.",
+  TX_ID_ALREADY_REDEEMED:
+    "This transaction ID has already been used to redeem tokens.",
   TWO_HOURS_NOT_PASSED:
-    "The previous redemption attempt for this parameter was submitted less than 2 hours ago",
-  NON_ZERO_DESTINATION_ADDRESS: "Destination address can not be zero Address",
+    "The previous redemption reservation for these parameters was submitted less than 2 hours ago.",
+  NON_ZERO_DESTINATION_ADDRESS:
+    "Destination address cannot be the zero address.",
   ONLY_REDEEMER:
-    "Only the user that submitted the redemption attempt can submit redemption tx",
-  PAYMENT_NOT_PROVEN:
-    "This Transaction has not been proven in stateConnector contract",
+    "Only the reservation holder can submit a redemption transaction.",
+  PAYMENT_NOT_PROVEN: "The state connector did not prove this transaction.",
 };
 const ADDRESS_ZERO = "0x0000000000000000000000000000000000000000";
 const BYTES32_ZERO =
   "0x0000000000000000000000000000000000000000000000000000000000000000";
 
-export { errorTypes, ADDRESS_ZERO, BYTES32_ZERO };
+const PRECISION_COLL = ethers.BigNumber.from("1000000000000000000");
+const PRECISION_PRICE = ethers.BigNumber.from("1000000000000000000000000000");
+const PRECISION_AUR = ethers.BigNumber.from(
+  "1000000000000000000000000000000000000000000000"
+);
+
+const bytes32 = (string) => ethers.utils.formatBytes32String(string);
+
+export {
+  errorTypes,
+  ADDRESS_ZERO,
+  BYTES32_ZERO,
+  PRECISION_COLL,
+  PRECISION_AUR,
+  PRECISION_PRICE,
+  bytes32,
+};

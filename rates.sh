@@ -1,3 +1,6 @@
+# This script calculates interest rates (units of ray) in increments of 0.25%.
+# The associated MPRs are calculated and displayed alongside the APRs.
+
 for i in {0..400}
 do
   RAY=1000000000000000000000000000
