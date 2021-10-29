@@ -139,6 +139,8 @@ For example:
 FLARE_DIR=~/Desktop/flare npm run deploy:local
 ```
 
+If you get the error `ProviderError: err: Invalid value for block.coinbase`, that means you have to first send a test transaction through Metamask in order for the network to start properly.
+
 ### Remote Deployment
 
 Create an `.env` file at the project root with the following contents:
