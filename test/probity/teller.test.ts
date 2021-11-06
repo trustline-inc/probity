@@ -43,7 +43,7 @@ describe("Teller Unit Tests", function () {
       vaultEngine: contracts.mockVaultEngine.address,
     });
     vaultEngine = contracts.mockVaultEngine;
-    reservePoolAddress = contracts.reserve.address;
+    reservePoolAddress = contracts.reservePool.address;
     teller = contracts.teller;
 
     owner = signers.owner;

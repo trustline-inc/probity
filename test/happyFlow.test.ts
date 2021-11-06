@@ -2,10 +2,11 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import "@nomiclabs/hardhat-ethers";
 import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-web3";
+import * as hre from "hardhat";
 
 import {
   Aurei,
-  Erc20Collateral,
+  ERC20Collateral,
   VaultEngine,
   NativeCollateral,
   Teller,
@@ -16,7 +17,7 @@ import {
   Liquidator,
   ReservePool,
   Registry,
-  MockErc20Token,
+  MockERC20Token,
 } from "../typechain";
 import { deployTest } from "../lib/deployer";
 import { ethers, web3 } from "hardhat";
@@ -24,7 +25,6 @@ import * as chai from "chai";
 const expect = chai.expect;
 
 // Wallets
-let redeemer: SignerWithAddress;
 let owner: SignerWithAddress;
 let user: SignerWithAddress;
 
@@ -33,7 +33,7 @@ let aurei: Aurei;
 let vaultEngine: VaultEngine;
 let registry: Registry;
 let flrColl: NativeCollateral;
-let fxrpColl: Erc20Collateral;
+let fxrpColl: ERC20Collateral;
 let teller: Teller;
 let treasury: Treasury;
 let ftso: MockFtso;
@@ -41,7 +41,7 @@ let priceFeed: PriceFeed;
 let auctioneer: Auctioneer;
 let liquidator: Liquidator;
 let reserve: ReservePool;
-let erc20: MockErc20Token;
+let erc20: MockERC20Token;
 
 const PRECISION_COLL = ethers.BigNumber.from("1000000000000000000");
 const PRECISION_PRICE = ethers.BigNumber.from("1000000000000000000000000000");
@@ -63,14 +63,14 @@ const flrCollId = web3.utils.keccak256("FLR");
 const fxrpCollId = web3.utils.keccak256("FXRP");
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
-describe("Probity Happy flow", function () {
+describe("Probity happy flow", function () {
   beforeEach(async function () {
-    const { contracts, signers } = await deployTest();
+    const { contracts, signers } = await deployTest("aurei");
 
     // Set contracts
     vaultEngine = contracts.vaultEngine;
     flrColl = contracts.nativeCollateral;
-    fxrpColl = contracts.fxrpCollateral;
+    fxrpColl = contracts.erc20Collateral;
     aurei = contracts.aurei;
     teller = contracts.teller;
     treasury = contracts.treasury;
@@ -78,9 +78,9 @@ describe("Probity Happy flow", function () {
     priceFeed = contracts.priceFeed;
     auctioneer = contracts.auctioneer;
     liquidator = contracts.liquidator;
-    reserve = contracts.reserve;
+    reserve = contracts.reservePool;
     registry = contracts.registry;
-    erc20 = contracts.erc20;
+    erc20 = contracts.erc20Token;
 
     owner = signers.owner;
     user = signers.alice;
