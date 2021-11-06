@@ -3,9 +3,15 @@ import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-web3";
 import { ethers, network, web3 } from "hardhat";
 
+export type Deployment = {
+  contracts: ContractDict;
+  signers: SignerDict;
+};
+
 // Import contract factory types
 import {
   AureiFactory,
+  PhiFactory,
   TcnTokenFactory,
   RegistryFactory,
   VaultEngineFactory,
@@ -32,6 +38,7 @@ import {
 // Import contract types
 import {
   Aurei,
+  Phi,
   Registry,
   TcnToken,
   VaultEngine,
@@ -71,8 +78,9 @@ const NETWORK_NATIVE_TOKEN = NETWORK_NATIVE_TOKENS[network.name];
 /**
  * Contracts
  */
-interface Contracts {
+interface ContractDict {
   aurei: Aurei;
+  phi: Phi;
   ftso: MockFtso;
   registry: Registry;
   tcnToken: TcnToken;
@@ -96,8 +104,9 @@ interface Contracts {
   mockVaultEngine: MockVaultEngine;
 }
 
-const contracts: Contracts = {
+const contracts: ContractDict = {
   aurei: null,
+  phi: null,
   ftso: null,
   registry: null,
   tcnToken: null,
@@ -121,7 +130,7 @@ const contracts: Contracts = {
   mockVaultEngine: null,
 };
 
-interface Signers {
+interface SignerDict {
   owner: SignerWithAddress;
   alice: SignerWithAddress;
   bob: SignerWithAddress;
@@ -133,7 +142,7 @@ interface Signers {
   addrs: SignerWithAddress[];
 }
 
-const signers: Signers = {
+const signers: SignerDict = {
   owner: null,
   alice: null,
   bob: null,
@@ -146,7 +155,6 @@ const signers: Signers = {
 };
 
 const getSigners = async () => {
-  // Set signers
   [
     signers.owner,
     signers.alice,
@@ -178,11 +186,10 @@ const deployRegistry = async (param?: { govAddress?: string }) => {
   return contracts;
 };
 
-const deployAUR = async (param?: { registry?: string }) => {
+const deployAurei = async (param?: { registry?: string }) => {
   const registry =
     param && param.registry ? param.registry : contracts.registry.address;
 
-  // Set signers
   const signers = await getSigners();
 
   const aureiFactory = (await ethers.getContractFactory(
@@ -200,10 +207,30 @@ const deployAUR = async (param?: { registry?: string }) => {
   return contracts;
 };
 
+const deployPhi = async (param?: { registry?: string }) => {
+  const registry =
+    param && param.registry ? param.registry : contracts.registry.address;
+
+  const signers = await getSigners();
+
+  const phiFactory = (await ethers.getContractFactory(
+    "Phi",
+    signers.owner
+  )) as PhiFactory;
+  contracts.phi = await phiFactory.deploy(registry);
+  await contracts.phi.deployed();
+
+  await contracts.registry.setupContractAddress(
+    bytes32("phi"),
+    contracts.phi.address
+  );
+
+  return contracts;
+};
+
 const deployTCN = async (param?: { registry?: string }) => {
   const registry =
     param && param.registry ? param.registry : contracts.registry.address;
-  // Set signers
   const signers = await getSigners();
 
   const tcnFactory = (await ethers.getContractFactory(
@@ -222,7 +249,6 @@ const deployTCN = async (param?: { registry?: string }) => {
 };
 
 const deployApr = async () => {
-  // Set signers
   const signers = await getSigners();
 
   const lowAprFactory = (await ethers.getContractFactory(
@@ -255,7 +281,6 @@ const deployApr = async () => {
 const deployVaultEngine = async (param?: { registry?: string }) => {
   const registry =
     param && param.registry ? param.registry : contracts.registry.address;
-  // Set signers
   const signers = await getSigners();
 
   const vaultEngineFactory = (await ethers.getContractFactory(
@@ -381,7 +406,6 @@ const deployNativeCollateral = async (param?: {
       ? param.vaultEngine
       : contracts.vaultEngine.address;
 
-  // Set signers
   const signers = await getSigners();
 
   const nativeCollateralFactory = (await ethers.getContractFactory(
@@ -420,7 +444,6 @@ const deployTeller = async (param?: {
   const highApr =
     param && param.highApr ? param.highApr : contracts.highApr.address;
 
-  // Set signers
   const signers = await getSigners();
 
   const tellerFactory = (await ethers.getContractFactory(
@@ -446,7 +469,7 @@ const deployTeller = async (param?: {
 const deployTreasury = async (param?: {
   registry?: string;
   vaultEngine?: string;
-  aurei?: string;
+  currency?: string;
   tcnToken?: string;
 }) => {
   const registry =
@@ -455,10 +478,10 @@ const deployTreasury = async (param?: {
     param && param.vaultEngine
       ? param.vaultEngine
       : contracts.vaultEngine.address;
-  const aurei = param && param.aurei ? param.aurei : contracts.aurei.address;
+  const currency =
+    param && param.currency ? param.currency : contracts.aurei.address;
   const tcnToken =
     param && param.tcnToken ? param.tcnToken : contracts.tcnToken.address;
-  // Set signers
   const signers = await getSigners();
 
   const treasuryFactory = (await ethers.getContractFactory(
@@ -468,7 +491,7 @@ const deployTreasury = async (param?: {
 
   contracts.treasury = await treasuryFactory.deploy(
     registry,
-    aurei,
+    currency,
     tcnToken,
     vaultEngine
   );
@@ -494,7 +517,6 @@ const deployPriceFeed = async (param?: {
       ? param.vaultEngine
       : contracts.vaultEngine.address;
 
-  // Set signers
   const signers = await getSigners();
 
   const priceFeedFactory = (await ethers.getContractFactory(
@@ -529,7 +551,6 @@ const deployAuction = async (param?: {
       ? param.priceCalc
       : contracts.linearDecrease.address;
   const ftso = param && param.ftso ? param.ftso : contracts.ftso.address;
-  // Set signers
   const signers = await getSigners();
 
   const auctionFactory = (await ethers.getContractFactory(
@@ -553,7 +574,6 @@ const deployAuction = async (param?: {
 };
 
 const deployPriceCalc = async () => {
-  // Set signers
   const signers = await getSigners();
 
   const linearDecreaseFactory = (await ethers.getContractFactory(
@@ -571,7 +591,7 @@ const deployPriceCalc = async () => {
   return contracts;
 };
 
-const deployReserve = async (param?: {
+const deployReservePool = async (param?: {
   registry?: string;
   vaultEngine?: string;
 }) => {
@@ -679,7 +699,6 @@ const deployMockVaultEngine = async () => {
 };
 
 const deployMockFtso = async () => {
-  // Set signers
   const signers = await getSigners();
 
   const ftsoFactory = (await ethers.getContractFactory(
@@ -698,7 +717,6 @@ const deployMockFtso = async () => {
 };
 
 const deployMockFtsoManager = async () => {
-  // Set signers
   const signers = await getSigners();
 
   const ftsoManagerFactory = (await ethers.getContractFactory(
@@ -717,7 +735,6 @@ const deployMockFtsoManager = async () => {
 };
 
 const deployMockFtsoRewardManager = async () => {
-  // Set signers
   const signers = await getSigners();
 
   const ftsoRewardManager = (await ethers.getContractFactory(
@@ -736,21 +753,19 @@ const deployMockFtsoRewardManager = async () => {
 };
 
 const deployMocks = async () => {
-  // Set signers
   const signers = await getSigners();
   await deployMockERC20();
   await deployMockVPToken();
   await deployMockFtso();
   await deployMockFtsoManager();
   await deployMockFtsoRewardManager();
-
   return { contracts, signers };
 };
 
-const deployProbity = async () => {
-  // Set signers
+const deployProbity = async (currency: string) => {
   const signers = await getSigners();
-  await deployAUR();
+  const contracts =
+    currency === "aurei" ? await deployAurei() : await deployPhi();
   await deployTCN();
   await deployApr();
   await deployVaultEngine();
@@ -758,49 +773,49 @@ const deployProbity = async () => {
   await deployTeller();
   await deployPriceCalc();
   await deployPriceFeed();
-  await deployTreasury();
-  await deployReserve();
+  await deployTreasury({ currency: contracts[currency.toLowerCase()].address });
+  await deployReservePool();
   await deployLiquidator();
-
   return { contracts, signers };
 };
 
-const deployLocal = async () => {
+////
+// Deployments by environment
+////
+
+const deployLocal = async (currency: string) => {
   const signers = await getSigners();
   await deployRegistry();
   await deployMocks();
-  await deployProbity();
+  await deployProbity(currency);
   await deployAuction();
   await deployERC20Collateral();
   await deployVPTokenCollateral();
-
   return { contracts, signers };
 };
 
-const deployTest = async () => {
+const deployTest = async (currency: string) => {
   const signers = await getSigners();
   await deployRegistry();
   await deployMocks();
-  await deployProbity();
+  await deployProbity(currency);
   await deployAuction();
   await deployERC20Collateral();
   await deployVPTokenCollateral();
   await deployMockVaultEngine();
-
   return { contracts, signers };
 };
 
-const deployProd = async () => {
+const deployProd = async (currency: string) => {
   const signers = await getSigners();
   await deployRegistry();
-  await deployProbity();
-
+  await deployProbity(currency);
   return { contracts, signers };
 };
 
 const probity = {
   deployRegistry,
-  deployAUR,
+  deployAurei,
   deployTCN,
   deployApr,
   deployVaultEngine,
@@ -812,7 +827,7 @@ const probity = {
   deployPriceFeed,
   deployAuction,
   deployTreasury,
-  deployReserve,
+  deployReservePool,
   deployLiquidator,
 };
 

@@ -1,21 +1,28 @@
 import "@nomiclabs/hardhat-ethers";
-import { deployLocal, deployProd, probity } from "../lib/deployer";
+import { deployLocal, Deployment, deployProd } from "../lib/deployer";
 import * as fs from "fs";
 
 async function main() {
-  let deployed;
+  let deployment: Deployment;
+
+  const currency: string = process.env.CURRENCY
+    ? process.env.CURRENCY.toLowerCase()
+    : "aurei";
+  if (!["phi", "aurei"].includes(currency))
+    throw Error('CURRENCY envvar must be set to "phi" or "aurei".');
+
   if (process.env.NETWORK === "local") {
-    console.log("Deploying in Local Mode");
-    deployed = await deployLocal();
+    console.info("Deploying in Local Mode");
+    deployment = await deployLocal(currency);
   } else {
-    console.log("Deploying in Production Mode");
-    deployed = await deployProd();
-    console.log(
-      "Warning: this deployment of Probity in Production does not include ERC20Collateral, VPTokenCollateral and Auction please deploy them separately"
+    console.info("Deploying in Production Mode");
+    deployment = await deployProd(currency);
+    console.warn(
+      "This deployment of Probity in Production does not include ERC20Collateral, VPTokenCollateral and Auctioneer contracts. Please deploy them separately."
     );
   }
 
-  let { contracts } = deployed;
+  let { contracts } = deployment;
 
   console.log("Contracts deployed!");
 
@@ -35,12 +42,11 @@ async function main() {
     fileOutput += `${contractDisplayName}=${contracts[contractName].address}\n`;
   }
 
-  fs.writeFileSync(".env", fileOutput);
   console.table(addresses);
+  fs.writeFileSync(".env", fileOutput);
+  console.info(`Contract addresses written to ${process.cwd()}/.env`);
 }
 
-// We recommend this pattern to be able to use async/await everywhere
-// and properly handle errors.
 main()
   .then(() => process.exit(0))
   .catch((error) => {
