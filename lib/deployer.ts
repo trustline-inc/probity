@@ -1,7 +1,7 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-web3";
-import { ethers, network, waffle, web3 } from "hardhat";
+import { ethers, network, web3 } from "hardhat";
 
 export type Deployment = {
   contracts: ContractDict;
