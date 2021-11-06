@@ -210,7 +210,7 @@ contract Phi is IPhi, Stateful {
         bytes32 r,
         bytes32 s
     ) external override {
-        require(deadline >= block.timestamp, "AUR/permit: EXPIRED");
+        require(deadline >= block.timestamp, "PHI/permit: EXPIRED");
         bytes32 digest = keccak256(
             abi.encodePacked(
                 "\x19\x01",
@@ -230,7 +230,7 @@ contract Phi is IPhi, Stateful {
         address recoveredAddress = ecrecover(digest, v, r, s);
         require(
             recoveredAddress != address(0) && recoveredAddress == owner,
-            "AUR/permit: INVALID_SIGNATURE"
+            "PHI/permit: INVALID_SIGNATURE"
         );
         _approve(owner, spender, amount);
     }
@@ -279,7 +279,7 @@ contract Phi is IPhi, Stateful {
     function _requireValidRecipient(address _recipient) internal view {
         require(
             _recipient != address(0) && _recipient != address(this),
-            "AUR/_requireValidRecipient: Cannot transfer tokens directly to the AUR token contract or the zero address"
+            "PHI/_requireValidRecipient: Cannot transfer tokens directly to the PHI token contract or the zero address"
         );
     }
 }
