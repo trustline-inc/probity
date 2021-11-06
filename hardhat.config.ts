@@ -1,6 +1,5 @@
 require("dotenv").config();
-import { existsSync } from "fs";
-import "hardhat-typechain";
+import "@typechain/hardhat";
 import "@nomiclabs/hardhat-ethers";
 import "@nomiclabs/hardhat-web3";
 import "@nomiclabs/hardhat-waffle";
