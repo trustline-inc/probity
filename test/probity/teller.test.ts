@@ -25,6 +25,7 @@ let user: SignerWithAddress;
 let teller: Teller;
 let vaultEngine: MockVaultEngine;
 let registry: Registry;
+let reservePoolAddress: string;
 
 let flrCollId = bytes32("FLR");
 let SUPPLY_TO_SET = PRECISION_AUR.mul(2000);
@@ -42,11 +43,61 @@ describe("Teller Unit Tests", function () {
       vaultEngine: contracts.mockVaultEngine.address,
     });
     vaultEngine = contracts.mockVaultEngine;
-
+    reservePoolAddress = contracts.reserve.address;
     teller = contracts.teller;
 
     owner = signers.owner;
     user = signers.alice;
+  });
+
+  describe("setReservePool Unit Tests", function () {
+    it("tests that values are properly set", async () => {
+      const NEW_RESERVE_POOL_ADDRESS = owner.address;
+      const reservePoolBefore = await teller.reservePool();
+      expect(reservePoolBefore).to.equal(reservePoolAddress);
+      await teller.setReservePoolAddress(NEW_RESERVE_POOL_ADDRESS);
+      const reservePoolAfter = await teller.reservePool();
+      expect(reservePoolAfter).to.equal(NEW_RESERVE_POOL_ADDRESS);
+    });
+
+    it("can only be called by gov address", async () => {
+      const NEW_RESERVE_POOL_ADDRESS = owner.address;
+      await assertRevert(
+        teller.connect(user).setReservePoolAddress(NEW_RESERVE_POOL_ADDRESS),
+        "AccessControl/OnlyBy: Caller does not have permission"
+      );
+      await registry.setupContractAddress(bytes32("gov"), user.address);
+      await teller
+        .connect(user)
+        .setReservePoolAddress(NEW_RESERVE_POOL_ADDRESS);
+    });
+  });
+
+  describe("setProtocolFee Unit Tests", function () {
+    beforeEach(async function () {
+      await teller.initCollType(flrCollId, 0);
+    });
+
+    it("tests that values are properly set", async () => {
+      const PROTOCOL_FEE_TO_SET = PRECISION_COLL.div(10);
+      const collBefore = await teller.collateralTypes(flrCollId);
+      expect(collBefore.protocolFee).to.equal(0);
+      await teller.setProtocolFee(flrCollId, PROTOCOL_FEE_TO_SET);
+      const collAfter = await teller.collateralTypes(flrCollId);
+      expect(collAfter.protocolFee).to.not.equal(0);
+    });
+
+    it("can only be called by gov address", async () => {
+      const PROTOCOL_FEE_TO_SET = PRECISION_COLL.div(10);
+      await assertRevert(
+        teller
+          .connect(user)
+          .setProtocolFee(bytes32("new coll"), PROTOCOL_FEE_TO_SET),
+        "AccessControl/OnlyBy: Caller does not have permission"
+      );
+      await registry.setupContractAddress(bytes32("gov"), user.address);
+      await teller.connect(user).setProtocolFee(flrCollId, PROTOCOL_FEE_TO_SET);
+    });
   });
 
   describe("initCollType Unit Tests", function () {
@@ -54,7 +105,7 @@ describe("Teller Unit Tests", function () {
       const collBefore = await teller.collateralTypes(flrCollId);
       expect(collBefore[0]).to.equal(0);
       expect(collBefore[1]).to.equal(0);
-      await teller.initCollType(flrCollId);
+      await teller.initCollType(flrCollId, 0);
       const collAfter = await teller.collateralTypes(flrCollId);
       expect(collAfter[0]).to.not.equal(0);
       expect(collAfter[1]).to.equal(0);
@@ -62,17 +113,17 @@ describe("Teller Unit Tests", function () {
 
     it("can only be called by gov address", async () => {
       await assertRevert(
-        teller.connect(user).initCollType(bytes32("new coll")),
+        teller.connect(user).initCollType(bytes32("new coll"), 0),
         "AccessControl/OnlyBy: Caller does not have permission"
       );
       await registry.setupContractAddress(bytes32("gov"), user.address);
-      await teller.connect(user).initCollType(flrCollId);
+      await teller.connect(user).initCollType(flrCollId, 0);
     });
   });
 
   describe("updateAccumulator Unit Tests", function () {
     beforeEach(async function () {
-      await teller.initCollType(flrCollId);
+      await teller.initCollType(flrCollId, 0);
       await vaultEngine.initCollType(flrCollId);
       await vaultEngine.setTotalDebt(DEBT_TO_SET);
       await vaultEngine.setTotalCapital(SUPPLY_TO_SET);
@@ -84,7 +135,7 @@ describe("Teller Unit Tests", function () {
         teller.updateAccumulator(newCollId),
         "Teller/updateAccumulator: Collateral Type not initialized"
       );
-      await teller.initCollType(newCollId);
+      await teller.initCollType(newCollId, 0);
       await teller.updateAccumulator(newCollId);
     });
 
@@ -254,7 +305,6 @@ describe("Teller Unit Tests", function () {
 
       TIME_TO_INCREASE = 394000;
 
-      // to know if utilization is zero, how will it act?
       await vaultEngine.setTotalDebt(0);
       mpr = await teller.mpr();
       await teller.updateAccumulator(flrCollId);
@@ -278,6 +328,55 @@ describe("Teller Unit Tests", function () {
 
       after = await vaultEngine.collateralTypes(flrCollId);
       expect(after[1]).to.equal(EXPECTED_SUPP_ACCUMULATOR);
+    });
+
+    it("tests that protocolFeeRate is calculated properly", async () => {
+      const PROTOCOL_FEE_TO_SET = PRECISION_COLL.div(10);
+      await teller.setProtocolFee(flrCollId, PROTOCOL_FEE_TO_SET);
+      const DEFAULT_SUPP_ACCUMULATOR = PRECISION_PRICE;
+      let TIME_TO_INCREASE = 400000;
+      await teller.updateAccumulator(flrCollId);
+
+      let vaultColl = await vaultEngine.collateralTypes(flrCollId);
+      let lastUpdatedBefore = (await teller.collateralTypes(flrCollId))[0];
+      let captialAccumulatorBefore = (
+        await vaultEngine.collateralTypes(flrCollId)
+      ).capitalAccumulator;
+      let before = await vaultEngine.collateralTypes(flrCollId);
+      expect(before[1]).to.equal(DEFAULT_SUPP_ACCUMULATOR);
+      await increaseTime(TIME_TO_INCREASE);
+      await teller.updateAccumulator(flrCollId);
+
+      let lastUpdatedAfter = (await teller.collateralTypes(flrCollId))[0];
+      let mpr = await teller.mpr();
+      let utilitization = (await teller.collateralTypes(flrCollId))
+        .lastUtilization;
+      let multipledByUtilization = rmul(
+        mpr.sub(PRECISION_PRICE),
+        utilitization.mul(1e9)
+      );
+      let exponentiated = rpow(
+        multipledByUtilization.add(PRECISION_PRICE),
+        lastUpdatedAfter.sub(lastUpdatedBefore)
+      );
+      let EXPECTED_SUPP_ACCUMULATOR = rmul(exponentiated, vaultColl[1]);
+      let EXPECTED_SUPP_ACCUMULATOR_RATE = EXPECTED_SUPP_ACCUMULATOR.sub(
+        captialAccumulatorBefore
+      );
+      let EXPECTED_PROTOCOL_FEE_RATE =
+        EXPECTED_SUPP_ACCUMULATOR_RATE.mul(PROTOCOL_FEE_TO_SET).div(
+          PRECISION_COLL
+        );
+      EXPECTED_SUPP_ACCUMULATOR_RATE = EXPECTED_SUPP_ACCUMULATOR_RATE.sub(
+        EXPECTED_PROTOCOL_FEE_RATE
+      );
+
+      let after = await vaultEngine.collateralTypes(flrCollId);
+      expect(after[1]).to.equal(
+        captialAccumulatorBefore.add(EXPECTED_SUPP_ACCUMULATOR_RATE)
+      );
+      let protocolRate = await vaultEngine.protocolFeeRates();
+      expect(protocolRate).to.equal(EXPECTED_PROTOCOL_FEE_RATE);
     });
   });
 });

@@ -432,6 +432,7 @@ const deployTeller = async (param?: {
   vaultEngine?: string;
   lowApr?: string;
   highApr?: string;
+  reservePool?: string;
 }) => {
   const registry =
     param && param.registry ? param.registry : contracts.registry.address;
@@ -443,6 +444,8 @@ const deployTeller = async (param?: {
     param && param.lowApr ? param.lowApr : contracts.lowApr.address;
   const highApr =
     param && param.highApr ? param.highApr : contracts.highApr.address;
+  const reservePool =
+    param && param.reservePool ? param.reservePool : contracts.reserve.address;
 
   const signers = await getSigners();
 
@@ -453,6 +456,7 @@ const deployTeller = async (param?: {
   contracts.teller = await tellerFactory.deploy(
     registry,
     vaultEngine,
+    reservePool,
     lowApr,
     highApr
   );
