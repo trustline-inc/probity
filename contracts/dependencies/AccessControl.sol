@@ -1,29 +1,37 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity ^0.8.0;
 
 import "../interfaces/IRegistry.sol";
 
 contract AccessControl {
-  IRegistry registry;
+    ///////////////////////////////////
+    // State Variables
+    ///////////////////////////////////
+    IRegistry public registry;
 
-  constructor(address registryAddress) {
-    registry = IRegistry(registryAddress);
-  }
+    ///////////////////////////////////
+    // Modifiers
+    ///////////////////////////////////
+    modifier onlyBy(bytes32 name) {
+        require(
+            registry.checkContractValidity(name, msg.sender),
+            "AccessControl/OnlyBy: Caller does not have permission"
+        );
+        _;
+    }
 
-  modifier onlyBy(bytes32 name) {
-    require(
-      registry.checkIfValidContract(name, msg.sender),
-      "ACCESS: Caller does not have authority to call this"
-    );
-    _;
-  }
+    modifier onlyByRegistered() {
+        require(
+            registry.checkContractValidity(msg.sender),
+            "AccessControl/onlyByRegistered: Caller is not a registered contract"
+        );
+        _;
+    }
 
-  modifier onlyByRegistered() {
-    require(
-      registry.checkIfValidContract(msg.sender),
-      "ACCESS: caller is not a registered Contract"
-    );
-    _;
-  }
+    ///////////////////////////////////
+    // Constructor
+    ///////////////////////////////////
+    constructor(address registryAddress) {
+        registry = IRegistry(registryAddress);
+    }
 }

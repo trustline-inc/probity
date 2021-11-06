@@ -5,52 +5,57 @@ pragma solidity ^0.8.0;
 import "../../dependencies/Stateful.sol";
 
 interface VaultEngineLike {
-  function modifyCollateral(
-    bytes32 collateral,
-    address user,
-    int256 amount
-  ) external;
+    function modifyCollateral(
+        bytes32 collateral,
+        address user,
+        int256 amount
+    ) external;
 }
 
 contract NativeCollateral is Stateful {
-  /////////////////////////////////////////
-  // Events
-  /////////////////////////////////////////
+    /////////////////////////////////////////
+    // State Variables
+    /////////////////////////////////////////
+    bytes32 public immutable collateralId;
+    VaultEngineLike public immutable vaultEngine;
 
-  event Deposit(address indexed user, uint256 amount);
-  event Withdrawal(address indexed user, uint256 amount);
+    /////////////////////////////////////////
+    // Events
+    /////////////////////////////////////////
 
-  /////////////////////////////////////////
-  // Data Storage
-  /////////////////////////////////////////
-  bytes32 collateralId;
-  VaultEngineLike vaultEngine;
+    event DepositNativeCrypto(address indexed user, uint256 amount);
+    event WithdrawNativeCrypto(address indexed user, uint256 amount);
 
-  /////////////////////////////////////////
-  // Constructor
-  /////////////////////////////////////////
-  constructor(
-    address registryAddress,
-    bytes32 collId,
-    VaultEngineLike vaultEngineAddress
-  ) Stateful(registryAddress) {
-    collateralId = collId;
-    vaultEngine = vaultEngineAddress;
-  }
+    /////////////////////////////////////////
+    // Constructor
+    /////////////////////////////////////////
+    constructor(
+        address registryAddress,
+        bytes32 collId,
+        VaultEngineLike vaultEngineAddress
+    ) Stateful(registryAddress) {
+        collateralId = collId;
+        vaultEngine = vaultEngineAddress;
+    }
 
-  /////////////////////////////////////////
-  // External Functions
-  /////////////////////////////////////////
+    /////////////////////////////////////////
+    // External Functions
+    /////////////////////////////////////////
+    function deposit() external payable onlyWhen("paused", false) {
+        vaultEngine.modifyCollateral(
+            collateralId,
+            msg.sender,
+            int256(msg.value)
+        );
+        emit DepositNativeCrypto(msg.sender, msg.value);
+    }
 
-  function deposit() external payable onlyWhen("paused", false) {
-    vaultEngine.modifyCollateral(collateralId, msg.sender, int256(msg.value));
-    emit Deposit(msg.sender, msg.value);
-  }
-
-  function withdraw(uint256 amount) external onlyWhen("paused", false) {
-    vaultEngine.modifyCollateral(collateralId, msg.sender, -int256(amount));
-    require(payable(msg.sender).send(amount), "FLR_COLL: fail to send FLR");
-
-    emit Withdrawal(msg.sender, amount);
-  }
+    function withdraw(uint256 amount) external onlyWhen("paused", false) {
+        vaultEngine.modifyCollateral(collateralId, msg.sender, -int256(amount));
+        require(
+            payable(msg.sender).send(amount),
+            "NativeCollateral/withdraw: fail to send FLR"
+        );
+        emit WithdrawNativeCrypto(msg.sender, amount);
+    }
 }

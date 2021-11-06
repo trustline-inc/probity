@@ -3,95 +3,103 @@
 pragma solidity ^0.8.0;
 
 import "../dependencies/Stateful.sol";
-import "../dependencies/DSMath.sol";
 import "../dependencies/Eventful.sol";
 
 interface VaultEngineLike {
-  function updatePrice(bytes32 collId, uint256 price) external;
+    function updatePrice(bytes32 collId, uint256 price) external;
 }
 
-interface ftsoLike {
-  function getCurrentPrice()
-    external
-    returns (uint256 _price, uint256 _timestamp);
+interface FtsoLike {
+    function getCurrentPrice()
+        external
+        returns (uint256 _price, uint256 _timestamp);
 }
 
-contract PriceFeed is Stateful, Eventful, DSMath {
-  /////////////////////////////////////////
-  // Data Structure
-  /////////////////////////////////////////
+contract PriceFeed is Stateful, Eventful {
+    /////////////////////////////////////////
+    // Type Declaration
+    /////////////////////////////////////////
+    struct Collateral {
+        uint256 liquidationRatio;
+        FtsoLike ftso;
+    }
 
-  struct Collateral {
-    uint256 liquidationRatio;
-    ftsoLike ftso;
-  }
+    /////////////////////////////////////////
+    // State Variables
+    /////////////////////////////////////////
+    uint256 private constant RAY = 1e27;
+    VaultEngineLike public immutable vaultEngine;
 
-  /////////////////////////////////////////
-  // Data Variables
-  /////////////////////////////////////////
-  VaultEngineLike vaultEngine;
-  mapping(bytes32 => Collateral) collateralTypes;
+    mapping(bytes32 => Collateral) public collateralTypes;
 
-  /////////////////////////////////////////
-  // Constructor
-  /////////////////////////////////////////
+    /////////////////////////////////////////
+    // Constructor
+    /////////////////////////////////////////
+    constructor(address registryAddress, VaultEngineLike vaultEngineAddress)
+        Stateful(registryAddress)
+    {
+        vaultEngine = vaultEngineAddress;
+    }
 
-  constructor(address registryAddress, VaultEngineLike vaultEngineAddress)
-    Stateful(registryAddress)
-  {
-    vaultEngine = vaultEngineAddress;
-  }
+    /////////////////////////////////////////
+    // External functions
+    /////////////////////////////////////////
+    function init(
+        bytes32 collId,
+        uint256 liquidationRatio,
+        FtsoLike ftso
+    ) external onlyBy("gov") {
+        collateralTypes[collId].liquidationRatio = liquidationRatio;
+        collateralTypes[collId].ftso = ftso;
+    }
 
-  /////////////////////////////////////////
-  // External functions
-  /////////////////////////////////////////
+    function updateLiquidationRatio(bytes32 collId, uint256 liquidationRatio)
+        external
+        onlyBy("gov")
+    {
+        emit LogVarUpdate(
+            "priceFeed",
+            collId,
+            "liquidationRatio",
+            collateralTypes[collId].liquidationRatio,
+            liquidationRatio
+        );
+        collateralTypes[collId].liquidationRatio = liquidationRatio;
+    }
 
-  function init(
-    bytes32 collId,
-    uint256 liquidationRatio,
-    ftsoLike ftso
-  ) external onlyBy("gov") {
-    collateralTypes[collId].liquidationRatio = liquidationRatio;
-    collateralTypes[collId].ftso = ftso;
-  }
+    function updateFtso(bytes32 collId, FtsoLike newFtso)
+        external
+        onlyBy("gov")
+    {
+        emit LogVarUpdate(
+            "priceFeed",
+            collId,
+            "ftso",
+            address(collateralTypes[collId].ftso),
+            address(newFtso)
+        );
+        collateralTypes[collId].ftso = newFtso;
+    }
 
-  function updateLiquidationRatio(bytes32 collId, uint256 liquidationRatio)
-    external
-    onlyBy("gov")
-  {
-    emit LogVarUpdate(
-      "priceFeed",
-      collId,
-      "liquidationRatio",
-      collateralTypes[collId].liquidationRatio,
-      liquidationRatio
-    );
-    collateralTypes[collId].liquidationRatio = liquidationRatio;
-  }
+    // @todo figure out how many places of precision the ftso provides and fix the math accordingly
+    function updatePrice(bytes32 collId) external {
+        require(
+            address(collateralTypes[collId].ftso) != address(0),
+            "PriceFeed/UpdatePrice: Collateral Type is not initialized"
+        );
+        (uint256 price, ) = collateralTypes[collId].ftso.getCurrentPrice();
+        uint256 adjustedPrice = rdiv(
+            rdiv(price, RAY),
+            collateralTypes[collId].liquidationRatio
+        );
 
-  function updateFtso(bytes32 collId, ftsoLike newFtso) external onlyBy("gov") {
-    emit LogVarUpdate(
-      "priceFeed",
-      collId,
-      "ftso",
-      address(collateralTypes[collId].ftso),
-      address(newFtso)
-    );
-    collateralTypes[collId].ftso = newFtso;
-  }
+        vaultEngine.updatePrice(collId, adjustedPrice);
+    }
 
-  // @todo figure out how many places of precision the ftso provides and fix the math accordingly
-  function updatePrice(bytes32 collId) external {
-    require(
-      address(collateralTypes[collId].ftso) != address(0),
-      "PriceFeed: Collateral Type is not"
-    );
-    (uint256 price, ) = collateralTypes[collId].ftso.getCurrentPrice();
-    uint256 adjustedPrice = rdiv(
-      rdiv(price, 10**27),
-      collateralTypes[collId].liquidationRatio
-    );
-
-    vaultEngine.updatePrice(collId, adjustedPrice);
-  }
+    /////////////////////////////////////////
+    // Internal functions
+    /////////////////////////////////////////
+    function rdiv(uint256 x, uint256 y) internal pure returns (uint256 z) {
+        z = ((x * RAY) + (y / 2)) / y;
+    }
 }

@@ -2,25 +2,17 @@
 
 pragma solidity ^0.8.0;
 
-import "../../dependencies/SafeMath.sol";
-import "../../interfaces/ITcnToken.sol";
-import "../../dependencies/Stateful.sol";
+import "../dependencies/SafeMath.sol";
+import "../interfaces/IAurei.sol";
 
-/**
- * Based upon OpenZeppelin's ERC20 contract:
- * https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC20/ERC20.sol
- *
- * and their EIP2612 (ERC20Permit / ERC712) functionality:
- * https://github.com/OpenZeppelin/openzeppelin-contracts/blob/53516bc555a454862470e7860a9b5254db4d00f5/contracts/token/ERC20/ERC20Permit.sol
- */
-contract TcnToken is ITcnToken, Stateful {
+contract MockERC20Token is IAurei {
     using SafeMath for uint256;
 
     // --- Data ---
 
     uint256 private _totalSupply;
-    string internal constant _NAME = "Trustline Credit Network Token";
-    string internal constant _SYMBOL = "TCN";
+    string internal constant _NAME = "Aurei";
+    string internal constant _SYMBOL = "AUR";
     string internal constant _VERSION = "1.0.0";
     uint8 internal constant _DECIMALS = 18;
 
@@ -38,7 +30,7 @@ contract TcnToken is ITcnToken, Stateful {
     /**
      * @dev Builds the domain separator
      */
-    constructor(address registryAddress) Stateful(registryAddress) {
+    constructor() {
         uint256 chainId;
         assembly {
             chainId := chainid()
@@ -145,11 +137,7 @@ contract TcnToken is ITcnToken, Stateful {
         return true;
     }
 
-    function mint(address account, uint256 amount)
-        external
-        override
-        onlyBy("treasury")
-    {
+    function mint(address account, uint256 amount) external override {
         assert(account != address(0));
 
         _totalSupply = _totalSupply.add(amount);
@@ -157,11 +145,7 @@ contract TcnToken is ITcnToken, Stateful {
         emit Transfer(address(0), account, amount);
     }
 
-    function burn(address account, uint256 amount)
-        external
-        override
-        onlyBy("treasury")
-    {
+    function burn(address account, uint256 amount) external override {
         assert(account != address(0));
 
         _balances[account] = _balances[account].sub(
@@ -209,28 +193,27 @@ contract TcnToken is ITcnToken, Stateful {
         bytes32 r,
         bytes32 s
     ) external override {
-        require(deadline >= block.timestamp, "TCN/permit: EXPIRED");
-        bytes32 digest =
-            keccak256(
-                abi.encodePacked(
-                    "\x19\x01",
-                    _DOMAIN_SEPARATOR,
-                    keccak256(
-                        abi.encode(
-                            _PERMIT_TYPEHASH,
-                            owner,
-                            spender,
-                            amount,
-                            _nonces[owner]++,
-                            deadline
-                        )
+        require(deadline >= block.timestamp, "AUR: EXPIRED");
+        bytes32 digest = keccak256(
+            abi.encodePacked(
+                "\x19\x01",
+                _DOMAIN_SEPARATOR,
+                keccak256(
+                    abi.encode(
+                        _PERMIT_TYPEHASH,
+                        owner,
+                        spender,
+                        amount,
+                        _nonces[owner]++,
+                        deadline
                     )
                 )
-            );
+            )
+        );
         address recoveredAddress = ecrecover(digest, v, r, s);
         require(
             recoveredAddress != address(0) && recoveredAddress == owner,
-            "TCN/permit: INVALID_SIGNATURE"
+            "AUR: INVALID_SIGNATURE"
         );
         _approve(owner, spender, amount);
     }
@@ -279,7 +262,7 @@ contract TcnToken is ITcnToken, Stateful {
     function _requireValidRecipient(address _recipient) internal view {
         require(
             _recipient != address(0) && _recipient != address(this),
-            "TCN/_requireValidRecipient: Cannot transfer tokens directly to the TCN token contract or the zero address"
+            "AUR: Cannot transfer tokens directly to the AUR token contract or the zero address"
         );
     }
 }
