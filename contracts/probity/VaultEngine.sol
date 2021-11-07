@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 
 import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
+import "hardhat/console.sol";
 
 interface FtsoLike {
     function getCurrentPrice()
@@ -551,31 +552,50 @@ contract VaultEngine is Stateful, Eventful {
     /**
      * @dev Updates cumulative indices for the specified collateral type
      * @param collId The collateral type ID
-     * @param debtAccumulator The new rate accumulator for debt
-     * @param capitalAccumulator The new rate accumulator for capital
+     * @param debtRateIncrease The new rate to increase for debt
+     * @param capitalRateIncrease The new rate to increase for capital
      */
     function updateAccumulators(
         bytes32 collId,
-        uint256 debtAccumulator,
-        uint256 capitalAccumulator
+        address reservePool,
+        uint256 debtRateIncrease,
+        uint256 capitalRateIncrease,
+        uint256 protocolFeeRates
     ) external onlyBy("teller") {
         emit LogVarUpdate(
             "Vault",
             collId,
             "debtAccumulator",
             collateralTypes[collId].debtAccumulator,
-            debtAccumulator
+            debtRateIncrease
         );
         emit LogVarUpdate(
             "Vault",
             collId,
             "capitalAccumulator",
             collateralTypes[collId].capitalAccumulator,
-            capitalAccumulator
+            capitalRateIncrease
         );
 
-        collateralTypes[collId].debtAccumulator = debtAccumulator;
-        collateralTypes[collId].capitalAccumulator = capitalAccumulator;
+        Collateral storage coll = collateralTypes[collId];
+        uint256 newDebt = coll.normDebt * debtRateIncrease;
+        uint256 newSupply = coll.normCapital * capitalRateIncrease;
+
+        coll.debtAccumulator += debtRateIncrease;
+        coll.capitalAccumulator += capitalRateIncrease;
+
+        uint256 protocolFeeToCollect = coll.normCapital * protocolFeeRates;
+        //        console.log("%s", debtRateIncrease);
+        //        console.log("%s", capitalRateIncrease);
+        //        console.log("new Debt    :%s", newDebt);
+        //        console.log("created     :%s", protocolFeeToCollect + newSupply);
+        //        console.log("new Capital :%s", newSupply);
+        //        console.log("protocolFee :%s", protocolFeeToCollect);
+        require(
+            newSupply + protocolFeeToCollect <= newDebt,
+            "VaultEngine/UpdateAccumulator: new capital created is higher than new debt"
+        );
+        aur[reservePool] += protocolFeeToCollect;
     }
 
     /**

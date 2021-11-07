@@ -3,6 +3,7 @@
 pragma solidity ^0.8.0;
 
 import "../dependencies/Stateful.sol";
+import "hardhat/console.sol";
 
 interface VaultEngineLike {
     function collateralTypes(bytes32)
@@ -133,20 +134,19 @@ contract Teller is Stateful {
         );
 
         // Update debt accumulator
-        uint256 debtRateIncrease = rmul(
-            rpow(mpr, (block.timestamp - coll.lastUpdated)),
-            debtAccumulator
-        ) - debtAccumulator;
+        uint256 debtRateIncrease =
+            rmul(
+                rpow(mpr, (block.timestamp - coll.lastUpdated)),
+                debtAccumulator
+            ) - debtAccumulator;
 
         uint256 exponentiated;
         {
             // Update capital accumulator
-            uint256 multipliedByUtilization = rmul(
-                mpr - RAY,
-                coll.lastUtilization * 1e9
-            );
-            uint256 multipliedByUtilizationPlusOne = multipliedByUtilization +
-                RAY;
+            uint256 multipliedByUtilization =
+                rmul(mpr - RAY, coll.lastUtilization * 1e9);
+            uint256 multipliedByUtilizationPlusOne =
+                multipliedByUtilization + RAY;
 
             exponentiated = rpow(
                 multipliedByUtilizationPlusOne,
@@ -154,8 +154,8 @@ contract Teller is Stateful {
             );
         }
 
-        uint256 suppAccumulatorDiff = rmul(exponentiated, suppAccumulator) -
-            suppAccumulator;
+        uint256 suppAccumulatorDiff =
+            rmul(exponentiated, suppAccumulator) - suppAccumulator;
         uint256 protocolFeeRate = 0;
         if (collateralTypes[collId].protocolFee != 0) {
             protocolFeeRate =
