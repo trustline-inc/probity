@@ -6,10 +6,21 @@ import { artifacts, ethers, web3 } from "hardhat";
 import * as dotenv from "dotenv";
 dotenv.config();
 
-// Collateral IDs
-const COLLATERAL_ID = {
+const COLLATERAL = {
   FLR: web3.utils.keccak256("FLR"),
+  SGB: web3.utils.keccak256("SGB"),
 };
+
+let symbol: string;
+
+switch (Number(process.env.CHAIN_ID)) {
+  case 16:
+    symbol = "FLR";
+  case 19:
+    symbol = "SGB";
+  default:
+    symbol = "FLR";
+}
 
 const PRECISION_COLL = ethers.BigNumber.from("1000000000000000000");
 const PRECISION_AUR = ethers.BigNumber.from(
@@ -23,17 +34,11 @@ const init = async () => {
   const [owner]: SignerWithAddress[] = await ethers.getSigners();
 
   // ABIs
-  const NativeCollateralABI = await artifacts.readArtifact("NativeCollateral");
   const PriceFeedABI = await artifacts.readArtifact("PriceFeed");
   const TellerABI = await artifacts.readArtifact("Teller");
   const VaultEngineABI = await artifacts.readArtifact("VaultEngine");
 
   // Contracts
-  const nativeCollateral = new ethers.Contract(
-    process.env.NATIVE_COLLATERAL,
-    NativeCollateralABI.abi,
-    owner
-  );
   const priceFeed = new ethers.Contract(
     process.env.PRICE_FEED,
     PriceFeedABI.abi,
@@ -46,26 +51,26 @@ const init = async () => {
     owner
   );
 
-  // // Initialize FLR collateral type
-  console.log("Initializing FLR collateral type");
-  await vaultEngine.connect(owner).initCollType(COLLATERAL_ID["FLR"]);
-  console.log("Connected to vault, FLR initialized.");
+  // // Initialize native collateral type
+  console.log(`Initializing ${symbol} collateral`);
+  await vaultEngine.connect(owner).initCollType(COLLATERAL[symbol]);
+  console.log(`Vault: ${symbol} initialized.`);
   await vaultEngine
     .connect(owner)
-    .updateCeiling(COLLATERAL_ID["FLR"], PRECISION_AUR.mul(10000000));
-  console.log("Connected to vault, ceiling updated.");
+    .updateCeiling(COLLATERAL[symbol], PRECISION_AUR.mul(10000000));
+  console.log(`Vault: ceiling updated.`);
   await teller
     .connect(owner)
-    .initCollType(COLLATERAL_ID["FLR"], 0, { gasLimit: 300000 });
-  console.log("Connected to teller, FLR initialized.");
+    .initCollType(COLLATERAL[symbol], 0, { gasLimit: 300000 });
+  console.log(`Teller: ${symbol} initialized.`);
   await priceFeed
     .connect(owner)
-    .init(COLLATERAL_ID["FLR"], PRECISION_COLL.mul(150), process.env.FTSO);
-  console.log("Connected to price feed, FLR price initialized.");
+    .init(COLLATERAL[symbol], PRECISION_COLL.mul(150), process.env.FTSO);
+  console.log(`PriceFeed: ${symbol} price initialized.`);
   await priceFeed
     .connect(owner)
-    .updatePrice(COLLATERAL_ID["FLR"], { gasLimit: 300000 });
-  console.log("Connected to price feed, FLR price updated.");
+    .updatePrice(COLLATERAL[symbol], { gasLimit: 300000 });
+  console.log(`PriceFeed: ${symbol} price updated.`);
 };
 
 init();
