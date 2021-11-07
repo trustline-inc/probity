@@ -155,7 +155,7 @@ describe("Teller Unit Tests", function () {
       await vaultEngine.setTotalCapital(0);
       await assertRevert(
         teller.updateAccumulator(flrCollId),
-        "Teller/UpdateAccumulator: total Capital can not be zero"
+        "Teller/UpdateAccumulator: Total capital can not be zero"
       );
       await vaultEngine.setTotalCapital(SUPPLY_TO_SET);
 
