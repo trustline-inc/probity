@@ -94,15 +94,15 @@ contract Delegatable is Stateful {
             ftsoManager.getCurrentRewardEpoch() > lastClaimedEpoch,
             "Delegatable/claimReward: No new epoch to claim"
         );
-        (uint256 startEpochId, uint256 endEpochId) =
-            ftsoRewardManager.getEpochsWithClaimableRewards();
+        (uint256 startEpochId, uint256 endEpochId) = ftsoRewardManager
+            .getEpochsWithClaimableRewards();
 
         for (uint256 epochId = startEpochId; epochId <= endEpochId; epochId++) {
             uint256[] memory epochs;
             epochs[0] = epochId;
 
-            uint256 rewardAmount =
-                ftsoRewardManager.claimRewardFromDataProviders(
+            uint256 rewardAmount = ftsoRewardManager
+                .claimRewardFromDataProviders(
                     payable(address(this)),
                     epochs,
                     dataProviders
@@ -122,8 +122,10 @@ contract Delegatable is Stateful {
             lastClaimedEpoch > userLastClaimedEpoch[msg.sender],
             "Delegatable/userCollectReward: No new epoch to claim"
         );
-        (uint256 freeColl, uint256 lockedColl) =
-            vaultEngine.vaults(collId, msg.sender);
+        (uint256 freeColl, uint256 lockedColl) = vaultEngine.vaults(
+            collId,
+            msg.sender
+        );
         uint256 currentBalance = freeColl + lockedColl;
         uint256 rewardBalance = 0;
 
@@ -132,8 +134,8 @@ contract Delegatable is Stateful {
             userEpoch <= ftsoManager.getCurrentRewardEpoch();
             userEpoch++
         ) {
-            uint256 rewardableBalance =
-                currentBalance - recentTotalDeposit[msg.sender];
+            uint256 rewardableBalance = currentBalance -
+                recentTotalDeposit[msg.sender];
             recentTotalDeposit[msg.sender] -= recentDeposits[msg.sender][
                 userEpoch
             ];

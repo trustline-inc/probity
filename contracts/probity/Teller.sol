@@ -119,18 +119,18 @@ contract Teller is Stateful {
     function updateAccumulator(bytes32 collId) external {
         require(
             collateralTypes[collId].lastUpdated != 0,
-            "Teller/updateAccumulator: Collateral Type not initialized"
+            "Teller/updateAccumulator: Collateral type not initialized"
         );
 
         Collateral memory coll = collateralTypes[collId];
-        (uint256 debtAccumulator, uint256 suppAccumulator) =
-            vaultEngine.collateralTypes(collId);
+        (uint256 debtAccumulator, uint256 suppAccumulator) = vaultEngine
+            .collateralTypes(collId);
         uint256 totalDebt = vaultEngine.totalDebt();
         uint256 totalSupply = vaultEngine.totalCapital();
 
         require(
             totalSupply > 0,
-            "Teller/UpdateAccumulator: total Capital can not be zero"
+            "Teller/UpdateAccumulator: Total capital can not be zero"
         );
 
         // Update debt accumulator
@@ -171,8 +171,10 @@ contract Teller is Stateful {
             apr = MAX_APR;
         } else {
             uint256 oneMinusUtilization = RAY - (coll.lastUtilization * 1e9);
-            uint256 oneDividedByOneMinusUtilization =
-                rdiv(10**27 * 0.01, oneMinusUtilization);
+            uint256 oneDividedByOneMinusUtilization = rdiv(
+                10**27 * 0.01,
+                oneMinusUtilization
+            );
 
             uint256 round = 0.0025 * 10**27;
             apr = oneDividedByOneMinusUtilization + RAY;

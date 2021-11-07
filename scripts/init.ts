@@ -18,7 +18,7 @@ const PRECISION_AUR = ethers.BigNumber.from(
 
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
-const initialize = async () => {
+const init = async () => {
   // Wallets
   const [owner]: SignerWithAddress[] = await ethers.getSigners();
 
@@ -54,7 +54,9 @@ const initialize = async () => {
     .connect(owner)
     .updateCeiling(COLLATERAL_ID["FLR"], PRECISION_AUR.mul(10000000));
   console.log("Connected to vault, ceiling updated.");
-  await teller.connect(owner).initCollType(COLLATERAL_ID["FLR"]);
+  await teller
+    .connect(owner)
+    .initCollType(COLLATERAL_ID["FLR"], 0, { gasLimit: 300000 });
   console.log("Connected to teller, FLR initialized.");
   await priceFeed
     .connect(owner)
@@ -66,4 +68,4 @@ const initialize = async () => {
   console.log("Connected to price feed, FLR price updated.");
 };
 
-initialize();
+init();

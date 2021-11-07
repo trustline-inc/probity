@@ -88,8 +88,10 @@ contract PriceFeed is Stateful, Eventful {
             "PriceFeed/UpdatePrice: Collateral Type is not initialized"
         );
         (uint256 price, ) = collateralTypes[collId].ftso.getCurrentPrice();
-        uint256 adjustedPrice =
-            rdiv(rdiv(price, RAY), collateralTypes[collId].liquidationRatio);
+        uint256 adjustedPrice = rdiv(
+            rdiv(price, RAY),
+            collateralTypes[collId].liquidationRatio
+        );
 
         vaultEngine.updatePrice(collId, adjustedPrice);
     }

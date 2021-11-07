@@ -171,8 +171,10 @@ contract Auctioneer is Stateful, Eventful {
             "Auctioneer/placeBid: this user has already placed a bid"
         );
 
-        (uint256 totalBidValue, address index) =
-            totalBidsAtPrice(auctionId, bidPrice * ONE);
+        (uint256 totalBidValue, address index) = totalBidsAtPrice(
+            auctionId,
+            bidPrice * ONE
+        );
         uint256 bidAbleAmount = auctions[auctionId].debt - totalBidValue;
         uint256 bidAmount = bidPrice * lot;
         if (bidAbleAmount < bidAmount) {
@@ -221,8 +223,10 @@ contract Auctioneer is Stateful, Eventful {
         );
         uint256 buyableAmount = amount;
 
-        (uint256 bidValueAtCurrent, address index) =
-            totalBidsAtPrice(auctionId, currentPrice * ONE);
+        (uint256 bidValueAtCurrent, address index) = totalBidsAtPrice(
+            auctionId,
+            currentPrice * ONE
+        );
         require(
             bidValueAtCurrent < auctions[auctionId].debt,
             "Auctioneer/buyItNow: Price has reach a point where BuyItNow is no longer available"
@@ -265,8 +269,8 @@ contract Auctioneer is Stateful, Eventful {
                 bids[auctionId][msg.sender].price * ONE,
             "Auctioneer/finalizeSale: the current price has not passed the bid price"
         );
-        uint256 buyAmount =
-            bids[auctionId][msg.sender].price * bids[auctionId][msg.sender].lot;
+        uint256 buyAmount = bids[auctionId][msg.sender].price *
+            bids[auctionId][msg.sender].lot;
         vaultEngine.moveAurei(
             msg.sender,
             auctions[auctionId].beneficiary,
@@ -385,9 +389,8 @@ contract Auctioneer is Stateful, Eventful {
                 amountLeft = amountLeft - bids[auctionId][index].price * ONE;
             } else if (amountLeft > 0) {
                 // this bidder's lot is going to change to amountLeftOver
-                uint256 lotDiff =
-                    bids[auctionId][index].lot -
-                        ((amountLeft / bids[auctionId][index].price) * ONE);
+                uint256 lotDiff = bids[auctionId][index].lot -
+                    ((amountLeft / bids[auctionId][index].price) * ONE);
                 bids[auctionId][index].lot =
                     (amountLeft / bids[auctionId][index].price) *
                     ONE;

@@ -140,10 +140,11 @@ contract Liquidator is Stateful, Eventful {
     // @todo incentive for someone who calls liquidateVault?
     function liquidateVault(bytes32 collId, address user) external {
         // check if vault can be liquidated
-        (uint256 debtAccu, , uint256 price) =
-            vaultEngine.collateralTypes(collId);
-        (, uint256 lockedColl, uint256 debt, uint256 supplied) =
-            vaultEngine.vaults(collId, user);
+        (uint256 debtAccu, , uint256 price) = vaultEngine.collateralTypes(
+            collId
+        );
+        (, uint256 lockedColl, uint256 debt, uint256 supplied) = vaultEngine
+            .vaults(collId, user);
         require(
             debt * debtAccu + supplied * PRECISION_PRICE < lockedColl * price,
             "Liquidator/liquidateVault: Vault collateral is still above required minimal ratio"
@@ -162,11 +163,10 @@ contract Liquidator is Stateful, Eventful {
             -int256(supplied)
         );
 
-        uint256 aurToRaise =
-            debt *
-                collateralTypes[collId].debtPenaltyFee +
-                supplied *
-                collateralTypes[collId].suppPenaltyFee;
+        uint256 aurToRaise = debt *
+            collateralTypes[collId].debtPenaltyFee +
+            supplied *
+            collateralTypes[collId].suppPenaltyFee;
 
         // start the auction
         collateralTypes[collId].auctioneer.startAuction(
