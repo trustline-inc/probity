@@ -57,30 +57,16 @@ contract MockVPToken is IAurei {
 
     // --- ERC20 Functions ---
 
-    function allowance(address owner, address spender)
-        external
-        view
-        override
-        returns (uint256)
-    {
+    function allowance(address owner, address spender) external view override returns (uint256) {
         return _allowed[owner][spender];
     }
 
-    function approve(address spender, uint256 amount)
-        external
-        override
-        returns (bool)
-    {
+    function approve(address spender, uint256 amount) external override returns (bool) {
         _approve(msg.sender, spender, amount);
         return true;
     }
 
-    function balanceOf(address account)
-        external
-        view
-        override
-        returns (uint256)
-    {
+    function balanceOf(address account) external view override returns (uint256) {
         return _balances[account];
     }
 
@@ -109,11 +95,7 @@ contract MockVPToken is IAurei {
         override
         returns (bool)
     {
-        _approve(
-            msg.sender,
-            spender,
-            _allowed[msg.sender][spender].add(addedValue)
-        );
+        _approve(msg.sender, spender, _allowed[msg.sender][spender].add(addedValue));
         return true;
     }
 
@@ -129,11 +111,7 @@ contract MockVPToken is IAurei {
         return _totalSupply;
     }
 
-    function transfer(address recipient, uint256 amount)
-        external
-        override
-        returns (bool)
-    {
+    function transfer(address recipient, uint256 amount) external override returns (bool) {
         _requireValidRecipient(recipient);
         _transfer(msg.sender, recipient, amount);
         return true;
@@ -150,10 +128,7 @@ contract MockVPToken is IAurei {
     function burn(address account, uint256 amount) external override {
         assert(account != address(0));
 
-        _balances[account] = _balances[account].sub(
-            amount,
-            "ERC20: burn amount exceeds balance"
-        );
+        _balances[account] = _balances[account].sub(amount, "ERC20: burn amount exceeds balance");
         _totalSupply = _totalSupply.sub(amount);
         emit Transfer(account, address(0), amount);
     }
@@ -168,10 +143,7 @@ contract MockVPToken is IAurei {
         _approve(
             sender,
             msg.sender,
-            _allowed[sender][msg.sender].sub(
-                amount,
-                "ERC20: transfer amount exceeds allowance"
-            )
+            _allowed[sender][msg.sender].sub(amount, "ERC20: transfer amount exceeds allowance")
         );
         return true;
     }
@@ -196,23 +168,22 @@ contract MockVPToken is IAurei {
         bytes32 s
     ) external override {
         require(deadline >= block.timestamp, "AUR: EXPIRED");
-        bytes32 digest =
-            keccak256(
-                abi.encodePacked(
-                    "\x19\x01",
-                    _DOMAIN_SEPARATOR,
-                    keccak256(
-                        abi.encode(
-                            _PERMIT_TYPEHASH,
-                            owner,
-                            spender,
-                            amount,
-                            _nonces[owner]++,
-                            deadline
-                        )
+        bytes32 digest = keccak256(
+            abi.encodePacked(
+                "\x19\x01",
+                _DOMAIN_SEPARATOR,
+                keccak256(
+                    abi.encode(
+                        _PERMIT_TYPEHASH,
+                        owner,
+                        spender,
+                        amount,
+                        _nonces[owner]++,
+                        deadline
                     )
                 )
-            );
+            )
+        );
         address recoveredAddress = ecrecover(digest, v, r, s);
         require(
             recoveredAddress != address(0) && recoveredAddress == owner,

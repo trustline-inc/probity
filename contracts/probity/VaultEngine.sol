@@ -7,9 +7,7 @@ import "../dependencies/Eventful.sol";
 import "hardhat/console.sol";
 
 interface FtsoLike {
-    function getCurrentPrice()
-        external
-        returns (uint256 _price, uint256 _timestamp);
+    function getCurrentPrice() external returns (uint256 _price, uint256 _timestamp);
 }
 
 /**
@@ -59,16 +57,8 @@ contract VaultEngine is Stateful, Eventful {
     // Events
     /////////////////////////////////////////
 
-    event SupplyModified(
-        address indexed user,
-        int256 collAmount,
-        int256 capitalAmount
-    );
-    event DebtModified(
-        address indexed user,
-        int256 collAmount,
-        int256 debtAmount
-    );
+    event SupplyModified(address indexed user, int256 collAmount, int256 capitalAmount);
+    event DebtModified(address indexed user, int256 collAmount, int256 debtAmount);
 
     /////////////////////////////////////////
     // Constructor
@@ -135,10 +125,7 @@ contract VaultEngine is Stateful, Eventful {
      * @param user The address of the beneficiary vault owner
      * @param amount The amount of Aurei to add
      */
-    function addAurei(address user, uint256 amount)
-        external
-        onlyBy("treasury")
-    {
+    function addAurei(address user, uint256 amount) external onlyBy("treasury") {
         aur[user] += amount;
     }
 
@@ -147,10 +134,7 @@ contract VaultEngine is Stateful, Eventful {
      * @param user The address of the beneficiary vault owner
      * @param amount The amount of Aurei to remove
      */
-    function removeAurei(address user, uint256 amount)
-        external
-        onlyBy("treasury")
-    {
+    function removeAurei(address user, uint256 amount) external onlyBy("treasury") {
         aur[user] -= amount;
     }
 
@@ -159,10 +143,7 @@ contract VaultEngine is Stateful, Eventful {
      * @param user The address of the vault to reduce TCN from.
      * @param amount The amount of TCN to reduce.
      */
-    function reduceTCN(address user, uint256 amount)
-        external
-        onlyBy("treasury")
-    {
+    function reduceTCN(address user, uint256 amount) external onlyBy("treasury") {
         tcn[user] -= amount;
     }
 
@@ -172,10 +153,7 @@ contract VaultEngine is Stateful, Eventful {
      * @param amount The amount of TCN to convert
      * TODO: This is not being called anywhere. Do we need it?
      */
-    function convertTcnToAurei(address user, uint256 amount)
-        external
-        onlyByRegistered
-    {
+    function convertTcnToAurei(address user, uint256 amount) external onlyByRegistered {
         tcn[user] -= amount;
         aur[user] += amount;
     }
@@ -191,8 +169,7 @@ contract VaultEngine is Stateful, Eventful {
             vault.capital *
             (collateral.capitalAccumulator - vault.lastCapitalAccumulator);
 
-        vaults[collId][msg.sender].lastCapitalAccumulator = collateral
-            .capitalAccumulator;
+        vaults[collId][msg.sender].lastCapitalAccumulator = collateral.capitalAccumulator;
     }
 
     /**
@@ -224,10 +201,7 @@ contract VaultEngine is Stateful, Eventful {
             capitalAmount
         );
 
-        int256 aurToModify = mul(
-            collateralTypes[collId].capitalAccumulator,
-            capitalAmount
-        );
+        int256 aurToModify = mul(collateralTypes[collId].capitalAccumulator, capitalAmount);
         totalCapital = add(totalCapital, aurToModify);
 
         require(
@@ -275,15 +249,9 @@ contract VaultEngine is Stateful, Eventful {
         vault.usedCollateral = add(vault.usedCollateral, collAmount);
         vault.debt = add(vault.debt, debtAmount);
 
-        collateralTypes[collId].normDebt = add(
-            collateralTypes[collId].normDebt,
-            debtAmount
-        );
+        collateralTypes[collId].normDebt = add(collateralTypes[collId].normDebt, debtAmount);
 
-        int256 debtToModify = mul(
-            collateralTypes[collId].debtAccumulator,
-            debtAmount
-        );
+        int256 debtToModify = mul(collateralTypes[collId].debtAccumulator, debtAmount);
         totalDebt = add(totalDebt, debtToModify);
 
         require(
@@ -338,10 +306,7 @@ contract VaultEngine is Stateful, Eventful {
             vaults[collId][auctioneer].freeCollateral,
             collateralAmount
         );
-        unbackedAurei[reservePool] = sub(
-            unbackedAurei[reservePool],
-            aurToRaise
-        );
+        unbackedAurei[reservePool] = sub(unbackedAurei[reservePool], aurToRaise);
         totalUnbackedAurei = sub(totalUnbackedAurei, aurToRaise);
 
         emit Log("vault", "liquidateVault", msg.sender);
@@ -374,17 +339,8 @@ contract VaultEngine is Stateful, Eventful {
      * @param collId The collateral type ID
      * @param ceiling The new ceiling amount
      */
-    function updateCeiling(bytes32 collId, uint256 ceiling)
-        external
-        onlyBy("gov")
-    {
-        emit LogVarUpdate(
-            "Vault",
-            collId,
-            "ceiling",
-            collateralTypes[collId].ceiling,
-            ceiling
-        );
+    function updateCeiling(bytes32 collId, uint256 ceiling) external onlyBy("gov") {
+        emit LogVarUpdate("Vault", collId, "ceiling", collateralTypes[collId].ceiling, ceiling);
         collateralTypes[collId].ceiling = ceiling;
     }
 
@@ -395,13 +351,7 @@ contract VaultEngine is Stateful, Eventful {
      * @param floor The new floor amount
      */
     function updateFloor(bytes32 collId, uint256 floor) external onlyBy("gov") {
-        emit LogVarUpdate(
-            "Vault",
-            collId,
-            "floor",
-            collateralTypes[collId].floor,
-            floor
-        );
+        emit LogVarUpdate("Vault", collId, "floor", collateralTypes[collId].floor, floor);
         collateralTypes[collId].floor = floor;
     }
 
@@ -459,17 +409,8 @@ contract VaultEngine is Stateful, Eventful {
      * @param collId The collateral type ID
      * @param price The new price
      */
-    function updatePrice(bytes32 collId, uint256 price)
-        external
-        onlyByRegistered
-    {
-        emit LogVarUpdate(
-            "Vault",
-            collId,
-            "price",
-            collateralTypes[collId].price,
-            price
-        );
+    function updatePrice(bytes32 collId, uint256 price) external onlyByRegistered {
+        emit LogVarUpdate("Vault", collId, "price", collateralTypes[collId].price, price);
         collateralTypes[collId].price = price;
     }
 
