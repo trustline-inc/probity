@@ -5,18 +5,18 @@ import * as fs from "fs";
 async function main() {
   let deployment: Deployment;
 
-  const currency: string = process.env.CURRENCY
-    ? process.env.CURRENCY.toLowerCase()
+  const token: string = process.env.TOKEN
+    ? process.env.TOKEN.toLowerCase()
     : "aurei";
-  if (!["phi", "aurei"].includes(currency))
-    throw Error('CURRENCY envvar must be set to "phi" or "aurei".');
+  if (!["phi", "aurei"].includes(token))
+    throw Error('TOKEN envvar must be set to "phi" or "aurei".');
 
   if (process.env.NETWORK === "local") {
     console.info("Deploying in Local Mode");
-    deployment = await deployLocal(currency);
+    deployment = await deployLocal(token);
   } else {
     console.info("Deploying in Production Mode");
-    deployment = await deployProd(currency);
+    deployment = await deployProd(token);
     console.warn(
       "This deployment of Probity in Production does not include ERC20Collateral, VPTokenCollateral and Auctioneer contracts. Please deploy them separately."
     );

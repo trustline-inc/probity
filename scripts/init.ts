@@ -6,10 +6,10 @@ import { artifacts, ethers, web3 } from "hardhat";
 import * as dotenv from "dotenv";
 dotenv.config();
 
-if (!process.env.CURRENCY)
-  throw Error("Must sent the CURRENCY environment variable.");
-if (!["aurei", "phi"].includes(process.env.CURRENCY))
-  throw Error("Invalid currency type.");
+if (!process.env.TOKEN)
+  throw Error("Must sent the TOKEN environment variable.");
+if (!["aurei", "phi"].includes(process.env.TOKEN))
+  throw Error("Invalid token type.");
 
 const COLLATERAL = {
   FLR: web3.utils.keccak256("FLR"),
@@ -46,34 +46,29 @@ const init = async () => {
   );
 
   // // Initialize native collateral type
-  console.log(`Initializing ${process.env.CURRENCY} collateral`);
+  console.log(`Initializing ${process.env.TOKEN} collateral`);
+  await vaultEngine.connect(owner).initCollType(COLLATERAL[process.env.TOKEN]);
+  console.log(`Vault: ${process.env.TOKEN} initialized.`);
   await vaultEngine
     .connect(owner)
-    .initCollType(COLLATERAL[process.env.CURRENCY]);
-  console.log(`Vault: ${process.env.CURRENCY} initialized.`);
-  await vaultEngine
-    .connect(owner)
-    .updateCeiling(
-      COLLATERAL[process.env.CURRENCY],
-      PRECISION_AUR.mul(10000000)
-    );
+    .updateCeiling(COLLATERAL[process.env.TOKEN], PRECISION_AUR.mul(10000000));
   console.log(`Vault: ceiling updated.`);
   await teller
     .connect(owner)
-    .initCollType(COLLATERAL[process.env.CURRENCY], 0, { gasLimit: 300000 });
-  console.log(`Teller: ${process.env.CURRENCY} initialized.`);
+    .initCollType(COLLATERAL[process.env.TOKEN], 0, { gasLimit: 300000 });
+  console.log(`Teller: ${process.env.TOKEN} initialized.`);
   await priceFeed
     .connect(owner)
     .init(
-      COLLATERAL[process.env.CURRENCY],
+      COLLATERAL[process.env.TOKEN],
       PRECISION_COLL.mul(150),
       process.env.FTSO
     );
-  console.log(`PriceFeed: ${process.env.CURRENCY} price initialized.`);
+  console.log(`PriceFeed: ${process.env.TOKEN} price initialized.`);
   await priceFeed
     .connect(owner)
-    .updatePrice(COLLATERAL[process.env.CURRENCY], { gasLimit: 300000 });
-  console.log(`PriceFeed: ${process.env.CURRENCY} price updated.`);
+    .updatePrice(COLLATERAL[process.env.TOKEN], { gasLimit: 300000 });
+  console.log(`PriceFeed: ${process.env.TOKEN} price updated.`);
 };
 
 init();

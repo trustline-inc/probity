@@ -452,7 +452,7 @@ const deployTeller = async (param?: {
 const deployTreasury = async (param?: {
   registry?: string;
   vaultEngine?: string;
-  currency?: string;
+  token?: string;
   tcnToken?: string;
 }) => {
   const registry =
@@ -461,8 +461,7 @@ const deployTreasury = async (param?: {
     param && param.vaultEngine
       ? param.vaultEngine
       : contracts.vaultEngine.address;
-  const currency =
-    param && param.currency ? param.currency : contracts.aurei.address;
+  const token = param && param.token ? param.token : contracts.aurei.address;
   const tcnToken =
     param && param.tcnToken ? param.tcnToken : contracts.tcnToken.address;
   const signers = await getSigners();
@@ -473,7 +472,7 @@ const deployTreasury = async (param?: {
   )) as Treasury__factory;
   contracts.treasury = await treasuryFactory.deploy(
     registry,
-    currency,
+    token,
     tcnToken,
     vaultEngine
   );
@@ -726,13 +725,12 @@ const deployMocks = async () => {
   return { contracts, signers };
 };
 
-const deployProbity = async (currency?: string) => {
+const deployProbity = async (token?: string) => {
   const signers = await getSigners();
-  if (currency && !["aurei", "phi"].includes(currency))
-    throw Error('Currency must be either "aurei" or "phi".');
-  currency = currency === undefined ? "aurei" : currency;
-  const contracts =
-    currency === "aurei" ? await deployAurei() : await deployPhi();
+  if (token && !["aurei", "phi"].includes(token))
+    throw Error('Token must be either "aurei" or "phi".');
+  token = token === undefined ? "aurei" : token;
+  const contracts = token === "aurei" ? await deployAurei() : await deployPhi();
   await deployTCN();
   await deployApr();
   await deployVaultEngine();
@@ -741,7 +739,7 @@ const deployProbity = async (currency?: string) => {
   await deployTeller();
   await deployPriceCalc();
   await deployPriceFeed();
-  await deployTreasury({ currency: contracts[currency.toLowerCase()].address });
+  await deployTreasury({ token: contracts[token.toLowerCase()].address });
   await deployLiquidator();
   return { contracts, signers };
 };
@@ -750,22 +748,22 @@ const deployProbity = async (currency?: string) => {
 // Deployments by environment
 ////
 
-const deployLocal = async (currency?: string) => {
+const deployLocal = async (token?: string) => {
   const signers = await getSigners();
   await deployRegistry();
   await deployMocks();
-  await deployProbity(currency);
+  await deployProbity(token);
   await deployAuctioneer();
   await deployERC20Collateral();
   await deployVPTokenCollateral();
   return { contracts, signers };
 };
 
-const deployTest = async (currency?: string) => {
+const deployTest = async (token?: string) => {
   const signers = await getSigners();
   await deployRegistry();
   await deployMocks();
-  await deployProbity(currency);
+  await deployProbity(token);
   await deployAuctioneer();
   await deployERC20Collateral();
   await deployVPTokenCollateral();
@@ -773,10 +771,10 @@ const deployTest = async (currency?: string) => {
   return { contracts, signers };
 };
 
-const deployProd = async (currency?: string) => {
+const deployProd = async (token?: string) => {
   const signers = await getSigners();
   await deployRegistry();
-  await deployProbity(currency);
+  await deployProbity(token);
   return { contracts, signers };
 };
 

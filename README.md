@@ -123,13 +123,13 @@ Run a local [Flare](https://gitlab.com/flarenetwork/flare) node.
 
 Deploy the smart contract in the local network using the `deploy:local` script.
 
-> Set the `FLARE_DIR` and `CURRENCY` envioronment variables.
+> Set the `FLARE_DIR` and `TOKEN` envioronment variables.
 
 For example:
 
 ```
 FLARE_DIR=~/Desktop/flare \
-CURRENCY=PHI \
+TOKEN=phi \
 npm run deploy:local
 ```
 
