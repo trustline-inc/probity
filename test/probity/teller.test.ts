@@ -133,7 +133,7 @@ describe("Teller Unit Tests", function () {
       const newCollId = bytes32("new coll");
       await assertRevert(
         teller.updateAccumulator(newCollId),
-        "Teller/updateAccumulator: Collateral Type not initialized"
+        "Teller/updateAccumulator: Collateral type not initialized"
       );
       await teller.initCollType(newCollId, 0);
       await teller.updateAccumulator(newCollId);
@@ -363,9 +363,10 @@ describe("Teller Unit Tests", function () {
       let EXPECTED_SUPP_ACCUMULATOR_RATE = EXPECTED_SUPP_ACCUMULATOR.sub(
         captialAccumulatorBefore
       );
-      let EXPECTED_PROTOCOL_FEE_RATE = EXPECTED_SUPP_ACCUMULATOR_RATE.mul(
-        PROTOCOL_FEE_TO_SET
-      ).div(PRECISION_COLL);
+      let EXPECTED_PROTOCOL_FEE_RATE =
+        EXPECTED_SUPP_ACCUMULATOR_RATE.mul(PROTOCOL_FEE_TO_SET).div(
+          PRECISION_COLL
+        );
       EXPECTED_SUPP_ACCUMULATOR_RATE = EXPECTED_SUPP_ACCUMULATOR_RATE.sub(
         EXPECTED_PROTOCOL_FEE_RATE
       );
