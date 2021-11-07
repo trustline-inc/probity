@@ -129,7 +129,7 @@ For example:
 
 ```
 FLARE_DIR=~/Desktop/flare \
-TOKEN=phi \
+TOKEN=PHI \
 npm run deploy:local
 ```
 
@@ -137,12 +137,14 @@ If you get the error `ProviderError: err: Invalid value for block.coinbase`, tha
 
 ## Initialization
 
-You can use the `initialize` script to configure a fresh deployment of the Probity system.
+### Collateral Types
 
-The script currently only initializes a `FLR` collateral type.
+You can use the `initialize` script to initialize a new collateral type.
 
 ```
-FLARE_DIR=~/Desktop/flare yarn run initialize
+TOKEN=SGB \
+FLARE_DIR=~/Desktop/flare \
+yarn run initialize
 ```
 
 ## Contract Addresses

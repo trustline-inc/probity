@@ -8,8 +8,10 @@ dotenv.config();
 
 if (!process.env.TOKEN)
   throw Error("Must sent the TOKEN environment variable.");
-if (!["aurei", "phi"].includes(process.env.TOKEN))
+if (!["FLR", "SGB"].includes(process.env.TOKEN.toUpperCase()))
   throw Error("Invalid token type.");
+
+const token = process.env.TOKEN.toUpperCase();
 
 const COLLATERAL = {
   FLR: web3.utils.keccak256("FLR"),
@@ -45,30 +47,26 @@ const init = async () => {
     owner
   );
 
-  // // Initialize native collateral type
-  console.log(`Initializing ${process.env.TOKEN} collateral`);
-  await vaultEngine.connect(owner).initCollType(COLLATERAL[process.env.TOKEN]);
-  console.log(`Vault: ${process.env.TOKEN} initialized.`);
+  // // Initialize collateral type
+  console.log(`Initializing ${token} collateral`);
+  await vaultEngine.connect(owner).initCollType(COLLATERAL[token]);
+  console.log(`Vault: ${token} initialized.`);
   await vaultEngine
     .connect(owner)
-    .updateCeiling(COLLATERAL[process.env.TOKEN], PRECISION_AUR.mul(10000000));
+    .updateCeiling(COLLATERAL[token], PRECISION_AUR.mul(10000000));
   console.log(`Vault: ceiling updated.`);
   await teller
     .connect(owner)
-    .initCollType(COLLATERAL[process.env.TOKEN], 0, { gasLimit: 300000 });
-  console.log(`Teller: ${process.env.TOKEN} initialized.`);
+    .initCollType(COLLATERAL[token], 0, { gasLimit: 300000 });
+  console.log(`Teller: ${token} initialized.`);
   await priceFeed
     .connect(owner)
-    .init(
-      COLLATERAL[process.env.TOKEN],
-      PRECISION_COLL.mul(150),
-      process.env.FTSO
-    );
-  console.log(`PriceFeed: ${process.env.TOKEN} price initialized.`);
+    .init(COLLATERAL[token], PRECISION_COLL.mul(150), process.env.FTSO);
+  console.log(`PriceFeed: ${token} price initialized.`);
   await priceFeed
     .connect(owner)
-    .updatePrice(COLLATERAL[process.env.TOKEN], { gasLimit: 300000 });
-  console.log(`PriceFeed: ${process.env.TOKEN} price updated.`);
+    .updatePrice(COLLATERAL[token], { gasLimit: 300000 });
+  console.log(`PriceFeed: ${token} price updated.`);
 };
 
 init();
