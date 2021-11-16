@@ -10,9 +10,7 @@ interface VaultEngineLike {
 }
 
 interface FtsoLike {
-    function getCurrentPrice()
-        external
-        returns (uint256 _price, uint256 _timestamp);
+    function getCurrentPrice() external returns (uint256 _price, uint256 _timestamp);
 }
 
 contract PriceFeed is Stateful, Eventful {
@@ -67,10 +65,7 @@ contract PriceFeed is Stateful, Eventful {
         collateralTypes[collId].liquidationRatio = liquidationRatio;
     }
 
-    function updateFtso(bytes32 collId, FtsoLike newFtso)
-        external
-        onlyBy("gov")
-    {
+    function updateFtso(bytes32 collId, FtsoLike newFtso) external onlyBy("gov") {
         emit LogVarUpdate(
             "priceFeed",
             collId,
@@ -88,10 +83,7 @@ contract PriceFeed is Stateful, Eventful {
             "PriceFeed/UpdatePrice: Collateral Type is not initialized"
         );
         (uint256 price, ) = collateralTypes[collId].ftso.getCurrentPrice();
-        uint256 adjustedPrice = rdiv(
-            rdiv(price, RAY),
-            collateralTypes[collId].liquidationRatio
-        );
+        uint256 adjustedPrice = rdiv(rdiv(price, RAY), collateralTypes[collId].liquidationRatio);
 
         vaultEngine.updatePrice(collId, adjustedPrice);
     }

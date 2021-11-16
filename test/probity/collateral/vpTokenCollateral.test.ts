@@ -4,8 +4,8 @@ import "@nomiclabs/hardhat-ethers";
 import {
   VaultEngine,
   Registry,
-  MockVpToken,
-  VpTokenCollateral,
+  MockVPToken,
+  VPTokenCollateral,
 } from "../../../typechain";
 
 import { deployTest } from "../../../lib/deployer";
@@ -21,8 +21,8 @@ let owner: SignerWithAddress;
 let user: SignerWithAddress;
 
 // Contracts
-let vpTokenCollateral: VpTokenCollateral;
-let vpToken: MockVpToken;
+let vpTokenCollateral: VPTokenCollateral;
+let vpToken: MockVPToken;
 let vaultEngine: VaultEngine;
 let registry: Registry;
 

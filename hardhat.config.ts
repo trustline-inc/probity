@@ -1,6 +1,5 @@
 require("dotenv").config();
-import { existsSync } from "fs";
-import "hardhat-typechain";
+import "@typechain/hardhat";
 import "@nomiclabs/hardhat-ethers";
 import "@nomiclabs/hardhat-web3";
 import "@nomiclabs/hardhat-waffle";
@@ -30,6 +29,12 @@ const config: HardhatUserConfig = {
     },
   },
   solidity: "0.8.4",
+  typechain: {
+    outDir: "typechain",
+    target: "ethers-v5",
+    alwaysGenerateOverloads: false,
+    externalArtifacts: [],
+  },
 };
 
 export default config;

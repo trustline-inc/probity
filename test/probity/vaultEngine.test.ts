@@ -49,7 +49,7 @@ describe("Vault Engine Unit Tests", function () {
     // Set contracts
     registry = contracts.registry;
     vaultEngine = contracts.vaultEngine;
-    reservePool = contracts.reserve;
+    reservePool = contracts.reservePool;
     nativeColl = contracts.nativeCollateral;
     teller = contracts.teller;
     priceFeed = contracts.priceFeed;
