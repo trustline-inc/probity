@@ -33,7 +33,7 @@ interface FtsoLike {
 }
 
 interface LiquidatorLike {
-    function reduce() external;
+    function reduceAuctionDebt(uint256 amount) external;
 }
 
 contract Auctioneer is Stateful, Eventful {
@@ -112,6 +112,7 @@ contract Auctioneer is Stateful, Eventful {
         uint256 price,
         uint256 lotSize
     );
+
     event AuctionEnded(bytes32 indexed collId, uint256 indexed auctionId);
 
     /////////////////////////////////////////
@@ -122,11 +123,13 @@ contract Auctioneer is Stateful, Eventful {
         address registryAddress,
         VaultEngineLike vaultEngineAddress,
         PriceCalc priceCalcAddress,
-        FtsoLike ftsoAddress
+        FtsoLike ftsoAddress,
+        LiquidatorLike liquidatorAddress
     ) Stateful(registryAddress) {
         vaultEngine = vaultEngineAddress;
         priceCalc = priceCalcAddress;
         ftso = ftsoAddress;
+        liquidator = liquidatorAddress;
     }
 
     /////////////////////////////////////////
@@ -299,13 +302,15 @@ contract Auctioneer is Stateful, Eventful {
         if (auctions[auctionId].debt == 0 || auctions[auctionId].lot == 0) {
             auctions[auctionId].isOver = true;
 
+            auctions[auctionId].lot = 0;
+
             vaultEngine.moveCollateral(
                 auctions[auctionId].collId,
                 address(this),
                 auctions[auctionId].owner,
                 auctions[auctionId].lot
             );
-            auctions[auctionId].lot = 0;
+
             emit AuctionEnded(auctions[auctionId].collId, auctionId);
             return;
         }
@@ -354,6 +359,24 @@ contract Auctioneer is Stateful, Eventful {
             ) return candidate;
             candidate = nextHighestBidder[auctionId][candidate];
         }
+    }
+
+    function cancelAuction(uint256 auctionId, address recipient) external {
+        Auction storage auction = auctions[auctionId];
+        // cancelOldBids at head index and currentBidValue should be at max?
+
+        cancelOldBids(auctionId, 0, HEAD);
+        // accept the debt?
+        liquidator.reduceAuctionDebt(auction.debt);
+        vaultEngine.moveCollateral(
+            auction.collId,
+            address(this),
+            recipient,
+            auction.lot
+        );
+
+        auction.debt = 0;
+        auction.lot = 0;
     }
 
     /////////////////////////////////////////

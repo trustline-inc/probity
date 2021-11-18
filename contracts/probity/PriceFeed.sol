@@ -38,7 +38,7 @@ contract PriceFeed is Stateful, Eventful {
 
     modifier collateralExists(bytes32 collId) {
         require(
-            address(collTypes[collId].ftso) != address(0),
+            address(collateralTypes[collId].ftso) != address(0),
             "PriceFeed/CollateralExists: Collateral Type is not Set"
         );
         _;
@@ -98,7 +98,7 @@ contract PriceFeed is Stateful, Eventful {
         collateralExists(collId)
         returns (uint256 price)
     {
-        (price, ) = collTypes[collId].ftso.getCurrentPrice();
+        (price, ) = collateralTypes[collId].ftso.getCurrentPrice();
     }
 
     // @todo figure out how many places of precision the ftso provides and fix the math accordingly

@@ -46,6 +46,8 @@ interface AuctioneerLike {
 
 interface ReservePoolLike {
     function addAuctionDebt(uint256 newDebt) external;
+
+    function reduceAuctionDebt(uint256 debtToReduce) external;
 }
 
 // When a vault is liquidated, the reserve pool will take the on the debt and
@@ -137,12 +139,17 @@ contract Liquidator is Stateful, Eventful {
         collateralTypes[collId].auctioneer = newAuctioneer;
     }
 
+    function reduceAuctionDebt(uint256 amount) external {
+        reserve.reduceAuctionDebt(amount);
+    }
+
     // @todo incentive for someone who calls liquidateVault?
     function liquidateVault(bytes32 collId, address user) external {
         // check if vault can be liquidated
-        (uint256 debtAccu, , uint256 price) = vault.collTypes(collId);
+        (uint256 debtAccu, , uint256 price) =
+            vaultEngine.collateralTypes(collId);
         (, uint256 lockedColl, uint256 debt, uint256 supplied) =
-            vault.vaults(collId, user);
+            vaultEngine.vaults(collId, user);
         require(
             debt * debtAccu + supplied * PRECISION_PRICE < lockedColl * price,
             "Liquidator: Vault collateral is still above required minimal ratio"
@@ -151,10 +158,10 @@ contract Liquidator is Stateful, Eventful {
         // transfer the debt to reservePool
         reserve.addAuctionDebt(((debt + supplied) * PRECISION_PRICE) / 1E18);
 
-        vault.liquidateVault(
+        vaultEngine.liquidateVault(
             collId,
             user,
-            address(collTypes[collId].auctioneer),
+            address(collateralTypes[collId].auctioneer),
             address(reserve),
             -int256(lockedColl),
             -int256(debt),
@@ -163,12 +170,12 @@ contract Liquidator is Stateful, Eventful {
 
         uint256 aurToRaise =
             debt *
-                collTypes[collId].debtPenaltyFee +
+                collateralTypes[collId].debtPenaltyFee +
                 supplied *
-                collTypes[collId].suppPenaltyFee;
+                collateralTypes[collId].suppPenaltyFee;
 
         // start the auction
-        collTypes[collId].auctioneer.startAuction(
+        collateralTypes[collId].auctioneer.startAuction(
             collId,
             lockedColl,
             aurToRaise,

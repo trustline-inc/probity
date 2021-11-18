@@ -11,14 +11,15 @@ import {
   VaultEngineFactory,
   NativeCollateralFactory,
   Erc20CollateralFactory,
-  TellerFactory,
   TreasuryFactory,
   PriceFeedFactory,
   AuctioneerFactory,
   LinearDecreaseFactory,
   LiquidatorFactory,
   ReservePoolFactory,
+  TellerFactory,
   VpTokenCollateralFactory,
+  ShutdownFactory,
   HighAprFactory,
   LowAprFactory,
   MockFtsoFactory,
@@ -27,6 +28,10 @@ import {
   MockErc20TokenFactory,
   MockVpTokenFactory,
   MockVaultEngineFactory,
+  MockPriceFeedFactory,
+  MockAuctioneerFactory,
+  MockLiquidatorFactory,
+  MockReservePoolFactory,
 } from "../typechain";
 
 // Import contract types
@@ -46,6 +51,7 @@ import {
   ReservePool,
   MockErc20Token,
   VpTokenCollateral,
+  Shutdown,
   LowApr,
   HighApr,
   MockFtso,
@@ -53,6 +59,10 @@ import {
   MockFtsoRewardManager,
   MockVpToken,
   MockVaultEngine,
+  MockPriceFeed,
+  MockAuctioneer,
+  MockLiquidator,
+  MockReservePool,
 } from "../typechain";
 
 /**
@@ -88,12 +98,17 @@ interface Contracts {
   linearDecrease: LinearDecrease;
   liquidator: Liquidator;
   reserve: ReservePool;
+  shutdown: Shutdown;
   erc20: MockErc20Token;
   vpToken: MockVpToken;
   vpTokenCollateral: VpTokenCollateral;
   lowApr: LowApr;
   highApr: HighApr;
   mockVaultEngine: MockVaultEngine;
+  mockPriceFeed: MockPriceFeed;
+  mockAuctioneer: MockAuctioneer;
+  mockLiquidator: MockLiquidator;
+  mockReserve: MockReservePool;
 }
 
 const contracts: Contracts = {
@@ -116,9 +131,14 @@ const contracts: Contracts = {
   erc20: null,
   vpToken: null,
   vpTokenCollateral: null,
+  shutdown: null,
   lowApr: null,
   highApr: null,
   mockVaultEngine: null,
+  mockPriceFeed: null,
+  mockAuctioneer: null,
+  mockLiquidator: null,
+  mockReserve: null,
 };
 
 interface Signers {
@@ -403,6 +423,58 @@ const deployNativeCollateral = async (param?: {
   return contracts;
 };
 
+const deployShutdown = async (param?: {
+  registry?: string;
+  priceFeed?: string;
+  vaultEngine?: string;
+  reservePool?: string;
+  teller?: string;
+  treasury?: string;
+  liquidator?: string;
+}) => {
+  const registry =
+    param && param.registry ? param.registry : contracts.registry.address;
+  const vaultEngine =
+    param && param.vaultEngine
+      ? param.vaultEngine
+      : contracts.vaultEngine.address;
+  const priceFeed =
+    param && param.priceFeed ? param.priceFeed : contracts.priceFeed.address;
+  const reservePool =
+    param && param.reservePool ? param.reservePool : contracts.reserve.address;
+  const teller =
+    param && param.teller ? param.teller : contracts.teller.address;
+  const treasury =
+    param && param.treasury ? param.treasury : contracts.treasury.address;
+  const liquidator =
+    param && param.liquidator ? param.liquidator : contracts.liquidator.address;
+
+  // Set signers
+  const signers = await getSigners();
+
+  const shutdownFactory = (await ethers.getContractFactory(
+    "Shutdown",
+    signers.owner
+  )) as ShutdownFactory;
+  contracts.shutdown = await shutdownFactory.deploy(
+    registry,
+    priceFeed,
+    vaultEngine,
+    reservePool,
+    teller,
+    treasury,
+    liquidator
+  );
+  await contracts.shutdown.deployed();
+
+  await contracts.registry.setupContractAddress(
+    bytes32("shutdown"),
+    contracts.shutdown.address
+  );
+
+  return contracts;
+};
+
 const deployTeller = async (param?: {
   registry?: string;
   vaultEngine?: string;
@@ -517,6 +589,7 @@ const deployAuction = async (param?: {
   vaultEngine?: string;
   priceCalc?: string;
   ftso?: string;
+  liquidator?: string;
 }) => {
   const registry =
     param && param.registry ? param.registry : contracts.registry;
@@ -529,6 +602,8 @@ const deployAuction = async (param?: {
       ? param.priceCalc
       : contracts.linearDecrease.address;
   const ftso = param && param.ftso ? param.ftso : contracts.ftso.address;
+  const liquidator =
+    param && param.liquidator ? param.liquidator : contracts.liquidator.address;
   // Set signers
   const signers = await getSigners();
 
@@ -540,7 +615,8 @@ const deployAuction = async (param?: {
     registry.address,
     vaultEngine,
     linearDecrease,
-    ftso
+    ftso,
+    liquidator
   );
   await contracts.auctioneer.deployed();
 
@@ -735,6 +811,82 @@ const deployMockFtsoRewardManager = async () => {
   return contracts;
 };
 
+const deployMockPriceFeed = async () => {
+  // Set signers
+  const signers = await getSigners();
+
+  const mockPriceFeed = (await ethers.getContractFactory(
+    "MockPriceFeed",
+    signers.owner
+  )) as MockPriceFeedFactory;
+  contracts.mockPriceFeed = await mockPriceFeed.deploy();
+  await contracts.mockPriceFeed.deployed();
+
+  await contracts.registry.setupContractAddress(
+    bytes32("priceFeed"),
+    contracts.mockPriceFeed.address
+  );
+
+  return contracts;
+};
+
+const deployMockLiquidator = async () => {
+  // Set signers
+  const signers = await getSigners();
+
+  const mockLiquidator = (await ethers.getContractFactory(
+    "MockLiquidator",
+    signers.owner
+  )) as MockLiquidatorFactory;
+  contracts.mockLiquidator = await mockLiquidator.deploy();
+  await contracts.mockLiquidator.deployed();
+
+  await contracts.registry.setupContractAddress(
+    bytes32("liquidator"),
+    contracts.mockLiquidator.address
+  );
+
+  return contracts;
+};
+
+const deployMockAuctioneer = async () => {
+  // Set signers
+  const signers = await getSigners();
+
+  const mockAuctioneer = (await ethers.getContractFactory(
+    "MockAuctioneer",
+    signers.owner
+  )) as MockAuctioneerFactory;
+  contracts.mockAuctioneer = await mockAuctioneer.deploy();
+  await contracts.mockAuctioneer.deployed();
+
+  await contracts.registry.setupContractAddress(
+    bytes32("auctioneer"),
+    contracts.mockAuctioneer.address
+  );
+
+  return contracts;
+};
+
+const deployMockReservePool = async () => {
+  // Set signers
+  const signers = await getSigners();
+
+  const mockReserve = (await ethers.getContractFactory(
+    "MockReservePool",
+    signers.owner
+  )) as MockReservePoolFactory;
+  contracts.mockReserve = await mockReserve.deploy();
+  await contracts.mockReserve.deployed();
+
+  await contracts.registry.setupContractAddress(
+    bytes32("reservePool"),
+    contracts.mockReserve.address
+  );
+
+  return contracts;
+};
+
 const deployMocks = async () => {
   // Set signers
   const signers = await getSigners();
@@ -743,6 +895,10 @@ const deployMocks = async () => {
   await deployMockFtso();
   await deployMockFtsoManager();
   await deployMockFtsoRewardManager();
+  await deployMockPriceFeed();
+  await deployMockReservePool();
+  await deployMockAuctioneer();
+  await deployMockLiquidator();
 
   return { contracts, signers };
 };
@@ -761,6 +917,7 @@ const deployProbity = async () => {
   await deployTreasury();
   await deployReserve();
   await deployLiquidator();
+  await deployShutdown();
 
   return { contracts, signers };
 };
@@ -814,6 +971,7 @@ const probity = {
   deployTreasury,
   deployReserve,
   deployLiquidator,
+  deployShutdown,
 };
 
 const mock = {
@@ -823,6 +981,7 @@ const mock = {
   deployMockFtsoManager,
   deployMockFtsoRewardManager,
   deployMockVaultEngine,
+  deployMockPriceFeed,
 };
 
 export { deployLocal, deployProd, deployTest, probity, mock };

@@ -6,6 +6,6 @@
     "reason-string": ["warn", { "maxLength": 96 }],
     "func-visibility": ["warn", { "ignoreConstructors": true }],
     "not-rely-on-time": "off",
-    "max-line-length": ["error", 99]
+    "max-line-length": ["error", 120]
   }
 }

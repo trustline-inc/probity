@@ -498,12 +498,12 @@ describe("Probity Happy flow", function () {
     );
 
     await reserve.updateDebtThreshold(PRECISION_AUR.mul(200));
-    await reserve.startIOUSale();
+    await reserve.startIouSale();
 
     const reserveUser = reserve.connect(user);
     await ethers.provider.send("evm_increaseTime", [21601]);
     await ethers.provider.send("evm_mine", []);
-    await reserveUser.buyIOU(PRECISION_AUR.mul(100));
+    await reserveUser.buyIou(PRECISION_AUR.mul(100));
 
     let userIOU = await reserve.ious(user.address);
     expect(userIOU > PRECISION_AUR.mul(100)).to.equal(true);

@@ -8,6 +8,7 @@
     "build": "npm run clean && npm run solhint && npm run compile",
     "clean": "npx hardhat clean",
     "compile": "npx hardhat compile",
+    "lint": "npm run prettier:solidity && npm run solhint",
     "solhint": "./node_modules/.bin/solhint contracts/**/*.sol contracts/**/**/*.sol",
     "solhint:fix": "./node_modules/.bin/solhint --fix contracts/**/*.sol contracts/**/**/*.sol",
     "prettier:solidity": "./node_modules/.bin/prettier --write contracts",
@@ -24,7 +25,7 @@
     "deploy:hardhat": "npx hardhat --network localhost run ./scripts/deploy.ts",
     "test": "npx hardhat test --network hardhat",
     "test:happy": "npx hardhat test test/happyFlow.test.ts --network hardhat",
-    "coverage": "npm run build && npx hardhat coverage --temp artifacts --network coverage"
+    "coverage": "npm run build && npx hardhat coverage --temp artifacts --network hardhat --solcoverjs ./.solcover.js"
   },
   "contributors": [
     {
@@ -68,6 +69,7 @@
     "pretty-quick": "^3.1.0",
     "solhint": "^3.3.6",
     "solhint-plugin-prettier": "^0.0.5",
+    "solidity-coverage": "^0.7.17",
     "ts-generator": "^0.1.1",
     "ts-node": "^9.1.1",
     "typechain": "^3.0.0",

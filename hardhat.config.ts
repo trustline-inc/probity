@@ -1,5 +1,5 @@
 require("dotenv").config();
-import { existsSync } from "fs";
+import "solidity-coverage";
 import "hardhat-typechain";
 import "@nomiclabs/hardhat-ethers";
 import "@nomiclabs/hardhat-web3";
