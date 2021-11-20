@@ -1,4 +1,5 @@
 require("dotenv").config();
+import "solidity-coverage";
 import "@typechain/hardhat";
 import "@nomiclabs/hardhat-ethers";
 import "@nomiclabs/hardhat-web3";
