@@ -60,6 +60,138 @@ describe("Vault Engine Unit Tests", function () {
     user = signers.alice;
   });
 
+  describe("modifySupply Unit Tests", function () {
+    const COLL_AMOUNT_SUPPLY = PRECISION_COLL.mul(10000);
+    const CAPITAL_AMOUNT = PRECISION_COLL.mul(2000);
+
+    beforeEach(async function () {
+      await owner.sendTransaction({
+        to: user.address,
+        value: ethers.utils.parseEther("1"),
+      });
+      await vaultEngine.initCollType(flrCollId);
+      await vaultEngine.updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
+      await registry.setupContractAddress(bytes32("collateral"), user.address);
+      await vaultEngine.updatePrice(flrCollId, PRECISION_PRICE.mul(1));
+      await vaultEngine
+        .connect(user)
+        .modifyCollateral(flrCollId, owner.address, COLL_AMOUNT_SUPPLY);
+    });
+
+    it("tests new user is added to userList", async () => {
+      const before = await vaultEngine.getUserList();
+      expect(before.length).to.equal(0);
+
+      await vaultEngine.modifySupply(
+        flrCollId,
+        treasury.address,
+        COLL_AMOUNT_SUPPLY,
+        CAPITAL_AMOUNT
+      );
+
+      const after = await vaultEngine.getUserList();
+      expect(after.length).to.equal(1);
+      expect(after[0]).to.equal(owner.address);
+    });
+
+    it("tests existing user is NOT added to userList", async () => {
+      await vaultEngine.modifySupply(
+        flrCollId,
+        treasury.address,
+        COLL_AMOUNT_SUPPLY.div(2),
+        CAPITAL_AMOUNT.div(2)
+      );
+
+      const before = await vaultEngine.getUserList();
+      expect(before.length).to.equal(1);
+
+      await vaultEngine.modifySupply(
+        flrCollId,
+        treasury.address,
+        COLL_AMOUNT_SUPPLY.div(2),
+        CAPITAL_AMOUNT.div(2)
+      );
+
+      const after = await vaultEngine.getUserList();
+      expect(after.length).to.equal(1);
+      expect(after[0]).to.equal(owner.address);
+    });
+  });
+
+  describe("modifyDebt Unit Tests", function () {
+    const COLL_AMOUNT_SUPPLY = PRECISION_COLL.mul(10000);
+    const COLL_AMOUNT_DEBT = PRECISION_COLL.mul(10000);
+    const CAPITAL_AMOUNT = PRECISION_COLL.mul(2000);
+    const DEBT_AMOUNT = PRECISION_COLL.mul(1000);
+
+    beforeEach(async function () {
+      await owner.sendTransaction({
+        to: user.address,
+        value: ethers.utils.parseEther("1"),
+      });
+      await vaultEngine.initCollType(flrCollId);
+      await vaultEngine.updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
+      await registry.setupContractAddress(bytes32("collateral"), user.address);
+      await vaultEngine.updatePrice(flrCollId, PRECISION_PRICE.mul(1));
+
+      await vaultEngine
+        .connect(user)
+        .modifyCollateral(flrCollId, owner.address, COLL_AMOUNT_DEBT);
+
+      await vaultEngine
+        .connect(user)
+        .modifyCollateral(flrCollId, user.address, COLL_AMOUNT_DEBT);
+
+      await vaultEngine
+        .connect(user)
+        .modifySupply(
+          flrCollId,
+          treasury.address,
+          COLL_AMOUNT_SUPPLY,
+          CAPITAL_AMOUNT
+        );
+    });
+
+    it("tests new user is added to userList", async () => {
+      const before = await vaultEngine.getUserList();
+      expect(before.length).to.equal(1);
+
+      await vaultEngine.modifyDebt(
+        flrCollId,
+        treasury.address,
+        COLL_AMOUNT_DEBT,
+        DEBT_AMOUNT
+      );
+
+      const after = await vaultEngine.getUserList();
+      expect(after.length).to.equal(2);
+      expect(after[1]).to.equal(owner.address);
+    });
+
+    it("tests existing user is NOT added to userList", async () => {
+      await vaultEngine.modifyDebt(
+        flrCollId,
+        treasury.address,
+        COLL_AMOUNT_DEBT.div(2),
+        DEBT_AMOUNT.div(2)
+      );
+
+      const before = await vaultEngine.getUserList();
+      expect(before.length).to.equal(2);
+
+      await vaultEngine.modifyDebt(
+        flrCollId,
+        treasury.address,
+        COLL_AMOUNT_DEBT.div(2),
+        DEBT_AMOUNT.div(2)
+      );
+
+      const after = await vaultEngine.getUserList();
+      expect(after.length).to.equal(2);
+      expect(after[1]).to.equal(owner.address);
+    });
+  });
+
   describe("updateAccumulator Unit Tests", function () {
     const COLL_AMOUNT_SUPPLY = PRECISION_COLL.mul(10000);
     const COLL_AMOUNT_DEBT = PRECISION_COLL.mul(10000);
