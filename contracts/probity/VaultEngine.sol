@@ -47,6 +47,8 @@ contract VaultEngine is Stateful, Eventful {
     uint256 public totalDebt;
     uint256 public totalCapital;
     uint256 public totalUnbackedAurei;
+    address[] public userList;
+    mapping(address => bool) userExists;
     mapping(address => uint256) public aur;
     mapping(address => uint256) public tcn;
     mapping(address => uint256) public unbackedAurei;
@@ -70,6 +72,13 @@ contract VaultEngine is Stateful, Eventful {
     /////////////////////////////////////////
     // External functions
     /////////////////////////////////////////
+
+    /**
+     * @dev return the list of keys for the vaults
+     */
+    function getUserList() external view returns (address[] memory list) {
+        return userList;
+    }
 
     /**
      * @dev Modifies a vault's collateral.
@@ -190,6 +199,11 @@ contract VaultEngine is Stateful, Eventful {
             "Vault/modifySupply: Treasury address is not valid"
         );
 
+        if (!userExists[msg.sender]) {
+            userList.push(msg.sender);
+            userExists[msg.sender] = true;
+        }
+
         collectInterest(collId);
         Vault storage vault = vaults[collId][msg.sender];
         vault.freeCollateral = sub(vault.freeCollateral, collAmount);
@@ -236,6 +250,11 @@ contract VaultEngine is Stateful, Eventful {
             registry.checkContractValidity("treasury", treasuryAddress),
             "Vault/modifyDebt: Treasury address is not valid"
         );
+
+        if (!userExists[msg.sender]) {
+            userList.push(msg.sender);
+            userExists[msg.sender] = true;
+        }
 
         if (debtAmount > 0) {
             require(
