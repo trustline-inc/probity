@@ -133,8 +133,6 @@ contract ReservePool is Stateful, Eventful {
     }
 
     function settle(uint256 amountToSettle) external {
-        console.log("debt      :%s", vaultEngine.unbackedAurei(address(this)));
-        console.log("to settle :%s", amountToSettle);
         require(
             amountToSettle <= vaultEngine.unbackedAurei(address(this)),
             "ReservePool/settle: Settlement amount is more than the debt"
@@ -156,8 +154,6 @@ contract ReservePool is Stateful, Eventful {
                 debtThreshold,
             "ReservePool/startIouSale: Debt Threshold is not yet crossed"
         );
-        console.log("address : %s", address(this));
-        console.log("aur     : %s", vaultEngine.aur(address(this)));
         require(
             vaultEngine.aur(address(this)) == 0,
             "ReservePool/startIouSale: AUR balance is still positive"

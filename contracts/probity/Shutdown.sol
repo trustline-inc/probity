@@ -3,7 +3,6 @@ pragma solidity ^0.8.4;
 
 import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
-import "hardhat/console.sol";
 import "./Treasury.sol";
 import "./priceFunction/LinearDecrease.sol";
 
@@ -19,7 +18,6 @@ import "./priceFunction/LinearDecrease.sol";
 // Step 6. Calculate the net deficit in UnderCollateralized vaults
 // (both debt side and supply side) (can we do this earlier?)
 // Step 7. Calculate final Collateral per AUR = Collateral / Total AUR in Circulation
-//
 
 interface PriceFeedLike {
     function setShutdownState() external;
@@ -164,6 +162,7 @@ contract Shutdown is Stateful, Eventful {
     uint256 public supplierObligationRatio;
     uint256 public debt;
     uint256 public finalDebtBalance;
+    uint256 public finalTotalReserve;
 
     /////////////////////////////////////////
     // Modifier
@@ -272,8 +271,6 @@ contract Shutdown is Stateful, Eventful {
 
         uint256 totalDebt = vaultEngine.totalDebt();
         uint256 totalCapital = vaultEngine.totalCapital();
-        //        console.log("debt   : %s", totalDebt);
-        //        console.log("capital: %s", totalCapital);
         if (totalCapital != 0) {
             if (totalDebt >= totalCapital) {
                 finalAurUtilizationRatio = RAY;
@@ -281,7 +278,6 @@ contract Shutdown is Stateful, Eventful {
                 finalAurUtilizationRatio = wdiv(totalDebt, totalCapital);
             }
         }
-        //        console.log("final ratio : %s", finalAurUtilizationRatio);
     }
 
     // step 2: set final prices
@@ -303,27 +299,18 @@ contract Shutdown is Stateful, Eventful {
         external
         onlyIfFinalPriceSet(collId)
     {
-        (, uint256 lockedColl, uint256 userDebt, , ) =
-            vaultEngine.vaults(collId, user);
+        (, uint256 lockedColl, uint256 userDebt, , ) = vaultEngine.vaults(
+            collId,
+            user
+        );
         (uint256 debtAccu, , , , , , ) = vaultEngine.collateralTypes(collId);
 
-        uint256 debtCollAmount =
-            (userDebt * debtAccu) / collateralTypes[collId].finalPrice;
+        uint256 debtCollAmount = (userDebt * debtAccu) /
+            collateralTypes[collId].finalPrice;
         uint256 amountToGrab = min(lockedColl, debtCollAmount);
         uint256 gap = debtCollAmount - amountToGrab;
         collateralTypes[collId].gap += gap;
         aurGap += gap * collateralTypes[collId].finalPrice;
-
-        //                console.log("lockedColl     : %s", lockedColl);
-        //                console.log("userDebt       : %s", userDebt);
-        //                console.log("test           : %s", (userDebt * debtAccu) / collateralTypes[collId].finalPrice);
-        //                console.log("debtAccu       : %s", debtAccu);
-        //                console.log("final Price    : %s", collateralTypes[collId].finalPrice);
-        //                console.log("debtCollAmount : %s", debtCollAmount);
-        //                console.log("amountToGrab   : %s", amountToGrab);
-        //                console.log("gap            : %s", gap);
-        //                console.log("aurGap         : %s", aurGap);
-        //                console.log("");
 
         vaultEngine.liquidateVault(
             collId,
@@ -340,8 +327,13 @@ contract Shutdown is Stateful, Eventful {
         external
         onlyIfFinalPriceSet(collId)
     {
-        (, uint256 lockedColl, uint256 userDebt, uint256 supplied, ) =
-            vaultEngine.vaults(collId, user);
+        (
+            ,
+            uint256 lockedColl,
+            uint256 userDebt,
+            uint256 supplied,
+
+        ) = vaultEngine.vaults(collId, user);
         require(
             userDebt == 0,
             "Shutdown/freeExcessCollateral: User needs to process debt first before calling this"
@@ -349,8 +341,8 @@ contract Shutdown is Stateful, Eventful {
 
         // how do we make it so this can be reused
         uint256 hookedAmount = (supplied * finalAurUtilizationRatio);
-        uint256 hookedCollAmount =
-            hookedAmount / collateralTypes[collId].finalPrice;
+        uint256 hookedCollAmount = hookedAmount /
+            collateralTypes[collId].finalPrice;
         require(
             lockedColl > hookedCollAmount,
             "Shutdown/freeExcessCollateral: No collateral to free"
@@ -369,77 +361,40 @@ contract Shutdown is Stateful, Eventful {
         );
     }
 
-    // @todo how to account for the IOUs
-    // - iou sale should stop selling immediately when shutdown is initiated
-    //
-    // three possible path :
-    //      - IOUs holders will get nothing (because they hold the risk)
-    //      - IOUs will be paid back by adding to the totalDebt (we are not doing this)
-    //      - IOUs holders can only redeem if there are extra system reserve (how to achieve this?)
+    function fillInAurGap() external onlyWhenInShutdown {
+        // use system reserve to fill in AurGap
+        uint256 reserveBalance = vaultEngine.aur(address(reservePool));
 
-    function cancelAuction(bytes32 collId, uint256 auctionId)
-        external
-        onlyWhenInShutdown
-    {
-        // liquidator fetch the auctioneer address
+        uint256 amountToMove = min(aurGap, reserveBalance);
+        vaultEngine.moveAurei(
+            address(reservePool),
+            address(this),
+            amountToMove
+        );
 
-        (address auctioneerAddress, , ) = liquidator.collateralTypes(collId);
-        AuctioneerLike auctioneer = AuctioneerLike(auctioneerAddress);
-        auctioneer.cancelAuction(auctionId, address(this));
-
-        // we are assuming here that when we calculate redeem ratio, the reserve's system debt will be accounted for
+        aurGap -= amountToMove;
     }
 
     function calculateSupplierObligation() external onlyWhenInShutdown {
         // assumptions:
         //    - all under-collateralized vaults have been processed
         //    - all outstanding auctions are over
+
         require(
-            block.timestamp >= initiatedAt + auctionWaitPeriod,
-            "shutdown/calculateSupplierObligation: auction wait period is not over"
+            finalDebtBalance != 0,
+            "shutdown/setFinalDebtBalance: finalDebtBalance must be set first"
         );
 
         require(
-            vaultEngine.unbackedAurei(address(reservePool)) == 0 ||
-                vaultEngine.aur(address(reservePool)) == 0,
-            "shutdown/setFinalDebtBalance: system reserve or debt must be zero"
-        ); // system debt or system reserve should be zero
+            aurGap == 0 || vaultEngine.aur(address(reservePool)) == 0,
+            "shutdown/setFinalDebtBalance: system reserve or aurGap must be zero"
+        );
 
-        uint256 reserve = vaultEngine.aur(address(reservePool));
-        uint256 systemDebt = vaultEngine.unbackedAurei(address(reservePool));
-        uint256 totalSupply = vaultEngine.totalCapital();
+        supplierObligationRatio = wdiv(aurGap, finalDebtBalance);
 
-        //                console.log("reserve        : %s", reserve);
-        //                console.log("systemDebt     : %s", systemDebt);
-        //                console.log("totalSupply    : %s", totalSupply);
-        //                console.log("aurGap         : %s", aurGap);
-        //                console.log("debt           : %s", debt);
-
-        if (reserve < systemDebt) {
-            // system in debt
-            aurGap += systemDebt - reserve;
-        } else {
-            // system have surplus
-            if (reserve - systemDebt >= aurGap) {
-                aurGap = 0;
-            } else {
-                aurGap -= reserve - systemDebt;
-                debt = reserve - systemDebt;
-            }
+        if (supplierObligationRatio >= WAD) {
+            supplierObligationRatio = WAD;
         }
-
-        // this should be a smaller percentage than the finalAurUtilizationRatio
-        // because it uses totalDebt instead of just the gap
-        supplierObligationRatio = rdiv(aurGap, totalSupply);
-
-        if (supplierObligationRatio >= RAY) {
-            supplierObligationRatio = RAY;
-        }
-
-        //                console.log("aurGap         : %s", aurGap);
-        //                console.log("debt           : %s", debt);
-        //                console.log("suppObligation : %s", supplierObligationRatio);
-        //                console.log("");
     }
 
     // process supplier side to fill the aur Gap created by under collateralized vaults
@@ -449,27 +404,27 @@ contract Shutdown is Stateful, Eventful {
             "Shutdown/processUserSupply:Supplier has no obligation"
         );
 
-        (, uint256 lockedColl, , uint256 supplied, ) =
-            vaultEngine.vaults(collId, user);
+        (, uint256 lockedColl, , uint256 supplied, ) = vaultEngine.vaults(
+            collId,
+            user
+        );
 
-        uint256 suppObligatedAmount =
-            (supplied * supplierObligationRatio) /
-                collateralTypes[collId].finalPrice;
+        (, uint256 capitalAccumulator, , , , , ) = vaultEngine.collateralTypes(
+            collId
+        );
+        uint256 hookedSuppliedAmount = (supplied *
+            capitalAccumulator *
+            finalAurUtilizationRatio) / WAD;
+        uint256 suppObligatedAmount = ((hookedSuppliedAmount *
+            supplierObligationRatio) / WAD) /
+            collateralTypes[collId].finalPrice;
         uint256 amountToGrab = min(lockedColl, suppObligatedAmount);
-        //                console.log("lockedColl     : %s", lockedColl);
-        //                console.log("supplied       : %s", supplied);
-        //                console.log("obligRatio     : %s", supplierObligationRatio);
-        //                console.log("amountToGrab   : %s", amountToGrab);
-        //                console.log("suppObligAmount: %s", suppObligatedAmount);
-        //                console.log("coll Gap       : %s", collateralTypes[collId].gap);
-        //                console.log("aur Gap        : %s", aurGap);
 
+        if (amountToGrab > collateralTypes[collId].gap) {
+            amountToGrab = collateralTypes[collId].gap;
+        }
         collateralTypes[collId].gap -= amountToGrab;
         aurGap -= amountToGrab * collateralTypes[collId].finalPrice;
-
-        //                console.log("coll Gap       : %s", collateralTypes[collId].gap);
-        //                console.log("aur Gap        : %s", aurGap);
-        //                console.log("");
 
         vaultEngine.liquidateVault(
             collId,
@@ -488,10 +443,9 @@ contract Shutdown is Stateful, Eventful {
             "shutdown/setFinalDebtBalance: finalDebtBalance has already been set"
         );
         require(
-            block.timestamp >=
-                initiatedAt + auctionWaitPeriod + supplierWaitPeriod,
+            block.timestamp >= initiatedAt + auctionWaitPeriod,
             "shutdown/setFinalDebtBalance: supplierWaitPeriod has not passed yet"
-        ); // the supplierWaitPeriod started at
+        );
         require(
             vaultEngine.unbackedAurei(address(reservePool)) == 0 ||
                 vaultEngine.aur(address(reservePool)) == 0,
@@ -511,29 +465,12 @@ contract Shutdown is Stateful, Eventful {
 
         uint256 normalizedDebt = collateralTypes[collId].normalizedDebt;
 
-        uint256 one =
-            (normalizedDebt * debtAccu) / collateralTypes[collId].finalPrice;
-        //            rdiv(rmul(normalizedDebt, debtAccu), collateralTypes[collId].finalPrice);
-
-        //                console.log("debtAccu       : %s", debtAccu);
-        //                console.log("normalizedDebt : %s", normalizedDebt);
-        //                console.log("first          : %s", rmul(normalizedDebt, debtAccu));
-        //                console.log("one            : %s", one);
-        //                console.log("finalPrice     : %s", collateralTypes[collId].finalPrice);
-        //                console.log("gap            : %s", collateralTypes[collId].gap);
-        //                console.log("availableColl  : %s", availableColl);
-        //                console.log("reserve        : %s", reserve);
-        //                console.log("totalDebt      : %s", vaultEngine.totalDebt());
-        //                console.log("aurCirculation : %s", aurCirculation);
-        //                console.log("test           : %s", one - collateralTypes[collId].gap);
+        uint256 one = (normalizedDebt * debtAccu) /
+            collateralTypes[collId].finalPrice;
 
         collateralTypes[collId].redeemRatio =
             ((one - collateralTypes[collId].gap) * RAY) /
             (finalDebtBalance / RAY);
-
-        //        console.log("redeemRatio    : %s", collateralTypes[collId].redeemRatio);
-        //        console.log("finalDebt Bal  : %s", finalDebtBalance);
-        //        console.log("");
     }
 
     function returnAurei(uint256 amount) external {
@@ -545,16 +482,11 @@ contract Shutdown is Stateful, Eventful {
         (uint256 balance, , , , ) = vaultEngine.vaults(collId, address(this));
 
         // can withdraw collateral returnedAurei * collateralPerAUR for collateral type
-        uint256 redeemAmount =
-            (aur[msg.sender] * collateralTypes[collId].redeemRatio) /
-                RAY /
-                RAY -
-                collRedeemed[collId][msg.sender];
-
-        //                console.log("balance        : %s", balance);
-        //                console.log("aur[msg.sender]: %s", aur[msg.sender]);
-        //                console.log("redeemRatio    : %s", collateralTypes[collId].redeemRatio);
-        //                console.log("redeemAmount   : %s", redeemAmount);
+        uint256 redeemAmount = ((aur[msg.sender] / 1e9) *
+            collateralTypes[collId].redeemRatio) /
+            WAD /
+            RAY -
+            collRedeemed[collId][msg.sender];
 
         collRedeemed[collId][msg.sender] += redeemAmount;
         vaultEngine.moveCollateral(
@@ -563,9 +495,6 @@ contract Shutdown is Stateful, Eventful {
             msg.sender,
             redeemAmount
         );
-
-        //        console.log("collRedeemed   : %s", collRedeemed[collId][msg.sender]);
-        //        console.log("");
     }
 
     function calculateIouRedemptionRatio() external {
@@ -573,10 +502,25 @@ contract Shutdown is Stateful, Eventful {
         require(vaultEngine.aur(address(reservePool)) != 0, "");
     }
 
-    function redeemIou() external {
+    function setFinalSystemReserve() external {
         require(
             finalDebtBalance != 0,
             "shutdown/redeemIou: finalDebtBalance must be set first"
+        );
+
+        uint256 totalSystemReserve = vaultEngine.aur(address(reservePool));
+        require(
+            totalSystemReserve != 0,
+            "shutdown/setFinalSystemReserve: system reserve is zero"
+        );
+
+        finalTotalReserve = totalSystemReserve;
+    }
+
+    function redeemIou() external {
+        require(
+            finalTotalReserve != 0,
+            "shutdown/redeemIou: finalTotalReserve must be set first"
         );
 
         uint256 userIouBalance = reservePool.ious(msg.sender);
@@ -587,14 +531,13 @@ contract Shutdown is Stateful, Eventful {
             "shutdown/redeemIou: no iou to redeem"
         );
 
-        uint256 totalSystemReserve = vaultEngine.aur(address(reservePool));
-        require(
-            totalSystemReserve != 0,
-            "shutdown/redeemIou: no aur to redeem"
-        );
-
+        uint256 one = 1e9;
         uint256 percentageOfIous = rdiv(userIouBalance, totalIouBalance);
-        uint256 shareOfAur = rmul(percentageOfIous, totalSystemReserve);
+        uint256 shareOfAur = rmul(percentageOfIous, finalTotalReserve);
+
+        if (shareOfAur > userIouBalance) {
+            shareOfAur = userIouBalance;
+        }
 
         reservePool.shutdownRedemption(msg.sender, shareOfAur);
     }
@@ -620,6 +563,6 @@ contract Shutdown is Stateful, Eventful {
     }
 
     function rdiv(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        z = ((x * WAD) + y / 2) / y;
+        z = ((x * RAY) + y / 2) / y;
     }
 }
