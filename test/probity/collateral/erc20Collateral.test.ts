@@ -4,8 +4,8 @@ import "@nomiclabs/hardhat-ethers";
 import {
   VaultEngine,
   Registry,
-  Erc20Collateral,
-  MockErc20Token,
+  ERC20Collateral,
+  MockERC20Token,
 } from "../../../typechain";
 
 import { deployTest } from "../../../lib/deployer";
@@ -20,8 +20,8 @@ let owner: SignerWithAddress;
 let user: SignerWithAddress;
 
 // Contracts
-let erc20Collateral: Erc20Collateral;
-let erc20: MockErc20Token;
+let erc20Collateral: ERC20Collateral;
+let erc20: MockERC20Token;
 let vaultEngine: VaultEngine;
 let registry: Registry;
 
@@ -37,8 +37,8 @@ describe("ERC20 Collateral Unit Test", function () {
     // Set contracts
     vaultEngine = contracts.vaultEngine;
     registry = contracts.registry;
-    erc20 = contracts.erc20;
-    erc20Collateral = contracts.fxrpCollateral;
+    erc20 = contracts.erc20Token;
+    erc20Collateral = contracts.erc20Collateral;
 
     owner = signers.owner;
     user = signers.alice;

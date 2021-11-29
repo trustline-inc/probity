@@ -3,11 +3,10 @@
 pragma solidity ^0.8.0;
 
 import "../dependencies/Stateful.sol";
+import "hardhat/console.sol";
 
 interface VaultEngineLike {
-    function collateralTypes(bytes32)
-        external
-        returns (uint256 debtAccumulator, uint256 suppAccumulator);
+    function collateralTypes(bytes32) external returns (uint256 debtAccumulator, uint256 suppAccumulator);
 
     function totalDebt() external returns (uint256);
 
@@ -15,8 +14,10 @@ interface VaultEngineLike {
 
     function updateAccumulators(
         bytes32 collId,
-        uint256 debtAccumulator,
-        uint256 suppAccumulator
+        address reservePool,
+        uint256 debtRateIncrease,
+        uint256 capitalRateIncrease,
+        uint256 protocolFeeRates
     ) external;
 }
 
@@ -35,6 +36,7 @@ contract Teller is Stateful {
     struct Collateral {
         uint256 lastUpdated;
         uint256 lastUtilization;
+        uint256 protocolFee;
     }
 
     /////////////////////////////////////////
@@ -44,10 +46,12 @@ contract Teller is Stateful {
     uint256 private constant RAY = 10**27;
     // Set max APR to 100%
     uint256 public constant MAX_APR = WAD * 2 * 1e9;
+
     VaultEngineLike public immutable vaultEngine;
     IAPR public immutable lowAprRate;
     IAPR public immutable highAprRate;
 
+    address public reservePool;
     uint256 public apr; // Annualized percentage rate
     uint256 public mpr; // Momentized percentage rate
     mapping(bytes32 => Collateral) public collateralTypes;
@@ -55,11 +59,7 @@ contract Teller is Stateful {
     /////////////////////////////////////////
     // Events
     /////////////////////////////////////////
-    event RatesUpdated(
-        uint256 timestamp,
-        uint256 debtAccumulator,
-        uint256 suppAccumulator
-    );
+    event RatesUpdated(uint256 timestamp, uint256 debtAccumulator, uint256 suppAccumulator);
 
     /////////////////////////////////////////
     // Constructor
@@ -67,59 +67,70 @@ contract Teller is Stateful {
     constructor(
         address registryAddress,
         VaultEngineLike vaultEngineAddress,
+        address reservePoolAddress,
         IAPR lowAprAddress,
         IAPR highAprAddress
     ) Stateful(registryAddress) {
         vaultEngine = vaultEngineAddress;
         lowAprRate = lowAprAddress;
         highAprRate = highAprAddress;
+        reservePool = reservePoolAddress;
         apr = RAY;
         mpr = RAY;
     }
 
     /////////////////////////////////////////
+    // Public Functions
+    /////////////////////////////////////////
+    function setProtocolFee(bytes32 collId, uint256 protocolFee) public onlyBy("gov") {
+        collateralTypes[collId].protocolFee = protocolFee;
+    }
+
+    /////////////////////////////////////////
     // External Functions
     /////////////////////////////////////////
-    function initCollType(bytes32 collId) external onlyBy("gov") {
+    function initCollType(bytes32 collId, uint256 protocolFee) external onlyBy("gov") {
         collateralTypes[collId].lastUpdated = block.timestamp;
+        collateralTypes[collId].protocolFee = protocolFee;
+    }
+
+    function setReservePoolAddress(address newReservePool) public onlyBy("gov") {
+        reservePool = newReservePool;
     }
 
     /**
      * @dev Updates the debt and capital rate accumulators
      */
     function updateAccumulator(bytes32 collId) external {
-        require(
-            collateralTypes[collId].lastUpdated != 0,
-            "Teller/updateAccumulator: Collateral Type not initialized"
-        );
+        require(collateralTypes[collId].lastUpdated != 0, "Teller/updateAccumulator: Collateral type not initialized");
 
         Collateral memory coll = collateralTypes[collId];
-        (uint256 debtAccumulator, uint256 suppAccumulator) =
-            vaultEngine.collateralTypes(collId);
+        (uint256 debtAccumulator, uint256 suppAccumulator) = vaultEngine.collateralTypes(collId);
         uint256 totalDebt = vaultEngine.totalDebt();
         uint256 totalSupply = vaultEngine.totalCapital();
 
-        require(
-            totalSupply > 0,
-            "Teller/UpdateAccumulator: total Capital can not be zero"
-        );
+        require(totalSupply > 0, "Teller/UpdateAccumulator: Total capital can not be zero");
 
         // Update debt accumulator
-        debtAccumulator = rmul(
-            rpow(mpr, (block.timestamp - coll.lastUpdated)),
-            debtAccumulator
-        );
+        uint256 debtRateIncrease = rmul(rpow(mpr, (block.timestamp - coll.lastUpdated)), debtAccumulator) -
+            debtAccumulator;
 
-        // Update capital accumulator
-        uint256 multipliedByUtilization =
-            rmul(mpr - RAY, coll.lastUtilization * 1e9);
-        uint256 multipliedByUtilizationPlusOne = multipliedByUtilization + RAY;
-        uint256 exponentiated =
-            rpow(
-                multipliedByUtilizationPlusOne,
-                (block.timestamp - coll.lastUpdated)
-            );
-        suppAccumulator = rmul(exponentiated, suppAccumulator);
+        uint256 exponentiated;
+        {
+            // Update capital accumulator
+            uint256 multipliedByUtilization = rmul(mpr - RAY, coll.lastUtilization * 1e9);
+            uint256 multipliedByUtilizationPlusOne = multipliedByUtilization + RAY;
+
+            exponentiated = rpow(multipliedByUtilizationPlusOne, (block.timestamp - coll.lastUpdated));
+        }
+
+        uint256 suppAccumulatorDiff = rmul(exponentiated, suppAccumulator) - suppAccumulator;
+        uint256 protocolFeeRate = 0;
+        if (collateralTypes[collId].protocolFee != 0) {
+            protocolFeeRate = (suppAccumulatorDiff * collateralTypes[collId].protocolFee) / WAD;
+        }
+
+        uint256 capitalRateIncrease = suppAccumulatorDiff - protocolFeeRate;
 
         // Set new APR (round to nearest 0.25%)
         coll.lastUtilization = wdiv(totalDebt, totalSupply);
@@ -127,8 +138,7 @@ contract Teller is Stateful {
             apr = MAX_APR;
         } else {
             uint256 oneMinusUtilization = RAY - (coll.lastUtilization * 1e9);
-            uint256 oneDividedByOneMinusUtilization =
-                rdiv(10**27 * 0.01, oneMinusUtilization);
+            uint256 oneDividedByOneMinusUtilization = rdiv(10**27 * 0.01, oneMinusUtilization);
 
             uint256 round = 0.0025 * 10**27;
             apr = oneDividedByOneMinusUtilization + RAY;
@@ -147,11 +157,10 @@ contract Teller is Stateful {
 
         // Update time index
         coll.lastUpdated = block.timestamp;
-        vaultEngine.updateAccumulators(
-            collId,
-            debtAccumulator,
-            suppAccumulator
-        );
+        vaultEngine.updateAccumulators(collId, reservePool, debtRateIncrease, capitalRateIncrease, protocolFeeRate);
+
+        // collect Fees by adding AUR to reserve pool
+
         collateralTypes[collId] = coll;
     }
 

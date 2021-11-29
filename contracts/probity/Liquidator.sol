@@ -92,10 +92,7 @@ contract Liquidator is Stateful, Eventful {
     /////////////////////////////////////////
     // External functions
     /////////////////////////////////////////
-    function init(bytes32 collId, AuctioneerLike auctioneer)
-        external
-        onlyBy("gov")
-    {
+    function init(bytes32 collId, AuctioneerLike auctioneer) external onlyBy("gov") {
         collateralTypes[collId].auctioneer = auctioneer;
         collateralTypes[collId].debtPenaltyFee = 1.17E27;
         collateralTypes[collId].suppPenaltyFee = 1.05E27;
@@ -106,29 +103,14 @@ contract Liquidator is Stateful, Eventful {
         uint256 debtPenalty,
         uint256 suppPenalty
     ) external onlyBy("gov") {
-        emit LogVarUpdate(
-            "liquidator",
-            collId,
-            "debtPenaltyFee",
-            collateralTypes[collId].debtPenaltyFee,
-            debtPenalty
-        );
-        emit LogVarUpdate(
-            "liquidator",
-            collId,
-            "suppPenaltyFee",
-            collateralTypes[collId].suppPenaltyFee,
-            suppPenalty
-        );
+        emit LogVarUpdate("liquidator", collId, "debtPenaltyFee", collateralTypes[collId].debtPenaltyFee, debtPenalty);
+        emit LogVarUpdate("liquidator", collId, "suppPenaltyFee", collateralTypes[collId].suppPenaltyFee, suppPenalty);
 
         collateralTypes[collId].debtPenaltyFee = debtPenalty;
         collateralTypes[collId].suppPenaltyFee = suppPenalty;
     }
 
-    function updateAuctioneer(bytes32 collId, AuctioneerLike newAuctioneer)
-        external
-        onlyBy("gov")
-    {
+    function updateAuctioneer(bytes32 collId, AuctioneerLike newAuctioneer) external onlyBy("gov") {
         emit LogVarUpdate(
             "priceFeed",
             collId,
@@ -146,10 +128,8 @@ contract Liquidator is Stateful, Eventful {
     // @todo incentive for someone who calls liquidateVault?
     function liquidateVault(bytes32 collId, address user) external {
         // check if vault can be liquidated
-        (uint256 debtAccu, , uint256 price) =
-            vaultEngine.collateralTypes(collId);
-        (, uint256 lockedColl, uint256 debt, uint256 supplied) =
-            vaultEngine.vaults(collId, user);
+        (uint256 debtAccu, , uint256 price) = vaultEngine.collateralTypes(collId);
+        (, uint256 lockedColl, uint256 debt, uint256 supplied) = vaultEngine.vaults(collId, user);
         require(
             debt * debtAccu + supplied * PRECISION_PRICE < lockedColl * price,
             "Liquidator: Vault collateral is still above required minimal ratio"
@@ -168,19 +148,12 @@ contract Liquidator is Stateful, Eventful {
             -int256(supplied)
         );
 
-        uint256 aurToRaise =
-            debt *
-                collateralTypes[collId].debtPenaltyFee +
-                supplied *
-                collateralTypes[collId].suppPenaltyFee;
+        uint256 aurToRaise = debt *
+            collateralTypes[collId].debtPenaltyFee +
+            supplied *
+            collateralTypes[collId].suppPenaltyFee;
 
         // start the auction
-        collateralTypes[collId].auctioneer.startAuction(
-            collId,
-            lockedColl,
-            aurToRaise,
-            user,
-            address(reserve)
-        );
+        collateralTypes[collId].auctioneer.startAuction(collId, lockedColl, aurToRaise, user, address(reserve));
     }
 }

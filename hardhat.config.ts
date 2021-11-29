@@ -1,5 +1,6 @@
 require("dotenv").config();
 import "solidity-coverage";
+import "@typechain/hardhat";
 import "hardhat-typechain";
 import "@nomiclabs/hardhat-ethers";
 import "@nomiclabs/hardhat-web3";
@@ -35,6 +36,12 @@ const config: HardhatUserConfig = {
     },
   },
   solidity: "0.8.4",
+  typechain: {
+    outDir: "typechain",
+    target: "ethers-v5",
+    alwaysGenerateOverloads: false,
+    externalArtifacts: [],
+  },
 };
 
 export default config;

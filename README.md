@@ -46,14 +46,14 @@ const AUREI_ADDRESS = "<ADDRESS>";
 
 const aurei = new Contract(AUREI_ADDRESS, AureiABI.abi, library.getSigner());
 const totalSupply = await aurei.totalSupply();
-console.log(totalSupply);
+console.log("Total supply:", totalSupply);
 ```
 
 ## Development
 
 ### Installation
 
-**1. Solidity Installation**
+**Solidity Installation**
 
 Make sure the Solidity compiler is installed. The compiler version must be >= `0.8.4`.
 
@@ -69,20 +69,12 @@ You can verify the version with like so:
 solcjs --version
 ```
 
-**2. Install NPM Modules**
+**Install NPM Modules**
 
 Install node dependencies:
 
 ```
 npm install
-```
-
-**3. Set Environment Variables**
-
-Create an `.env` file with `FLARE_DIR` set to the location of your local Flare directory. Example:
-
-```
-FLARE_DIR=/Users/satoshi/Desktop/flare
 ```
 
 ### IDE
@@ -129,46 +121,30 @@ Run a local [Flare](https://gitlab.com/flarenetwork/flare) node.
 
 2. Deploy to the network.
 
-Deploy the smart contract in the local network using `npm run deploy:local`.
+Deploy the smart contract in the local network using the `deploy:local` script.
 
-> `FLARE_DIR` may be read from a `.env` file or set in the shell
+> Set the `FLARE_DIR` and `TOKEN` envioronment variables.
 
 For example:
 
 ```
-FLARE_DIR=~/Desktop/flare npm run deploy:local
+FLARE_DIR=~/Desktop/flare \
+TOKEN=PHI \
+npm run deploy:local
 ```
 
-### Remote Deployment
-
-Create an `.env` file at the project root with the following contents:
-
-```
-PRIVATE_KEY=<INSERT_TESTNET_PK_HERE>
-```
-
-Generate a Flare account and place the private key in the file. Ensure that the account is funded so you can deploy the contract. Then deploy the contract to the remote network using the appropriate script.
-
-```
-$ npm run deploy:coston
-
-> @trustline/probity@1.0.0 deploy
-> npx hardhat --network coston run ./scripts/deploy.ts
-Compiling 1 file with 0.8.0
-Compilation finished successfully
-Creating Typechain artifacts in directory typechain for target ethers-v5
-Successfully generated Typechain artifacts!
-Contracts deployed!
-```
+If you get the error `ProviderError: err: Invalid value for block.coinbase`, that means you have to first send a test transaction through Metamask in order for the network to start properly.
 
 ## Initialization
 
-You can use the `initialize` script to configure a fresh deployment of the Probity system.
+### Collateral Types
 
-The script currently only initializes a `FLR` collateral type.
+You can use the `initialize` script to initialize a new collateral type.
 
 ```
-FLARE_DIR=~/Desktop/flare yarn run initialize
+TOKEN=SGB \
+FLARE_DIR=~/Desktop/flare \
+yarn run initialize
 ```
 
 ## Contract Addresses
@@ -180,3 +156,7 @@ Coston contract addresses will be listed here.
 ### Songbird Network
 
 Songbird contract addresses will be listed here.
+
+### Flare Network
+
+Flare contract addresses will be listed here.

@@ -10,9 +10,7 @@ interface VaultEngineLike {
 }
 
 interface FtsoLike {
-    function getCurrentPrice()
-        external
-        returns (uint256 _price, uint256 _timestamp);
+    function getCurrentPrice() external returns (uint256 _price, uint256 _timestamp);
 }
 
 contract PriceFeed is Stateful, Eventful {
@@ -47,9 +45,7 @@ contract PriceFeed is Stateful, Eventful {
     /////////////////////////////////////////
     // Constructor
     /////////////////////////////////////////
-    constructor(address registryAddress, VaultEngineLike vaultEngineAddress)
-        Stateful(registryAddress)
-    {
+    constructor(address registryAddress, VaultEngineLike vaultEngineAddress) Stateful(registryAddress) {
         vaultEngine = vaultEngineAddress;
     }
 
@@ -65,10 +61,7 @@ contract PriceFeed is Stateful, Eventful {
         collateralTypes[collId].ftso = ftso;
     }
 
-    function updateLiquidationRatio(bytes32 collId, uint256 liquidationRatio)
-        external
-        onlyBy("gov")
-    {
+    function updateLiquidationRatio(bytes32 collId, uint256 liquidationRatio) external onlyBy("gov") {
         emit LogVarUpdate(
             "priceFeed",
             collId,
@@ -79,25 +72,12 @@ contract PriceFeed is Stateful, Eventful {
         collateralTypes[collId].liquidationRatio = liquidationRatio;
     }
 
-    function updateFtso(bytes32 collId, FtsoLike newFtso)
-        external
-        onlyBy("gov")
-    {
-        emit LogVarUpdate(
-            "priceFeed",
-            collId,
-            "ftso",
-            address(collateralTypes[collId].ftso),
-            address(newFtso)
-        );
+    function updateFtso(bytes32 collId, FtsoLike newFtso) external onlyBy("gov") {
+        emit LogVarUpdate("priceFeed", collId, "ftso", address(collateralTypes[collId].ftso), address(newFtso));
         collateralTypes[collId].ftso = newFtso;
     }
 
-    function getPrice(bytes32 collId)
-        public
-        collateralExists(collId)
-        returns (uint256 price)
-    {
+    function getPrice(bytes32 collId) public collateralExists(collId) returns (uint256 price) {
         (price, ) = collateralTypes[collId].ftso.getCurrentPrice();
     }
 
@@ -108,8 +88,7 @@ contract PriceFeed is Stateful, Eventful {
             "PriceFeed/UpdatePrice: Collateral Type is not initialized"
         );
         (uint256 price, ) = collateralTypes[collId].ftso.getCurrentPrice();
-        uint256 adjustedPrice =
-            rdiv(rdiv(price, RAY), collateralTypes[collId].liquidationRatio);
+        uint256 adjustedPrice = rdiv(rdiv(price, RAY), collateralTypes[collId].liquidationRatio * 1e9);
 
         vaultEngine.updatePrice(collId, adjustedPrice);
     }

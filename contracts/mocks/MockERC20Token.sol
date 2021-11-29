@@ -22,8 +22,7 @@ contract MockERC20Token is IAurei {
     // --- ERC2612 Data ---
 
     bytes32 private immutable _DOMAIN_SEPARATOR;
-    bytes32 private constant _PERMIT_TYPEHASH =
-        0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9; // keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
+    bytes32 private constant _PERMIT_TYPEHASH = 0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9; // keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
 
     mapping(address => uint256) private _nonces;
 
@@ -55,30 +54,16 @@ contract MockERC20Token is IAurei {
 
     // --- ERC20 Functions ---
 
-    function allowance(address owner, address spender)
-        external
-        view
-        override
-        returns (uint256)
-    {
+    function allowance(address owner, address spender) external view override returns (uint256) {
         return _allowed[owner][spender];
     }
 
-    function approve(address spender, uint256 amount)
-        external
-        override
-        returns (bool)
-    {
+    function approve(address spender, uint256 amount) external override returns (bool) {
         _approve(msg.sender, spender, amount);
         return true;
     }
 
-    function balanceOf(address account)
-        external
-        view
-        override
-        returns (uint256)
-    {
+    function balanceOf(address account) external view override returns (uint256) {
         return _balances[account];
     }
 
@@ -86,32 +71,17 @@ contract MockERC20Token is IAurei {
         return _DECIMALS;
     }
 
-    function decreaseAllowance(address spender, uint256 subtractedValue)
-        external
-        override
-        returns (bool)
-    {
+    function decreaseAllowance(address spender, uint256 subtractedValue) external override returns (bool) {
         _approve(
             msg.sender,
             spender,
-            _allowed[msg.sender][spender].sub(
-                subtractedValue,
-                "ERC20: decreased allowance below zero"
-            )
+            _allowed[msg.sender][spender].sub(subtractedValue, "ERC20: decreased allowance below zero")
         );
         return true;
     }
 
-    function increaseAllowance(address spender, uint256 addedValue)
-        external
-        override
-        returns (bool)
-    {
-        _approve(
-            msg.sender,
-            spender,
-            _allowed[msg.sender][spender].add(addedValue)
-        );
+    function increaseAllowance(address spender, uint256 addedValue) external override returns (bool) {
+        _approve(msg.sender, spender, _allowed[msg.sender][spender].add(addedValue));
         return true;
     }
 
@@ -127,11 +97,7 @@ contract MockERC20Token is IAurei {
         return _totalSupply;
     }
 
-    function transfer(address recipient, uint256 amount)
-        external
-        override
-        returns (bool)
-    {
+    function transfer(address recipient, uint256 amount) external override returns (bool) {
         _requireValidRecipient(recipient);
         _transfer(msg.sender, recipient, amount);
         return true;
@@ -148,10 +114,7 @@ contract MockERC20Token is IAurei {
     function burn(address account, uint256 amount) external override {
         assert(account != address(0));
 
-        _balances[account] = _balances[account].sub(
-            amount,
-            "ERC20: burn amount exceeds balance"
-        );
+        _balances[account] = _balances[account].sub(amount, "ERC20: burn amount exceeds balance");
         _totalSupply = _totalSupply.sub(amount);
         emit Transfer(account, address(0), amount);
     }
@@ -166,10 +129,7 @@ contract MockERC20Token is IAurei {
         _approve(
             sender,
             msg.sender,
-            _allowed[sender][msg.sender].sub(
-                amount,
-                "ERC20: transfer amount exceeds allowance"
-            )
+            _allowed[sender][msg.sender].sub(amount, "ERC20: transfer amount exceeds allowance")
         );
         return true;
     }
@@ -194,28 +154,15 @@ contract MockERC20Token is IAurei {
         bytes32 s
     ) external override {
         require(deadline >= block.timestamp, "AUR: EXPIRED");
-        bytes32 digest =
-            keccak256(
-                abi.encodePacked(
-                    "\x19\x01",
-                    _DOMAIN_SEPARATOR,
-                    keccak256(
-                        abi.encode(
-                            _PERMIT_TYPEHASH,
-                            owner,
-                            spender,
-                            amount,
-                            _nonces[owner]++,
-                            deadline
-                        )
-                    )
-                )
-            );
-        address recoveredAddress = ecrecover(digest, v, r, s);
-        require(
-            recoveredAddress != address(0) && recoveredAddress == owner,
-            "AUR: INVALID_SIGNATURE"
+        bytes32 digest = keccak256(
+            abi.encodePacked(
+                "\x19\x01",
+                _DOMAIN_SEPARATOR,
+                keccak256(abi.encode(_PERMIT_TYPEHASH, owner, spender, amount, _nonces[owner]++, deadline))
+            )
         );
+        address recoveredAddress = ecrecover(digest, v, r, s);
+        require(recoveredAddress != address(0) && recoveredAddress == owner, "AUR: INVALID_SIGNATURE");
         _approve(owner, spender, amount);
     }
 
@@ -250,10 +197,7 @@ contract MockERC20Token is IAurei {
         assert(sender != address(0));
         assert(recipient != address(0));
 
-        _balances[sender] = _balances[sender].sub(
-            amount,
-            "ERC20: transfer amount exceeds balance"
-        );
+        _balances[sender] = _balances[sender].sub(amount, "ERC20: transfer amount exceeds balance");
         _balances[recipient] = _balances[recipient].add(amount);
         emit Transfer(sender, recipient, amount);
     }

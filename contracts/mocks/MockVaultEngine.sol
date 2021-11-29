@@ -1,7 +1,5 @@
 pragma solidity ^0.8.0;
 
-import "hardhat/console.sol";
-
 contract MockVaultEngine {
     struct Vault {
         uint256 freeCollateral; // Collateral that is currently free
@@ -38,6 +36,7 @@ contract MockVaultEngine {
     mapping(address => uint256) public tcn;
     mapping(address => uint256) public unbackedAurei;
 
+    uint256 public protocolFeeRates;
     uint256 public totalDebt;
     uint256 public totalCapital;
     LiquidateVaultCall public lastLiquidateVaultCall;
@@ -111,10 +110,14 @@ contract MockVaultEngine {
     function updateAccumulators(
         bytes32 collId,
         uint256 debtAccumulator,
-        uint256 capitalAccumulator
+        uint256 capitalAccumulator,
+        uint256 capitalRateIncrease,
+        uint256 protocolFeeRates_
     ) external {
-        collateralTypes[collId].debtAccumulator = debtAccumulator;
-        collateralTypes[collId].capitalAccumulator = capitalAccumulator;
+        Collateral storage coll = collateralTypes[collId];
+        coll.debtAccumulator += debtRateIncrease;
+        coll.capitalAccumulator += capitalRateIncrease;
+        protocolFeeRates = protocolFeeRates_;
     }
 
     function updateNormValues(
