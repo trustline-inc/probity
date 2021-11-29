@@ -19,6 +19,7 @@ const COLLATERAL = {
 };
 
 const PRECISION_COLL = ethers.BigNumber.from("1000000000000000000");
+const PRECISION_PRICE = ethers.BigNumber.from("1000000000000000000000000000");
 const PRECISION_AUR = ethers.BigNumber.from(
   "1000000000000000000000000000000000000000000000"
 );
@@ -30,11 +31,17 @@ const init = async () => {
   const [owner]: SignerWithAddress[] = await ethers.getSigners();
 
   // ABIs
+  const LiquidatorABI = await artifacts.readArtifact("Liquidator");
   const PriceFeedABI = await artifacts.readArtifact("PriceFeed");
   const TellerABI = await artifacts.readArtifact("Teller");
   const VaultEngineABI = await artifacts.readArtifact("VaultEngine");
 
   // Contracts
+  const liquidator = new ethers.Contract(
+    process.env.PRICE_FEED,
+    LiquidatorABI.abi,
+    owner
+  );
   const priceFeed = new ethers.Contract(
     process.env.PRICE_FEED,
     PriceFeedABI.abi,
@@ -59,10 +66,19 @@ const init = async () => {
     .connect(owner)
     .initCollType(COLLATERAL[token], 0, { gasLimit: 300000 });
   console.log(`Teller: ${token} initialized.`);
+  await liquidator
+    .connect(owner)
+    .init(COLLATERAL[token], process.env.AUCTIONEER);
+  console.log(`Liquidator: ${token} initialized.`);
   await priceFeed
     .connect(owner)
     .init(COLLATERAL[token], PRECISION_COLL.mul(150), process.env.FTSO);
   console.log(`PriceFeed: ${token} price initialized.`);
+  await priceFeed.updateLiquidationRatio(
+    COLLATERAL[token],
+    PRECISION_PRICE.mul(15).div(10)
+  );
+  console.log(`PriceFeed: ${token} liquidation ratio initialized.`);
   await priceFeed
     .connect(owner)
     .updatePrice(COLLATERAL[token], { gasLimit: 300000 });
