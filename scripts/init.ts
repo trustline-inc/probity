@@ -19,7 +19,6 @@ const COLLATERAL = {
 };
 
 const PRECISION_COLL = ethers.BigNumber.from("1000000000000000000");
-const PRECISION_PRICE = ethers.BigNumber.from("1000000000000000000000000000");
 const PRECISION_AUR = ethers.BigNumber.from(
   "1000000000000000000000000000000000000000000000"
 );
@@ -80,7 +79,7 @@ const init = async () => {
   // Initialize price feed collateral type
   await priceFeed
     .connect(owner)
-    .init(COLLATERAL[token], PRECISION_PRICE.mul(15).div(10), process.env.FTSO);
+    .init(COLLATERAL[token], PRECISION_COLL.mul(15).div(10), process.env.FTSO);
   console.log(`PriceFeed: ${token} price initialized.`);
 
   // Update collateral price
