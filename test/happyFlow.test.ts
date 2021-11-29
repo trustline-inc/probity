@@ -156,7 +156,11 @@ describe("Probity happy flow", function () {
     await vaultEngine.initCollType(flrCollId);
     await vaultEngine.updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
     await teller.initCollType(flrCollId, 0);
-    await priceFeed.init(flrCollId, PRECISION_COLL.mul(150), ftso.address);
+    await priceFeed.init(
+      flrCollId,
+      PRECISION_PRICE.mul(15).div(10),
+      ftso.address
+    );
     await priceFeed.updatePrice(flrCollId);
 
     let userVaultBefore = await vaultEngine.vaults(flrCollId, owner.address);
@@ -212,7 +216,11 @@ describe("Probity happy flow", function () {
     await vaultEngine.initCollType(flrCollId);
     await vaultEngine.updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
     await teller.initCollType(flrCollId, 0);
-    await priceFeed.init(flrCollId, PRECISION_COLL.mul(150), ftso.address);
+    await priceFeed.init(
+      flrCollId,
+      PRECISION_PRICE.mul(15).div(10),
+      ftso.address
+    );
     await priceFeed.updatePrice(flrCollId);
 
     // Create Aurei
@@ -274,7 +282,11 @@ describe("Probity happy flow", function () {
     await vaultEngine.initCollType(flrCollId);
     await vaultEngine.updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
     await teller.initCollType(flrCollId, 0);
-    await priceFeed.init(flrCollId, PRECISION_COLL.mul(150), ftso.address);
+    await priceFeed.init(
+      flrCollId,
+      PRECISION_PRICE.mul(15).div(10),
+      ftso.address
+    );
     await priceFeed.updatePrice(flrCollId);
 
     let userVaultBefore = await vaultEngine.vaults(flrCollId, owner.address);

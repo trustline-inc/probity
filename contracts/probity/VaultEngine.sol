@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 
 import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
-import "hardhat/console.sol";
 
 interface FtsoLike {
     function getCurrentPrice() external returns (uint256 _price, uint256 _timestamp);
@@ -91,10 +90,7 @@ contract VaultEngine is Stateful, Eventful {
         address user,
         int256 amount
     ) external onlyByRegistered {
-        vaults[collateral][user].freeCollateral = add(
-            vaults[collateral][user].freeCollateral,
-            amount
-        );
+        vaults[collateral][user].freeCollateral = add(vaults[collateral][user].freeCollateral, amount);
     }
 
     /**
@@ -174,9 +170,7 @@ contract VaultEngine is Stateful, Eventful {
     function collectInterest(bytes32 collId) public {
         Vault memory vault = vaults[collId][msg.sender];
         Collateral memory collateral = collateralTypes[collId];
-        tcn[msg.sender] +=
-            vault.capital *
-            (collateral.capitalAccumulator - vault.lastCapitalAccumulator);
+        tcn[msg.sender] += vault.capital * (collateral.capitalAccumulator - vault.lastCapitalAccumulator);
 
         vaults[collId][msg.sender].lastCapitalAccumulator = collateral.capitalAccumulator;
     }
@@ -210,18 +204,12 @@ contract VaultEngine is Stateful, Eventful {
         vault.usedCollateral = add(vault.usedCollateral, collAmount);
         vault.capital = add(vault.capital, capitalAmount);
 
-        collateralTypes[collId].normCapital = add(
-            collateralTypes[collId].normCapital,
-            capitalAmount
-        );
+        collateralTypes[collId].normCapital = add(collateralTypes[collId].normCapital, capitalAmount);
 
         int256 aurToModify = mul(collateralTypes[collId].capitalAccumulator, capitalAmount);
         totalCapital = add(totalCapital, aurToModify);
 
-        require(
-            totalCapital <= collateralTypes[collId].ceiling,
-            "Vault/modifySupply: Supply ceiling reached"
-        );
+        require(totalCapital <= collateralTypes[collId].ceiling, "Vault/modifySupply: Supply ceiling reached");
         require(
             vault.capital == 0 || vault.capital > collateralTypes[collId].floor,
             "Vault/modifySupply: Capital floor reached"
@@ -273,10 +261,7 @@ contract VaultEngine is Stateful, Eventful {
         int256 debtToModify = mul(collateralTypes[collId].debtAccumulator, debtAmount);
         totalDebt = add(totalDebt, debtToModify);
 
-        require(
-            totalDebt <= collateralTypes[collId].ceiling,
-            "Vault/modifyDebt: Debt ceiling reached"
-        );
+        require(totalDebt <= collateralTypes[collId].ceiling, "Vault/modifyDebt: Debt ceiling reached");
         require(
             vault.debt == 0 || vault.debt > collateralTypes[collId].floor,
             "Vault/modifyDebt: Debt Smaller than floor"
@@ -318,13 +303,9 @@ contract VaultEngine is Stateful, Eventful {
         vault.capital = add(vault.capital, capitalAmount);
         coll.normDebt = add(coll.normDebt, debtAmount);
         coll.normCapital = add(coll.normCapital, capitalAmount);
-        int256 aurToRaise = mul(coll.debtAccumulator, debtAmount) +
-            mul(PRECISION_PRICE, capitalAmount);
+        int256 aurToRaise = mul(coll.debtAccumulator, debtAmount) + mul(PRECISION_PRICE, capitalAmount);
 
-        vaults[collId][auctioneer].freeCollateral = sub(
-            vaults[collId][auctioneer].freeCollateral,
-            collateralAmount
-        );
+        vaults[collId][auctioneer].freeCollateral = sub(vaults[collId][auctioneer].freeCollateral, collateralAmount);
         unbackedAurei[reservePool] = sub(unbackedAurei[reservePool], aurToRaise);
         totalUnbackedAurei = sub(totalUnbackedAurei, aurToRaise);
 
@@ -444,8 +425,7 @@ contract VaultEngine is Stateful, Eventful {
      */
     function certify(bytes32 collId, Vault memory vault) internal view {
         require(
-            (vault.debt * collateralTypes[collId].debtAccumulator) +
-                (vault.capital * PRECISION_PRICE) <=
+            (vault.debt * collateralTypes[collId].debtAccumulator) + (vault.capital * PRECISION_PRICE) <=
                 vault.usedCollateral * collateralTypes[collId].price,
             "Vault/certify: Not enough collateral"
         );
