@@ -23,7 +23,7 @@ const AMOUNT_TO_MINT = PRECISION_COLL.mul(1000);
 const AMOUNT_TO_BURN = PRECISION_COLL.mul(230);
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
-describe("tcn Token Unit Test", function () {
+describe("TCN Token Unit Test", function () {
   beforeEach(async function () {
     const { contracts, signers } = await deployTest();
 
