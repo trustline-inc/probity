@@ -5,7 +5,7 @@ import "@nomiclabs/hardhat-web3";
 
 import {
   Aurei,
-  Erc20Collateral,
+  ERC20Collateral,
   VaultEngine,
   NativeCollateral,
   Teller,
@@ -16,7 +16,7 @@ import {
   Liquidator,
   ReservePool,
   Registry,
-  MockErc20Token,
+  MockERC20Token,
   Shutdown,
 } from "../typechain";
 import { ethers, web3 } from "hardhat";
@@ -41,7 +41,7 @@ let aurei: Aurei;
 let vaultEngine: VaultEngine;
 let registry: Registry;
 let flrColl: NativeCollateral;
-let fxrpColl: Erc20Collateral;
+let fxrpColl: ERC20Collateral;
 let teller: Teller;
 let treasury: Treasury;
 let ftsoFlr: MockFtso;
@@ -51,10 +51,9 @@ let auctioneerFlr: Auctioneer;
 let auctioneerFxrp: Auctioneer;
 let liquidator: Liquidator;
 let reserve: ReservePool;
-let erc20: MockErc20Token;
+let erc20: MockERC20Token;
 let shutdown: Shutdown;
 
-const PRECISION_FEED = ethers.BigNumber.from("1000000000");
 const PRECISION_COLL = ethers.BigNumber.from("1000000000000000000");
 const PRECISION_PRICE = ethers.BigNumber.from("1000000000000000000000000000");
 const PRECISION_AUR = ethers.BigNumber.from(
@@ -129,7 +128,7 @@ describe("Shutdown Flow Test", function () {
     // Set contracts
     vaultEngine = contracts.vaultEngine;
     flrColl = contracts.nativeCollateral;
-    fxrpColl = contracts.fxrpCollateral;
+    fxrpColl = contracts.erc20Collateral;
     aurei = contracts.aurei;
     teller = contracts.teller;
     treasury = contracts.treasury;
@@ -137,15 +136,15 @@ describe("Shutdown Flow Test", function () {
     priceFeed = contracts.priceFeed;
     auctioneerFlr = contracts.auctioneer;
     liquidator = contracts.liquidator;
-    reserve = contracts.reserve;
+    reserve = contracts.reservePool;
     registry = contracts.registry;
-    erc20 = contracts.erc20;
+    erc20 = contracts.erc20Token;
     shutdown = contracts.shutdown;
 
     contracts = await mock.deployMockFtso();
     ftsoFxrp = contracts.ftso;
 
-    contracts = await probity.deployAuction();
+    contracts = await probity.deployAuctioneer();
     auctioneerFxrp = contracts.auctioneer;
 
     owner = signers.owner;
@@ -158,14 +157,22 @@ describe("Shutdown Flow Test", function () {
 
     await vaultEngine.initCollType(flrCollId);
     await vaultEngine.updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
-    await teller.initCollType(flrCollId);
-    await priceFeed.init(flrCollId, PRECISION_COLL.mul(150), ftsoFlr.address);
+    await teller.initCollType(flrCollId, 0);
+    await priceFeed.init(
+      flrCollId,
+      PRECISION_COLL.mul(15).div(10),
+      ftsoFlr.address
+    );
     await liquidator.init(flrCollId, auctioneerFlr.address);
 
     await vaultEngine.initCollType(fxrpCollId);
     await vaultEngine.updateCeiling(fxrpCollId, PRECISION_AUR.mul(10000000));
-    await teller.initCollType(fxrpCollId);
-    await priceFeed.init(fxrpCollId, PRECISION_COLL.mul(150), ftsoFxrp.address);
+    await teller.initCollType(fxrpCollId, 0);
+    await priceFeed.init(
+      fxrpCollId,
+      PRECISION_COLL.mul(15).div(10),
+      ftsoFxrp.address
+    );
     await liquidator.init(fxrpCollId, auctioneerFxrp.address);
     await reserve.updateDebtThreshold(DEBT_THRESHOLD);
 
@@ -246,11 +253,11 @@ describe("Shutdown Flow Test", function () {
       .modifyDebt(
         fxrpCollId,
         treasury.address,
-        PRECISION_COLL.mul(270000),
+        PRECISION_COLL.mul(150000),
         PRECISION_COLL.mul(135000)
       );
     balances.user2.fxrp = {
-      lockedColl: PRECISION_COLL.mul(270000),
+      lockedColl: PRECISION_COLL.mul(150000),
       debt: PRECISION_COLL.mul(135000),
     };
     balances.user2.aur = PRECISION_AUR.mul(135000 + 1500);
@@ -308,7 +315,6 @@ describe("Shutdown Flow Test", function () {
     await ftsoFxrp.setCurrentPrice(PRECISION_PRICE.mul(123).div(100));
     await priceFeed.updatePrice(fxrpCollId);
     // start 2 auction 1 of each collateral
-
     await liquidator.liquidateVault(flrCollId, user2.address);
     reserveBalances.debt = PRECISION_AUR.mul(1500);
     await checkReserveBalances(reserveBalances);
@@ -663,7 +669,7 @@ describe("Shutdown Flow Test", function () {
     balances.user3.aur = PRECISION_AUR.mul(15000 + 10000);
     await expectBalancesToMatch(user3, balances.user3);
 
-    await fxrpDeposit(user4, PRECISION_COLL.mul(600000));
+    await fxrpDeposit(user4, PRECISION_COLL.mul(620000));
     await vaultEngine
       .connect(user4)
       .modifySupply(
@@ -677,12 +683,12 @@ describe("Shutdown Flow Test", function () {
       .modifyDebt(
         fxrpCollId,
         treasury.address,
-        PRECISION_COLL.mul(200000),
+        PRECISION_COLL.mul(220000),
         PRECISION_COLL.mul(1500000)
       );
 
     balances.user4.fxrp = {
-      lockedColl: PRECISION_COLL.mul(400000 + 200000),
+      lockedColl: PRECISION_COLL.mul(400000 + 220000),
       debt: PRECISION_COLL.mul(1500000),
       capital: PRECISION_COLL.mul(1000000),
     };
@@ -692,7 +698,7 @@ describe("Shutdown Flow Test", function () {
     await flrColl
       .connect(user5)
       .deposit({ value: ethers.utils.parseEther("2000") });
-    await fxrpDeposit(user5, PRECISION_COLL.mul(530000));
+    await fxrpDeposit(user5, PRECISION_COLL.mul(1830000));
     await vaultEngine
       .connect(user5)
       .modifySupply(
@@ -721,7 +727,7 @@ describe("Shutdown Flow Test", function () {
       .modifySupply(
         fxrpCollId,
         treasury.address,
-        PRECISION_COLL.mul(530000),
+        PRECISION_COLL.mul(1830000),
         PRECISION_COLL.mul(1500000)
       );
     await vaultEngine
@@ -734,7 +740,7 @@ describe("Shutdown Flow Test", function () {
       );
 
     balances.user5.fxrp = {
-      lockedColl: PRECISION_COLL.mul(530000),
+      lockedColl: PRECISION_COLL.mul(1830000),
       debt: PRECISION_COLL.mul(1200000),
       capital: PRECISION_COLL.mul(1500000),
     };
@@ -743,8 +749,14 @@ describe("Shutdown Flow Test", function () {
 
     // new collateral ratio : 175%
     // drop prices flr : : $3.60 , fxrp: $4.48
-    await priceFeed.updateLiquidationRatio(flrCollId, PRECISION_COLL.mul(175));
-    await priceFeed.updateLiquidationRatio(fxrpCollId, PRECISION_COLL.mul(175));
+    await priceFeed.updateLiquidationRatio(
+      flrCollId,
+      PRECISION_COLL.mul(175).div(100)
+    );
+    await priceFeed.updateLiquidationRatio(
+      fxrpCollId,
+      PRECISION_COLL.mul(175).div(100)
+    );
     await ftsoFlr.setCurrentPrice(PRECISION_PRICE.mul(360).div(100));
     await priceFeed.updatePrice(flrCollId);
     await ftsoFxrp.setCurrentPrice(PRECISION_PRICE.mul(448).div(100));
@@ -872,11 +884,11 @@ describe("Shutdown Flow Test", function () {
     );
 
     await shutdown.processUserDebt(fxrpCollId, user4.address);
-    // user 4 have debt of $1500000, coll value: 600000 * 2.20 = 1320000
-    // aurGap should be 1500000 - 1320000 = 180000
-    // collGap should be 180000 / 2.20 = 81818.1818182
-    EXPECTED_FXRP_GAP = PRECISION_COLL.mul("818181818182").div(1e7);
-    EXPECTED_AUR_GAP = EXPECTED_AUR_GAP.add(PRECISION_AUR.mul(180000));
+    // user 4 have debt of $1500000, coll value: 620000 * 2.20 = 1364000
+    // aurGap should be 1500000 - 1364000 = 136000
+    // collGap should be 136000 / 2.20 = 61818.1818182
+    EXPECTED_FXRP_GAP = PRECISION_COLL.mul("618181818182").div(1e7);
+    EXPECTED_AUR_GAP = EXPECTED_AUR_GAP.add(PRECISION_AUR.mul(136000));
     expect(
       (await shutdown.aurGap())
         .sub(EXPECTED_AUR_GAP)
@@ -891,12 +903,6 @@ describe("Shutdown Flow Test", function () {
     ).to.equal(true);
     await shutdown.processUserDebt(fxrpCollId, user5.address);
 
-    // user5 have $1200000 debt , coll Value: 530000 * 2.20 = 1166000
-    // aurGap should be 1200000 - 1166000 = 34000
-    // collGap 34000 / 2.20 = 15454.5454545
-    // add existing collGap: 81818.1818182 + 15454.5454545 = 97272.7272727
-    EXPECTED_FXRP_GAP = PRECISION_COLL.mul("972727272727").div(1e7);
-    EXPECTED_AUR_GAP = EXPECTED_AUR_GAP.add(PRECISION_AUR.mul(34000));
     expect(
       (await shutdown.aurGap())
         .sub(EXPECTED_AUR_GAP)
@@ -925,17 +931,17 @@ describe("Shutdown Flow Test", function () {
 
     await shutdown.calculateSupplierObligation();
 
-    // total aurGap  4930 + 180000 + 34000 = 218930
+    // total aurGap 140930
     // total capital * final utilization Ratio = total capital in use
     // $4506500 * 0.85043825585 = 3832500
     // total aurGap / total capital in use = supplier obligation ratio
-    // 218930 / 3685500 = 0.05940306606
+    // 140930 / 3685500 = 0.0382390449
 
-    const EXPECTED_SUPPLIER_OBLIGATION_RATIO = "5940306606";
-
+    const EXPECTED_SUPPLIER_OBLIGATION_RATIO =
+      PRECISION_COLL.mul("382390449").div(1e10);
     expect(
       (await shutdown.supplierObligationRatio())
-        .sub(PRECISION_COLL.mul(EXPECTED_SUPPLIER_OBLIGATION_RATIO).div(1e11))
+        .sub(EXPECTED_SUPPLIER_OBLIGATION_RATIO)
         .abs()
         .lte(PRECISION_COLL.div(100))
     ).to.equal(true);
@@ -943,10 +949,10 @@ describe("Shutdown Flow Test", function () {
     await shutdown.processUserSupply(flrCollId, user1.address);
     // user 1 has supplied $5000, 0.85043825585 = 4252.19127925 on hook
     // supplied amount * supplier obligation ratio
-    // 4252.19127925  * 0.05940306606 = 252.593199461
-    // coll amount = 252.593199503 / 2.23 = 113.270493051
+    // 4252.19127925  * 0.0382390449 = 162.599733251
+    // coll amount = 162.599733251 / 2.23 = 72.9146785877
     EXPECTED_FLR_GAP = EXPECTED_FLR_GAP.sub(
-      PRECISION_COLL.mul("113270493051").div(1e9)
+      PRECISION_COLL.mul("729146785877").div(1e10)
     );
     expect(
       (await shutdown.collateralTypes(flrCollId)).gap
@@ -961,6 +967,7 @@ describe("Shutdown Flow Test", function () {
         .abs()
         .lte(PRECISION_COLL.div(10))
     ).to.equal(true);
+
     await shutdown.processUserSupply(flrCollId, user3.address);
     expect(
       (await shutdown.collateralTypes(flrCollId)).gap
@@ -978,10 +985,10 @@ describe("Shutdown Flow Test", function () {
     await shutdown.processUserSupply(flrCollId, user5.address);
 
     // user5 supplied $1500 * 0.85043825585 = 1275.65738377
-    // 1275.65738377 * 0.05940306606 = 75.7779598383
-    // 75.7779598383 / 2.23 = 33.9811479096
+    // 1275.65738377 * 0.0382390449 = 48.779919975
+    // 48.779919975 / 2.23 = 21.8744035762
     EXPECTED_FLR_GAP = EXPECTED_FLR_GAP.sub(
-      PRECISION_COLL.mul("339811479096").div(1e10)
+      PRECISION_COLL.mul("218744035762").div(1e10)
     );
 
     expect(
@@ -994,10 +1001,10 @@ describe("Shutdown Flow Test", function () {
     // process supplier for fxrp collateral
     await shutdown.processUserSupply(fxrpCollId, user1.address);
     // user1 supplied $2000000 * 0.85043825585 = 1700876.5117
-    // 1700876.5117 * 0.05940306606 = 101037.279784
-    // 101037.279784 / 2.20 = 45926.0362656
+    // 1700876.5117 * 0.0382390449 = 65039.8933003
+    // 65039.8933003 / 2.20 = 29563.5878638
     EXPECTED_FXRP_GAP = EXPECTED_FXRP_GAP.sub(
-      PRECISION_COLL.mul("459260362656").div(1e7)
+      PRECISION_COLL.mul("295635878638").div(1e7)
     );
     expect(
       (await shutdown.collateralTypes(fxrpCollId)).gap
@@ -1026,6 +1033,14 @@ describe("Shutdown Flow Test", function () {
         .abs()
         .lte(PRECISION_COLL.div(10))
     ).to.equal(true);
+
+    // user5 supplied $1500000 * 0.85043825585 = 1275657.38377
+    // 1275657.38377 * 0.0382390449 = 48779.919975
+    // 48779.919975 / 2.20 = 22172.6908977
+    EXPECTED_FXRP_GAP = EXPECTED_FXRP_GAP.sub(
+      PRECISION_COLL.mul("221726908977").div(1e7)
+    );
+
     await shutdown.processUserSupply(fxrpCollId, user5.address);
     expect(
       (await shutdown.collateralTypes(fxrpCollId)).gap
@@ -1040,30 +1055,32 @@ describe("Shutdown Flow Test", function () {
     // calcuate redeem ratio
     await shutdown.calculateRedeemRatio(flrCollId);
     // redeem Ratio = theoretical max - gap / total aur in circulation
-    // ((26500 / $2.23) - 2063.5106908794 / $3685500
-    // 11883.4080717 - 2063.5106908794 = 9819.89738087
-    // 9819.89738087 / $3685500 = 0.0026644681538
+    // ((26500 / $2.23) - 2115.9732496600 / $3685500
+    // 11883.4080717 - 2063.5106908794 = 9767.43482209
+    // 9767.43482209 / 3685500 = 0.00265023329
+
     const EXPECTED_FLR_REDEEM_RATIO =
-      PRECISION_PRICE.mul("26644681538").div(1e13);
+      PRECISION_PRICE.mul("265023329").div(1e11);
     expect(
       (await shutdown.collateralTypes(flrCollId)).redeemRatio
         .sub(EXPECTED_FLR_REDEEM_RATIO)
         .abs()
-        .lte(PRECISION_AUR.div(100))
+        .lte(PRECISION_COLL.div(100))
     ).to.equal(true);
 
     await shutdown.calculateRedeemRatio(fxrpCollId);
     // redeem Ratio = theoretical max - gap / total aur in circulation
-    // ((2700000 / $2.20) - 51346.6910071 / $3685500
-    // 1227272.72727 - 51346.6910071 = 1175926.03627
-    // 1175926.03627 / $3685500 = 0.31906825024
+    // ((2700000 / $2.20) - 10081.9030487 / $3685500
+    // 1227272.72727 - 10081.9030487 = 1217190.82422
+    // 1217190.82422 / $3685500 = 0.3302647739
     const EXPECTED_FXRP_REDEEM_RATIO =
-      PRECISION_PRICE.mul("31906825024").div(1e11);
+      PRECISION_PRICE.mul("3302647739").div(1e10);
+
     expect(
       (await shutdown.collateralTypes(fxrpCollId)).redeemRatio
         .sub(EXPECTED_FXRP_REDEEM_RATIO)
         .abs()
-        .lte(PRECISION_AUR.div(100))
+        .lte(PRECISION_COLL.div(100))
     ).to.equal(true);
 
     // return Aurei
@@ -1080,9 +1097,9 @@ describe("Shutdown Flow Test", function () {
       .freeCollateral;
     // user2 aur balance: 1099000
     // aur balance * flr Redeemed Collateral
-    // 1099000 * 0.0026644681538 = 2928.25050103
+    // 1099000 * 0.00265023329 = 2912.60638571
     const EXPECTED_FLR_COLL_REDEEMED =
-      PRECISION_COLL.mul("292825050103").div(1e8);
+      PRECISION_COLL.mul("291260638571").div(1e8);
     expect(
       after
         .sub(before)
@@ -1098,9 +1115,9 @@ describe("Shutdown Flow Test", function () {
       .freeCollateral;
     // user2 aur balance: 1099000
     // aur balance * flr Redeemed Collateral
-    // 1099000 * 0.31906825024 = 350656.007014
+    // 1099000 * 0.3302647739 = 362960.986516
     const EXPECTED_FXRP_COLL_REDEEMED =
-      PRECISION_COLL.mul("350656007014").div(1e6);
+      PRECISION_COLL.mul("362960986516").div(1e6);
     expect(
       after
         .sub(before)

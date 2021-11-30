@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 
 import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
-import "hardhat/console.sol";
 
 interface FtsoLike {
     function getCurrentPrice() external returns (uint256 _price, uint256 _timestamp);
@@ -399,12 +398,7 @@ contract VaultEngine is Stateful, Eventful {
         coll.capitalAccumulator += capitalRateIncrease;
 
         uint256 protocolFeeToCollect = coll.normCapital * protocolFeeRates;
-        //        console.log("%s", debtRateIncrease);
-        //        console.log("%s", capitalRateIncrease);
-        //        console.log("new Debt    :%s", newDebt);
-        //        console.log("created     :%s", protocolFeeToCollect + newSupply);
-        //        console.log("new Capital :%s", newSupply);
-        //        console.log("protocolFee :%s", protocolFeeToCollect);
+
         require(
             newSupply + protocolFeeToCollect <= newDebt,
             "VaultEngine/UpdateAccumulator: new capital created is higher than new debt"

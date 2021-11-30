@@ -109,14 +109,14 @@ contract MockVaultEngine {
 
     function updateAccumulators(
         bytes32 collId,
+        address reservePool,
         uint256 debtAccumulator,
         uint256 capitalAccumulator,
-        uint256 capitalRateIncrease,
         uint256 protocolFeeRates_
     ) external {
         Collateral storage coll = collateralTypes[collId];
-        coll.debtAccumulator += debtRateIncrease;
-        coll.capitalAccumulator += capitalRateIncrease;
+        coll.debtAccumulator += debtAccumulator;
+        coll.capitalAccumulator += capitalAccumulator;
         protocolFeeRates = protocolFeeRates_;
     }
 

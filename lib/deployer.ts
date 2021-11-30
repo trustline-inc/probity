@@ -3,36 +3,6 @@ import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-web3";
 import { ethers, network, web3 } from "hardhat";
 
-// Import contract factory types
-import {
-  AureiFactory,
-  TcnTokenFactory,
-  RegistryFactory,
-  VaultEngineFactory,
-  NativeCollateralFactory,
-  Erc20CollateralFactory,
-  TreasuryFactory,
-  PriceFeedFactory,
-  AuctioneerFactory,
-  LinearDecreaseFactory,
-  LiquidatorFactory,
-  ReservePoolFactory,
-  TellerFactory,
-  VpTokenCollateralFactory,
-  ShutdownFactory,
-  HighAprFactory,
-  LowAprFactory,
-  MockFtsoFactory,
-  MockFtsoManagerFactory,
-  MockFtsoRewardManagerFactory,
-  MockErc20TokenFactory,
-  MockVpTokenFactory,
-  MockVaultEngineFactory,
-  MockPriceFeedFactory,
-  MockAuctioneerFactory,
-  MockLiquidatorFactory,
-  MockReservePoolFactory,
-} from "../typechain";
 export type Deployment = {
   contracts: ContractDict;
   signers: SignerDict;
@@ -84,6 +54,7 @@ import {
   Auctioneer__factory,
   LinearDecrease__factory,
   ReservePool__factory,
+  Shutdown__factory,
   Liquidator__factory,
   MockERC20Token__factory,
   MockVPToken__factory,
@@ -91,6 +62,10 @@ import {
   MockFtso__factory,
   MockFtsoManager__factory,
   MockFtsoRewardManager__factory,
+  MockAuctioneer__factory,
+  MockLiquidator__factory,
+  MockPriceFeed__factory,
+  MockReservePool__factory,
 } from "../typechain";
 
 /**
@@ -467,7 +442,9 @@ const deployShutdown = async (param?: {
   const priceFeed =
     param && param.priceFeed ? param.priceFeed : contracts.priceFeed.address;
   const reservePool =
-    param && param.reservePool ? param.reservePool : contracts.reserve.address;
+    param && param.reservePool
+      ? param.reservePool
+      : contracts.reservePool.address;
   const teller =
     param && param.teller ? param.teller : contracts.teller.address;
   const treasury =
@@ -481,7 +458,7 @@ const deployShutdown = async (param?: {
   const shutdownFactory = (await ethers.getContractFactory(
     "Shutdown",
     signers.owner
-  )) as ShutdownFactory;
+  )) as Shutdown__factory;
   contracts.shutdown = await shutdownFactory.deploy(
     registry,
     priceFeed,
@@ -823,7 +800,7 @@ const deployMockPriceFeed = async () => {
   const mockPriceFeed = (await ethers.getContractFactory(
     "MockPriceFeed",
     signers.owner
-  )) as MockPriceFeedFactory;
+  )) as MockPriceFeed__factory;
   contracts.mockPriceFeed = await mockPriceFeed.deploy();
   await contracts.mockPriceFeed.deployed();
 
@@ -842,7 +819,7 @@ const deployMockLiquidator = async () => {
   const mockLiquidator = (await ethers.getContractFactory(
     "MockLiquidator",
     signers.owner
-  )) as MockLiquidatorFactory;
+  )) as MockLiquidator__factory;
   contracts.mockLiquidator = await mockLiquidator.deploy();
   await contracts.mockLiquidator.deployed();
 
@@ -861,7 +838,7 @@ const deployMockAuctioneer = async () => {
   const mockAuctioneer = (await ethers.getContractFactory(
     "MockAuctioneer",
     signers.owner
-  )) as MockAuctioneerFactory;
+  )) as MockAuctioneer__factory;
   contracts.mockAuctioneer = await mockAuctioneer.deploy();
   await contracts.mockAuctioneer.deployed();
 
@@ -880,7 +857,7 @@ const deployMockReservePool = async () => {
   const mockReserve = (await ethers.getContractFactory(
     "MockReservePool",
     signers.owner
-  )) as MockReservePoolFactory;
+  )) as MockReservePool__factory;
   contracts.mockReserve = await mockReserve.deploy();
   await contracts.mockReserve.deployed();
 

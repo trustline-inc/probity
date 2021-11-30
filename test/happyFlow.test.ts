@@ -370,7 +370,7 @@ describe("Probity happy flow", function () {
 
     await priceFeed.updateLiquidationRatio(
       flrCollId,
-      PRECISION_COLL.mul(15).div(10)
+      PRECISION_COLL.mul(22).div(10)
     );
     await priceFeed.updatePrice(flrCollId);
     let unBackedAurBefore = await vaultEngine.unbackedAurei(reserve.address);
@@ -411,7 +411,7 @@ describe("Probity happy flow", function () {
 
     await priceFeed.updateLiquidationRatio(
       flrCollId,
-      PRECISION_COLL.mul(15).div(10)
+      PRECISION_COLL.mul(22).div(10)
     );
     await priceFeed.updatePrice(flrCollId);
 
@@ -420,11 +420,11 @@ describe("Probity happy flow", function () {
     const flrCollUser = flrColl.connect(user);
     const vaultUser = vaultEngine.connect(user);
     const auctioneerUser = auctioneer.connect(user);
-    await flrCollUser.deposit({ value: PRECISION_COLL.mul(3000) });
+    await flrCollUser.deposit({ value: PRECISION_COLL.mul(30000) });
     await vaultUser.modifySupply(
       flrCollId,
       treasury.address,
-      PRECISION_COLL.mul(2000),
+      PRECISION_COLL.mul(20000),
       PRECISION_COLL.mul(1000)
     );
     await vaultUser.modifyDebt(
@@ -487,7 +487,7 @@ describe("Probity happy flow", function () {
 
     await priceFeed.updateLiquidationRatio(
       flrCollId,
-      PRECISION_COLL.mul(15).div(10)
+      PRECISION_COLL.mul(22).div(10)
     );
     await priceFeed.updatePrice(flrCollId);
 
@@ -495,13 +495,14 @@ describe("Probity happy flow", function () {
 
     const flrCollUser = flrColl.connect(user);
     const vaultUser = vaultEngine.connect(user);
-    await flrCollUser.deposit({ value: PRECISION_COLL.mul(3000) });
+    await flrCollUser.deposit({ value: PRECISION_COLL.mul(30000) });
     await vaultUser.modifySupply(
       flrCollId,
       treasury.address,
-      PRECISION_COLL.mul(2000),
+      PRECISION_COLL.mul(20000),
       PRECISION_COLL.mul(1000)
     );
+
     await vaultUser.modifyDebt(
       flrCollId,
       treasury.address,

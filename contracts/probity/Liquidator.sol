@@ -125,13 +125,13 @@ contract Liquidator is Stateful, Eventful {
         reserve.reduceAuctionDebt(amount);
     }
 
-    // @todo incentive for someone who calls liquidateVault?
     function liquidateVault(bytes32 collId, address user) external {
         // check if vault can be liquidated
         (uint256 debtAccu, , uint256 price) = vaultEngine.collateralTypes(collId);
         (, uint256 lockedColl, uint256 debt, uint256 supplied) = vaultEngine.vaults(collId, user);
+
         require(
-            debt * debtAccu + supplied * PRECISION_PRICE < lockedColl * price,
+            lockedColl * price <= debt * debtAccu + supplied * PRECISION_PRICE,
             "Liquidator: Vault collateral is still above required minimal ratio"
         );
 
