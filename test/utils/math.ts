@@ -1,7 +1,11 @@
-import { PRECISION_COLL, PRECISION_PRICE } from "./constants";
+import { PRECISION_AUR, PRECISION_COLL, PRECISION_PRICE } from "./constants";
 
 function wdiv(x, y) {
   return x.mul(PRECISION_COLL).add(y.div(2)).div(y);
+}
+
+function rdiv(x, y) {
+  return x.mul(PRECISION_PRICE).add(y.div(2)).div(y);
 }
 
 function rmul(x, y) {
@@ -22,4 +26,4 @@ function rpow(x, n) {
   return z;
 }
 
-export { wdiv, rmul, rpow };
+export { wdiv, rdiv, rmul, rpow };

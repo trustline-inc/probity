@@ -9,6 +9,12 @@ interface VaultEngineLike {
 
     function removeAurei(address user, uint256 amount) external;
 
+    function moveAurei(
+        address from,
+        address to,
+        uint256 amount
+    ) external;
+
     function removeTcn(address user, uint256 amount) external;
 }
 
@@ -42,6 +48,11 @@ contract Treasury is Stateful {
     /////////////////////////////////////////
     event DepositAurei(address indexed user, uint256 amount);
     event WithdrawAurei(address indexed user, uint256 amount);
+    event TransferAurei(
+        address indexed from,
+        address indexed to,
+        uint256 amount
+    );
     event WithdrawTcn(address indexed user, uint256 amount);
     event ExchangeTcn(address indexed user, uint256 amount);
 
@@ -72,6 +83,11 @@ contract Treasury is Stateful {
         vaultEngine.removeAurei(msg.sender, amount * 1e27);
         aurei.mint(msg.sender, amount);
         emit WithdrawAurei(msg.sender, amount);
+    }
+
+    function transferAurei(address recipient, uint256 amount) external {
+        vaultEngine.moveAurei(msg.sender, recipient, amount * 1e27);
+        emit TransferAurei(msg.sender, recipient, amount);
     }
 
     function withdrawTcn(uint256 amount) external {

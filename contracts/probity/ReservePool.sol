@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 
 import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
+import "hardhat/console.sol";
 
 // reserve pool holds the extra aur that comes from liquidation penalty fee, protocol fees
 // whenever the system have bad debt, this pool will be used to pay it off
@@ -16,6 +17,8 @@ interface VaultEngineLike {
     function unbackedAurei(address user) external returns (uint256 balance);
 
     function settle(uint256 balance) external;
+
+    function increaseSystemDebt(uint256 amount) external;
 
     function moveAurei(
         address from,
@@ -49,6 +52,7 @@ contract ReservePool is Stateful, Eventful {
     // max IOU received per AUR is 50% @todo evaluate this max value
     uint256 public saleMaxPrice = 1.5E18;
     mapping(address => uint256) public ious;
+    uint256 public totalIous;
 
     /////////////////////////////////////////
     // Constructor
@@ -118,12 +122,19 @@ contract ReservePool is Stateful, Eventful {
     }
 
     function addAuctionDebt(uint256 newDebt) external onlyBy("liquidator") {
-        debtOnAuction = debtOnAuction + newDebt;
+        debtOnAuction += newDebt;
+    }
+
+    function reduceAuctionDebt(uint256 debtToReduce)
+        external
+        onlyBy("liquidator")
+    {
+        debtOnAuction -= debtToReduce;
     }
 
     function settle(uint256 amountToSettle) external {
         require(
-            vaultEngine.unbackedAurei(address(this)) <= amountToSettle,
+            amountToSettle <= vaultEngine.unbackedAurei(address(this)),
             "ReservePool/settle: Settlement amount is more than the debt"
         );
         require(
@@ -133,54 +144,81 @@ contract ReservePool is Stateful, Eventful {
         vaultEngine.settle(amountToSettle);
     }
 
-    function startIOUSale() external {
+    function increaseSystemDebt(uint256 amountToSettle) external {
+        vaultEngine.increaseSystemDebt(amountToSettle);
+    }
+
+    function startIouSale() external {
         require(
             vaultEngine.unbackedAurei(address(this)) - debtOnAuction >
                 debtThreshold,
-            "ReservePool/startIOUSale: Debt Threshold is not yet crossed"
+            "ReservePool/startIouSale: Debt Threshold is not yet crossed"
         );
         require(
             vaultEngine.aur(address(this)) == 0,
-            "ReservePool/startIOUSale: AUR balance is still positive"
+            "ReservePool/startIouSale: AUR balance is still positive"
         );
         require(
             sale.active == false,
-            "ReservePool/startIOUSale: the current sale is not over yet"
+            "ReservePool/startIouSale: the current sale is not over yet"
         );
         sale.active = true;
         sale.startTime = block.timestamp;
         sale.saleAmount = debtThreshold;
     }
 
-    function buyIOU(uint256 amount) external {
+    function buyIou(uint256 amount) external {
         require(
             sale.active,
-            "ReservePool/buyIOU: IOUs are not currently on sale"
+            "ReservePool/buyIou: ious are not currently on sale"
         );
         require(
             sale.saleAmount >= amount,
-            "ReservePool/buyIOU: Can't buy more amount than what's available"
+            "ReservePool/buyIou: Can't buy more amount than what's available"
         );
 
         vaultEngine.moveAurei(msg.sender, address(this), amount);
         vaultEngine.settle(amount);
-        ious[msg.sender] = ious[msg.sender] + ((amount * iouPerAur()) / ONE);
+        uint256 amountToBuy = ((amount * iouPerAur()) / ONE);
+        ious[msg.sender] += amountToBuy;
+        totalIous += amountToBuy;
         sale.saleAmount = sale.saleAmount - amount;
         if (sale.saleAmount == 0) {
             sale.active = false;
         }
     }
 
-    function redeemIOU(uint256 amount) external {
+    function redeemIou(uint256 amount) external {
+        processRedemption(msg.sender, amount);
+    }
+
+    function shutdownRedemption(address user, uint256 amount)
+        external
+        onlyWhen("shutdown", true)
+        onlyBy("shutdown")
+    {
+        processRedemption(user, amount);
+    }
+
+    function sendAurei(address to, uint256 amount) external onlyBy("gov") {
+        vaultEngine.moveAurei(address(this), to, amount);
+    }
+
+    /////////////////////////////////////////
+    // Internal functions
+    /////////////////////////////////////////
+
+    function processRedemption(address user, uint256 amount) internal {
         require(
             vaultEngine.aur(address(this)) >= amount,
-            "ReservePool/redeemIOU: The reserve pool doesn't have enough AUR"
+            "ReservePool/processRedemption: The reserve pool doesn't have enough AUR"
         );
         require(
-            ious[msg.sender] >= amount,
-            "ReservePool/redeemIOU: User doesn't have enough IOU to redeem this much"
+            ious[user] >= amount,
+            "ReservePool/processRedemption: User doesn't have enough iou to redeem this much"
         );
-        ious[msg.sender] = ious[msg.sender] - amount;
-        vaultEngine.moveAurei(address(this), msg.sender, amount);
+
+        ious[user] -= amount;
+        vaultEngine.moveAurei(address(this), user, amount);
     }
 }

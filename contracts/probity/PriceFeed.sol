@@ -31,6 +31,18 @@ contract PriceFeed is Stateful, Eventful {
     mapping(bytes32 => Collateral) public collateralTypes;
 
     /////////////////////////////////////////
+    // Modifiers
+    /////////////////////////////////////////
+
+    modifier collateralExists(bytes32 collId) {
+        require(
+            address(collateralTypes[collId].ftso) != address(0),
+            "PriceFeed/CollateralExists: Collateral Type is not Set"
+        );
+        _;
+    }
+
+    /////////////////////////////////////////
     // Constructor
     /////////////////////////////////////////
     constructor(address registryAddress, VaultEngineLike vaultEngineAddress) Stateful(registryAddress) {
@@ -63,6 +75,10 @@ contract PriceFeed is Stateful, Eventful {
     function updateFtso(bytes32 collId, FtsoLike newFtso) external onlyBy("gov") {
         emit LogVarUpdate("priceFeed", collId, "ftso", address(collateralTypes[collId].ftso), address(newFtso));
         collateralTypes[collId].ftso = newFtso;
+    }
+
+    function getPrice(bytes32 collId) public collateralExists(collId) returns (uint256 price) {
+        (price, ) = collateralTypes[collId].ftso.getCurrentPrice();
     }
 
     // @todo figure out how many places of precision the ftso provides and fix the math accordingly

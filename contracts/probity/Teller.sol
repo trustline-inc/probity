@@ -6,9 +6,7 @@ import "../dependencies/Stateful.sol";
 import "hardhat/console.sol";
 
 interface VaultEngineLike {
-    function collateralTypes(bytes32)
-        external
-        returns (uint256 debtAccumulator, uint256 suppAccumulator);
+    function collateralTypes(bytes32) external returns (uint256 debtAccumulator, uint256 suppAccumulator);
 
     function totalDebt() external returns (uint256);
 
@@ -104,10 +102,7 @@ contract Teller is Stateful {
      * @dev Updates the debt and capital rate accumulators
      */
     function updateAccumulator(bytes32 collId) external {
-        require(
-            collateralTypes[collId].lastUpdated != 0,
-            "Teller/updateAccumulator: Collateral type not initialized"
-        );
+        require(collateralTypes[collId].lastUpdated != 0, "Teller/updateAccumulator: Collateral type not initialized");
 
         Collateral memory coll = collateralTypes[collId];
         (uint256 debtAccumulator, uint256 suppAccumulator) = vaultEngine.collateralTypes(collId);
@@ -117,10 +112,8 @@ contract Teller is Stateful {
         require(totalSupply > 0, "Teller/UpdateAccumulator: Total capital can not be zero");
 
         // Update debt accumulator
-        uint256 debtRateIncrease = rmul(
-            rpow(mpr, (block.timestamp - coll.lastUpdated)),
-            debtAccumulator
-        ) - debtAccumulator;
+        uint256 debtRateIncrease = rmul(rpow(mpr, (block.timestamp - coll.lastUpdated)), debtAccumulator) -
+            debtAccumulator;
 
         uint256 exponentiated;
         {
@@ -128,10 +121,7 @@ contract Teller is Stateful {
             uint256 multipliedByUtilization = rmul(mpr - RAY, coll.lastUtilization * 1e9);
             uint256 multipliedByUtilizationPlusOne = multipliedByUtilization + RAY;
 
-            exponentiated = rpow(
-                multipliedByUtilizationPlusOne,
-                (block.timestamp - coll.lastUpdated)
-            );
+            exponentiated = rpow(multipliedByUtilizationPlusOne, (block.timestamp - coll.lastUpdated));
         }
 
         uint256 suppAccumulatorDiff = rmul(exponentiated, suppAccumulator) - suppAccumulator;
@@ -167,13 +157,7 @@ contract Teller is Stateful {
 
         // Update time index
         coll.lastUpdated = block.timestamp;
-        vaultEngine.updateAccumulators(
-            collId,
-            reservePool,
-            debtRateIncrease,
-            capitalRateIncrease,
-            protocolFeeRate
-        );
+        vaultEngine.updateAccumulators(collId, reservePool, debtRateIncrease, capitalRateIncrease, protocolFeeRate);
 
         // collect Fees by adding AUR to reserve pool
 

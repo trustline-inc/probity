@@ -294,7 +294,7 @@ contract VaultEngine is Stateful, Eventful {
         int256 collateralAmount,
         int256 debtAmount,
         int256 capitalAmount
-    ) external onlyBy("liquidator") {
+    ) external onlyByRegistered {
         Vault storage vault = vaults[collId][user];
         Collateral storage coll = collateralTypes[collId];
 
@@ -315,12 +315,19 @@ contract VaultEngine is Stateful, Eventful {
     /**
      * @notice Used for settlement by the reserve pool
      * @param amount The amount to settle
-     * TODO: Do we also need to add a way to increase totalUnbackedAurei?
      */
     function settle(uint256 amount) external onlyByRegistered {
-        aur[msg.sender] = aur[msg.sender] - amount;
-        unbackedAurei[msg.sender] = unbackedAurei[msg.sender] - amount;
+        aur[msg.sender] -= amount;
+        unbackedAurei[msg.sender] -= amount;
+        totalDebt -= amount;
         emit Log("vault", "settle", msg.sender);
+    }
+
+    function increaseSystemDebt(uint256 amount) external onlyByRegistered {
+        aur[msg.sender] += amount;
+        unbackedAurei[msg.sender] += amount;
+        totalDebt += amount;
+        emit Log("vault", "increaseSystemDebt", msg.sender);
     }
 
     /// Admin-related functions
@@ -391,12 +398,7 @@ contract VaultEngine is Stateful, Eventful {
         coll.capitalAccumulator += capitalRateIncrease;
 
         uint256 protocolFeeToCollect = coll.normCapital * protocolFeeRates;
-        //        console.log("%s", debtRateIncrease);
-        //        console.log("%s", capitalRateIncrease);
-        //        console.log("new Debt    :%s", newDebt);
-        //        console.log("created     :%s", protocolFeeToCollect + newSupply);
-        //        console.log("new Capital :%s", newSupply);
-        //        console.log("protocolFee :%s", protocolFeeToCollect);
+
         require(
             newSupply + protocolFeeToCollect <= newDebt,
             "VaultEngine/UpdateAccumulator: new capital created is higher than new debt"

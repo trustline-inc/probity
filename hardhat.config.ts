@@ -19,6 +19,11 @@ const config: HardhatUserConfig = {
       allowUnlimitedContractSize: true,
       gas: 12000000,
       blockGasLimit: 0x1fffffffffffff,
+      accounts: {
+        mnemonic:
+          "refuse inherit state window exercise carpet circle empty scan exclude talk cargo",
+        accountsBalance: "100000000000000000000000000",
+      },
     },
     local: {
       url: "http://127.0.0.1:9650/ext/bc/C/rpc",

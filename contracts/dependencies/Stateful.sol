@@ -13,6 +13,7 @@ contract Stateful is AccessControl {
     ///////////////////////////////////
     // Modifiers
     ///////////////////////////////////
+
     modifier onlyWhen(bytes32 name, bool set) {
         require(states[name] == set, "Stateful/onlyWhen: State check failed");
         _;
@@ -22,6 +23,7 @@ contract Stateful is AccessControl {
     // Events
     ///////////////////////////////////
     event LogStateChange(bytes32 name, bool newState);
+    event ShutdownInitiated();
 
     ///////////////////////////////////
     // Constructor
@@ -35,5 +37,10 @@ contract Stateful is AccessControl {
     function setState(bytes32 name, bool set) external onlyBy("gov") {
         states[name] = set;
         emit LogStateChange(name, set);
+    }
+
+    function setShutdownState() external onlyBy("shutdown") {
+        states[bytes32("shutdown")] = true;
+        emit ShutdownInitiated();
     }
 }

@@ -21,9 +21,7 @@ interface VaultEngineLike {
 }
 
 interface PriceCalc {
-    function price(uint256 startingPrice, uint256 timeElapsed)
-        external
-        returns (uint256 calculatedPrice);
+    function price(uint256 startingPrice, uint256 timeElapsed) external returns (uint256 calculatedPrice);
 }
 
 interface FtsoLike {
@@ -31,7 +29,7 @@ interface FtsoLike {
 }
 
 interface LiquidatorLike {
-    function reduce() external;
+    function reduceAuctionDebt(uint256 amount) external;
 }
 
 contract Auctioneer is Stateful, Eventful {
@@ -91,13 +89,7 @@ contract Auctioneer is Stateful, Eventful {
         uint256 lotSize
     );
 
-    event Sale(
-        bytes32 indexed collId,
-        uint256 indexed auctionId,
-        address indexed user,
-        uint256 price,
-        uint256 lotSize
-    );
+    event Sale(bytes32 indexed collId, uint256 indexed auctionId, address indexed user, uint256 price, uint256 lotSize);
 
     event BidRemoved(
         bytes32 indexed collId,
@@ -106,6 +98,7 @@ contract Auctioneer is Stateful, Eventful {
         uint256 price,
         uint256 lotSize
     );
+
     event AuctionEnded(bytes32 indexed collId, uint256 indexed auctionId);
 
     /////////////////////////////////////////
@@ -116,11 +109,13 @@ contract Auctioneer is Stateful, Eventful {
         address registryAddress,
         VaultEngineLike vaultEngineAddress,
         PriceCalc priceCalcAddress,
-        FtsoLike ftsoAddress
+        FtsoLike ftsoAddress,
+        LiquidatorLike liquidatorAddress
     ) Stateful(registryAddress) {
         vaultEngine = vaultEngineAddress;
         priceCalc = priceCalcAddress;
         ftso = ftsoAddress;
+        liquidator = liquidatorAddress;
     }
 
     /////////////////////////////////////////
@@ -157,10 +152,7 @@ contract Auctioneer is Stateful, Eventful {
         uint256 lot
     ) external {
         require(!auctions[auctionId].isOver, "Auctioneer/placeBid: Auction is over");
-        require(
-            bids[auctionId][msg.sender].price == 0,
-            "Auctioneer/placeBid: this user has already placed a bid"
-        );
+        require(bids[auctionId][msg.sender].price == 0, "Auctioneer/placeBid: this user has already placed a bid");
 
         (uint256 totalBidValue, address index) = totalBidsAtPrice(auctionId, bidPrice * ONE);
         uint256 bidAbleAmount = auctions[auctionId].debt - totalBidValue;
@@ -190,17 +182,11 @@ contract Auctioneer is Stateful, Eventful {
         require(!auctions[auctionId].isOver, "Auctioneer/buyItNow: Auction is over");
         // fail if currentPrice <= max Price
         uint256 currentPrice = calculatePrice(auctionId);
-        require(
-            currentPrice <= maxPrice,
-            "Auctioneer/buyItNow: current price is higher than max price"
-        );
+        require(currentPrice <= maxPrice, "Auctioneer/buyItNow: current price is higher than max price");
         require(currentPrice != 0, "Auctioneer/buyItNow: Current Price is now 0");
         uint256 buyableAmount = amount;
 
-        (uint256 bidValueAtCurrent, address index) = totalBidsAtPrice(
-            auctionId,
-            currentPrice * ONE
-        );
+        (uint256 bidValueAtCurrent, address index) = totalBidsAtPrice(auctionId, currentPrice * ONE);
         require(
             bidValueAtCurrent < auctions[auctionId].debt,
             "Auctioneer/buyItNow: Price has reach a point where BuyItNow is no longer available"
@@ -212,12 +198,7 @@ contract Auctioneer is Stateful, Eventful {
         uint256 lotToBuy = buyableAmount / currentPrice;
 
         vaultEngine.moveAurei(msg.sender, auctions[auctionId].beneficiary, buyableAmount);
-        vaultEngine.moveCollateral(
-            auctions[auctionId].collId,
-            address(this),
-            msg.sender,
-            lotToBuy
-        );
+        vaultEngine.moveCollateral(auctions[auctionId].collId, address(this), msg.sender, lotToBuy);
 
         auctions[auctionId].debt = auctions[auctionId].debt - buyableAmount;
         auctions[auctionId].lot = auctions[auctionId].lot - lotToBuy;
@@ -259,24 +240,22 @@ contract Auctioneer is Stateful, Eventful {
         if (auctions[auctionId].debt == 0 || auctions[auctionId].lot == 0) {
             auctions[auctionId].isOver = true;
 
+            auctions[auctionId].lot = 0;
+
             vaultEngine.moveCollateral(
                 auctions[auctionId].collId,
                 address(this),
                 auctions[auctionId].owner,
                 auctions[auctionId].lot
             );
-            auctions[auctionId].lot = 0;
+
             emit AuctionEnded(auctions[auctionId].collId, auctionId);
             return;
         }
     }
 
     function calculatePrice(uint256 auctionId) public returns (uint256 price) {
-        return
-            priceCalc.price(
-                auctions[auctionId].startPrice,
-                block.timestamp - auctions[auctionId].startTime
-            );
+        return priceCalc.price(auctions[auctionId].startPrice, block.timestamp - auctions[auctionId].startTime);
     }
 
     function removeIndex(uint256 auctionId, address indexToRemove) public {
@@ -292,23 +271,25 @@ contract Auctioneer is Stateful, Eventful {
         require(removed, "Auctioneer/removeIndex: The index could not be found");
     }
 
-    function findIndex(uint256 auctionId, uint256 newPrice)
-        public
-        view
-        returns (address candidate)
-    {
+    function findIndex(uint256 auctionId, uint256 newPrice) public view returns (address candidate) {
         candidate = HEAD;
         while (true) {
-            if (
-                verifyIndex(
-                    auctionId,
-                    candidate,
-                    newPrice,
-                    nextHighestBidder[auctionId][candidate]
-                )
-            ) return candidate;
+            if (verifyIndex(auctionId, candidate, newPrice, nextHighestBidder[auctionId][candidate])) return candidate;
             candidate = nextHighestBidder[auctionId][candidate];
         }
+    }
+
+    function cancelAuction(uint256 auctionId, address recipient) external {
+        Auction storage auction = auctions[auctionId];
+        // cancelOldBids at head index and currentBidValue should be at max?
+
+        cancelOldBids(auctionId, 0, HEAD);
+        // accept the debt?
+        liquidator.reduceAuctionDebt(auction.debt);
+        vaultEngine.moveCollateral(auction.collId, address(this), recipient, auction.lot);
+
+        auction.debt = 0;
+        auction.lot = 0;
     }
 
     /////////////////////////////////////////
@@ -337,14 +318,9 @@ contract Auctioneer is Stateful, Eventful {
                 amountLeft = amountLeft - bids[auctionId][index].price * ONE;
             } else if (amountLeft > 0) {
                 // this bidder's lot is going to change to amountLeftOver
-                uint256 lotDiff = bids[auctionId][index].lot -
-                    ((amountLeft / bids[auctionId][index].price) * ONE);
+                uint256 lotDiff = bids[auctionId][index].lot - ((amountLeft / bids[auctionId][index].price) * ONE);
                 bids[auctionId][index].lot = (amountLeft / bids[auctionId][index].price) * ONE;
-                vaultEngine.moveAurei(
-                    address(this),
-                    index,
-                    lotDiff * bids[auctionId][index].price * ONE
-                );
+                vaultEngine.moveAurei(address(this), index, lotDiff * bids[auctionId][index].price * ONE);
 
                 amountLeft = 0;
             } else {
@@ -396,9 +372,7 @@ contract Auctioneer is Stateful, Eventful {
                 break;
             }
 
-            totalBidsValue =
-                totalBidsValue +
-                (bids[auctionId][index].lot * bids[auctionId][index].price);
+            totalBidsValue = totalBidsValue + (bids[auctionId][index].lot * bids[auctionId][index].price);
             if (nextHighestBidder[auctionId][index] == address(0)) {
                 break;
             }

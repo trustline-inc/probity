@@ -10,10 +10,7 @@ interface FtsoRewardManagerLike {
         address[] memory _dataProviders
     ) external returns (uint256 _rewardAmount);
 
-    function getEpochsWithClaimableRewards()
-        external
-        view
-        returns (uint256 _startEpochId, uint256 _endEpochId);
+    function getEpochsWithClaimableRewards() external view returns (uint256 _startEpochId, uint256 _endEpochId);
 }
 
 interface FtsoManagerLike {
@@ -33,9 +30,7 @@ interface VPTokenLike {
 }
 
 interface VaultEngineLike {
-    function vaults(bytes32 collId, address user)
-        external
-        returns (uint256 freeColl, uint256 lockedColl);
+    function vaults(bytes32 collId, address user) external returns (uint256 freeColl, uint256 lockedColl);
 
     function modifyCollateral(
         bytes32 collateral,
@@ -92,8 +87,7 @@ contract Delegatable is Stateful {
             ftsoManager.getCurrentRewardEpoch() > lastClaimedEpoch,
             "Delegatable/claimReward: No new epoch to claim"
         );
-        (uint256 startEpochId, uint256 endEpochId) = ftsoRewardManager
-            .getEpochsWithClaimableRewards();
+        (uint256 startEpochId, uint256 endEpochId) = ftsoRewardManager.getEpochsWithClaimableRewards();
 
         for (uint256 epochId = startEpochId; epochId <= endEpochId; epochId++) {
             uint256[] memory epochs;
@@ -134,10 +128,7 @@ contract Delegatable is Stateful {
         userLastClaimedEpoch[msg.sender] = lastClaimedEpoch;
     }
 
-    function changeDataProviders(address[] memory providers, uint256[] memory pct)
-        external
-        onlyBy("gov")
-    {
+    function changeDataProviders(address[] memory providers, uint256[] memory pct) external onlyBy("gov") {
         require(
             providers.length == pct.length,
             "Delegatable/changeDataProviders: Length of providers and pct mismatch"
