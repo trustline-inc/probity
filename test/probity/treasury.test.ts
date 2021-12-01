@@ -178,31 +178,4 @@ describe("Treasury Unit Tests", function () {
       expect(parsedEvents[0].args[1]).to.equal(AMOUNT_TO_WITHDRAW);
     });
   });
-
-  describe("ExchangeTcn Unit Tests", function () {
-    beforeEach(async function () {
-      await tcn.mint(owner.address, AMOUNT_TO_MINT);
-    });
-
-    it("tests that tcn is burned and aurei is minted properly", async () => {
-      const aurBalanceBefore = await aurei.balanceOf(owner.address);
-      const tcnBalanceBefore = await tcn.balanceOf(owner.address);
-      await treasury.exchangeTcn(AMOUNT_TO_MINT);
-      const aurBalanceAfter = await aurei.balanceOf(owner.address);
-      const tcnBalanceAfter = await tcn.balanceOf(owner.address);
-      expect(aurBalanceAfter.sub(aurBalanceBefore)).to.equal(AMOUNT_TO_MINT);
-      expect(tcnBalanceBefore.sub(tcnBalanceAfter)).to.equal(AMOUNT_TO_MINT);
-    });
-
-    it("tests that ExchangeTcn is emitted properly", async () => {
-      const parsedEvents = await parseEvents(
-        treasury.exchangeTcn(AMOUNT_TO_WITHDRAW),
-        "ExchangeTcn",
-        treasury
-      );
-
-      expect(parsedEvents[0].args[0]).to.equal(owner.address);
-      expect(parsedEvents[0].args[1]).to.equal(AMOUNT_TO_WITHDRAW);
-    });
-  });
 });
