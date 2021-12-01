@@ -3,7 +3,6 @@
 pragma solidity ^0.8.0;
 
 import "../dependencies/Stateful.sol";
-import "hardhat/console.sol";
 
 interface VaultEngineLike {
     function collateralTypes(bytes32) external returns (uint256 debtAccumulator, uint256 suppAccumulator);

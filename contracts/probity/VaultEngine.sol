@@ -5,10 +5,6 @@ pragma solidity ^0.8.0;
 import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
 
-interface FtsoLike {
-    function getCurrentPrice() external returns (uint256 _price, uint256 _timestamp);
-}
-
 /**
  * @title VaultEngine contract
  * @author Matthew Rosendin <matt@trustline.co, @mrosendin>
