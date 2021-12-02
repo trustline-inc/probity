@@ -5,10 +5,6 @@ pragma solidity ^0.8.0;
 import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
 
-interface FtsoLike {
-    function getCurrentPrice() external returns (uint256 _price, uint256 _timestamp);
-}
-
 /**
  * @title VaultEngine contract
  * @author Matthew Rosendin <matt@trustline.co, @mrosendin>
@@ -31,7 +27,7 @@ contract VaultEngine is Stateful, Eventful {
     struct Collateral {
         uint256 debtAccumulator; // Cumulative debt rate
         uint256 capitalAccumulator; // Cumulative capital rate
-        uint256 price; // Price adjusted for collateral ratio
+        uint256 adjustedPrice; // Price adjusted for collateral ratio
         uint256 normDebt; // Normalized debt
         uint256 normCapital; // Normalized supply
         uint256 ceiling; // Max. amount that can be supplied/borrowed
@@ -153,17 +149,6 @@ contract VaultEngine is Stateful, Eventful {
     }
 
     /**
-     * @dev Converts TCN to Aurei
-     * @param user The address of the vault for TCN conversion
-     * @param amount The amount of TCN to convert
-     * TODO: This is not being called anywhere. Do we need it?
-     */
-    function convertTcnToAurei(address user, uint256 amount) external onlyByRegistered {
-        tcn[user] -= amount;
-        stablecoin[user] += amount;
-    }
-
-    /**
      * @dev Accrues vault TCN
      * @param collId The ID of the vault collateral type
      */
@@ -171,6 +156,7 @@ contract VaultEngine is Stateful, Eventful {
         Vault memory vault = vaults[collId][msg.sender];
         Collateral memory collateral = collateralTypes[collId];
         tcn[msg.sender] += vault.capital * (collateral.capitalAccumulator - vault.lastCapitalAccumulator);
+        aur[msg.sender] += vault.capital * (collateral.capitalAccumulator - vault.lastCapitalAccumulator);
 
         vaults[collId][msg.sender].lastCapitalAccumulator = collateral.capitalAccumulator;
     }
@@ -411,9 +397,9 @@ contract VaultEngine is Stateful, Eventful {
      * @param collId The collateral type ID
      * @param price The new price
      */
-    function updatePrice(bytes32 collId, uint256 price) external onlyByRegistered {
-        emit LogVarUpdate("Vault", collId, "price", collateralTypes[collId].price, price);
-        collateralTypes[collId].price = price;
+    function updateAdjustedPrice(bytes32 collId, uint256 price) external onlyByRegistered {
+        emit LogVarUpdate("Vault", collId, "price", collateralTypes[collId].adjustedPrice, price);
+        collateralTypes[collId].adjustedPrice = price;
     }
 
     /////////////////////////////////////////
@@ -428,7 +414,7 @@ contract VaultEngine is Stateful, Eventful {
     function certify(bytes32 collId, Vault memory vault) internal view {
         require(
             (vault.debt * collateralTypes[collId].debtAccumulator) + (vault.capital * PRECISION_PRICE) <=
-                vault.usedCollateral * collateralTypes[collId].price,
+                vault.usedCollateral * collateralTypes[collId].adjustedPrice,
             "Vault/certify: Not enough collateral"
         );
     }

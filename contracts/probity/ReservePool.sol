@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 
 import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
-import "hardhat/console.sol";
 
 // reserve pool holds the extra aur that comes from liquidation penalty fee, protocol fees
 // whenever the system have bad debt, this pool will be used to pay it off

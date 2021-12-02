@@ -85,7 +85,7 @@ interface VaultLike {
 interface ReservePoolLike {
     function ious(address user) external returns (uint256 balance);
 
-    function totalIous() external returns (uint256 totalIous);
+    function totalIous() external returns (uint256);
 
     function shutdownRedemption(address user, uint256 amount) external;
 
@@ -406,8 +406,6 @@ contract Shutdown is Stateful, Eventful {
     }
 
     function redeemCollateral(bytes32 collId) external {
-        (uint256 balance, , , , ) = vaultEngine.vaults(collId, address(this));
-
         // can withdraw collateral returnedAurei * collateralPerAUR for collateral type
         uint256 redeemAmount = ((stablecoin[msg.sender] / 1e9) * collateralTypes[collId].redeemRatio) /
             WAD /
@@ -440,7 +438,6 @@ contract Shutdown is Stateful, Eventful {
 
         require(userIouBalance != 0 && totalIouBalance != 0, "shutdown/redeemIou: no iou to redeem");
 
-        uint256 one = 1e9;
         uint256 percentageOfIous = rdiv(userIouBalance, totalIouBalance);
         uint256 shareOfAur = rmul(percentageOfIous, finalTotalReserve);
 

@@ -72,7 +72,7 @@ describe("Vault Engine Unit Tests", function () {
       await vaultEngine.initCollType(flrCollId);
       await vaultEngine.updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
       await registry.setupContractAddress(bytes32("collateral"), user.address);
-      await vaultEngine.updatePrice(flrCollId, PRECISION_PRICE.mul(1));
+      await vaultEngine.updateAdjustedPrice(flrCollId, PRECISION_PRICE.mul(1));
       await vaultEngine
         .connect(user)
         .modifyCollateral(flrCollId, owner.address, COLL_AMOUNT_SUPPLY);
@@ -132,7 +132,7 @@ describe("Vault Engine Unit Tests", function () {
       await vaultEngine.initCollType(flrCollId);
       await vaultEngine.updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
       await registry.setupContractAddress(bytes32("collateral"), user.address);
-      await vaultEngine.updatePrice(flrCollId, PRECISION_PRICE.mul(1));
+      await vaultEngine.updateAdjustedPrice(flrCollId, PRECISION_PRICE.mul(1));
 
       await vaultEngine
         .connect(user)
@@ -213,7 +213,7 @@ describe("Vault Engine Unit Tests", function () {
           owner.address,
           COLL_AMOUNT_DEBT.add(COLL_AMOUNT_SUPPLY)
         );
-      await vaultEngine.updatePrice(flrCollId, PRECISION_PRICE.mul(1));
+      await vaultEngine.updateAdjustedPrice(flrCollId, PRECISION_PRICE.mul(1));
 
       await vaultEngine.modifySupply(
         flrCollId,
