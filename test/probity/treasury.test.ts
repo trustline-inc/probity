@@ -70,9 +70,9 @@ describe("Treasury Unit Tests", function () {
     });
 
     it("tests that deposit calls vaultEngine.addAurei function", async () => {
-      const aurBalanceBefore = await vaultEngine.aur(owner.address);
+      const aurBalanceBefore = await vaultEngine.stablecoin(owner.address);
       await treasury.deposit(AMOUNT_TO_MINT);
-      const aurBalanceAfter = await vaultEngine.aur(owner.address);
+      const aurBalanceAfter = await vaultEngine.stablecoin(owner.address);
       expect(aurBalanceAfter.sub(aurBalanceBefore)).to.equal(
         AMOUNT_TO_MINT.mul(PRECISION_PRICE)
       );
@@ -104,9 +104,9 @@ describe("Treasury Unit Tests", function () {
     });
 
     it("tests that withdrawAurei calls vaultEngine.removeAurei function", async () => {
-      const aurBalanceBefore = await vaultEngine.aur(owner.address);
+      const aurBalanceBefore = await vaultEngine.stablecoin(owner.address);
       await treasury.withdrawAurei(AMOUNT_TO_WITHDRAW);
-      const aurBalanceAfter = await vaultEngine.aur(owner.address);
+      const aurBalanceAfter = await vaultEngine.stablecoin(owner.address);
       expect(
         aurBalanceBefore.sub(aurBalanceAfter).div(PRECISION_PRICE)
       ).to.equal(AMOUNT_TO_WITHDRAW);

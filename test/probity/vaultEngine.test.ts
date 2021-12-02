@@ -314,7 +314,9 @@ describe("Vault Engine Unit Tests", function () {
 
       const EXPECTED_AUR = protocolFee.mul(CAPITAL_AMOUNT);
 
-      const reserveAurBefore = await vaultEngine.aur(reservePool.address);
+      const reserveAurBefore = await vaultEngine.stablecoin(
+        reservePool.address
+      );
       await vaultEngine
         .connect(user)
         .updateAccumulators(
@@ -325,7 +327,7 @@ describe("Vault Engine Unit Tests", function () {
           protocolFee
         );
 
-      const reserveAurAfter = await vaultEngine.aur(reservePool.address);
+      const reserveAurAfter = await vaultEngine.stablecoin(reservePool.address);
       expect(reserveAurAfter.sub(reserveAurBefore)).to.equal(EXPECTED_AUR);
     });
   });

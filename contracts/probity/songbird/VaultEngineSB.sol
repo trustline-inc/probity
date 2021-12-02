@@ -41,12 +41,12 @@ contract VaultEngineSB is Stateful, Eventful {
 
     uint256 public totalDebt;
     uint256 public totalCapital;
-    uint256 public totalUnbackedAurei;
+    uint256 public totalunbackedStablecoin;
     address[] public userList;
     mapping(address => bool) userExists;
-    mapping(address => uint256) public aur;
+    mapping(address => uint256) public stablecoin;
     mapping(address => uint256) public tcn;
-    mapping(address => uint256) public unbackedAurei;
+    mapping(address => uint256) public unbackedStablecoin;
     mapping(bytes32 => Collateral) public collateralTypes;
     mapping(bytes32 => mapping(address => Vault)) public vaults;
 
@@ -120,8 +120,8 @@ contract VaultEngineSB is Stateful, Eventful {
         address to,
         uint256 amount
     ) external onlyByRegistered {
-        aur[from] -= amount;
-        aur[to] += amount;
+        stablecoin[from] -= amount;
+        stablecoin[to] += amount;
     }
 
     /**
@@ -130,7 +130,7 @@ contract VaultEngineSB is Stateful, Eventful {
      * @param amount The amount of Aurei to add
      */
     function addAurei(address user, uint256 amount) external onlyBy("treasury") {
-        aur[user] += amount;
+        stablecoin[user] += amount;
     }
 
     /**
@@ -139,7 +139,7 @@ contract VaultEngineSB is Stateful, Eventful {
      * @param amount The amount of Aurei to remove
      */
     function removeAurei(address user, uint256 amount) external onlyBy("treasury") {
-        aur[user] -= amount;
+        stablecoin[user] -= amount;
     }
 
     /**
@@ -159,7 +159,7 @@ contract VaultEngineSB is Stateful, Eventful {
         Vault memory vault = vaults[collId][msg.sender];
         Collateral memory collateral = collateralTypes[collId];
         tcn[msg.sender] += vault.capital * (collateral.capitalAccumulator - vault.lastCapitalAccumulator);
-        aur[msg.sender] += vault.capital * (collateral.capitalAccumulator - vault.lastCapitalAccumulator);
+        stablecoin[msg.sender] += vault.capital * (collateral.capitalAccumulator - vault.lastCapitalAccumulator);
 
         vaults[collId][msg.sender].lastCapitalAccumulator = collateral.capitalAccumulator;
     }
@@ -206,7 +206,7 @@ contract VaultEngineSB is Stateful, Eventful {
         certify(collId, vault);
         checkVaultUnderLimit(collId, vault);
 
-        aur[treasuryAddress] = add(aur[treasuryAddress], aurToModify);
+        stablecoin[treasuryAddress] = add(stablecoin[treasuryAddress], aurToModify);
 
         emit SupplyModified(msg.sender, collAmount, capitalAmount);
     }
@@ -236,7 +236,7 @@ contract VaultEngineSB is Stateful, Eventful {
 
         if (debtAmount > 0) {
             require(
-                aur[treasuryAddress] >= uint256(debtAmount),
+                stablecoin[treasuryAddress] >= uint256(debtAmount),
                 "Vault/modifyDebt: Treasury doesn't have enough supply to loan this amount"
             );
         }
@@ -259,8 +259,8 @@ contract VaultEngineSB is Stateful, Eventful {
         certify(collId, vault);
         checkVaultUnderLimit(collId, vault);
 
-        aur[msg.sender] = add(aur[msg.sender], debtToModify);
-        aur[treasuryAddress] = sub(aur[treasuryAddress], debtToModify);
+        stablecoin[msg.sender] = add(stablecoin[msg.sender], debtToModify);
+        stablecoin[treasuryAddress] = sub(stablecoin[treasuryAddress], debtToModify);
 
         vaults[collId][msg.sender] = vault;
 
@@ -297,8 +297,8 @@ contract VaultEngineSB is Stateful, Eventful {
         int256 aurToRaise = mul(coll.debtAccumulator, debtAmount) + mul(PRECISION_PRICE, capitalAmount);
 
         vaults[collId][auctioneer].freeCollateral = sub(vaults[collId][auctioneer].freeCollateral, collateralAmount);
-        unbackedAurei[reservePool] = sub(unbackedAurei[reservePool], aurToRaise);
-        totalUnbackedAurei = sub(totalUnbackedAurei, aurToRaise);
+        unbackedStablecoin[reservePool] = sub(unbackedStablecoin[reservePool], aurToRaise);
+        totalunbackedStablecoin = sub(totalunbackedStablecoin, aurToRaise);
 
         emit Log("vault", "liquidateVault", msg.sender);
     }
@@ -308,15 +308,15 @@ contract VaultEngineSB is Stateful, Eventful {
      * @param amount The amount to settle
      */
     function settle(uint256 amount) external onlyByRegistered {
-        aur[msg.sender] -= amount;
-        unbackedAurei[msg.sender] -= amount;
+        stablecoin[msg.sender] -= amount;
+        unbackedStablecoin[msg.sender] -= amount;
         totalDebt -= amount;
         emit Log("vault", "settle", msg.sender);
     }
 
     function increaseSystemDebt(uint256 amount) external onlyByRegistered {
-        aur[msg.sender] += amount;
-        unbackedAurei[msg.sender] += amount;
+        stablecoin[msg.sender] += amount;
+        unbackedStablecoin[msg.sender] += amount;
         totalDebt += amount;
         emit Log("vault", "increaseSystemDebt", msg.sender);
     }
@@ -414,7 +414,7 @@ contract VaultEngineSB is Stateful, Eventful {
             newSupply + protocolFeeToCollect <= newDebt,
             "VaultEngine/UpdateAccumulator: new capital created is higher than new debt"
         );
-        aur[reservePool] += protocolFeeToCollect;
+        stablecoin[reservePool] += protocolFeeToCollect;
     }
 
     /**
