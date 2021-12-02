@@ -161,7 +161,7 @@ describe("Probity happy flow", function () {
       PRECISION_COLL.mul(15).div(10),
       ftso.address
     );
-    await priceFeed.updatePrice(flrCollId);
+    await priceFeed.updateAdjustedPrice(flrCollId);
 
     let userVaultBefore = await vaultEngine.vaults(flrCollId, owner.address);
 
@@ -221,7 +221,7 @@ describe("Probity happy flow", function () {
       PRECISION_COLL.mul(15).div(10),
       ftso.address
     );
-    await priceFeed.updatePrice(flrCollId);
+    await priceFeed.updateAdjustedPrice(flrCollId);
 
     // Create Aurei
     await vaultEngine.modifySupply(
@@ -287,7 +287,7 @@ describe("Probity happy flow", function () {
       PRECISION_COLL.mul(15).div(10),
       ftso.address
     );
-    await priceFeed.updatePrice(flrCollId);
+    await priceFeed.updateAdjustedPrice(flrCollId);
 
     let userVaultBefore = await vaultEngine.vaults(flrCollId, owner.address);
 
@@ -337,7 +337,7 @@ describe("Probity happy flow", function () {
       ftso.address
     );
 
-    await priceFeed.updatePrice(flrCollId);
+    await priceFeed.updateAdjustedPrice(flrCollId);
 
     let collTypeAfter = await vaultEngine.collateralTypes(flrCollId);
     let expectedPrice = PRECISION_PRICE.div(3).mul(2);
@@ -353,7 +353,7 @@ describe("Probity happy flow", function () {
     await teller.initCollType(flrCollId, 0);
     await liquidator.init(flrCollId, auctioneer.address);
     await priceFeed.init(flrCollId, PRECISION_COLL, ftso.address);
-    await priceFeed.updatePrice(flrCollId);
+    await priceFeed.updateAdjustedPrice(flrCollId);
 
     await vaultEngine.modifySupply(
       flrCollId,
@@ -372,7 +372,7 @@ describe("Probity happy flow", function () {
       flrCollId,
       PRECISION_COLL.mul(22).div(10)
     );
-    await priceFeed.updatePrice(flrCollId);
+    await priceFeed.updateAdjustedPrice(flrCollId);
     let unBackedAurBefore = await vaultEngine.unbackedAurei(reserve.address);
     let userVaultBefore = await vaultEngine.vaults(flrCollId, owner.address);
     await liquidator.liquidateVault(flrCollId, owner.address);
@@ -394,7 +394,7 @@ describe("Probity happy flow", function () {
     await teller.initCollType(flrCollId, 0);
     await liquidator.init(flrCollId, auctioneer.address);
     await priceFeed.init(flrCollId, PRECISION_COLL, ftso.address);
-    await priceFeed.updatePrice(flrCollId);
+    await priceFeed.updateAdjustedPrice(flrCollId);
 
     await vaultEngine.modifySupply(
       flrCollId,
@@ -413,7 +413,7 @@ describe("Probity happy flow", function () {
       flrCollId,
       PRECISION_COLL.mul(22).div(10)
     );
-    await priceFeed.updatePrice(flrCollId);
+    await priceFeed.updateAdjustedPrice(flrCollId);
 
     await liquidator.liquidateVault(flrCollId, owner.address);
 
@@ -470,7 +470,7 @@ describe("Probity happy flow", function () {
     await teller.initCollType(flrCollId, 0);
     await liquidator.init(flrCollId, auctioneer.address);
     await priceFeed.init(flrCollId, PRECISION_COLL, ftso.address);
-    await priceFeed.updatePrice(flrCollId);
+    await priceFeed.updateAdjustedPrice(flrCollId);
 
     await vaultEngine.modifySupply(
       flrCollId,
@@ -489,7 +489,7 @@ describe("Probity happy flow", function () {
       flrCollId,
       PRECISION_COLL.mul(22).div(10)
     );
-    await priceFeed.updatePrice(flrCollId);
+    await priceFeed.updateAdjustedPrice(flrCollId);
 
     await liquidator.liquidateVault(flrCollId, owner.address);
 

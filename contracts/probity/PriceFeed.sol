@@ -6,7 +6,7 @@ import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
 
 interface VaultEngineLike {
-    function updatePrice(bytes32 collId, uint256 price) external;
+    function updateAdjustedPrice(bytes32 collId, uint256 price) external;
 }
 
 interface FtsoLike {
@@ -82,7 +82,7 @@ contract PriceFeed is Stateful, Eventful {
     }
 
     // @todo figure out how many places of precision the ftso provides and fix the math accordingly
-    function updatePrice(bytes32 collId) external {
+    function updateAdjustedPrice(bytes32 collId) external {
         require(
             address(collateralTypes[collId].ftso) != address(0),
             "PriceFeed/UpdatePrice: Collateral Type is not initialized"
@@ -90,7 +90,7 @@ contract PriceFeed is Stateful, Eventful {
         (uint256 price, ) = collateralTypes[collId].ftso.getCurrentPrice();
         uint256 adjustedPrice = rdiv(rdiv(price, RAY), collateralTypes[collId].liquidationRatio * 1e9);
 
-        vaultEngine.updatePrice(collId, adjustedPrice);
+        vaultEngine.updateAdjustedPrice(collId, adjustedPrice);
     }
 
     /////////////////////////////////////////
