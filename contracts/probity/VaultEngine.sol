@@ -411,7 +411,7 @@ contract VaultEngine is Stateful, Eventful {
      * @param collId The collateral type ID
      * @param price The new price
      */
-    function updatePrice(bytes32 collId, uint256 price) external onlyByRegistered {
+    function updateAdjustedPrice(bytes32 collId, uint256 price) external onlyByRegistered {
         emit LogVarUpdate("Vault", collId, "price", collateralTypes[collId].adjustedPrice, price);
         collateralTypes[collId].adjustedPrice = price;
     }

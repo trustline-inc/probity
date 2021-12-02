@@ -196,9 +196,9 @@ describe("Shutdown Flow Test", function () {
     // current collateral ratio : 150%
     // starting price flr : $1.10 , fxrp : $2.78
     await ftsoFlr.setCurrentPrice(PRECISION_PRICE.mul(11).div(10));
-    await priceFeed.updatePrice(flrCollId);
+    await priceFeed.updateAdjustedPrice(flrCollId);
     await ftsoFxrp.setCurrentPrice(PRECISION_PRICE.mul(278).div(100));
-    await priceFeed.updatePrice(fxrpCollId);
+    await priceFeed.updateAdjustedPrice(fxrpCollId);
 
     // have at least 3 vault that is undercollateralized
     await flrColl
@@ -311,9 +311,9 @@ describe("Shutdown Flow Test", function () {
 
     // drop prices flr : : $0.60 , fxrp: $1.23
     await ftsoFlr.setCurrentPrice(PRECISION_PRICE.mul(60).div(100));
-    await priceFeed.updatePrice(flrCollId);
+    await priceFeed.updateAdjustedPrice(flrCollId);
     await ftsoFxrp.setCurrentPrice(PRECISION_PRICE.mul(123).div(100));
-    await priceFeed.updatePrice(fxrpCollId);
+    await priceFeed.updateAdjustedPrice(fxrpCollId);
     // start 2 auction 1 of each collateral
     await liquidator.liquidateVault(flrCollId, user2.address);
     reserveBalances.debt = PRECISION_AUR.mul(1500);
@@ -575,9 +575,9 @@ describe("Shutdown Flow Test", function () {
     // current collateral ratio : 150%
     // starting price flr : $4.30 , fxrp : $6.23
     await ftsoFlr.setCurrentPrice(PRECISION_PRICE.mul(43).div(10));
-    await priceFeed.updatePrice(flrCollId);
+    await priceFeed.updateAdjustedPrice(flrCollId);
     await ftsoFxrp.setCurrentPrice(PRECISION_PRICE.mul(623).div(100));
-    await priceFeed.updatePrice(fxrpCollId);
+    await priceFeed.updateAdjustedPrice(fxrpCollId);
 
     // have at least 4 vault that is undercollateralized
     await flrColl
@@ -758,9 +758,9 @@ describe("Shutdown Flow Test", function () {
       PRECISION_COLL.mul(175).div(100)
     );
     await ftsoFlr.setCurrentPrice(PRECISION_PRICE.mul(360).div(100));
-    await priceFeed.updatePrice(flrCollId);
+    await priceFeed.updateAdjustedPrice(flrCollId);
     await ftsoFxrp.setCurrentPrice(PRECISION_PRICE.mul(448).div(100));
-    await priceFeed.updatePrice(fxrpCollId);
+    await priceFeed.updateAdjustedPrice(fxrpCollId);
 
     // start 2 auction 1 of each collateral
 
