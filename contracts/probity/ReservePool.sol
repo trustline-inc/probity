@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 
 import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
-import "hardhat/console.sol";
 
 // reserve pool holds the extra aur that comes from liquidation penalty fee, protocol fees
 // whenever the system have bad debt, this pool will be used to pay it off
@@ -57,9 +56,7 @@ contract ReservePool is Stateful, Eventful {
     /////////////////////////////////////////
     // Constructor
     /////////////////////////////////////////
-    constructor(address registryAddress, VaultEngineLike vaultEngineAddress)
-        Stateful(registryAddress)
-    {
+    constructor(address registryAddress, VaultEngineLike vaultEngineAddress) Stateful(registryAddress) {
         vaultEngine = vaultEngineAddress;
     }
 
@@ -85,39 +82,18 @@ contract ReservePool is Stateful, Eventful {
         saleMaxPrice = newMaxPrice;
     }
 
-    function updateSaleStepPeriod(uint256 newStepPeriod)
-        external
-        onlyBy("gov")
-    {
-        emit LogVarUpdate(
-            "reserve",
-            "saleStepPeriod",
-            saleStepPeriod,
-            newStepPeriod
-        );
+    function updateSaleStepPeriod(uint256 newStepPeriod) external onlyBy("gov") {
+        emit LogVarUpdate("reserve", "saleStepPeriod", saleStepPeriod, newStepPeriod);
         saleStepPeriod = newStepPeriod;
     }
 
-    function updateSalePriceIncreasePerStep(uint256 newPriceIncreasePerStep)
-        external
-        onlyBy("gov")
-    {
-        emit LogVarUpdate(
-            "reserve",
-            "salePriceIncreasePerStep",
-            salePriceIncreasePerStep,
-            newPriceIncreasePerStep
-        );
+    function updateSalePriceIncreasePerStep(uint256 newPriceIncreasePerStep) external onlyBy("gov") {
+        emit LogVarUpdate("reserve", "salePriceIncreasePerStep", salePriceIncreasePerStep, newPriceIncreasePerStep);
         salePriceIncreasePerStep = newPriceIncreasePerStep;
     }
 
     function updateDebtThreshold(uint256 newThreshold) external onlyBy("gov") {
-        emit LogVarUpdate(
-            "reserve",
-            "debtThreshold",
-            debtThreshold,
-            newThreshold
-        );
+        emit LogVarUpdate("reserve", "debtThreshold", debtThreshold, newThreshold);
         debtThreshold = newThreshold;
     }
 
@@ -125,10 +101,7 @@ contract ReservePool is Stateful, Eventful {
         debtOnAuction += newDebt;
     }
 
-    function reduceAuctionDebt(uint256 debtToReduce)
-        external
-        onlyBy("liquidator")
-    {
+    function reduceAuctionDebt(uint256 debtToReduce) external onlyBy("liquidator") {
         debtOnAuction -= debtToReduce;
     }
 
@@ -137,10 +110,7 @@ contract ReservePool is Stateful, Eventful {
             amountToSettle <= vaultEngine.unbackedAurei(address(this)),
             "ReservePool/settle: Settlement amount is more than the debt"
         );
-        require(
-            vaultEngine.aur(address(this)) >= amountToSettle,
-            "ReservePool/settle: Not enough balance to settle"
-        );
+        require(vaultEngine.aur(address(this)) >= amountToSettle, "ReservePool/settle: Not enough balance to settle");
         vaultEngine.settle(amountToSettle);
     }
 
@@ -150,32 +120,19 @@ contract ReservePool is Stateful, Eventful {
 
     function startIouSale() external {
         require(
-            vaultEngine.unbackedAurei(address(this)) - debtOnAuction >
-                debtThreshold,
+            vaultEngine.unbackedAurei(address(this)) - debtOnAuction > debtThreshold,
             "ReservePool/startIouSale: Debt Threshold is not yet crossed"
         );
-        require(
-            vaultEngine.aur(address(this)) == 0,
-            "ReservePool/startIouSale: AUR balance is still positive"
-        );
-        require(
-            sale.active == false,
-            "ReservePool/startIouSale: the current sale is not over yet"
-        );
+        require(vaultEngine.aur(address(this)) == 0, "ReservePool/startIouSale: AUR balance is still positive");
+        require(sale.active == false, "ReservePool/startIouSale: the current sale is not over yet");
         sale.active = true;
         sale.startTime = block.timestamp;
         sale.saleAmount = debtThreshold;
     }
 
     function buyIou(uint256 amount) external {
-        require(
-            sale.active,
-            "ReservePool/buyIou: ious are not currently on sale"
-        );
-        require(
-            sale.saleAmount >= amount,
-            "ReservePool/buyIou: Can't buy more amount than what's available"
-        );
+        require(sale.active, "ReservePool/buyIou: ious are not currently on sale");
+        require(sale.saleAmount >= amount, "ReservePool/buyIou: Can't buy more amount than what's available");
 
         vaultEngine.moveAurei(msg.sender, address(this), amount);
         vaultEngine.settle(amount);
@@ -192,11 +149,7 @@ contract ReservePool is Stateful, Eventful {
         processRedemption(msg.sender, amount);
     }
 
-    function shutdownRedemption(address user, uint256 amount)
-        external
-        onlyWhen("shutdown", true)
-        onlyBy("shutdown")
-    {
+    function shutdownRedemption(address user, uint256 amount) external onlyWhen("shutdown", true) onlyBy("shutdown") {
         processRedemption(user, amount);
     }
 
