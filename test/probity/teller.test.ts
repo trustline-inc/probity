@@ -66,7 +66,7 @@ describe("Teller Unit Tests", function () {
         teller.connect(user).setReservePoolAddress(NEW_RESERVE_POOL_ADDRESS),
         "AccessControl/OnlyBy: Caller does not have permission"
       );
-      await registry.setupContractAddress(bytes32("gov"), user.address);
+      await registry.setupAddress(bytes32("gov"), user.address);
       await teller
         .connect(user)
         .setReservePoolAddress(NEW_RESERVE_POOL_ADDRESS);
@@ -95,7 +95,7 @@ describe("Teller Unit Tests", function () {
           .setProtocolFee(bytes32("new coll"), PROTOCOL_FEE_TO_SET),
         "AccessControl/OnlyBy: Caller does not have permission"
       );
-      await registry.setupContractAddress(bytes32("gov"), user.address);
+      await registry.setupAddress(bytes32("gov"), user.address);
       await teller.connect(user).setProtocolFee(flrCollId, PROTOCOL_FEE_TO_SET);
     });
   });
@@ -116,7 +116,7 @@ describe("Teller Unit Tests", function () {
         teller.connect(user).initCollType(bytes32("new coll"), 0),
         "AccessControl/OnlyBy: Caller does not have permission"
       );
-      await registry.setupContractAddress(bytes32("gov"), user.address);
+      await registry.setupAddress(bytes32("gov"), user.address);
       await teller.connect(user).initCollType(flrCollId, 0);
     });
   });

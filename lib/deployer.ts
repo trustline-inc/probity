@@ -211,7 +211,7 @@ const deployAurei = async (param?: { registry?: string }) => {
   )) as Aurei__factory;
   contracts.aurei = await aureiFactory.deploy(registry);
   await contracts.aurei.deployed();
-  await contracts.registry.setupContractAddress(
+  await contracts.registry.setupAddress(
     bytes32("aur"),
     contracts.aurei.address
   );
@@ -228,10 +228,7 @@ const deployPhi = async (param?: { registry?: string }) => {
   )) as Phi__factory;
   contracts.phi = await phiFactory.deploy(registry);
   await contracts.phi.deployed();
-  await contracts.registry.setupContractAddress(
-    bytes32("phi"),
-    contracts.phi.address
-  );
+  await contracts.registry.setupAddress(bytes32("phi"), contracts.phi.address);
   return contracts;
 };
 
@@ -245,7 +242,7 @@ const deployTCN = async (param?: { registry?: string }) => {
   )) as TcnToken__factory;
   contracts.tcnToken = await tcnFactory.deploy(registry);
   await contracts.tcnToken.deployed();
-  await contracts.registry.setupContractAddress(
+  await contracts.registry.setupAddress(
     bytes32("tcn"),
     contracts.tcnToken.address
   );
@@ -260,7 +257,7 @@ const deployApr = async () => {
   )) as LowAPR__factory;
   contracts.lowApr = await lowAprFactory.deploy();
   await contracts.lowApr.deployed();
-  await contracts.registry.setupContractAddress(
+  await contracts.registry.setupAddress(
     bytes32("lowApr"),
     contracts.lowApr.address
   );
@@ -270,7 +267,7 @@ const deployApr = async () => {
   )) as HighAPR__factory;
   contracts.highApr = await highAprFactory.deploy();
   await contracts.highApr.deployed();
-  await contracts.registry.setupContractAddress(
+  await contracts.registry.setupAddress(
     bytes32("highApr"),
     contracts.highApr.address
   );
@@ -287,7 +284,7 @@ const deployVaultEngine = async (param?: { registry?: string }) => {
   )) as VaultEngine__factory;
   contracts.vaultEngine = await vaultEngineFactory.deploy(registry);
   await contracts.vaultEngine.deployed();
-  await contracts.registry.setupContractAddress(
+  await contracts.registry.setupAddress(
     bytes32("vaultEngine"),
     contracts.vaultEngine.address
   );
@@ -339,7 +336,7 @@ const deployVPTokenCollateral = async (param?: {
   );
   await contracts.vpTokenCollateral.deployed();
 
-  await registry.setupContractAddress(
+  await registry.setupAddress(
     bytes32("collateral"),
     contracts.vpTokenCollateral.address
   );
@@ -379,7 +376,7 @@ const deployERC20Collateral = async (param?: {
     vaultEngine
   );
   await contracts.erc20Collateral.deployed();
-  await registry.setupContractAddress(
+  await registry.setupAddress(
     bytes32("collateral"),
     contracts.erc20Collateral.address
   );
@@ -416,7 +413,7 @@ const deployNativeCollateral = async (param?: {
   );
   await contracts.nativeCollateral.deployed();
 
-  await contracts.registry.setupContractAddress(
+  await contracts.registry.setupAddress(
     bytes32("collateral"),
     contracts.nativeCollateral.address
   );
@@ -470,7 +467,7 @@ const deployShutdown = async (param?: {
   );
   await contracts.shutdown.deployed();
 
-  await contracts.registry.setupContractAddress(
+  await contracts.registry.setupAddress(
     bytes32("shutdown"),
     contracts.shutdown.address
   );
@@ -515,7 +512,7 @@ const deployTeller = async (param?: {
   );
   await contracts.teller.deployed();
 
-  await contracts.registry.setupContractAddress(
+  await contracts.registry.setupAddress(
     bytes32("teller"),
     contracts.teller.address
   );
@@ -553,7 +550,7 @@ const deployTreasury = async (param?: {
 
   await contracts.treasury.deployed();
 
-  await contracts.registry.setupContractAddress(
+  await contracts.registry.setupAddress(
     bytes32("treasury"),
     contracts.treasury.address
   );
@@ -581,7 +578,7 @@ const deployPriceFeed = async (param?: {
   contracts.priceFeed = await priceFeedFactory.deploy(registry, vaultEngine);
   await contracts.priceFeed.deployed();
 
-  await contracts.registry.setupContractAddress(
+  await contracts.registry.setupAddress(
     bytes32("priceFeed"),
     contracts.priceFeed.address
   );
@@ -625,7 +622,7 @@ const deployAuctioneer = async (param?: {
 
   await contracts.auctioneer.deployed();
 
-  await registry.setupContractAddress(
+  await registry.setupAddress(
     bytes32("auctioneer"),
     contracts.auctioneer.address
   );
@@ -641,7 +638,7 @@ const deployPriceCalc = async () => {
   )) as LinearDecrease__factory;
   contracts.linearDecrease = await linearDecreaseFactory.deploy();
   await contracts.linearDecrease.deployed();
-  await contracts.registry.setupContractAddress(
+  await contracts.registry.setupAddress(
     bytes32("priceCalc"),
     contracts.linearDecrease.address
   );
@@ -669,7 +666,7 @@ const deployReservePool = async (param?: {
     vaultEngine
   );
   await contracts.reservePool.deployed();
-  await contracts.registry.setupContractAddress(
+  await contracts.registry.setupAddress(
     bytes32("reservePool"),
     contracts.reservePool.address
   );
@@ -704,7 +701,7 @@ const deployLiquidator = async (param?: {
     reservePool
   );
   await contracts.liquidator.deployed();
-  await contracts.registry.setupContractAddress(
+  await contracts.registry.setupAddress(
     bytes32("liquidator"),
     contracts.liquidator.address
   );
@@ -753,7 +750,7 @@ const deployMockFtso = async () => {
   )) as MockFtso__factory;
   contracts.ftso = await ftsoFactory.deploy();
   await contracts.ftso.deployed();
-  await contracts.registry.setupContractAddress(
+  await contracts.registry.setupAddress(
     bytes32("ftso"),
     contracts.ftso.address
   );
@@ -768,7 +765,7 @@ const deployMockFtsoManager = async () => {
   )) as MockFtsoManager__factory;
   contracts.ftsoManager = await ftsoManagerFactory.deploy();
   await contracts.ftsoManager.deployed();
-  await contracts.registry.setupContractAddress(
+  await contracts.registry.setupAddress(
     bytes32("ftsoManager"),
     contracts.ftsoManager.address
   );
@@ -785,7 +782,7 @@ const deployMockFtsoRewardManager = async () => {
   contracts.ftsoRewardManager = await ftsoRewardManager.deploy();
   await contracts.ftsoRewardManager.deployed();
 
-  await contracts.registry.setupContractAddress(
+  await contracts.registry.setupAddress(
     bytes32("ftsoRewardManager"),
     contracts.ftsoRewardManager.address
   );
@@ -804,7 +801,7 @@ const deployMockPriceFeed = async () => {
   contracts.mockPriceFeed = await mockPriceFeed.deploy();
   await contracts.mockPriceFeed.deployed();
 
-  await contracts.registry.setupContractAddress(
+  await contracts.registry.setupAddress(
     bytes32("priceFeed"),
     contracts.mockPriceFeed.address
   );
@@ -823,7 +820,7 @@ const deployMockLiquidator = async () => {
   contracts.mockLiquidator = await mockLiquidator.deploy();
   await contracts.mockLiquidator.deployed();
 
-  await contracts.registry.setupContractAddress(
+  await contracts.registry.setupAddress(
     bytes32("liquidator"),
     contracts.mockLiquidator.address
   );
@@ -842,7 +839,7 @@ const deployMockAuctioneer = async () => {
   contracts.mockAuctioneer = await mockAuctioneer.deploy();
   await contracts.mockAuctioneer.deployed();
 
-  await contracts.registry.setupContractAddress(
+  await contracts.registry.setupAddress(
     bytes32("auctioneer"),
     contracts.mockAuctioneer.address
   );
@@ -861,7 +858,7 @@ const deployMockReservePool = async () => {
   contracts.mockReserve = await mockReserve.deploy();
   await contracts.mockReserve.deployed();
 
-  await contracts.registry.setupContractAddress(
+  await contracts.registry.setupAddress(
     bytes32("reservePool"),
     contracts.mockReserve.address
   );

@@ -71,7 +71,7 @@ describe("Vault Engine Unit Tests", function () {
       });
       await vaultEngine.initCollType(flrCollId);
       await vaultEngine.updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
-      await registry.setupContractAddress(bytes32("collateral"), user.address);
+      await registry.setupAddress(bytes32("collateral"), user.address);
       await vaultEngine.updatePrice(flrCollId, PRECISION_PRICE.mul(1));
       await vaultEngine
         .connect(user)
@@ -131,7 +131,7 @@ describe("Vault Engine Unit Tests", function () {
       });
       await vaultEngine.initCollType(flrCollId);
       await vaultEngine.updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
-      await registry.setupContractAddress(bytes32("collateral"), user.address);
+      await registry.setupAddress(bytes32("collateral"), user.address);
       await vaultEngine.updatePrice(flrCollId, PRECISION_PRICE.mul(1));
 
       await vaultEngine
@@ -205,7 +205,7 @@ describe("Vault Engine Unit Tests", function () {
       });
       await vaultEngine.initCollType(flrCollId);
       await vaultEngine.updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
-      await registry.setupContractAddress(bytes32("collateral"), user.address);
+      await registry.setupAddress(bytes32("collateral"), user.address);
       await vaultEngine
         .connect(user)
         .modifyCollateral(
@@ -228,7 +228,7 @@ describe("Vault Engine Unit Tests", function () {
         DEBT_AMOUNT
       );
 
-      await registry.setupContractAddress(bytes32("teller"), user.address);
+      await registry.setupAddress(bytes32("teller"), user.address);
     });
 
     it("tests that only teller can call updateAccumulators", async () => {
