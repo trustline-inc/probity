@@ -153,17 +153,6 @@ contract VaultEngine is Stateful, Eventful {
     }
 
     /**
-     * @dev Converts TCN to Aurei
-     * @param user The address of the vault for TCN conversion
-     * @param amount The amount of TCN to convert
-     * TODO: This is not being called anywhere. Do we need it?
-     */
-    function convertTcnToAurei(address user, uint256 amount) external onlyByRegistered {
-        tcn[user] -= amount;
-        aur[user] += amount;
-    }
-
-    /**
      * @dev Accrues vault TCN
      * @param collId The ID of the vault collateral type
      */
@@ -171,6 +160,7 @@ contract VaultEngine is Stateful, Eventful {
         Vault memory vault = vaults[collId][msg.sender];
         Collateral memory collateral = collateralTypes[collId];
         tcn[msg.sender] += vault.capital * (collateral.capitalAccumulator - vault.lastCapitalAccumulator);
+        aur[msg.sender] += vault.capital * (collateral.capitalAccumulator - vault.lastCapitalAccumulator);
 
         vaults[collId][msg.sender].lastCapitalAccumulator = collateral.capitalAccumulator;
     }
