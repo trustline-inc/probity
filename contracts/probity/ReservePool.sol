@@ -11,9 +11,9 @@ import "../dependencies/Eventful.sol";
 // the reserve will sell IOUs in order to cover it
 // people with IOU can redeem it after the reserve replenishes
 interface VaultEngineLike {
-    function aur(address user) external returns (uint256 balance);
+    function stablecoin(address user) external returns (uint256 balance);
 
-    function unbackedAurei(address user) external returns (uint256 balance);
+    function unbackedStablecoin(address user) external returns (uint256 balance);
 
     function settle(uint256 balance) external;
 
@@ -107,10 +107,13 @@ contract ReservePool is Stateful, Eventful {
 
     function settle(uint256 amountToSettle) external {
         require(
-            amountToSettle <= vaultEngine.unbackedAurei(address(this)),
+            amountToSettle <= vaultEngine.unbackedStablecoin(address(this)),
             "ReservePool/settle: Settlement amount is more than the debt"
         );
-        require(vaultEngine.aur(address(this)) >= amountToSettle, "ReservePool/settle: Not enough balance to settle");
+        require(
+            vaultEngine.stablecoin(address(this)) >= amountToSettle,
+            "ReservePool/settle: Not enough balance to settle"
+        );
         vaultEngine.settle(amountToSettle);
     }
 
@@ -120,10 +123,10 @@ contract ReservePool is Stateful, Eventful {
 
     function startIouSale() external {
         require(
-            vaultEngine.unbackedAurei(address(this)) - debtOnAuction > debtThreshold,
+            vaultEngine.unbackedStablecoin(address(this)) - debtOnAuction > debtThreshold,
             "ReservePool/startIouSale: Debt Threshold is not yet crossed"
         );
-        require(vaultEngine.aur(address(this)) == 0, "ReservePool/startIouSale: AUR balance is still positive");
+        require(vaultEngine.stablecoin(address(this)) == 0, "ReservePool/startIouSale: AUR balance is still positive");
         require(sale.active == false, "ReservePool/startIouSale: the current sale is not over yet");
         sale.active = true;
         sale.startTime = block.timestamp;
@@ -163,7 +166,7 @@ contract ReservePool is Stateful, Eventful {
 
     function processRedemption(address user, uint256 amount) internal {
         require(
-            vaultEngine.aur(address(this)) >= amount,
+            vaultEngine.stablecoin(address(this)) >= amount,
             "ReservePool/processRedemption: The reserve pool doesn't have enough AUR"
         );
         require(

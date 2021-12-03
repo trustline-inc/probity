@@ -28,9 +28,9 @@ interface PriceFeedLike {
 interface VaultLike {
     function setShutdownState() external;
 
-    function aur(address user) external returns (uint256 value);
+    function stablecoin(address user) external returns (uint256 value);
 
-    function unbackedAurei(address user) external returns (uint256 value);
+    function unbackedStablecoin(address user) external returns (uint256 value);
 
     function totalDebt() external returns (uint256 value);
 
@@ -155,7 +155,7 @@ contract Shutdown is Stateful, Eventful {
     uint256 public supplierWaitPeriod = 2 days;
     mapping(bytes32 => Collateral) public collateralTypes;
     mapping(bytes32 => mapping(address => uint256)) public collRedeemed;
-    mapping(address => uint256) public aur;
+    mapping(address => uint256) public stablecoin;
     uint256 public finalAurUtilizationRatio;
     uint256 public redeemRatio;
     uint256 public aurGap; // value of under-collateralized vaults
@@ -318,7 +318,7 @@ contract Shutdown is Stateful, Eventful {
 
     function fillInAurGap() external onlyWhenInShutdown {
         // use system reserve to fill in AurGap
-        uint256 reserveBalance = vaultEngine.aur(address(reservePool));
+        uint256 reserveBalance = vaultEngine.stablecoin(address(reservePool));
 
         uint256 amountToMove = min(aurGap, reserveBalance);
         vaultEngine.moveAurei(address(reservePool), address(this), amountToMove);
@@ -334,7 +334,7 @@ contract Shutdown is Stateful, Eventful {
         require(finalDebtBalance != 0, "shutdown/setFinalDebtBalance: finalDebtBalance must be set first");
 
         require(
-            aurGap == 0 || vaultEngine.aur(address(reservePool)) == 0,
+            aurGap == 0 || vaultEngine.stablecoin(address(reservePool)) == 0,
             "shutdown/setFinalDebtBalance: system reserve or aurGap must be zero"
         );
 
@@ -381,7 +381,8 @@ contract Shutdown is Stateful, Eventful {
             "shutdown/setFinalDebtBalance: supplierWaitPeriod has not passed yet"
         );
         require(
-            vaultEngine.unbackedAurei(address(reservePool)) == 0 || vaultEngine.aur(address(reservePool)) == 0,
+            vaultEngine.unbackedStablecoin(address(reservePool)) == 0 ||
+                vaultEngine.stablecoin(address(reservePool)) == 0,
             "shutdown/setFinalDebtBalance: system reserve or debt must be zero"
         ); // system debt or system reserve should be zero
 
@@ -401,12 +402,12 @@ contract Shutdown is Stateful, Eventful {
 
     function returnAurei(uint256 amount) external {
         vaultEngine.moveAurei(msg.sender, address(this), amount);
-        aur[msg.sender] += amount;
+        stablecoin[msg.sender] += amount;
     }
 
     function redeemCollateral(bytes32 collId) external {
         // can withdraw collateral returnedAurei * collateralPerAUR for collateral type
-        uint256 redeemAmount = ((aur[msg.sender] / 1e9) * collateralTypes[collId].redeemRatio) /
+        uint256 redeemAmount = ((stablecoin[msg.sender] / 1e9) * collateralTypes[collId].redeemRatio) /
             WAD /
             RAY -
             collRedeemed[collId][msg.sender];
@@ -417,13 +418,13 @@ contract Shutdown is Stateful, Eventful {
 
     function calculateIouRedemptionRatio() external {
         require(finalDebtBalance != 0, "");
-        require(vaultEngine.aur(address(reservePool)) != 0, "");
+        require(vaultEngine.stablecoin(address(reservePool)) != 0, "");
     }
 
     function setFinalSystemReserve() external {
         require(finalDebtBalance != 0, "shutdown/redeemIou: finalDebtBalance must be set first");
 
-        uint256 totalSystemReserve = vaultEngine.aur(address(reservePool));
+        uint256 totalSystemReserve = vaultEngine.stablecoin(address(reservePool));
         require(totalSystemReserve != 0, "shutdown/setFinalSystemReserve: system reserve is zero");
 
         finalTotalReserve = totalSystemReserve;

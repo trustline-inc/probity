@@ -71,10 +71,10 @@ async function fxrpDeposit(user, amount) {
 }
 
 async function expectBalancesToMatch(user, balance) {
-  if (balance.aur !== undefined) {
-    let aur = await vaultEngine.aur(user.address);
+  if (balance.stablecoin !== undefined) {
+    let aur = await vaultEngine.stablecoin(user.address);
 
-    expect(aur).to.equal(balance.aur);
+    expect(aur).to.equal(balance.stablecoin);
   }
 
   if (balance.flr !== undefined) {
@@ -109,10 +109,10 @@ async function expectBalancesToMatch(user, balance) {
 }
 
 async function checkReserveBalances(reserveBalances) {
-  expect(await vaultEngine.aur(reserve.address)).to.equal(
+  expect(await vaultEngine.stablecoin(reserve.address)).to.equal(
     reserveBalances.reserve
   );
-  expect(await vaultEngine.unbackedAurei(reserve.address)).to.equal(
+  expect(await vaultEngine.unbackedStablecoin(reserve.address)).to.equal(
     reserveBalances.debt
   );
 }
@@ -260,7 +260,7 @@ describe("Shutdown Flow Test", function () {
       lockedColl: PRECISION_COLL.mul(150000),
       debt: PRECISION_COLL.mul(135000),
     };
-    balances.user2.aur = PRECISION_AUR.mul(135000 + 1500);
+    balances.user2.stablecoin = PRECISION_AUR.mul(135000 + 1500);
     await expectBalancesToMatch(user2, balances.user2);
 
     await fxrpDeposit(user3, PRECISION_COLL.mul(600000));
@@ -285,7 +285,7 @@ describe("Shutdown Flow Test", function () {
       debt: PRECISION_COLL.mul(150000),
       capital: PRECISION_COLL.mul(150000),
     };
-    balances.user3.aur = PRECISION_AUR.mul(150000);
+    balances.user3.stablecoin = PRECISION_AUR.mul(150000);
     await expectBalancesToMatch(user3, balances.user3);
 
     await flrColl
@@ -303,7 +303,7 @@ describe("Shutdown Flow Test", function () {
       lockedColl: PRECISION_COLL.mul(6900),
       debt: PRECISION_COLL.mul(4500),
     };
-    balances.user4.aur = PRECISION_AUR.mul(4500);
+    balances.user4.stablecoin = PRECISION_AUR.mul(4500);
     await expectBalancesToMatch(user4, balances.user4);
 
     // totalDebt should be $291000
@@ -345,7 +345,9 @@ describe("Shutdown Flow Test", function () {
     reserveBalances.reserve = PRECISION_AUR.mul(0);
     await checkReserveBalances(reserveBalances);
 
-    balances.user2.aur = balances.user2.aur.add(DEBT_THRESHOLD.mul(12).div(10));
+    balances.user2.stablecoin = balances.user2.stablecoin.add(
+      DEBT_THRESHOLD.mul(12).div(10)
+    );
     await expectBalancesToMatch(user2, balances.user2);
 
     await reserve.startIouSale();
@@ -355,14 +357,18 @@ describe("Shutdown Flow Test", function () {
     );
     await checkReserveBalances(reserveBalances);
 
-    balances.user3.aur = balances.user3.aur.sub(DEBT_THRESHOLD.mul(3).div(4));
+    balances.user3.stablecoin = balances.user3.stablecoin.sub(
+      DEBT_THRESHOLD.mul(3).div(4)
+    );
     await expectBalancesToMatch(user3, balances.user3);
 
     await reserve.connect(user2).buyIou(DEBT_THRESHOLD.div(4));
     reserveBalances.debt = reserveBalances.debt.sub(DEBT_THRESHOLD.div(4));
     await checkReserveBalances(reserveBalances);
 
-    balances.user2.aur = balances.user2.aur.sub(DEBT_THRESHOLD.div(4));
+    balances.user2.stablecoin = balances.user2.stablecoin.sub(
+      DEBT_THRESHOLD.div(4)
+    );
     await expectBalancesToMatch(user2, balances.user2);
 
     // put system reserve (enough to cover all the debt have have extra left over) and have IOU holder
@@ -374,7 +380,9 @@ describe("Shutdown Flow Test", function () {
       PRECISION_AUR.mul(7000)
     );
     await checkReserveBalances(reserveBalances);
-    balances.user2.aur = balances.user2.aur.sub(PRECISION_AUR.mul(7000));
+    balances.user2.stablecoin = balances.user2.stablecoin.sub(
+      PRECISION_AUR.mul(7000)
+    );
     await expectBalancesToMatch(user2, balances.user2);
 
     await treasury
@@ -385,7 +393,9 @@ describe("Shutdown Flow Test", function () {
       PRECISION_AUR.mul(140000)
     );
     await checkReserveBalances(reserveBalances);
-    balances.user3.aur = balances.user3.aur.sub(PRECISION_AUR.mul(140000));
+    balances.user3.stablecoin = balances.user3.stablecoin.sub(
+      PRECISION_AUR.mul(140000)
+    );
     await expectBalancesToMatch(user3, balances.user3);
 
     // initiate shutdown
@@ -512,7 +522,7 @@ describe("Shutdown Flow Test", function () {
 
     // return Aurei
     await shutdown.connect(user2).returnAurei(PRECISION_AUR.mul(65000 + 1500));
-    expect(await shutdown.aur(user2.address)).to.equal(
+    expect(await shutdown.stablecoin(user2.address)).to.equal(
       PRECISION_AUR.mul(65000 + 1500)
     );
 
@@ -639,7 +649,7 @@ describe("Shutdown Flow Test", function () {
       lockedColl: PRECISION_COLL.mul(270000),
       debt: PRECISION_COLL.mul(1100000),
     };
-    balances.user2.aur = PRECISION_AUR.mul(6000 + 1100000);
+    balances.user2.stablecoin = PRECISION_AUR.mul(6000 + 1100000);
     await expectBalancesToMatch(user2, balances.user2);
 
     await flrColl
@@ -666,7 +676,7 @@ describe("Shutdown Flow Test", function () {
       lockedColl: PRECISION_COLL.mul(9000),
       debt: PRECISION_COLL.mul(10000 + 15000),
     };
-    balances.user3.aur = PRECISION_AUR.mul(15000 + 10000);
+    balances.user3.stablecoin = PRECISION_AUR.mul(15000 + 10000);
     await expectBalancesToMatch(user3, balances.user3);
 
     await fxrpDeposit(user4, PRECISION_COLL.mul(620000));
@@ -692,7 +702,7 @@ describe("Shutdown Flow Test", function () {
       debt: PRECISION_COLL.mul(1500000),
       capital: PRECISION_COLL.mul(1000000),
     };
-    balances.user4.aur = PRECISION_AUR.mul(1500000);
+    balances.user4.stablecoin = PRECISION_AUR.mul(1500000);
     await expectBalancesToMatch(user4, balances.user4);
 
     await flrColl
@@ -744,7 +754,7 @@ describe("Shutdown Flow Test", function () {
       debt: PRECISION_COLL.mul(1200000),
       capital: PRECISION_COLL.mul(1500000),
     };
-    balances.user5.aur = PRECISION_AUR.mul(1200000 + 1500);
+    balances.user5.stablecoin = PRECISION_AUR.mul(1200000 + 1500);
     await expectBalancesToMatch(user5, balances.user5);
 
     // new collateral ratio : 175%
@@ -789,7 +799,9 @@ describe("Shutdown Flow Test", function () {
       PRECISION_AUR.mul(7000)
     );
     await checkReserveBalances(reserveBalances);
-    balances.user2.aur = balances.user2.aur.sub(PRECISION_AUR.mul(7000));
+    balances.user2.stablecoin = balances.user2.stablecoin.sub(
+      PRECISION_AUR.mul(7000)
+    );
     await expectBalancesToMatch(user2, balances.user2);
 
     await treasury
@@ -800,7 +812,9 @@ describe("Shutdown Flow Test", function () {
       PRECISION_AUR.mul(140000)
     );
     await checkReserveBalances(reserveBalances);
-    balances.user4.aur = balances.user4.aur.sub(PRECISION_AUR.mul(140000));
+    balances.user4.stablecoin = balances.user4.stablecoin.sub(
+      PRECISION_AUR.mul(140000)
+    );
     await expectBalancesToMatch(user4, balances.user4);
 
     // initiate shutdown
@@ -1085,7 +1099,7 @@ describe("Shutdown Flow Test", function () {
 
     // return Aurei
     await shutdown.connect(user2).returnAurei(PRECISION_AUR.mul(1099000));
-    expect(await shutdown.aur(user2.address)).to.equal(
+    expect(await shutdown.stablecoin(user2.address)).to.equal(
       PRECISION_AUR.mul(1099000)
     );
 

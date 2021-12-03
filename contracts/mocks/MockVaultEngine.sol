@@ -32,9 +32,9 @@ contract MockVaultEngine {
     mapping(bytes32 => mapping(address => Vault)) public vaults;
     mapping(bytes32 => bool) public states;
     mapping(bytes32 => Collateral) public collateralTypes;
-    mapping(address => uint256) public aur;
+    mapping(address => uint256) public stablecoin;
     mapping(address => uint256) public tcn;
-    mapping(address => uint256) public unbackedAurei;
+    mapping(address => uint256) public unbackedStablecoin;
 
     uint256 public protocolFeeRates;
     uint256 public totalDebt;
@@ -42,11 +42,11 @@ contract MockVaultEngine {
     LiquidateVaultCall public lastLiquidateVaultCall;
 
     function addAurei(address user, uint256 amount) external {
-        aur[user] += amount;
+        stablecoin[user] += amount;
     }
 
     function removeAurei(address user, uint256 amount) external {
-        aur[user] -= amount;
+        stablecoin[user] -= amount;
     }
 
     function moveAurei(
@@ -54,16 +54,16 @@ contract MockVaultEngine {
         address to,
         uint256 amount
     ) external {
-        aur[from] -= amount;
-        aur[to] += amount;
+        stablecoin[from] -= amount;
+        stablecoin[to] += amount;
     }
 
     function setAurei(address user, uint256 amount) external {
-        aur[user] = amount;
+        stablecoin[user] = amount;
     }
 
-    function setUnbackedAurei(address user, uint256 amount) external {
-        unbackedAurei[user] = amount;
+    function setunbackedStablecoin(address user, uint256 amount) external {
+        unbackedStablecoin[user] = amount;
     }
 
     function removeTcn(address user, uint256 amount) external {
