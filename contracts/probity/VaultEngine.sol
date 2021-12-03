@@ -156,7 +156,7 @@ contract VaultEngine is Stateful, Eventful {
         Vault memory vault = vaults[collId][msg.sender];
         Collateral memory collateral = collateralTypes[collId];
         tcn[msg.sender] += vault.capital * (collateral.capitalAccumulator - vault.lastCapitalAccumulator);
-        aur[msg.sender] += vault.capital * (collateral.capitalAccumulator - vault.lastCapitalAccumulator);
+        stablecoin[msg.sender] += vault.capital * (collateral.capitalAccumulator - vault.lastCapitalAccumulator);
 
         vaults[collId][msg.sender].lastCapitalAccumulator = collateral.capitalAccumulator;
     }
