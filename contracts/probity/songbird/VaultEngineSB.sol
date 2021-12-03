@@ -2,8 +2,8 @@
 
 pragma solidity ^0.8.0;
 
-import "../dependencies/Stateful.sol";
-import "../dependencies/Eventful.sol";
+import "../../dependencies/Stateful.sol";
+import "../../dependencies/Eventful.sol";
 
 /**
  * @title VaultEngine contract
@@ -12,7 +12,7 @@ import "../dependencies/Eventful.sol";
  * @notice The core accounting module for the Probity system
  */
 
-contract VaultEngine is Stateful, Eventful {
+contract VaultEngineSB is Stateful, Eventful {
     /////////////////////////////////////////
     // Type Declarations
     /////////////////////////////////////////
@@ -27,7 +27,7 @@ contract VaultEngine is Stateful, Eventful {
     struct Collateral {
         uint256 debtAccumulator; // Cumulative debt rate
         uint256 capitalAccumulator; // Cumulative capital rate
-        uint256 adjustedPrice; // Price adjusted for collateral ratio
+        uint256 price; // Price adjusted for collateral ratio
         uint256 normDebt; // Normalized debt
         uint256 normCapital; // Normalized supply
         uint256 ceiling; // Max. amount that can be supplied/borrowed
@@ -49,6 +49,9 @@ contract VaultEngine is Stateful, Eventful {
     mapping(address => uint256) public unbackedStablecoin;
     mapping(bytes32 => Collateral) public collateralTypes;
     mapping(bytes32 => mapping(address => Vault)) public vaults;
+
+    // For SongBird Purposes only
+    uint256 public individualVaultLimit;
 
     /////////////////////////////////////////
     // Events
@@ -175,7 +178,7 @@ contract VaultEngine is Stateful, Eventful {
         int256 capitalAmount
     ) external {
         require(
-            registry.checkValidity("treasury", treasuryAddress),
+            registry.checkContractValidity("treasury", treasuryAddress),
             "Vault/modifySupply: Treasury address is not valid"
         );
 
@@ -201,6 +204,7 @@ contract VaultEngine is Stateful, Eventful {
             "Vault/modifySupply: Capital floor reached"
         );
         certify(collId, vault);
+        checkVaultUnderLimit(collId, vault);
 
         stablecoin[treasuryAddress] = add(stablecoin[treasuryAddress], aurToModify);
 
@@ -220,7 +224,10 @@ contract VaultEngine is Stateful, Eventful {
         int256 collAmount,
         int256 debtAmount
     ) external {
-        require(registry.checkValidity("treasury", treasuryAddress), "Vault/modifyDebt: Treasury address is not valid");
+        require(
+            registry.checkContractValidity("treasury", treasuryAddress),
+            "Vault/modifyDebt: Treasury address is not valid"
+        );
 
         if (!userExists[msg.sender]) {
             userList.push(msg.sender);
@@ -250,6 +257,7 @@ contract VaultEngine is Stateful, Eventful {
             "Vault/modifyDebt: Debt Smaller than floor"
         );
         certify(collId, vault);
+        checkVaultUnderLimit(collId, vault);
 
         stablecoin[msg.sender] = add(stablecoin[msg.sender], debtToModify);
         stablecoin[treasuryAddress] = sub(stablecoin[treasuryAddress], debtToModify);
@@ -346,6 +354,26 @@ contract VaultEngine is Stateful, Eventful {
     }
 
     /**
+     * @notice Updates individual vault limit
+     * For Songbird purposes only
+     */
+    function updateIndividualVaultLimit(uint256 newLimit) external onlyBy("gov") {
+        individualVaultLimit = newLimit;
+    }
+
+    /**
+     * @notice Check if user's vault is under individual vault limit
+     * For Songbird purposes only
+     */
+    function checkVaultUnderLimit(bytes32 collId, Vault memory vault) internal {
+        require(
+            (vault.debt * collateralTypes[collId].debtAccumulator) + (vault.capital * PRECISION_PRICE) <=
+                individualVaultLimit,
+            "Vault is over the individual vault limit"
+        );
+    }
+
+    /**
      * @dev Updates cumulative indices for the specified collateral type
      * @param collId The collateral type ID
      * @param debtRateIncrease The new rate to increase for debt
@@ -394,9 +422,9 @@ contract VaultEngine is Stateful, Eventful {
      * @param collId The collateral type ID
      * @param price The new price
      */
-    function updateAdjustedPrice(bytes32 collId, uint256 price) external onlyByRegistered {
-        emit LogVarUpdate("Vault", collId, "price", collateralTypes[collId].adjustedPrice, price);
-        collateralTypes[collId].adjustedPrice = price;
+    function updatePrice(bytes32 collId, uint256 price) external onlyByRegistered {
+        emit LogVarUpdate("Vault", collId, "price", collateralTypes[collId].price, price);
+        collateralTypes[collId].price = price;
     }
 
     /////////////////////////////////////////
@@ -411,7 +439,7 @@ contract VaultEngine is Stateful, Eventful {
     function certify(bytes32 collId, Vault memory vault) internal view {
         require(
             (vault.debt * collateralTypes[collId].debtAccumulator) + (vault.capital * PRECISION_PRICE) <=
-                vault.usedCollateral * collateralTypes[collId].adjustedPrice,
+                vault.usedCollateral * collateralTypes[collId].price,
             "Vault/certify: Not enough collateral"
         );
     }

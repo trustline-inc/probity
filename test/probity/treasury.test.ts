@@ -70,9 +70,9 @@ describe("Treasury Unit Tests", function () {
     });
 
     it("tests that deposit calls vaultEngine.addAurei function", async () => {
-      const aurBalanceBefore = await vaultEngine.aur(owner.address);
+      const aurBalanceBefore = await vaultEngine.stablecoin(owner.address);
       await treasury.deposit(AMOUNT_TO_MINT);
-      const aurBalanceAfter = await vaultEngine.aur(owner.address);
+      const aurBalanceAfter = await vaultEngine.stablecoin(owner.address);
       expect(aurBalanceAfter.sub(aurBalanceBefore)).to.equal(
         AMOUNT_TO_MINT.mul(PRECISION_PRICE)
       );
@@ -104,9 +104,9 @@ describe("Treasury Unit Tests", function () {
     });
 
     it("tests that withdrawAurei calls vaultEngine.removeAurei function", async () => {
-      const aurBalanceBefore = await vaultEngine.aur(owner.address);
+      const aurBalanceBefore = await vaultEngine.stablecoin(owner.address);
       await treasury.withdrawAurei(AMOUNT_TO_WITHDRAW);
-      const aurBalanceAfter = await vaultEngine.aur(owner.address);
+      const aurBalanceAfter = await vaultEngine.stablecoin(owner.address);
       expect(
         aurBalanceBefore.sub(aurBalanceAfter).div(PRECISION_PRICE)
       ).to.equal(AMOUNT_TO_WITHDRAW);
@@ -171,33 +171,6 @@ describe("Treasury Unit Tests", function () {
       const parsedEvents = await parseEvents(
         treasury.withdrawTcn(AMOUNT_TO_WITHDRAW),
         "WithdrawTcn",
-        treasury
-      );
-
-      expect(parsedEvents[0].args[0]).to.equal(owner.address);
-      expect(parsedEvents[0].args[1]).to.equal(AMOUNT_TO_WITHDRAW);
-    });
-  });
-
-  describe("ExchangeTcn Unit Tests", function () {
-    beforeEach(async function () {
-      await tcn.mint(owner.address, AMOUNT_TO_MINT);
-    });
-
-    it("tests that tcn is burned and aurei is minted properly", async () => {
-      const aurBalanceBefore = await aurei.balanceOf(owner.address);
-      const tcnBalanceBefore = await tcn.balanceOf(owner.address);
-      await treasury.exchangeTcn(AMOUNT_TO_MINT);
-      const aurBalanceAfter = await aurei.balanceOf(owner.address);
-      const tcnBalanceAfter = await tcn.balanceOf(owner.address);
-      expect(aurBalanceAfter.sub(aurBalanceBefore)).to.equal(AMOUNT_TO_MINT);
-      expect(tcnBalanceBefore.sub(tcnBalanceAfter)).to.equal(AMOUNT_TO_MINT);
-    });
-
-    it("tests that ExchangeTcn is emitted properly", async () => {
-      const parsedEvents = await parseEvents(
-        treasury.exchangeTcn(AMOUNT_TO_WITHDRAW),
-        "ExchangeTcn",
         treasury
       );
 

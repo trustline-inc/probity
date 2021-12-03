@@ -66,6 +66,8 @@ import {
   MockLiquidator__factory,
   MockPriceFeed__factory,
   MockReservePool__factory,
+  VaultEngineSB,
+  VaultEngineSB__factory,
 } from "../typechain";
 
 /**
@@ -91,6 +93,7 @@ interface ContractDict {
   registry: Registry;
   tcnToken: TcnToken;
   vaultEngine: VaultEngine;
+  vaultEngineSB: VaultEngineSB;
   nativeCollateral: NativeCollateral;
   erc20Collateral: ERC20Collateral;
   ftsoManager: MockFtsoManager;
@@ -122,6 +125,7 @@ const contracts: ContractDict = {
   registry: null,
   tcnToken: null,
   vaultEngine: null,
+  vaultEngineSB: null,
   nativeCollateral: null,
   erc20Collateral: null,
   ftsoManager: null,
@@ -285,6 +289,23 @@ const deployVaultEngine = async (param?: { registry?: string }) => {
   contracts.vaultEngine = await vaultEngineFactory.deploy(registry);
   await contracts.vaultEngine.deployed();
   await contracts.registry.setupAddress(
+    bytes32("vaultEngine"),
+    contracts.vaultEngine.address
+  );
+  return contracts;
+};
+
+const deployVaultEngineSB = async (param?: { registry?: string }) => {
+  const registry =
+    param && param.registry ? param.registry : contracts.registry.address;
+  const signers = await getSigners();
+  const vaultEngineFactory = (await ethers.getContractFactory(
+    "VaultEngineSB",
+    signers.owner
+  )) as VaultEngineSB__factory;
+  contracts.vaultEngineSB = await vaultEngineFactory.deploy(registry);
+  await contracts.vaultEngine.deployed();
+  await contracts.registry.setupContractAddress(
     bytes32("vaultEngine"),
     contracts.vaultEngine.address
   );
@@ -886,10 +907,11 @@ const deployProbity = async (token?: string) => {
   if (token && !["aurei", "phi"].includes(token))
     throw Error('Token must be either "aurei" or "phi".');
   token = token === undefined ? "aurei" : token;
-  const contracts = token === "aurei" ? await deployAurei() : await deployPhi();
+  let contracts = token === "aurei" ? await deployAurei() : await deployPhi();
   await deployTCN();
   await deployApr();
-  await deployVaultEngine();
+  contracts =
+    token === "aurei" ? await deployVaultEngine() : await deployVaultEngineSB();
   await deployNativeCollateral();
   await deployReservePool();
   await deployTeller();
@@ -922,6 +944,7 @@ const deployTest = async (token?: string) => {
   await deployRegistry();
   await deployMocks();
   await deployProbity(token);
+  await deployVaultEngineSB();
   await deployAuctioneer();
   await deployERC20Collateral();
   await deployVPTokenCollateral();

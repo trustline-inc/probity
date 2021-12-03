@@ -85,7 +85,7 @@ const init = async () => {
   // Update collateral price
   await priceFeed
     .connect(owner)
-    .updatePrice(COLLATERAL[token], { gasLimit: 300000 });
+    .updateAdjustedPrice(COLLATERAL[token], { gasLimit: 300000 });
   console.log(`PriceFeed: ${token} price updated.`);
 };
 

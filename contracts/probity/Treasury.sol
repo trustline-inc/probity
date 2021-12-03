@@ -19,9 +19,7 @@ interface VaultEngineLike {
 }
 
 interface TokenLike {
-    function transfer(address recipient, uint256 amount)
-        external
-        returns (bool);
+    function transfer(address recipient, uint256 amount) external returns (bool);
 
     function transferFrom(
         address sender,
@@ -48,11 +46,7 @@ contract Treasury is Stateful {
     /////////////////////////////////////////
     event DepositAurei(address indexed user, uint256 amount);
     event WithdrawAurei(address indexed user, uint256 amount);
-    event TransferAurei(
-        address indexed from,
-        address indexed to,
-        uint256 amount
-    );
+    event TransferAurei(address indexed from, address indexed to, uint256 amount);
     event WithdrawTcn(address indexed user, uint256 amount);
     event ExchangeTcn(address indexed user, uint256 amount);
 
@@ -94,11 +88,5 @@ contract Treasury is Stateful {
         vaultEngine.removeTcn(msg.sender, amount * 1e27);
         tcn.mint(msg.sender, amount);
         emit WithdrawTcn(msg.sender, amount);
-    }
-
-    function exchangeTcn(uint256 amount) external {
-        tcn.burn(msg.sender, amount);
-        aurei.mint(msg.sender, amount);
-        emit ExchangeTcn(msg.sender, amount);
     }
 }

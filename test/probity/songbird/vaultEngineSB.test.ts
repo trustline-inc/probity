@@ -9,10 +9,10 @@ import {
   ReservePool,
   Teller,
   Treasury,
-  VaultEngine,
-} from "../../typechain";
+  VaultEngineSB,
+} from "../../../typechain";
 
-import { deployTest } from "../../lib/deployer";
+import { deployTest } from "../../../lib/deployer";
 import { ethers } from "hardhat";
 import * as chai from "chai";
 import {
@@ -20,9 +20,9 @@ import {
   PRECISION_AUR,
   PRECISION_COLL,
   PRECISION_PRICE,
-} from "../utils/constants";
+} from "../../utils/constants";
 import { BigNumber } from "ethers";
-import assertRevert from "../utils/assertRevert";
+import assertRevert from "../../utils/assertRevert";
 const expect = chai.expect;
 
 // Wallets
@@ -30,7 +30,7 @@ let owner: SignerWithAddress;
 let user: SignerWithAddress;
 
 // Contracts
-let vaultEngine: VaultEngine;
+let vaultEngine: VaultEngineSB;
 let registry: Registry;
 let reservePool: ReservePool;
 let nativeColl: NativeCollateral;
@@ -43,12 +43,12 @@ let flrCollId = bytes32("FLR");
 
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
-describe("Vault Engine Unit Tests", function () {
+describe("Vault Engine Songbird Unit Tests", function () {
   beforeEach(async function () {
     let { contracts, signers } = await deployTest();
     // Set contracts
     registry = contracts.registry;
-    vaultEngine = contracts.vaultEngine;
+    vaultEngine = contracts.vaultEngineSB;
     reservePool = contracts.reservePool;
     nativeColl = contracts.nativeCollateral;
     teller = contracts.teller;
@@ -71,11 +71,12 @@ describe("Vault Engine Unit Tests", function () {
       });
       await vaultEngine.initCollType(flrCollId);
       await vaultEngine.updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
-      await registry.setupAddress(bytes32("collateral"), user.address);
-      await vaultEngine.updateAdjustedPrice(flrCollId, PRECISION_PRICE.mul(1));
+      await registry.setupContractAddress(bytes32("collateral"), user.address);
+      await vaultEngine.updatePrice(flrCollId, PRECISION_PRICE.mul(1));
       await vaultEngine
         .connect(user)
         .modifyCollateral(flrCollId, owner.address, COLL_AMOUNT_SUPPLY);
+      await vaultEngine.updateIndividualVaultLimit(PRECISION_AUR.mul(1000000));
     });
 
     it("tests new user is added to userList", async () => {
@@ -131,8 +132,9 @@ describe("Vault Engine Unit Tests", function () {
       });
       await vaultEngine.initCollType(flrCollId);
       await vaultEngine.updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
-      await registry.setupAddress(bytes32("collateral"), user.address);
-      await vaultEngine.updateAdjustedPrice(flrCollId, PRECISION_PRICE.mul(1));
+      await registry.setupContractAddress(bytes32("collateral"), user.address);
+      await vaultEngine.updatePrice(flrCollId, PRECISION_PRICE.mul(1));
+      await vaultEngine.updateIndividualVaultLimit(PRECISION_AUR.mul(1000000));
 
       await vaultEngine
         .connect(user)
@@ -192,6 +194,107 @@ describe("Vault Engine Unit Tests", function () {
     });
   });
 
+  describe("individualVaultLimit Unit Tests", function () {
+    beforeEach(async function () {
+      await owner.sendTransaction({
+        to: user.address,
+        value: ethers.utils.parseEther("1"),
+      });
+      await vaultEngine.initCollType(flrCollId);
+      await vaultEngine.updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
+      await registry.setupContractAddress(bytes32("collateral"), user.address);
+    });
+
+    it("updateIndividualVaultLimit works properly", async () => {
+      const NEW_INDIVIDUAL_VAULT_LIMTI = PRECISION_AUR.mul(500);
+      expect(await vaultEngine.individualVaultLimit()).to.equal(0);
+      await vaultEngine.updateIndividualVaultLimit(NEW_INDIVIDUAL_VAULT_LIMTI);
+      expect(await vaultEngine.individualVaultLimit()).to.equal(
+        NEW_INDIVIDUAL_VAULT_LIMTI
+      );
+    });
+
+    it("modifyDebt uses individualVaultLimit", async () => {
+      const COLL_AMOUNT_SUPPLY = PRECISION_COLL.mul(10000);
+      const COLL_AMOUNT_DEBT = PRECISION_COLL.mul(10000);
+      const CAPITAL_AMOUNT = PRECISION_COLL.mul(500);
+      const DEBT_AMOUNT = PRECISION_COLL.mul(1000);
+      const NEW_INDIVIDUAL_VAULT_LIMTI = PRECISION_AUR.mul(500);
+
+      await vaultEngine
+        .connect(user)
+        .modifyCollateral(
+          flrCollId,
+          owner.address,
+          COLL_AMOUNT_DEBT.add(COLL_AMOUNT_SUPPLY)
+        );
+      await vaultEngine.updatePrice(flrCollId, PRECISION_PRICE.mul(1));
+
+      await assertRevert(
+        vaultEngine.modifySupply(
+          flrCollId,
+          treasury.address,
+          COLL_AMOUNT_SUPPLY,
+          CAPITAL_AMOUNT
+        ),
+        "Vault is over the individual vault limit"
+      );
+
+      await vaultEngine.updateIndividualVaultLimit(NEW_INDIVIDUAL_VAULT_LIMTI);
+
+      await vaultEngine.modifySupply(
+        flrCollId,
+        treasury.address,
+        COLL_AMOUNT_SUPPLY,
+        CAPITAL_AMOUNT
+      );
+    });
+
+    it("modifyDebt uses individualVaultLimit", async () => {
+      const COLL_AMOUNT_SUPPLY = PRECISION_COLL.mul(10000);
+      const COLL_AMOUNT_DEBT = PRECISION_COLL.mul(10000);
+      const DEBT_AMOUNT = PRECISION_COLL.mul(500);
+      const NEW_INDIVIDUAL_VAULT_LIMTI = PRECISION_AUR.mul(1000);
+
+      await vaultEngine
+        .connect(user)
+        .modifyCollateral(
+          flrCollId,
+          owner.address,
+          COLL_AMOUNT_DEBT.add(COLL_AMOUNT_SUPPLY)
+        );
+      await vaultEngine.updatePrice(flrCollId, PRECISION_PRICE.mul(1));
+
+      await vaultEngine.updateIndividualVaultLimit(PRECISION_AUR.mul(500));
+
+      await vaultEngine.modifySupply(
+        flrCollId,
+        treasury.address,
+        COLL_AMOUNT_SUPPLY,
+        DEBT_AMOUNT
+      );
+
+      await assertRevert(
+        vaultEngine.modifyDebt(
+          flrCollId,
+          treasury.address,
+          COLL_AMOUNT_SUPPLY,
+          DEBT_AMOUNT
+        ),
+        "Vault is over the individual vault limit"
+      );
+
+      await vaultEngine.updateIndividualVaultLimit(NEW_INDIVIDUAL_VAULT_LIMTI);
+
+      await vaultEngine.modifyDebt(
+        flrCollId,
+        treasury.address,
+        COLL_AMOUNT_SUPPLY,
+        DEBT_AMOUNT
+      );
+    });
+  });
+
   describe("updateAccumulator Unit Tests", function () {
     const COLL_AMOUNT_SUPPLY = PRECISION_COLL.mul(10000);
     const COLL_AMOUNT_DEBT = PRECISION_COLL.mul(10000);
@@ -205,7 +308,8 @@ describe("Vault Engine Unit Tests", function () {
       });
       await vaultEngine.initCollType(flrCollId);
       await vaultEngine.updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
-      await registry.setupAddress(bytes32("collateral"), user.address);
+      await registry.setupContractAddress(bytes32("collateral"), user.address);
+      await vaultEngine.updateIndividualVaultLimit(PRECISION_AUR.mul(1000000));
       await vaultEngine
         .connect(user)
         .modifyCollateral(
@@ -213,7 +317,7 @@ describe("Vault Engine Unit Tests", function () {
           owner.address,
           COLL_AMOUNT_DEBT.add(COLL_AMOUNT_SUPPLY)
         );
-      await vaultEngine.updateAdjustedPrice(flrCollId, PRECISION_PRICE.mul(1));
+      await vaultEngine.updatePrice(flrCollId, PRECISION_PRICE.mul(1));
 
       await vaultEngine.modifySupply(
         flrCollId,
@@ -228,7 +332,7 @@ describe("Vault Engine Unit Tests", function () {
         DEBT_AMOUNT
       );
 
-      await registry.setupAddress(bytes32("teller"), user.address);
+      await registry.setupContractAddress(bytes32("teller"), user.address);
     });
 
     it("tests that only teller can call updateAccumulators", async () => {
