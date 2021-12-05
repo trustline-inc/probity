@@ -88,7 +88,7 @@ contract VaultEngineSB is Stateful, Eventful {
         bytes32 collateral,
         address user,
         int256 amount
-    ) external onlyByRegistered {
+    ) external onlyByProbity {
         vaults[collateral][user].freeCollateral = add(vaults[collateral][user].freeCollateral, amount);
     }
 
@@ -104,7 +104,7 @@ contract VaultEngineSB is Stateful, Eventful {
         address from,
         address to,
         uint256 amount
-    ) external onlyByRegistered {
+    ) external onlyByProbity {
         vaults[collateral][from].freeCollateral -= amount;
         vaults[collateral][to].freeCollateral += amount;
     }
@@ -119,7 +119,7 @@ contract VaultEngineSB is Stateful, Eventful {
         address from,
         address to,
         uint256 amount
-    ) external onlyByRegistered {
+    ) external onlyByProbity {
         stablecoin[from] -= amount;
         stablecoin[to] += amount;
     }
@@ -282,7 +282,7 @@ contract VaultEngineSB is Stateful, Eventful {
         int256 collateralAmount,
         int256 debtAmount,
         int256 capitalAmount
-    ) external onlyByRegistered {
+    ) external onlyByProbity {
         Vault storage vault = vaults[collId][user];
         Collateral storage coll = collateralTypes[collId];
 
@@ -304,14 +304,14 @@ contract VaultEngineSB is Stateful, Eventful {
      * @notice Used for settlement by the reserve pool
      * @param amount The amount to settle
      */
-    function settle(uint256 amount) external onlyByRegistered {
+    function settle(uint256 amount) external onlyByProbity {
         stablecoin[msg.sender] -= amount;
         unbackedStablecoin[msg.sender] -= amount;
         totalDebt -= amount;
         emit Log("vault", "settle", msg.sender);
     }
 
-    function increaseSystemDebt(uint256 amount) external onlyByRegistered {
+    function increaseSystemDebt(uint256 amount) external onlyByProbity {
         stablecoin[msg.sender] += amount;
         unbackedStablecoin[msg.sender] += amount;
         totalDebt += amount;
@@ -362,7 +362,7 @@ contract VaultEngineSB is Stateful, Eventful {
      * @notice Check if user's vault is under individual vault limit
      * For Songbird purposes only
      */
-    function checkVaultUnderLimit(bytes32 collId, Vault memory vault) internal {
+    function checkVaultUnderLimit(bytes32 collId, Vault memory vault) internal view {
         require(
             (vault.debt * collateralTypes[collId].debtAccumulator) + (vault.capital * PRECISION_PRICE) <=
                 individualVaultLimit,
@@ -419,7 +419,7 @@ contract VaultEngineSB is Stateful, Eventful {
      * @param collId The collateral type ID
      * @param price The new price
      */
-    function updatePrice(bytes32 collId, uint256 price) external onlyByRegistered {
+    function updatePrice(bytes32 collId, uint256 price) external onlyByProbity {
         emit LogVarUpdate("Vault", collId, "price", collateralTypes[collId].price, price);
         collateralTypes[collId].price = price;
     }

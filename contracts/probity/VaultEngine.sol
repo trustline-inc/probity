@@ -85,7 +85,7 @@ contract VaultEngine is Stateful, Eventful {
         bytes32 collateral,
         address user,
         int256 amount
-    ) external onlyByRegistered {
+    ) external onlyByProbity {
         vaults[collateral][user].freeCollateral = add(vaults[collateral][user].freeCollateral, amount);
     }
 
@@ -101,7 +101,7 @@ contract VaultEngine is Stateful, Eventful {
         address from,
         address to,
         uint256 amount
-    ) external onlyByRegistered {
+    ) external onlyByProbity {
         vaults[collateral][from].freeCollateral -= amount;
         vaults[collateral][to].freeCollateral += amount;
     }
@@ -116,7 +116,7 @@ contract VaultEngine is Stateful, Eventful {
         address from,
         address to,
         uint256 amount
-    ) external onlyByRegistered {
+    ) external onlyByProbity {
         stablecoin[from] -= amount;
         stablecoin[to] += amount;
     }
@@ -277,7 +277,7 @@ contract VaultEngine is Stateful, Eventful {
         int256 collateralAmount,
         int256 debtAmount,
         int256 capitalAmount
-    ) external onlyByRegistered {
+    ) external onlyByProbity {
         Vault storage vault = vaults[collId][user];
         Collateral storage coll = collateralTypes[collId];
 
@@ -299,14 +299,14 @@ contract VaultEngine is Stateful, Eventful {
      * @notice Used for settlement by the reserve pool
      * @param amount The amount to settle
      */
-    function settle(uint256 amount) external onlyByRegistered {
+    function settle(uint256 amount) external onlyByProbity {
         stablecoin[msg.sender] -= amount;
         unbackedStablecoin[msg.sender] -= amount;
         totalDebt -= amount;
         emit Log("vault", "settle", msg.sender);
     }
 
-    function increaseSystemDebt(uint256 amount) external onlyByRegistered {
+    function increaseSystemDebt(uint256 amount) external onlyByProbity {
         stablecoin[msg.sender] += amount;
         unbackedStablecoin[msg.sender] += amount;
         totalDebt += amount;
@@ -394,7 +394,7 @@ contract VaultEngine is Stateful, Eventful {
      * @param collId The collateral type ID
      * @param price The new price
      */
-    function updateAdjustedPrice(bytes32 collId, uint256 price) external onlyByRegistered {
+    function updateAdjustedPrice(bytes32 collId, uint256 price) external onlyByProbity {
         emit LogVarUpdate("Vault", collId, "price", collateralTypes[collId].adjustedPrice, price);
         collateralTypes[collId].adjustedPrice = price;
     }

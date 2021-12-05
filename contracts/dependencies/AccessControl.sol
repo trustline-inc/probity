@@ -17,10 +17,10 @@ contract AccessControl {
         _;
     }
 
-    modifier onlyByRegistered() {
+    modifier onlyByProbity() {
         require(
-            registry.checkValidity(msg.sender),
-            "AccessControl/onlyByRegistered: Caller is not a registered contract"
+            registry.checkValidity(msg.sender) && !registry.checkValidity("whiteListed", msg.sender),
+            "AccessControl/onlyByProbity: Caller must be from Probity system contract"
         );
         _;
     }
