@@ -84,7 +84,9 @@ describe("Vault Engine Songbird Unit Tests", function () {
       await registry
         .connect(gov)
         .setupAddress(bytes32("collateral"), coll.address);
-      await vaultEngine.updatePrice(flrCollId, PRECISION_PRICE.mul(1));
+      await vaultEngine
+        .connect(gov)
+        .updateAdjustedPrice(flrCollId, PRECISION_PRICE.mul(1));
       await vaultEngine
         .connect(coll)
         .modifyCollateral(flrCollId, owner.address, COLL_AMOUNT_SUPPLY);
@@ -151,7 +153,9 @@ describe("Vault Engine Songbird Unit Tests", function () {
       await registry
         .connect(gov)
         .setupAddress(bytes32("collateral"), coll.address);
-      await vaultEngine.updatePrice(flrCollId, PRECISION_PRICE.mul(1));
+      await vaultEngine
+        .connect(gov)
+        .updateAdjustedPrice(flrCollId, PRECISION_PRICE.mul(1));
       await vaultEngine
         .connect(gov)
         .updateIndividualVaultLimit(PRECISION_AUR.mul(1000000));
@@ -253,7 +257,9 @@ describe("Vault Engine Songbird Unit Tests", function () {
           owner.address,
           COLL_AMOUNT_DEBT.add(COLL_AMOUNT_SUPPLY)
         );
-      await vaultEngine.updatePrice(flrCollId, PRECISION_PRICE.mul(1));
+      await vaultEngine
+        .connect(gov)
+        .updateAdjustedPrice(flrCollId, PRECISION_PRICE.mul(1));
 
       await assertRevert(
         vaultEngine.modifySupply(
@@ -290,7 +296,9 @@ describe("Vault Engine Songbird Unit Tests", function () {
           owner.address,
           COLL_AMOUNT_DEBT.add(COLL_AMOUNT_SUPPLY)
         );
-      await vaultEngine.updatePrice(flrCollId, PRECISION_PRICE.mul(1));
+      await vaultEngine
+        .connect(gov)
+        .updateAdjustedPrice(flrCollId, PRECISION_PRICE.mul(1));
 
       await vaultEngine
         .connect(gov)
@@ -354,7 +362,9 @@ describe("Vault Engine Songbird Unit Tests", function () {
           owner.address,
           COLL_AMOUNT_DEBT.add(COLL_AMOUNT_SUPPLY)
         );
-      await vaultEngine.updatePrice(flrCollId, PRECISION_PRICE.mul(1));
+      await vaultEngine
+        .connect(gov)
+        .updateAdjustedPrice(flrCollId, PRECISION_PRICE.mul(1));
 
       await vaultEngine.modifySupply(
         flrCollId,

@@ -27,7 +27,7 @@ contract VaultEngineSB is Stateful, Eventful {
     struct Collateral {
         uint256 debtAccumulator; // Cumulative debt rate
         uint256 capitalAccumulator; // Cumulative capital rate
-        uint256 price; // Price adjusted for collateral ratio
+        uint256 adjustedPrice; // Price adjusted for collateral ratio
         uint256 normDebt; // Normalized debt
         uint256 normCapital; // Normalized supply
         uint256 ceiling; // Max. amount that can be supplied/borrowed
@@ -419,9 +419,9 @@ contract VaultEngineSB is Stateful, Eventful {
      * @param collId The collateral type ID
      * @param price The new price
      */
-    function updatePrice(bytes32 collId, uint256 price) external onlyByProbity {
-        emit LogVarUpdate("Vault", collId, "price", collateralTypes[collId].price, price);
-        collateralTypes[collId].price = price;
+    function updateAdjustedPrice(bytes32 collId, uint256 price) external onlyByProbity {
+        emit LogVarUpdate("Vault", collId, "price", collateralTypes[collId].adjustedPrice, price);
+        collateralTypes[collId].adjustedPrice = price;
     }
 
     /////////////////////////////////////////
@@ -436,7 +436,7 @@ contract VaultEngineSB is Stateful, Eventful {
     function certify(bytes32 collId, Vault memory vault) internal view {
         require(
             (vault.debt * collateralTypes[collId].debtAccumulator) + (vault.capital * PRECISION_PRICE) <=
-                vault.usedCollateral * collateralTypes[collId].price,
+                vault.usedCollateral * collateralTypes[collId].adjustedPrice,
             "Vault/certify: Not enough collateral"
         );
     }

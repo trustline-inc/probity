@@ -84,7 +84,9 @@ describe("Vault Engine Unit Tests", function () {
       await registry
         .connect(gov)
         .setupAddress(bytes32("collateral"), coll.address);
-      await vaultEngine.updateAdjustedPrice(flrCollId, PRECISION_PRICE.mul(1));
+      await vaultEngine
+        .connect(gov)
+        .updateAdjustedPrice(flrCollId, PRECISION_PRICE.mul(1));
       await vaultEngine
         .connect(coll)
         .modifyCollateral(flrCollId, owner.address, COLL_AMOUNT_SUPPLY);
@@ -174,7 +176,9 @@ describe("Vault Engine Unit Tests", function () {
       await registry
         .connect(gov)
         .setupAddress(bytes32("collateral"), coll.address);
-      await vaultEngine.updateAdjustedPrice(flrCollId, PRECISION_PRICE.mul(1));
+      await vaultEngine
+        .connect(gov)
+        .updateAdjustedPrice(flrCollId, PRECISION_PRICE.mul(1));
 
       await vaultEngine
         .connect(coll)
@@ -285,7 +289,9 @@ describe("Vault Engine Unit Tests", function () {
           owner.address,
           COLL_AMOUNT_DEBT.add(COLL_AMOUNT_SUPPLY)
         );
-      await vaultEngine.updateAdjustedPrice(flrCollId, PRECISION_PRICE.mul(1));
+      await vaultEngine
+        .connect(gov)
+        .updateAdjustedPrice(flrCollId, PRECISION_PRICE.mul(1));
 
       await vaultEngine.modifySupply(
         flrCollId,
