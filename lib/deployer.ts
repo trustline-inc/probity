@@ -305,7 +305,7 @@ const deployVaultEngineSB = async (param?: { registry?: string }) => {
   )) as VaultEngineSB__factory;
   contracts.vaultEngineSB = await vaultEngineFactory.deploy(registry);
   await contracts.vaultEngine.deployed();
-  await contracts.registry.setupContractAddress(
+  await contracts.registry.setupAddress(
     bytes32("vaultEngine"),
     contracts.vaultEngine.address
   );

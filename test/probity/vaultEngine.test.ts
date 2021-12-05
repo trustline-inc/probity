@@ -28,6 +28,8 @@ const expect = chai.expect;
 // Wallets
 let owner: SignerWithAddress;
 let user: SignerWithAddress;
+let gov: SignerWithAddress;
+let coll: SignerWithAddress;
 
 // Contracts
 let vaultEngine: VaultEngine;
@@ -58,6 +60,12 @@ describe("Vault Engine Unit Tests", function () {
 
     owner = signers.owner;
     user = signers.alice;
+    gov = signers.charlie;
+    coll = signers.don;
+
+    await registry.setupAddress(bytes32("gov"), gov.address);
+    await registry.setupAddress(bytes32("whiteListed"), user.address);
+    await registry.setupAddress(bytes32("whiteListed"), owner.address);
   });
 
   describe("modifySupply Unit Tests", function () {
@@ -69,13 +77,43 @@ describe("Vault Engine Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.initCollType(flrCollId);
-      await vaultEngine.updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
-      await registry.setupAddress(bytes32("collateral"), user.address);
+      await vaultEngine.connect(gov).initCollType(flrCollId);
+      await vaultEngine
+        .connect(gov)
+        .updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
+      await registry
+        .connect(gov)
+        .setupAddress(bytes32("collateral"), coll.address);
       await vaultEngine.updateAdjustedPrice(flrCollId, PRECISION_PRICE.mul(1));
       await vaultEngine
-        .connect(user)
+        .connect(coll)
         .modifyCollateral(flrCollId, owner.address, COLL_AMOUNT_SUPPLY);
+    });
+
+    it("only whitelisted user can call modifySupply", async () => {
+      await registry
+        .connect(gov)
+        .setupAddress(bytes32("notWhitelisted"), owner.address);
+      await assertRevert(
+        vaultEngine.modifySupply(
+          flrCollId,
+          treasury.address,
+          COLL_AMOUNT_SUPPLY,
+          CAPITAL_AMOUNT
+        ),
+        "AccessControl/onlyByWhiteListed: Only Whitelisted user can call this"
+      );
+
+      await registry
+        .connect(gov)
+        .setupAddress(bytes32("whiteListed"), owner.address);
+
+      await vaultEngine.modifySupply(
+        flrCollId,
+        treasury.address,
+        COLL_AMOUNT_SUPPLY,
+        CAPITAL_AMOUNT
+      );
     });
 
     it("tests new user is added to userList", async () => {
@@ -129,17 +167,21 @@ describe("Vault Engine Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.initCollType(flrCollId);
-      await vaultEngine.updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
-      await registry.setupAddress(bytes32("collateral"), user.address);
+      await vaultEngine.connect(gov).initCollType(flrCollId);
+      await vaultEngine
+        .connect(gov)
+        .updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
+      await registry
+        .connect(gov)
+        .setupAddress(bytes32("collateral"), coll.address);
       await vaultEngine.updateAdjustedPrice(flrCollId, PRECISION_PRICE.mul(1));
 
       await vaultEngine
-        .connect(user)
+        .connect(coll)
         .modifyCollateral(flrCollId, owner.address, COLL_AMOUNT_DEBT);
 
       await vaultEngine
-        .connect(user)
+        .connect(coll)
         .modifyCollateral(flrCollId, user.address, COLL_AMOUNT_DEBT);
 
       await vaultEngine
@@ -150,6 +192,32 @@ describe("Vault Engine Unit Tests", function () {
           COLL_AMOUNT_SUPPLY,
           CAPITAL_AMOUNT
         );
+    });
+
+    it("only whitelisted user can call modifyDebt", async () => {
+      await registry
+        .connect(gov)
+        .setupAddress(bytes32("notWhitelisted"), owner.address);
+      await assertRevert(
+        vaultEngine.modifyDebt(
+          flrCollId,
+          treasury.address,
+          COLL_AMOUNT_DEBT,
+          DEBT_AMOUNT
+        ),
+        "AccessControl/onlyByWhiteListed: Only Whitelisted user can call this"
+      );
+
+      await registry
+        .connect(gov)
+        .setupAddress(bytes32("whiteListed"), owner.address);
+
+      await vaultEngine.modifyDebt(
+        flrCollId,
+        treasury.address,
+        COLL_AMOUNT_DEBT,
+        DEBT_AMOUNT
+      );
     });
 
     it("tests new user is added to userList", async () => {
@@ -203,11 +271,15 @@ describe("Vault Engine Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.initCollType(flrCollId);
-      await vaultEngine.updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
-      await registry.setupAddress(bytes32("collateral"), user.address);
+      await vaultEngine.connect(gov).initCollType(flrCollId);
       await vaultEngine
-        .connect(user)
+        .connect(gov)
+        .updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
+      await registry
+        .connect(gov)
+        .setupAddress(bytes32("collateral"), coll.address);
+      await vaultEngine
+        .connect(coll)
         .modifyCollateral(
           flrCollId,
           owner.address,
@@ -228,7 +300,7 @@ describe("Vault Engine Unit Tests", function () {
         DEBT_AMOUNT
       );
 
-      await registry.setupAddress(bytes32("teller"), user.address);
+      await registry.connect(gov).setupAddress(bytes32("teller"), user.address);
     });
 
     it("tests that only teller can call updateAccumulators", async () => {
