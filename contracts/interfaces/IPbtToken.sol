@@ -8,7 +8,7 @@ import "./IERC2612.sol";
 /**
  * @notice Common interface for the PBT token.
  */
-interface IPbtToken is IERC20, IERC2612 {
+interface IPbtToken is IERC20 {
     // --- Events ---
 
     // --- Functions ---
