@@ -250,7 +250,7 @@ const deployTCN = async (param?: { registry?: string }) => {
   contracts.tcnToken = await tcnFactory.deploy(registry);
   await contracts.tcnToken.deployed();
   await contracts.registry.setupContractAddress(
-    bytes32("tcn"),
+    bytes32("pbt"),
     contracts.tcnToken.address
   );
   return contracts;

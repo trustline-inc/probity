@@ -33,7 +33,7 @@ contract MockVaultEngine {
     mapping(bytes32 => bool) public states;
     mapping(bytes32 => Collateral) public collateralTypes;
     mapping(address => uint256) public stablecoin;
-    mapping(address => uint256) public tcn;
+    mapping(address => uint256) public pbt;
     mapping(address => uint256) public unbackedStablecoin;
 
     uint256 public protocolFeeRates;
@@ -67,12 +67,12 @@ contract MockVaultEngine {
     }
 
     function removeTcn(address user, uint256 amount) external {
-        tcn[user] -= amount;
+        pbt[user] -= amount;
     }
 
     // added for testing purposes
     function addTcn(address user, uint256 amount) external {
-        tcn[user] += amount;
+        pbt[user] += amount;
     }
 
     //added for testing purposes

@@ -45,7 +45,7 @@ contract VaultEngine is Stateful, Eventful {
     address[] public userList;
     mapping(address => bool) userExists;
     mapping(address => uint256) public stablecoin;
-    mapping(address => uint256) public tcn;
+    mapping(address => uint256) public pbt;
     mapping(address => uint256) public unbackedStablecoin;
     mapping(bytes32 => Collateral) public collateralTypes;
     mapping(bytes32 => mapping(address => Vault)) public vaults;
@@ -140,22 +140,22 @@ contract VaultEngine is Stateful, Eventful {
     }
 
     /**
-     * @dev Reduce a user's TCN balance.
-     * @param user The address of the vault to reduce TCN from.
-     * @param amount The amount of TCN to reduce.
+     * @dev Reduce a user's PBT balance.
+     * @param user The address of the vault to reduce PBT from.
+     * @param amount The amount of PBT to reduce.
      */
     function reduceTCN(address user, uint256 amount) external onlyBy("treasury") {
-        tcn[user] -= amount;
+        pbt[user] -= amount;
     }
 
     /**
-     * @dev Accrues vault TCN
+     * @dev Accrues vault PBT
      * @param collId The ID of the vault collateral type
      */
     function collectInterest(bytes32 collId) public {
         Vault memory vault = vaults[collId][msg.sender];
         Collateral memory collateral = collateralTypes[collId];
-        tcn[msg.sender] += vault.capital * (collateral.capitalAccumulator - vault.lastCapitalAccumulator);
+        pbt[msg.sender] += vault.capital * (collateral.capitalAccumulator - vault.lastCapitalAccumulator);
         stablecoin[msg.sender] += vault.capital * (collateral.capitalAccumulator - vault.lastCapitalAccumulator);
 
         vaults[collId][msg.sender].lastCapitalAccumulator = collateral.capitalAccumulator;
