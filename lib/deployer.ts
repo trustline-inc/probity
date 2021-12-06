@@ -13,7 +13,7 @@ import {
   Aurei,
   Phi,
   Registry,
-  TcnToken,
+  PbtToken,
   VaultEngine,
   NativeCollateral,
   ERC20Collateral,
@@ -41,7 +41,7 @@ import {
   Registry__factory,
   Aurei__factory,
   Phi__factory,
-  TcnToken__factory,
+  PbtToken__factory,
   LowAPR__factory,
   HighAPR__factory,
   VaultEngine__factory,
@@ -91,7 +91,7 @@ interface ContractDict {
   phi: Phi;
   ftso: MockFtso;
   registry: Registry;
-  tcnToken: TcnToken;
+  pbtToken: PbtToken;
   vaultEngine: VaultEngine;
   vaultEngineSB: VaultEngineSB;
   nativeCollateral: NativeCollateral;
@@ -123,7 +123,7 @@ const contracts: ContractDict = {
   phi: null,
   ftso: null,
   registry: null,
-  tcnToken: null,
+  pbtToken: null,
   vaultEngine: null,
   vaultEngineSB: null,
   nativeCollateral: null,
@@ -243,15 +243,15 @@ const deployTCN = async (param?: { registry?: string }) => {
   const registry =
     param && param.registry ? param.registry : contracts.registry.address;
   const signers = await getSigners();
-  const tcnFactory = (await ethers.getContractFactory(
-    "TcnToken",
+  const pbtFactory = (await ethers.getContractFactory(
+    "PbtToken",
     signers.owner
-  )) as TcnToken__factory;
-  contracts.tcnToken = await tcnFactory.deploy(registry);
-  await contracts.tcnToken.deployed();
+  )) as PbtToken__factory;
+  contracts.pbtToken = await pbtFactory.deploy(registry);
+  await contracts.pbtToken.deployed();
   await contracts.registry.setupContractAddress(
     bytes32("pbt"),
-    contracts.tcnToken.address
+    contracts.pbtToken.address
   );
   return contracts;
 };
@@ -548,7 +548,7 @@ const deployTreasury = async (param?: {
   registry?: string;
   vaultEngine?: string;
   token?: string;
-  tcnToken?: string;
+  pbtToken?: string;
 }) => {
   const registry =
     param && param.registry ? param.registry : contracts.registry.address;
@@ -557,8 +557,8 @@ const deployTreasury = async (param?: {
       ? param.vaultEngine
       : contracts.vaultEngine.address;
   const token = param && param.token ? param.token : contracts.aurei.address;
-  const tcnToken =
-    param && param.tcnToken ? param.tcnToken : contracts.tcnToken.address;
+  const pbtToken =
+    param && param.pbtToken ? param.pbtToken : contracts.pbtToken.address;
   const signers = await getSigners();
 
   const treasuryFactory = (await ethers.getContractFactory(
@@ -568,7 +568,7 @@ const deployTreasury = async (param?: {
   contracts.treasury = await treasuryFactory.deploy(
     registry,
     token,
-    tcnToken,
+    pbtToken,
     vaultEngine
   );
 

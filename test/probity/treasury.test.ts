@@ -4,7 +4,7 @@ import "@nomiclabs/hardhat-ethers";
 import {
   Registry,
   Aurei,
-  TcnToken,
+  PbtToken,
   Treasury,
   NativeCollateral,
   MockVaultEngine,
@@ -29,7 +29,7 @@ let user: SignerWithAddress;
 
 // Contracts
 let aurei: Aurei;
-let pbt: TcnToken;
+let pbt: PbtToken;
 let vaultEngine: MockVaultEngine;
 let treasury: Treasury;
 let registry: Registry;
@@ -46,7 +46,7 @@ describe("Treasury Unit Tests", function () {
     // Set contracts
     registry = contracts.registry;
     aurei = contracts.aurei;
-    pbt = contracts.tcnToken;
+    pbt = contracts.pbtToken;
     flrCollateral = contracts.nativeCollateral;
 
     owner = signers.owner;
@@ -112,7 +112,7 @@ describe("Treasury Unit Tests", function () {
       ).to.equal(AMOUNT_TO_WITHDRAW);
     });
 
-    it("fails when user doesn't have enough aur to be withdrawn", async () => {
+    it.only("fails when user doesn't have enough aur to be withdrawn", async () => {
       await assertRevert(
         treasury.connect(user).withdrawAurei(AMOUNT_TO_WITHDRAW),
         "reverted with panic code 0x11"

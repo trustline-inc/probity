@@ -3,7 +3,7 @@
 pragma solidity ^0.8.0;
 
 import "../../dependencies/SafeMath.sol";
-import "../../interfaces/ITcnToken.sol";
+import "../../interfaces/IPbtToken.sol";
 import "../../dependencies/Stateful.sol";
 
 /**
@@ -13,7 +13,7 @@ import "../../dependencies/Stateful.sol";
  * and their EIP2612 (ERC20Permit / ERC712) functionality:
  * https://github.com/OpenZeppelin/openzeppelin-contracts/blob/53516bc555a454862470e7860a9b5254db4d00f5/contracts/token/ERC20/ERC20Permit.sol
  */
-contract TcnToken is ITcnToken, Stateful {
+contract PbtToken is IPbtToken, Stateful {
     using SafeMath for uint256;
 
     // --- Data ---

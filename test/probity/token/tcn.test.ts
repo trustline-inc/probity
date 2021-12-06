@@ -1,7 +1,7 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import "@nomiclabs/hardhat-ethers";
 
-import { Aurei, VaultEngine, TcnToken, Registry } from "../../../typechain";
+import { Aurei, VaultEngine, PbtToken, Registry } from "../../../typechain";
 
 import { deployTest } from "../../../lib/deployer";
 import { ethers } from "hardhat";
@@ -17,7 +17,7 @@ let user: SignerWithAddress;
 // Contracts
 let vaultEngine: VaultEngine;
 let registry: Registry;
-let pbt: TcnToken;
+let pbt: PbtToken;
 
 const AMOUNT_TO_MINT = PRECISION_COLL.mul(1000);
 const AMOUNT_TO_BURN = PRECISION_COLL.mul(230);
@@ -29,7 +29,7 @@ describe("PBT Token Unit Test", function () {
 
     // Set contracts
     vaultEngine = contracts.vaultEngine;
-    pbt = contracts.tcnToken;
+    pbt = contracts.pbtToken;
     registry = contracts.registry;
 
     owner = signers.owner;
