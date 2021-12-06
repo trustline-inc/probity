@@ -112,7 +112,7 @@ describe("Treasury Unit Tests", function () {
       ).to.equal(AMOUNT_TO_WITHDRAW);
     });
 
-    it.only("fails when user doesn't have enough aur to be withdrawn", async () => {
+    it("fails when user doesn't have enough aur to be withdrawn", async () => {
       await assertRevert(
         treasury.connect(user).withdrawAurei(AMOUNT_TO_WITHDRAW),
         "reverted with panic code 0x11"
