@@ -54,7 +54,7 @@ describe("PBT Token Unit Test", function () {
   });
 
   it("test that transfer is not allowed", async () => {
-    await registry.setupContractAddress(bytes32("treasury"), owner.address);
+    await registry.setupAddress(bytes32("treasury"), owner.address);
 
     await pbt.mint(user.address, AMOUNT_TO_MINT);
 
@@ -65,7 +65,7 @@ describe("PBT Token Unit Test", function () {
   });
 
   it("test that approve is not allowed", async () => {
-    await registry.setupContractAddress(bytes32("treasury"), owner.address);
+    await registry.setupAddress(bytes32("treasury"), owner.address);
 
     await pbt.mint(user.address, AMOUNT_TO_MINT);
 

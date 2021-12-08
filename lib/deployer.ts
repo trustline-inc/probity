@@ -216,7 +216,7 @@ const deployAurei = async (param?: { registry?: string }) => {
   contracts.aurei = await aureiFactory.deploy(registry);
   await contracts.aurei.deployed();
   if (process.env.NODE_ENV !== "test") console.info("aurei deployed ✓");
-  await contracts.registry.setupContractAddress(
+  await contracts.registry.setupAddress(
     bytes32("aur"),
     contracts.aurei.address
   );
@@ -234,10 +234,7 @@ const deployPhi = async (param?: { registry?: string }) => {
   contracts.phi = await phiFactory.deploy(registry);
   await contracts.phi.deployed();
   if (process.env.NODE_ENV !== "test") console.info("phi deployed ✓");
-  await contracts.registry.setupContractAddress(
-    bytes32("phi"),
-    contracts.phi.address
-  );
+  await contracts.registry.setupAddress(bytes32("phi"), contracts.phi.address);
   return contracts;
 };
 
@@ -252,7 +249,7 @@ const deployPbt = async (param?: { registry?: string }) => {
   contracts.pbtToken = await pbtFactory.deploy(registry);
   await contracts.pbtToken.deployed();
   if (process.env.NODE_ENV !== "test") console.info("pbt deployed ✓");
-  await contracts.registry.setupContractAddress(
+  await contracts.registry.setupAddress(
     bytes32("pbt"),
     contracts.pbtToken.address
   );
@@ -267,7 +264,7 @@ const deployApr = async () => {
   )) as LowAPR__factory;
   contracts.lowApr = await lowAprFactory.deploy();
   await contracts.lowApr.deployed();
-  await contracts.registry.setupContractAddress(
+  await contracts.registry.setupAddress(
     bytes32("lowApr"),
     contracts.lowApr.address
   );
@@ -278,7 +275,7 @@ const deployApr = async () => {
   contracts.highApr = await highAprFactory.deploy();
   await contracts.highApr.deployed();
   if (process.env.NODE_ENV !== "test") console.info("highApr deployed ✓");
-  await contracts.registry.setupContractAddress(
+  await contracts.registry.setupAddress(
     bytes32("highApr"),
     contracts.highApr.address
   );
@@ -296,7 +293,7 @@ const deployVaultEngine = async (param?: { registry?: string }) => {
   contracts.vaultEngine = await vaultEngineFactory.deploy(registry);
   await contracts.vaultEngine.deployed();
   if (process.env.NODE_ENV !== "test") console.info("vaultEngine deployed ✓");
-  await contracts.registry.setupContractAddress(
+  await contracts.registry.setupAddress(
     bytes32("vaultEngine"),
     contracts.vaultEngine.address
   );
@@ -314,7 +311,7 @@ const deployVaultEngineSB = async (param?: { registry?: string }) => {
   contracts.vaultEngineSB = await vaultEngineFactory.deploy(registry);
   await contracts.vaultEngineSB.deployed();
   if (process.env.NODE_ENV !== "test") console.info("vaultEngineSB deployed ✓");
-  await contracts.registry.setupContractAddress(
+  await contracts.registry.setupAddress(
     bytes32("vaultEngine"),
     contracts.vaultEngineSB.address
   );
@@ -370,7 +367,7 @@ const deployVPTokenCollateral = async (param?: {
   if (process.env.NODE_ENV !== "test")
     console.info("vpTokenCollateral deployed ✓");
 
-  await registry.setupContractAddress(
+  await registry.setupAddress(
     bytes32("collateral"),
     contracts.vpTokenCollateral.address
   );
@@ -415,7 +412,7 @@ const deployERC20Collateral = async (param?: {
   if (process.env.NODE_ENV !== "test")
     console.info("erc20Collateral deployed ✓");
 
-  await registry.setupContractAddress(
+  await registry.setupAddress(
     bytes32("collateral"),
     contracts.erc20Collateral.address
   );
@@ -456,7 +453,7 @@ const deployNativeCollateral = async (param?: {
   if (process.env.NODE_ENV !== "test")
     console.info("nativeCollateral deployed ✓");
 
-  await contracts.registry.setupContractAddress(
+  await contracts.registry.setupAddress(
     bytes32("collateral"),
     contracts.nativeCollateral.address
   );
@@ -513,7 +510,7 @@ const deployShutdown = async (param?: {
   await contracts.shutdown.deployed();
   if (process.env.NODE_ENV !== "test") console.info("shutdown deployed ✓");
 
-  await contracts.registry.setupContractAddress(
+  await contracts.registry.setupAddress(
     bytes32("shutdown"),
     contracts.shutdown.address
   );
@@ -561,7 +558,7 @@ const deployTeller = async (param?: {
   await contracts.teller.deployed();
   if (process.env.NODE_ENV !== "test") console.info("teller deployed ✓");
 
-  await contracts.registry.setupContractAddress(
+  await contracts.registry.setupAddress(
     bytes32("teller"),
     contracts.teller.address
   );
@@ -602,7 +599,7 @@ const deployTreasury = async (param?: {
   await contracts.treasury.deployed();
   if (process.env.NODE_ENV !== "test") console.info("treasury deployed ✓");
 
-  await contracts.registry.setupContractAddress(
+  await contracts.registry.setupAddress(
     bytes32("treasury"),
     contracts.treasury.address
   );
@@ -633,7 +630,7 @@ const deployPriceFeed = async (param?: {
   await contracts.priceFeed.deployed();
   if (process.env.NODE_ENV !== "test") console.info("priceFeed deployed ✓");
 
-  await contracts.registry.setupContractAddress(
+  await contracts.registry.setupAddress(
     bytes32("priceFeed"),
     contracts.priceFeed.address
   );
@@ -680,7 +677,7 @@ const deployAuctioneer = async (param?: {
   await contracts.auctioneer.deployed();
   if (process.env.NODE_ENV !== "test") console.info("auctioneer deployed ✓");
 
-  await registry.setupContractAddress(
+  await registry.setupAddress(
     bytes32("auctioneer"),
     contracts.auctioneer.address
   );
@@ -698,7 +695,7 @@ const deployPriceCalc = async () => {
   await contracts.linearDecrease.deployed();
   if (process.env.NODE_ENV !== "test")
     console.info("linearDecrease deployed ✓");
-  await contracts.registry.setupContractAddress(
+  await contracts.registry.setupAddress(
     bytes32("priceCalc"),
     contracts.linearDecrease.address
   );
@@ -729,7 +726,7 @@ const deployReservePool = async (param?: {
   );
   await contracts.reservePool.deployed();
   if (process.env.NODE_ENV !== "test") console.info("reservePool deployed ✓");
-  await contracts.registry.setupContractAddress(
+  await contracts.registry.setupAddress(
     bytes32("reservePool"),
     contracts.reservePool.address
   );
@@ -767,7 +764,7 @@ const deployLiquidator = async (param?: {
   );
   await contracts.liquidator.deployed();
   if (process.env.NODE_ENV !== "test") console.info("liquidator deployed ✓");
-  await contracts.registry.setupContractAddress(
+  await contracts.registry.setupAddress(
     bytes32("liquidator"),
     contracts.liquidator.address
   );
@@ -820,7 +817,7 @@ const deployMockFtso = async () => {
   contracts.ftso = await ftsoFactory.deploy();
   await contracts.ftso.deployed();
   if (process.env.NODE_ENV !== "test") console.info("ftso deployed ✓");
-  await contracts.registry.setupContractAddress(
+  await contracts.registry.setupAddress(
     bytes32("ftso"),
     contracts.ftso.address
   );
@@ -836,7 +833,7 @@ const deployMockFtsoManager = async () => {
   contracts.ftsoManager = await ftsoManagerFactory.deploy();
   await contracts.ftsoManager.deployed();
   if (process.env.NODE_ENV !== "test") console.info("ftsoManager deployed ✓");
-  await contracts.registry.setupContractAddress(
+  await contracts.registry.setupAddress(
     bytes32("ftsoManager"),
     contracts.ftsoManager.address
   );
@@ -854,7 +851,7 @@ const deployMockFtsoRewardManager = async () => {
   await contracts.ftsoRewardManager.deployed();
   if (process.env.NODE_ENV !== "test")
     console.info("ftsoRewardManager deployed ✓");
-  await contracts.registry.setupContractAddress(
+  await contracts.registry.setupAddress(
     bytes32("ftsoRewardManager"),
     contracts.ftsoRewardManager.address
   );
@@ -874,7 +871,7 @@ const deployMockPriceFeed = async () => {
   await contracts.mockPriceFeed.deployed();
   if (process.env.NODE_ENV !== "test") console.info("mockPriceFeed deployed ✓");
 
-  await contracts.registry.setupContractAddress(
+  await contracts.registry.setupAddress(
     bytes32("priceFeed"),
     contracts.mockPriceFeed.address
   );
@@ -894,7 +891,7 @@ const deployMockLiquidator = async () => {
   await contracts.mockLiquidator.deployed();
   if (process.env.NODE_ENV !== "test")
     console.info("mockLiquidator deployed ✓");
-  await contracts.registry.setupContractAddress(
+  await contracts.registry.setupAddress(
     bytes32("liquidator"),
     contracts.mockLiquidator.address
   );
@@ -915,7 +912,7 @@ const deployMockAuctioneer = async () => {
   if (process.env.NODE_ENV !== "test")
     console.info("mockAuctioneer deployed ✓");
 
-  await contracts.registry.setupContractAddress(
+  await contracts.registry.setupAddress(
     bytes32("auctioneer"),
     contracts.mockAuctioneer.address
   );
@@ -935,7 +932,7 @@ const deployMockReservePool = async () => {
   await contracts.mockReserve.deployed();
   if (process.env.NODE_ENV !== "test") console.info("mockReserve deployed ✓");
 
-  await contracts.registry.setupContractAddress(
+  await contracts.registry.setupAddress(
     bytes32("reservePool"),
     contracts.mockReserve.address
   );
