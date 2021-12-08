@@ -15,6 +15,7 @@
     "initProbity": "npx hardhat --network local run ./scripts/initProbity.ts",
     "createInitialTx:local": "npx hardhat --network local run ./scripts/createInitialTx.ts",
     "rateUpdater": "npx hardhat --network local run ./scripts/rateUpdater.ts",
+    "whitelistAddress": "npx hardhat --network local run ./scripts/whitelistAddress.ts",
     "demo:issue": "npx hardhat --network local run ./scripts/issueAurei.ts",
     "demo:redeem": "npx hardhat --network local run ./scripts/redeemAurei.ts",
     "script:markComplete": "npx hardhat --network local run ./scripts/markTransferComplete.ts",
