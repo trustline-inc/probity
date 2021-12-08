@@ -60,10 +60,11 @@ const init = async () => {
     owner
   );
 
+  // One address can only have one role
   await registry.setupAddress(web3.utils.keccak256("gov"), owner.address);
   await registry.setupAddress(
     web3.utils.keccak256("whiteListed"),
-    owner.address
+    "0x6310B7E8bDFD25EFbeDfB17987Ba69D9191a45bD"
   );
 
   // Initialize vault collateral type
