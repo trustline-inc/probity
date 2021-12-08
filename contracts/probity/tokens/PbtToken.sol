@@ -27,13 +27,6 @@ contract PbtToken is IPbtToken, Stateful {
     mapping(address => uint256) private _balances;
     mapping(address => mapping(address => uint256)) private _allowed;
 
-    // --- ERC2612 Data ---
-
-    bytes32 private immutable _DOMAIN_SEPARATOR;
-    bytes32 private constant _PERMIT_TYPEHASH = 0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9; // keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
-
-    mapping(address => uint256) private _nonces;
-
     /**
      * @dev Builds the domain separator
      */
@@ -42,22 +35,6 @@ contract PbtToken is IPbtToken, Stateful {
         assembly {
             chainId := chainid()
         }
-        _DOMAIN_SEPARATOR = keccak256(
-            abi.encode(
-                keccak256(
-                    "EIP712Domain("
-                    "string name,"
-                    "string version,"
-                    "uint256 chainId,"
-                    "address verifyingContract"
-                    ")"
-                ),
-                keccak256(bytes(_NAME)),
-                keccak256(bytes(_VERSION)),
-                chainId,
-                address(this)
-            )
-        );
     }
 
     // --- ERC20 Functions ---
@@ -112,7 +89,7 @@ contract PbtToken is IPbtToken, Stateful {
     }
 
     function mint(address account, uint256 amount) external override onlyBy("treasury") {
-        assert(account != address(0));
+        _requireValidRecipient(account);
 
         _totalSupply = _totalSupply.add(amount);
         _balances[account] = _balances[account].add(amount);
@@ -120,7 +97,7 @@ contract PbtToken is IPbtToken, Stateful {
     }
 
     function burn(address account, uint256 amount) external override onlyBy("treasury") {
-        assert(account != address(0));
+        _requireValidRecipient(account);
 
         _balances[account] = _balances[account].sub(amount, "ERC20: burn amount exceeds balance");
         _totalSupply = _totalSupply.sub(amount);
@@ -142,72 +119,26 @@ contract PbtToken is IPbtToken, Stateful {
         return true;
     }
 
-    function version() external pure override returns (string memory) {
+    function version() external pure returns (string memory) {
         return _VERSION;
-    }
-
-    // --- ERC2612 Functions ---
-
-    function DOMAIN_SEPARATOR() external view override returns (bytes32) {
-        return _DOMAIN_SEPARATOR;
-    }
-
-    function permit(
-        address owner,
-        address spender,
-        uint256 amount,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
-    ) external override {
-        require(deadline >= block.timestamp, "PBT/permit: EXPIRED");
-        bytes32 digest = keccak256(
-            abi.encodePacked(
-                "\x19\x01",
-                _DOMAIN_SEPARATOR,
-                keccak256(abi.encode(_PERMIT_TYPEHASH, owner, spender, amount, _nonces[owner]++, deadline))
-            )
-        );
-        address recoveredAddress = ecrecover(digest, v, r, s);
-        require(recoveredAddress != address(0) && recoveredAddress == owner, "PBT/permit: INVALID_SIGNATURE");
-        _approve(owner, spender, amount);
-    }
-
-    function permitTypeHash() external pure override returns (bytes32) {
-        return _PERMIT_TYPEHASH;
-    }
-
-    /// @dev EIP 2612
-    function nonces(address owner) external view override returns (uint256) {
-        return _nonces[owner];
     }
 
     // --- Internal operations ---
 
     function _approve(
-        address owner,
-        address spender,
-        uint256 amount
-    ) internal {
-        assert(owner != address(0));
-        assert(spender != address(0));
-
-        _allowed[owner][spender] = amount;
-        emit Approval(owner, spender, amount);
+        address,
+        address,
+        uint256
+    ) internal pure {
+        revert("Approve is disabled for PBT token");
     }
 
     function _transfer(
-        address sender,
-        address recipient,
-        uint256 amount
-    ) internal {
-        assert(sender != address(0));
-        assert(recipient != address(0));
-
-        _balances[sender] = _balances[sender].sub(amount, "ERC20: transfer amount exceeds balance");
-        _balances[recipient] = _balances[recipient].add(amount);
-        emit Transfer(sender, recipient, amount);
+        address,
+        address,
+        uint256
+    ) internal pure {
+        revert("Transfer is disabled for PBT token");
     }
 
     // --- 'require' functions ---

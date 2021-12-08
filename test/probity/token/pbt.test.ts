@@ -53,6 +53,28 @@ describe("PBT Token Unit Test", function () {
     expect(balanceAfter.sub(balanceBefore)).to.equal(AMOUNT_TO_MINT);
   });
 
+  it("test that transfer is not allowed", async () => {
+    await registry.setupContractAddress(bytes32("treasury"), owner.address);
+
+    await pbt.mint(user.address, AMOUNT_TO_MINT);
+
+    await assertRevert(
+      pbt.connect(user).transfer(owner.address, AMOUNT_TO_MINT),
+      "Transfer is disabled for PBT token"
+    );
+  });
+
+  it("test that approve is not allowed", async () => {
+    await registry.setupContractAddress(bytes32("treasury"), owner.address);
+
+    await pbt.mint(user.address, AMOUNT_TO_MINT);
+
+    await assertRevert(
+      pbt.connect(user).approve(owner.address, AMOUNT_TO_MINT),
+      "Approve is disabled for PBT token"
+    );
+  });
+
   it("test burn can only be called by vault contract", async () => {
     // add owner to registry as 'treasury' then check if owner can now mint
     await registry.setupContractAddress(bytes32("treasury"), owner.address);
