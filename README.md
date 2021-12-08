@@ -152,7 +152,7 @@ You can use the `initialize` script to initialize a new collateral type.
 ```
 TOKEN=SGB \
 FLARE_DIR=~/Desktop/flare \
-yarn run initialize
+yarn run initProbity
 ```
 
 ## Contract Addresses
