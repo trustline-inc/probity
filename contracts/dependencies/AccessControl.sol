@@ -13,17 +13,22 @@ contract AccessControl {
     // Modifiers
     ///////////////////////////////////
     modifier onlyBy(bytes32 name) {
+        require(registry.checkValidity(name, msg.sender), "AccessControl/OnlyBy: Caller does not have permission");
+        _;
+    }
+
+    modifier onlyByProbity() {
         require(
-            registry.checkContractValidity(name, msg.sender),
-            "AccessControl/OnlyBy: Caller does not have permission"
+            registry.checkValidity(msg.sender) && !registry.checkValidity("whiteListed", msg.sender),
+            "AccessControl/onlyByProbity: Caller must be from Probity system contract"
         );
         _;
     }
 
-    modifier onlyByRegistered() {
+    modifier onlyByWhiteListed() {
         require(
-            registry.checkContractValidity(msg.sender),
-            "AccessControl/onlyByRegistered: Caller is not a registered contract"
+            registry.checkValidity("whiteListed", msg.sender),
+            "AccessControl/onlyByWhiteListed: Only Whitelisted user can call this"
         );
         _;
     }

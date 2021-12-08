@@ -17,10 +17,7 @@ contract Registry is IRegistry {
     // Modifiers
     /////////////////////////////////////////
     modifier onlyByGov() {
-        require(
-            addressToName[msg.sender] == "gov",
-            "Registry/onlyByGov: caller is not from 'gov' address"
-        );
+        require(addressToName[msg.sender] == "gov", "Registry/onlyByGov: caller is not from 'gov' address");
         _;
     }
 
@@ -40,36 +37,22 @@ contract Registry is IRegistry {
     /////////////////////////////////////////
     // External Functions
     /////////////////////////////////////////
-    function setupContractAddress(bytes32 name, address addr)
-        external
-        override
-        onlyByGov
-    {
+    function setupAddress(bytes32 name, address addr) external override onlyByGov {
         addressToName[addr] = name;
         emit ContractAdded(name, addr);
     }
 
-    function removeContractAddress(address addr) external override onlyByGov {
+    function removeAddress(address addr) external override onlyByGov {
         bytes32 name = addressToName[addr];
         addressToName[addr] = bytes32("");
         emit ContractRemoved(name, addr);
     }
 
-    function checkContractValidity(bytes32 name, address addr)
-        external
-        view
-        override
-        returns (bool)
-    {
+    function checkValidity(bytes32 name, address addr) external view override returns (bool) {
         return addressToName[addr] == name;
     }
 
-    function checkContractValidity(address addr)
-        external
-        view
-        override
-        returns (bool)
-    {
+    function checkValidity(address addr) external view override returns (bool) {
         return addressToName[addr] != bytes32("");
     }
 }

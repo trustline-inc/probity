@@ -61,7 +61,7 @@ describe("Treasury Unit Tests", function () {
     treasury = contracts.treasury;
     vaultEngine = contracts.mockVaultEngine;
 
-    await registry.setupContractAddress(bytes32("treasury"), owner.address);
+    await registry.setupAddress(bytes32("treasury"), owner.address);
   });
 
   describe("depositAurei Unit Tests", function () {

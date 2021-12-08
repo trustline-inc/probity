@@ -25,6 +25,7 @@ import * as chai from "chai";
 import { deployTest, mock, probity } from "../lib/deployer";
 import increaseTime from "./utils/increaseTime";
 import { BigNumber } from "ethers";
+import { bytes32 } from "./utils/constants";
 const expect = chai.expect;
 
 // Wallets
@@ -188,6 +189,15 @@ describe("Shutdown Flow Test", function () {
       reserve: PRECISION_COLL.mul(0),
       debt: PRECISION_COLL.mul(0),
     };
+
+    await registry.setupAddress(bytes32("whiteListed"), user1.address);
+    await registry.setupAddress(bytes32("whiteListed"), user2.address);
+    await registry.setupAddress(bytes32("whiteListed"), user3.address);
+    await registry.setupAddress(bytes32("whiteListed"), user4.address);
+    await registry.setupAddress(bytes32("whiteListed"), user5.address);
+    await registry.setupAddress(bytes32("whiteListed"), user6.address);
+
+    // await registry.setupAddress(bytes32("whiteListed"), owner.address)
   });
 
   it("test happy flow where system is solvent", async () => {

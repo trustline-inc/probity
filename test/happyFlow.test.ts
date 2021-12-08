@@ -22,11 +22,13 @@ import {
 import { deployTest } from "../lib/deployer";
 import { ethers, web3 } from "hardhat";
 import * as chai from "chai";
+import { bytes32 } from "./utils/constants";
 const expect = chai.expect;
 
 // Wallets
 let owner: SignerWithAddress;
 let user: SignerWithAddress;
+let gov: SignerWithAddress;
 
 // Contracts
 let aurei: Aurei;
@@ -84,6 +86,11 @@ describe("Probity happy flow", function () {
 
     owner = signers.owner;
     user = signers.alice;
+    gov = signers.charlie;
+
+    await registry.setupAddress(bytes32("gov"), gov.address);
+    await registry.setupAddress(bytes32("whiteListed"), user.address);
+    await registry.setupAddress(bytes32("whiteListed"), owner.address);
   });
 
   it("test deposit and withdrawal of collateral", async () => {
@@ -153,14 +160,14 @@ describe("Probity happy flow", function () {
     await flrColl.deposit({ value: COLL_AMOUNT });
 
     // Initialize the FLR collateral type
-    await vaultEngine.initCollType(flrCollId);
-    await vaultEngine.updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
-    await teller.initCollType(flrCollId, 0);
-    await priceFeed.init(
-      flrCollId,
-      PRECISION_COLL.mul(15).div(10),
-      ftso.address
-    );
+    await vaultEngine.connect(gov).initCollType(flrCollId);
+    await vaultEngine
+      .connect(gov)
+      .updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
+    await teller.connect(gov).initCollType(flrCollId, 0);
+    await priceFeed
+      .connect(gov)
+      .init(flrCollId, PRECISION_COLL.mul(15).div(10), ftso.address);
     await priceFeed.updateAdjustedPrice(flrCollId);
 
     let userVaultBefore = await vaultEngine.vaults(flrCollId, owner.address);
@@ -213,14 +220,14 @@ describe("Probity happy flow", function () {
     await flrColl.deposit({ value: COLL_AMOUNT });
 
     // Initialize the FLR collateral type
-    await vaultEngine.initCollType(flrCollId);
-    await vaultEngine.updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
-    await teller.initCollType(flrCollId, 0);
-    await priceFeed.init(
-      flrCollId,
-      PRECISION_COLL.mul(15).div(10),
-      ftso.address
-    );
+    await vaultEngine.connect(gov).initCollType(flrCollId);
+    await vaultEngine
+      .connect(gov)
+      .updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
+    await teller.connect(gov).initCollType(flrCollId, 0);
+    await priceFeed
+      .connect(gov)
+      .init(flrCollId, PRECISION_COLL.mul(15).div(10), ftso.address);
     await priceFeed.updateAdjustedPrice(flrCollId);
 
     // Create Aurei
@@ -279,14 +286,14 @@ describe("Probity happy flow", function () {
     await flrColl.deposit({ value: COLL_AMOUNT });
 
     // Initialize the FLR collateral type
-    await vaultEngine.initCollType(flrCollId);
-    await vaultEngine.updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
-    await teller.initCollType(flrCollId, 0);
-    await priceFeed.init(
-      flrCollId,
-      PRECISION_COLL.mul(15).div(10),
-      ftso.address
-    );
+    await vaultEngine.connect(gov).initCollType(flrCollId);
+    await vaultEngine
+      .connect(gov)
+      .updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
+    await teller.connect(gov).initCollType(flrCollId, 0);
+    await priceFeed
+      .connect(gov)
+      .init(flrCollId, PRECISION_COLL.mul(15).div(10), ftso.address);
     await priceFeed.updateAdjustedPrice(flrCollId);
 
     let userVaultBefore = await vaultEngine.vaults(flrCollId, owner.address);
@@ -328,14 +335,14 @@ describe("Probity happy flow", function () {
   it("test priceFeed update", async () => {
     await flrColl.deposit({ value: COLL_AMOUNT });
 
-    await vaultEngine.initCollType(flrCollId);
-    await vaultEngine.updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
-    await teller.initCollType(flrCollId, 0);
-    await priceFeed.init(
-      flrCollId,
-      PRECISION_COLL.mul(15).div(10),
-      ftso.address
-    );
+    await vaultEngine.connect(gov).initCollType(flrCollId);
+    await vaultEngine
+      .connect(gov)
+      .updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
+    await teller.connect(gov).initCollType(flrCollId, 0);
+    await priceFeed
+      .connect(gov)
+      .init(flrCollId, PRECISION_COLL.mul(15).div(10), ftso.address);
 
     await priceFeed.updateAdjustedPrice(flrCollId);
 
@@ -348,11 +355,13 @@ describe("Probity happy flow", function () {
   it("test liquidation start", async () => {
     await flrColl.deposit({ value: COLL_AMOUNT });
 
-    await vaultEngine.initCollType(flrCollId);
-    await vaultEngine.updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
-    await teller.initCollType(flrCollId, 0);
-    await liquidator.init(flrCollId, auctioneer.address);
-    await priceFeed.init(flrCollId, PRECISION_COLL, ftso.address);
+    await vaultEngine.connect(gov).initCollType(flrCollId);
+    await vaultEngine
+      .connect(gov)
+      .updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
+    await teller.connect(gov).initCollType(flrCollId, 0);
+    await liquidator.connect(gov).init(flrCollId, auctioneer.address);
+    await priceFeed.connect(gov).init(flrCollId, PRECISION_COLL, ftso.address);
     await priceFeed.updateAdjustedPrice(flrCollId);
 
     await vaultEngine.modifySupply(
@@ -368,10 +377,9 @@ describe("Probity happy flow", function () {
       LOAN_AMOUNT
     );
 
-    await priceFeed.updateLiquidationRatio(
-      flrCollId,
-      PRECISION_COLL.mul(22).div(10)
-    );
+    await priceFeed
+      .connect(gov)
+      .updateLiquidationRatio(flrCollId, PRECISION_COLL.mul(22).div(10));
     await priceFeed.updateAdjustedPrice(flrCollId);
     let unBackedAurBefore = await vaultEngine.unbackedStablecoin(
       reserve.address
@@ -393,11 +401,13 @@ describe("Probity happy flow", function () {
   it("test auction process", async () => {
     await flrColl.deposit({ value: COLL_AMOUNT });
 
-    await vaultEngine.initCollType(flrCollId);
-    await vaultEngine.updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
-    await teller.initCollType(flrCollId, 0);
-    await liquidator.init(flrCollId, auctioneer.address);
-    await priceFeed.init(flrCollId, PRECISION_COLL, ftso.address);
+    await vaultEngine.connect(gov).initCollType(flrCollId);
+    await vaultEngine
+      .connect(gov)
+      .updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
+    await teller.connect(gov).initCollType(flrCollId, 0);
+    await liquidator.connect(gov).init(flrCollId, auctioneer.address);
+    await priceFeed.connect(gov).init(flrCollId, PRECISION_COLL, ftso.address);
     await priceFeed.updateAdjustedPrice(flrCollId);
 
     await vaultEngine.modifySupply(
@@ -413,10 +423,9 @@ describe("Probity happy flow", function () {
       LOAN_AMOUNT
     );
 
-    await priceFeed.updateLiquidationRatio(
-      flrCollId,
-      PRECISION_COLL.mul(22).div(10)
-    );
+    await priceFeed
+      .connect(gov)
+      .updateLiquidationRatio(flrCollId, PRECISION_COLL.mul(22).div(10));
     await priceFeed.updateAdjustedPrice(flrCollId);
 
     await liquidator.liquidateVault(flrCollId, owner.address);
@@ -469,11 +478,13 @@ describe("Probity happy flow", function () {
   it("test reserve pool settlement + IOU sale", async () => {
     await flrColl.deposit({ value: COLL_AMOUNT });
 
-    await vaultEngine.initCollType(flrCollId);
-    await vaultEngine.updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
-    await teller.initCollType(flrCollId, 0);
-    await liquidator.init(flrCollId, auctioneer.address);
-    await priceFeed.init(flrCollId, PRECISION_COLL, ftso.address);
+    await vaultEngine.connect(gov).initCollType(flrCollId);
+    await vaultEngine
+      .connect(gov)
+      .updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
+    await teller.connect(gov).initCollType(flrCollId, 0);
+    await liquidator.connect(gov).init(flrCollId, auctioneer.address);
+    await priceFeed.connect(gov).init(flrCollId, PRECISION_COLL, ftso.address);
     await priceFeed.updateAdjustedPrice(flrCollId);
 
     await vaultEngine.modifySupply(
@@ -489,10 +500,9 @@ describe("Probity happy flow", function () {
       LOAN_AMOUNT
     );
 
-    await priceFeed.updateLiquidationRatio(
-      flrCollId,
-      PRECISION_COLL.mul(22).div(10)
-    );
+    await priceFeed
+      .connect(gov)
+      .updateLiquidationRatio(flrCollId, PRECISION_COLL.mul(22).div(10));
     await priceFeed.updateAdjustedPrice(flrCollId);
 
     await liquidator.liquidateVault(flrCollId, owner.address);
@@ -514,7 +524,7 @@ describe("Probity happy flow", function () {
       PRECISION_COLL.mul(600)
     );
 
-    await reserve.updateDebtThreshold(PRECISION_AUR.mul(200));
+    await reserve.connect(gov).updateDebtThreshold(PRECISION_AUR.mul(200));
     await reserve.startIouSale();
 
     const reserveUser = reserve.connect(user);
