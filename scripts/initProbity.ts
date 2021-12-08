@@ -30,6 +30,7 @@ const init = async () => {
   const [owner]: SignerWithAddress[] = await ethers.getSigners();
 
   // ABIs
+  const RegistryABI = await artifacts.readArtifact("Registry");
   const LiquidatorABI = await artifacts.readArtifact("Liquidator");
   const PriceFeedABI = await artifacts.readArtifact("PriceFeed");
   const TellerABI = await artifacts.readArtifact("Teller");
@@ -37,6 +38,11 @@ const init = async () => {
   const VaultEngineSBABI = await artifacts.readArtifact("VaultEngineSB");
 
   // Contracts
+  const registry = new ethers.Contract(
+    process.env.REGISTRY,
+    RegistryABI.abi,
+    owner
+  );
   const liquidator = new ethers.Contract(
     process.env.LIQUIDATOR,
     LiquidatorABI.abi,
@@ -52,6 +58,12 @@ const init = async () => {
     token === "SGB" ? process.env.VAULT_ENGINE_S_B : process.env.VAULT_ENGINE,
     token === "SGB" ? VaultEngineSBABI.abi : VaultEngineABI.abi,
     owner
+  );
+
+  await registry.setupAddress(web3.utils.keccak256("gov"), owner.address);
+  await registry.setupAddress(
+    web3.utils.keccak256("whiteListed"),
+    owner.address
   );
 
   // Initialize vault collateral type
