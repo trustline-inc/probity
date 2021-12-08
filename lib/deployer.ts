@@ -343,9 +343,7 @@ const deployVPTokenCollateral = async (param?: {
   const vpToken =
     param && param.vpToken ? param.vpToken : contracts.vpToken.address;
   const vaultEngine =
-    param && param.vaultEngine
-      ? param.vaultEngine
-      : process.env.TOKEN?.toLowerCase() === "phi"
+    param?.vaultEngine || process.env.TOKEN?.toLowerCase() === "phi"
       ? contracts.vaultEngineSB.address
       : contracts.vaultEngine.address;
 
@@ -390,9 +388,7 @@ const deployERC20Collateral = async (param?: {
   const erc20Token =
     param && param.erc20 ? param.erc20 : contracts.erc20Token.address;
   const vaultEngine =
-    param && param.vaultEngine
-      ? param.vaultEngine
-      : process.env.TOKEN?.toLowerCase() === "phi"
+    param?.vaultEngine || process.env.TOKEN?.toLowerCase() === "phi"
       ? contracts.vaultEngineSB.address
       : contracts.vaultEngine.address;
 
@@ -432,9 +428,7 @@ const deployNativeCollateral = async (param?: {
       ? param.collateralId
       : web3.utils.keccak256(NETWORK_NATIVE_TOKEN);
   const vaultEngine =
-    param && param.vaultEngine
-      ? param.vaultEngine
-      : process.env.TOKEN?.toLowerCase() === "phi"
+    param?.vaultEngine || process.env.TOKEN?.toLowerCase() === "phi"
       ? contracts.vaultEngineSB.address
       : contracts.vaultEngine.address;
 
@@ -473,9 +467,7 @@ const deployShutdown = async (param?: {
   const registry =
     param && param.registry ? param.registry : contracts.registry.address;
   const vaultEngine =
-    param && param.vaultEngine
-      ? param.vaultEngine
-      : process.env.TOKEN?.toLowerCase() === "phi"
+    param?.vaultEngine || process.env.TOKEN?.toLowerCase() === "phi"
       ? contracts.vaultEngineSB.address
       : contracts.vaultEngine.address;
   const priceFeed =
@@ -528,9 +520,7 @@ const deployTeller = async (param?: {
   const registry =
     param && param.registry ? param.registry : contracts.registry.address;
   const vaultEngine =
-    param && param.vaultEngine
-      ? param.vaultEngine
-      : process.env.TOKEN?.toLowerCase() === "phi"
+    param?.vaultEngine || process.env.TOKEN?.toLowerCase() === "phi"
       ? contracts.vaultEngineSB.address
       : contracts.vaultEngine.address;
   const lowApr =
@@ -575,9 +565,7 @@ const deployTreasury = async (param?: {
   const registry =
     param && param.registry ? param.registry : contracts.registry.address;
   const vaultEngine =
-    param && param.vaultEngine
-      ? param.vaultEngine
-      : process.env.TOKEN?.toLowerCase() === "phi"
+    param?.vaultEngine || process.env.TOKEN?.toLowerCase() === "phi"
       ? contracts.vaultEngineSB.address
       : contracts.vaultEngine.address;
   const token = param && param.token ? param.token : contracts.aurei.address;
@@ -614,9 +602,7 @@ const deployPriceFeed = async (param?: {
   const registry =
     param && param.registry ? param.registry : contracts.registry.address;
   const vaultEngine =
-    param && param.vaultEngine
-      ? param.vaultEngine
-      : process.env.TOKEN?.toLowerCase() === "phi"
+    param?.vaultEngine || process.env.TOKEN?.toLowerCase() === "phi"
       ? contracts.vaultEngineSB.address
       : contracts.vaultEngine.address;
 
@@ -648,9 +634,7 @@ const deployAuctioneer = async (param?: {
   const registry =
     param && param.registry ? param.registry : contracts.registry;
   const vaultEngine =
-    param && param.vaultEngine
-      ? param.vaultEngine
-      : process.env.TOKEN?.toLowerCase() === "phi"
+    param?.vaultEngine || process.env.TOKEN?.toLowerCase() === "phi"
       ? contracts.vaultEngineSB.address
       : contracts.vaultEngine.address;
   const linearDecrease =
@@ -709,9 +693,7 @@ const deployReservePool = async (param?: {
   const registry =
     param && param.registry ? param.registry : contracts.registry.address;
   const vaultEngine =
-    param && param.vaultEngine
-      ? param.vaultEngine
-      : process.env.TOKEN?.toLowerCase() === "phi"
+    param?.vaultEngine || process.env.TOKEN?.toLowerCase() === "phi"
       ? contracts.vaultEngineSB.address
       : contracts.vaultEngine.address;
 
@@ -742,9 +724,7 @@ const deployLiquidator = async (param?: {
   const registry =
     param && param.registry ? param.registry : contracts.registry.address;
   const vaultEngine =
-    param && param.vaultEngine
-      ? param.vaultEngine
-      : process.env.TOKEN?.toLowerCase() === "phi"
+    param?.vaultEngine || process.env.TOKEN?.toLowerCase() === "phi"
       ? contracts.vaultEngineSB.address
       : contracts.vaultEngine.address;
   const reservePool =
