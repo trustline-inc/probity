@@ -74,9 +74,9 @@ import {
  * Set native token for the deployment's target network
  */
 const NETWORK_NATIVE_TOKENS = {
-  local: "FLR",
-  hardhat: "FLR",
-  coston: "FLR",
+  local: process.env.NATIVE_TOKEN_LOCAL || "FLR",
+  hardhat: "FLR", // tests always use FLR and AUR
+  coston: process.env.NATIVE_TOKEN_COSTON || "FLR",
   songbird: "SGB",
   flare: "FLR",
 };
