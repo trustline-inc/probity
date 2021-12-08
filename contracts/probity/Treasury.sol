@@ -38,7 +38,7 @@ contract Treasury is Stateful {
     /////////////////////////////////////////
 
     TokenLike public immutable aurei;
-    TokenLike public immutable tcn;
+    TokenLike public immutable pbt;
     VaultEngineLike public immutable vaultEngine;
 
     /////////////////////////////////////////
@@ -61,7 +61,7 @@ contract Treasury is Stateful {
     ) Stateful(registryAddress) {
         aurei = aureiAddress;
         vaultEngine = vaultEngineAddress;
-        tcn = tcnAddress;
+        pbt = tcnAddress;
     }
 
     /////////////////////////////////////////
@@ -86,7 +86,7 @@ contract Treasury is Stateful {
 
     function withdrawTcn(uint256 amount) external {
         vaultEngine.removeTcn(msg.sender, amount * 1e27);
-        tcn.mint(msg.sender, amount);
+        pbt.mint(msg.sender, amount);
         emit WithdrawTcn(msg.sender, amount);
     }
 }
