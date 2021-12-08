@@ -45,7 +45,7 @@ let flrCollId = bytes32("FLR");
 
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
-describe.only("Liquidator Unit Tests", function () {
+describe("Liquidator Unit Tests", function () {
   beforeEach(async function () {
     let { contracts, signers } = await deployTest();
     // Set contracts
@@ -118,7 +118,7 @@ describe.only("Liquidator Unit Tests", function () {
     });
 
     it("tests that auctioneer address is updated correctly", async () => {
-      const DEFAULT_AUCTIONEER_ADDRESS = user.address;
+      const DEFAULT_AUCTIONEER_ADDRESS = auctioneer.address;
       const NEW_AUCTIONEER_ADDRESS = owner.address;
       const before = await liquidator.collateralTypes(flrCollId);
       expect(before.auctioneer).to.equal(DEFAULT_AUCTIONEER_ADDRESS);
@@ -146,7 +146,7 @@ describe.only("Liquidator Unit Tests", function () {
     });
   });
 
-  describe.only("liquidateVault Unit Tests", function () {
+  describe("liquidateVault Unit Tests", function () {
     const VAULT_LOCKED_COLL = PRECISION_COLL.mul(999);
     const VAULT_DEBT = PRECISION_COLL.mul(500);
     const VAULT_CAPITAL = PRECISION_COLL.mul(500);
