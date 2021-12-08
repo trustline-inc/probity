@@ -131,13 +131,14 @@ npm run createInitialTx:local
 
 Deploy the smart contract in the local network using the `deploy:local` script.
 
-> Set the `FLARE_DIR` and `TOKEN` envioronment variables.
+> Set the `FLARE_DIR` and `TOKEN` envioronment variables. Set `NATIVE_TOKEN_LOCAL` if you are deploying locally.
 
 For example:
 
 ```
 FLARE_DIR=~/Desktop/flare \
 TOKEN=PHI \
+NATIVE_TOKEN_LOCAL=SGB \
 npm run deploy:local
 ```
 
