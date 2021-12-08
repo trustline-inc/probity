@@ -14,8 +14,8 @@ if (!["FLR", "SGB"].includes(process.env.TOKEN.toUpperCase()))
 const token = process.env.TOKEN.toUpperCase();
 
 const COLLATERAL = {
-  FLR: web3.utils.keccak256("FLR"),
-  SGB: web3.utils.keccak256("SGB"),
+  FLR: ethers.utils.formatBytes32String("FLR"),
+  SGB: ethers.utils.formatBytes32String("SGB"),
 };
 
 const PRECISION_COLL = ethers.BigNumber.from("1000000000000000000");
@@ -61,11 +61,15 @@ const init = async () => {
   );
 
   // One address can only have one role
-  await registry.setupAddress(web3.utils.keccak256("gov"), owner.address, {
-    gasLimit: 300000,
-  });
   await registry.setupAddress(
-    web3.utils.keccak256("whiteListed"),
+    ethers.utils.formatBytes32String("gov"),
+    owner.address,
+    {
+      gasLimit: 300000,
+    }
+  );
+  await registry.setupAddress(
+    ethers.utils.formatBytes32String("whiteListed"),
     "0x6310B7E8bDFD25EFbeDfB17987Ba69D9191a45bD",
     { gasLimit: 300000 }
   );
@@ -77,13 +81,24 @@ const init = async () => {
     .initCollType(COLLATERAL[token], { gasLimit: 300000 });
   console.log(`Vault: ${token} initialized.`);
 
+  // Set individual vault limit
+  if (token === "SGB") {
+    console.log(`Setting individual vault limit`);
+    await vaultEngine
+      .connect(owner)
+      .updateIndividualVaultLimit(PRECISION_COLL.mul(1000), {
+        gasLimit: 300000,
+      });
+    console.log(`Vault: individual limit set.`);
+  }
+
   // Update debt ceiling
   await vaultEngine
     .connect(owner)
     .updateCeiling(COLLATERAL[token], PRECISION_AUR.mul(10000000), {
       gasLimit: 300000,
     });
-  console.log(`Vault: ceiling updated.`);
+  console.log(`Vault: ${token} ceiling updated.`);
 
   // Initialize teller collateral type
   await teller
