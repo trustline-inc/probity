@@ -287,7 +287,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
       const COLL_AMOUNT_SUPPLY = PRECISION_COLL.mul(10000);
       const COLL_AMOUNT_DEBT = PRECISION_COLL.mul(10000);
       const DEBT_AMOUNT = PRECISION_COLL.mul(500);
-      const NEW_INDIVIDUAL_VAULT_LIMTI = PRECISION_AUR.mul(1000);
+      const NEW_INDIVIDUAL_VAULT_LIMIT = PRECISION_AUR.mul(1000);
 
       await vaultEngine
         .connect(coll)
@@ -323,7 +323,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
 
       await vaultEngine
         .connect(gov)
-        .updateIndividualVaultLimit(NEW_INDIVIDUAL_VAULT_LIMTI);
+        .updateIndividualVaultLimit(NEW_INDIVIDUAL_VAULT_LIMIT);
 
       await vaultEngine.modifyDebt(
         flrCollId,

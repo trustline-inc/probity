@@ -12,9 +12,9 @@
     "solhint": "./node_modules/.bin/solhint contracts/**/*.sol contracts/**/**/*.sol",
     "solhint:fix": "./node_modules/.bin/solhint --fix contracts/**/*.sol contracts/**/**/*.sol",
     "prettier:solidity": "./node_modules/.bin/prettier --write contracts",
-    "init": "npx hardhat --network local run ./scripts/init.ts",
+    "initProbity": "npx hardhat --network local run ./scripts/initProbity.ts",
+    "createInitialTx:local": "npx hardhat --network local run ./scripts/createInitialTx.ts",
     "rateUpdater": "npx hardhat --network local run ./scripts/rateUpdater.ts",
-    "fund:local": "npx hardhat --network local run ./scripts/fund.ts",
     "demo:issue": "npx hardhat --network local run ./scripts/issueAurei.ts",
     "demo:redeem": "npx hardhat --network local run ./scripts/redeemAurei.ts",
     "script:markComplete": "npx hardhat --network local run ./scripts/markTransferComplete.ts",
@@ -24,8 +24,8 @@
     "deploy:local": "export NETWORK=local && npx hardhat --network local run ./scripts/deploy.ts",
     "deploy:coston": "npx hardhat --network coston run ./scripts/deploy.ts",
     "deploy:hardhat": "npx hardhat --network localhost run ./scripts/deploy.ts",
-    "test": "npx hardhat test --network hardhat",
-    "test:happy": "npx hardhat test test/happyFlow.test.ts --network hardhat",
+    "test": "NODE_ENV=test npx hardhat test --network hardhat",
+    "test:happy": "NODE_ENV=test npx hardhat test test/happyFlow.test.ts --network hardhat",
     "coverage": "npm run build && npx hardhat coverage --temp artifacts --network hardhat --solcoverjs ./.solcover.js"
   },
   "contributors": [

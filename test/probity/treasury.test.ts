@@ -4,7 +4,7 @@ import "@nomiclabs/hardhat-ethers";
 import {
   Registry,
   Aurei,
-  TcnToken,
+  PbtToken,
   Treasury,
   NativeCollateral,
   MockVaultEngine,
@@ -29,7 +29,7 @@ let user: SignerWithAddress;
 
 // Contracts
 let aurei: Aurei;
-let tcn: TcnToken;
+let pbt: PbtToken;
 let vaultEngine: MockVaultEngine;
 let treasury: Treasury;
 let registry: Registry;
@@ -46,7 +46,7 @@ describe("Treasury Unit Tests", function () {
     // Set contracts
     registry = contracts.registry;
     aurei = contracts.aurei;
-    tcn = contracts.tcnToken;
+    pbt = contracts.pbtToken;
     flrCollateral = contracts.nativeCollateral;
 
     owner = signers.owner;
@@ -150,18 +150,18 @@ describe("Treasury Unit Tests", function () {
     });
 
     it("tests that withdrawTcn call vaultEngine.removeTcn function", async () => {
-      const tcnBalanceBefore = await vaultEngine.tcn(owner.address);
+      const tcnBalanceBefore = await vaultEngine.pbt(owner.address);
       await treasury.withdrawTcn(AMOUNT_TO_WITHDRAW);
-      const tcnBalanceAfter = await vaultEngine.tcn(owner.address);
+      const tcnBalanceAfter = await vaultEngine.pbt(owner.address);
       expect(
         tcnBalanceBefore.sub(tcnBalanceAfter).div(PRECISION_PRICE)
       ).to.equal(AMOUNT_TO_WITHDRAW);
     });
 
-    it("tests that tcn is minted for user's balance", async () => {
-      const tcnBalanceBefore = await tcn.balanceOf(owner.address);
+    it("tests that pbt is minted for user's balance", async () => {
+      const tcnBalanceBefore = await pbt.balanceOf(owner.address);
       await treasury.withdrawTcn(AMOUNT_TO_WITHDRAW);
-      const tcnBalanceAfter = await tcn.balanceOf(owner.address);
+      const tcnBalanceAfter = await pbt.balanceOf(owner.address);
       expect(tcnBalanceAfter.sub(tcnBalanceBefore)).to.equal(
         AMOUNT_TO_WITHDRAW
       );

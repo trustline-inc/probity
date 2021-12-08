@@ -6,9 +6,9 @@ import "./IERC20.sol";
 import "./IERC2612.sol";
 
 /**
- * @notice Common interface for the TCN token.
+ * @notice Common interface for the PBT token.
  */
-interface ITcnToken is IERC20, IERC2612 {
+interface IPbtToken is IERC20 {
     // --- Events ---
 
     // --- Functions ---
