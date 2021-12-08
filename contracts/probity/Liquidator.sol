@@ -72,6 +72,7 @@ contract Liquidator is Stateful, Eventful {
     // State Variables
     /////////////////////////////////////////
     uint256 private constant PRECISION_PRICE = 10**27;
+    uint256 private constant PRECISION_COLL = 10**18;
 
     VaultEngineLike public immutable vaultEngine;
     ReservePoolLike public immutable reserve;
@@ -95,8 +96,8 @@ contract Liquidator is Stateful, Eventful {
     /////////////////////////////////////////
     function init(bytes32 collId, AuctioneerLike auctioneer) external onlyBy("gov") {
         collateralTypes[collId].auctioneer = auctioneer;
-        collateralTypes[collId].debtPenaltyFee = 1.17E27;
-        collateralTypes[collId].suppPenaltyFee = 1.05E27;
+        collateralTypes[collId].debtPenaltyFee = 1.17E18;
+        collateralTypes[collId].suppPenaltyFee = 1.05E18;
     }
 
     function updatePenalties(
@@ -149,10 +150,9 @@ contract Liquidator is Stateful, Eventful {
         );
 
         uint256 aurToRaise = (debt * debtAccu * collateralTypes[collId].debtPenaltyFee) /
-            PRECISION_PRICE +
+            PRECISION_COLL +
             (supplied * capitalAccu * collateralTypes[collId].suppPenaltyFee) /
-            PRECISION_PRICE;
-
+            PRECISION_COLL;
         // start the auction
         collateralTypes[collId].auctioneer.startAuction(collId, lockedColl, aurToRaise, user, address(reserve));
     }

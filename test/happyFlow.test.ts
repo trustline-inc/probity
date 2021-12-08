@@ -524,6 +524,7 @@ describe("Probity happy flow", function () {
       PRECISION_COLL.mul(600)
     );
 
+    await liquidator.reduceAuctionDebt(PRECISION_AUR.mul(201));
     await reserve.connect(gov).updateDebtThreshold(PRECISION_AUR.mul(200));
     await reserve.startIouSale();
 
