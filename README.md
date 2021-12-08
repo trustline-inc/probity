@@ -119,6 +119,14 @@ You can deploy in the local network following these steps:
 
 Run a local [Flare](https://gitlab.com/flarenetwork/flare) node.
 
+You should run an initial transaction before deploying contracts:
+
+> This command can also be run when deploying.
+
+```
+npm run createInitialTx:local
+```
+
 2. Deploy to the network.
 
 Deploy the smart contract in the local network using the `deploy:local` script.
@@ -133,7 +141,7 @@ TOKEN=PHI \
 npm run deploy:local
 ```
 
-If you get the error `ProviderError: err: Invalid value for block.coinbase`, that means you have to first send a test transaction through Metamask in order for the network to start properly.
+If you get the error `ProviderError: err: Invalid value for block.coinbase`, that means you have to first run `npm run createInitialTx:local`, which creates a genesis transaction in order for the network to start properly.
 
 ## Initialization
 
