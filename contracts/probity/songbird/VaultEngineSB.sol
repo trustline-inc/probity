@@ -250,8 +250,8 @@ contract VaultEngineSB is Stateful, Eventful {
 
         require(totalDebt <= collateralTypes[collId].ceiling, "Vault/modifyDebt: Debt ceiling reached");
         require(
-            vault.debt == 0 || vault.debt > collateralTypes[collId].floor,
-            "Vault/modifyDebt: Debt Smaller than floor"
+            vault.debt == 0 || (vault.debt * PRECISION_PRICE) > collateralTypes[collId].floor,
+            "Vault/modifyDebt: Debt smaller than floor"
         );
         certify(collId, vault);
         checkVaultUnderLimit(collId, vault);
