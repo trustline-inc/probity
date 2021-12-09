@@ -156,7 +156,7 @@ contract ReservePool is Stateful, Eventful {
         processRedemption(user, amount);
     }
 
-    function sendAurei(address to, uint256 amount) external onlyBy("gov") {
+    function sendStablecoin(address to, uint256 amount) external onlyBy("gov") {
         vaultEngine.moveStablecoin(address(this), to, amount);
     }
 

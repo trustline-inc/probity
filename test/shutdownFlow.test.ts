@@ -351,7 +351,7 @@ describe("Shutdown Flow Test", function () {
     );
     await checkReserveBalances(reserveBalances);
 
-    await reserve.sendAurei(user2.address, DEBT_THRESHOLD.mul(12).div(10));
+    await reserve.sendStablecoin(user2.address, DEBT_THRESHOLD.mul(12).div(10));
     reserveBalances.reserve = PRECISION_AUR.mul(0);
     await checkReserveBalances(reserveBalances);
 
@@ -384,7 +384,7 @@ describe("Shutdown Flow Test", function () {
     // put system reserve (enough to cover all the debt have have extra left over) and have IOU holder
     await treasury
       .connect(user2)
-      .transferAurei(reserve.address, PRECISION_COLL.mul(7000));
+      .transferStablecoin(reserve.address, PRECISION_COLL.mul(7000));
 
     reserveBalances.reserve = reserveBalances.reserve.add(
       PRECISION_AUR.mul(7000)
@@ -397,7 +397,7 @@ describe("Shutdown Flow Test", function () {
 
     await treasury
       .connect(user3)
-      .transferAurei(reserve.address, PRECISION_COLL.mul(140000));
+      .transferStablecoin(reserve.address, PRECISION_COLL.mul(140000));
 
     reserveBalances.reserve = reserveBalances.reserve.add(
       PRECISION_AUR.mul(140000)
@@ -530,8 +530,10 @@ describe("Shutdown Flow Test", function () {
       EXPECTED_FXRP_REDEEM_RATIO
     );
 
-    // return Aurei
-    await shutdown.connect(user2).returnAurei(PRECISION_AUR.mul(65000 + 1500));
+    // return stablecoin
+    await shutdown
+      .connect(user2)
+      .returnStablecoin(PRECISION_AUR.mul(65000 + 1500));
     expect(await shutdown.stablecoin(user2.address)).to.equal(
       PRECISION_AUR.mul(65000 + 1500)
     );
@@ -803,7 +805,7 @@ describe("Shutdown Flow Test", function () {
     // put system reserve to fill up some gap but not entirely
     await treasury
       .connect(user2)
-      .transferAurei(reserve.address, PRECISION_COLL.mul(7000));
+      .transferStablecoin(reserve.address, PRECISION_COLL.mul(7000));
 
     reserveBalances.reserve = reserveBalances.reserve.add(
       PRECISION_AUR.mul(7000)
@@ -816,7 +818,7 @@ describe("Shutdown Flow Test", function () {
 
     await treasury
       .connect(user4)
-      .transferAurei(reserve.address, PRECISION_COLL.mul(140000));
+      .transferStablecoin(reserve.address, PRECISION_COLL.mul(140000));
 
     reserveBalances.reserve = reserveBalances.reserve.add(
       PRECISION_AUR.mul(140000)
@@ -1107,8 +1109,8 @@ describe("Shutdown Flow Test", function () {
         .lte(PRECISION_COLL.div(100))
     ).to.equal(true);
 
-    // return Aurei
-    await shutdown.connect(user2).returnAurei(PRECISION_AUR.mul(1099000));
+    // return stablecoin
+    await shutdown.connect(user2).returnStablecoin(PRECISION_AUR.mul(1099000));
     expect(await shutdown.stablecoin(user2.address)).to.equal(
       PRECISION_AUR.mul(1099000)
     );

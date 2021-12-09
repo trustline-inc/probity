@@ -203,7 +203,10 @@ const deployRegistry = async (param?: { govAddress?: string }) => {
   await contracts.registry.deployed();
   if (process.env.NODE_ENV !== "test") {
     console.info("registry deployed ✓");
-    console.info({ govAddress });
+    console.info({
+      address: contracts.registry.address,
+      params: { govAddress },
+    });
   }
   return contracts;
 };
@@ -220,7 +223,10 @@ const deployAurei = async (param?: { registry?: string }) => {
   await contracts.aurei.deployed();
   if (process.env.NODE_ENV !== "test") {
     console.info("aurei deployed ✓");
-    console.info({ registry });
+    console.info({
+      address: contracts.aurei.address,
+      params: { registry },
+    });
   }
   await contracts.registry.setupAddress(
     bytes32("aur"),

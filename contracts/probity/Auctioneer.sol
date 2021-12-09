@@ -42,7 +42,7 @@ contract Auctioneer is Stateful, Eventful {
         uint256 lot;
         uint256 debt;
         address owner; // left over collateral will go back to this owner
-        address beneficiary; // aurei will go to this address
+        address beneficiary; // stablecoin will go to this address
         uint256 startPrice;
         uint256 startTime;
         bool isOver;

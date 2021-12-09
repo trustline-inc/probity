@@ -914,7 +914,7 @@ describe("Shutdown Unit Tests", function () {
       await increaseTime(172800);
     });
 
-    it("fails if reservePool unBacked Aurei is not zero", async () => {
+    it("fails if reservePool unbacked stablecoins is not zero", async () => {
       await shutdown.setFinalDebtBalance();
       await vaultEngine.setUnbackedStablecoin(
         reservePool.address,
@@ -960,7 +960,7 @@ describe("Shutdown Unit Tests", function () {
     });
   });
 
-  describe("returnAurei Unit Tests", function () {
+  describe("returnStablecoin Unit Tests", function () {
     const AUREI_AMOUNT_TO_SET = PRECISION_AUR.mul(2000);
     beforeEach(async function () {
       await vaultEngine.setStablecoin(owner.address, AUREI_AMOUNT_TO_SET);
@@ -968,24 +968,28 @@ describe("Shutdown Unit Tests", function () {
 
     it("tests that correct amount of aurei are transferred", async () => {
       const AMOUNT_TO_RETURN = AUREI_AMOUNT_TO_SET.div(10);
-      const aureiBalanceBefore = await vaultEngine.stablecoin(shutdown.address);
+      const stablecoinBalanceBefore = await vaultEngine.stablecoin(
+        shutdown.address
+      );
 
-      await shutdown.returnAurei(AMOUNT_TO_RETURN);
+      await shutdown.returnStablecoin(AMOUNT_TO_RETURN);
 
-      const aureiBalanceAfter = await vaultEngine.stablecoin(shutdown.address);
-      expect(aureiBalanceAfter.sub(aureiBalanceBefore)).to.equal(
+      const stablecoinBalanceAfter = await vaultEngine.stablecoin(
+        shutdown.address
+      );
+      expect(stablecoinBalanceAfter.sub(stablecoinBalanceBefore)).to.equal(
         AMOUNT_TO_RETURN
       );
     });
 
     it("tests that values are properly updated", async () => {
       const AMOUNT_TO_RETURN = AUREI_AMOUNT_TO_SET.div(10);
-      const aureiBalanceBefore = await shutdown.stablecoin(owner.address);
+      const stablecoinBalanceBefore = await shutdown.stablecoin(owner.address);
 
-      await shutdown.returnAurei(AMOUNT_TO_RETURN);
+      await shutdown.returnStablecoin(AMOUNT_TO_RETURN);
 
-      const aureiBalanceAfter = await shutdown.stablecoin(owner.address);
-      expect(aureiBalanceAfter.sub(aureiBalanceBefore)).to.equal(
+      const stablecoinBalanceAfter = await shutdown.stablecoin(owner.address);
+      expect(stablecoinBalanceAfter.sub(stablecoinBalanceBefore)).to.equal(
         AMOUNT_TO_RETURN
       );
     });
@@ -1054,7 +1058,7 @@ describe("Shutdown Unit Tests", function () {
     });
 
     it("tests that values are properly updated", async () => {
-      await shutdown.returnAurei(AUREI_AMOUNT_TO_SET);
+      await shutdown.returnStablecoin(AUREI_AMOUNT_TO_SET);
 
       const before = await shutdown.collRedeemed(flrCollId, owner.address);
       await shutdown.redeemCollateral(flrCollId);
@@ -1063,7 +1067,7 @@ describe("Shutdown Unit Tests", function () {
     });
 
     it("tests that if more aurei is returned, more collateral can be withdrawn", async () => {
-      await shutdown.returnAurei(AUREI_AMOUNT_TO_SET.mul(2).div(3));
+      await shutdown.returnStablecoin(AUREI_AMOUNT_TO_SET.mul(2).div(3));
 
       let before = await shutdown.collRedeemed(flrCollId, owner.address);
 
@@ -1072,7 +1076,7 @@ describe("Shutdown Unit Tests", function () {
       let after = await shutdown.collRedeemed(flrCollId, owner.address);
       expect(after.sub(before)).to.equal(DEBT_TO_SET.mul(2).div(3));
 
-      await shutdown.returnAurei(AUREI_AMOUNT_TO_SET.div(3));
+      await shutdown.returnStablecoin(AUREI_AMOUNT_TO_SET.div(3));
       before = await shutdown.collRedeemed(flrCollId, owner.address);
 
       await shutdown.redeemCollateral(flrCollId);
@@ -1082,7 +1086,7 @@ describe("Shutdown Unit Tests", function () {
     });
 
     it("tests that correct Amount of collateral has been transferred", async () => {
-      await shutdown.returnAurei(AUREI_AMOUNT_TO_SET);
+      await shutdown.returnStablecoin(AUREI_AMOUNT_TO_SET);
 
       const before = await vaultEngine.vaults(flrCollId, owner.address);
       await shutdown.redeemCollateral(flrCollId);

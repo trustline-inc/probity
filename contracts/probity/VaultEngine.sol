@@ -107,10 +107,10 @@ contract VaultEngine is Stateful, Eventful {
     }
 
     /**
-     * @dev Moves Aurei between vaults.
+     * @dev Moves stablecoin between vaults.
      * @param from The address of the originating vault owner
      * @param to The address of the beneficiary vault owner
-     * @param amount The amount of Aurei to move
+     * @param amount The amount of stablecoin to move
      */
     function moveStablecoin(
         address from,
@@ -122,18 +122,18 @@ contract VaultEngine is Stateful, Eventful {
     }
 
     /**
-     * @dev Add Aurei to User vault.
+     * @dev Add stablecoin to user vault.
      * @param user The address of the beneficiary vault owner
-     * @param amount The amount of Aurei to add
+     * @param amount The amount of stablecoin to add
      */
     function addStablecoin(address user, uint256 amount) external onlyBy("treasury") {
         stablecoin[user] += amount;
     }
 
     /**
-     * @dev Remove Aurei from User vault.
+     * @dev Remove stablecoin from user vault.
      * @param user The address of the beneficiary vault owner
-     * @param amount The amount of Aurei to remove
+     * @param amount The amount of stablecoin to remove
      */
     function removeStablecoin(address user, uint256 amount) external onlyBy("treasury") {
         stablecoin[user] -= amount;
@@ -212,7 +212,7 @@ contract VaultEngine is Stateful, Eventful {
      * @param collId The ID of the vault collateral type
      * @param treasuryAddress The address of the desired treasury contract
      * @param collAmount Amount of collateral supplied as loan security
-     * @param debtAmount Amount of Aurei to borrow
+     * @param debtAmount Amount of stablecoin to borrow
      */
     function modifyDebt(
         bytes32 collId,

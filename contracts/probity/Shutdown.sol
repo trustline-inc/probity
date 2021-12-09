@@ -400,13 +400,13 @@ contract Shutdown is Stateful, Eventful {
         collateralTypes[collId].redeemRatio = ((max - collateralTypes[collId].gap) * RAY) / (finalDebtBalance / RAY);
     }
 
-    function returnAurei(uint256 amount) external {
+    function returnStablecoin(uint256 amount) external {
         vaultEngine.moveStablecoin(msg.sender, address(this), amount);
         stablecoin[msg.sender] += amount;
     }
 
     function redeemCollateral(bytes32 collId) external {
-        // can withdraw collateral returnedAurei * collateralPerAUR for collateral type
+        // can withdraw collateral returnedStablecoin * collateralPerAUR for collateral type
         uint256 redeemAmount = ((stablecoin[msg.sender] / 1e9) * collateralTypes[collId].redeemRatio) /
             WAD /
             RAY -
