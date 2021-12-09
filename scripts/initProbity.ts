@@ -28,6 +28,7 @@ ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 const init = async () => {
   // Wallets
   const [owner]: SignerWithAddress[] = await ethers.getSigners();
+  const trustlineAddress = "0x6310B7E8bDFD25EFbeDfB17987Ba69D9191a45bD";
 
   // ABIs
   const RegistryABI = await artifacts.readArtifact("Registry");
@@ -61,18 +62,26 @@ const init = async () => {
   );
 
   // One address can only have one role
-  await registry.setupAddress(web3.utils.keccak256("gov"), owner.address, {
-    gasLimit: 300000,
-  });
-  await registry.setupAddress(
+  console.log(`Setting gov address: ${owner.address}`);
+  let tx = await registry.setupAddress(
+    web3.utils.keccak256("gov"),
+    owner.address,
+    {
+      gasLimit: 300000,
+    }
+  );
+  await tx.wait();
+  console.log(`Whitelisting address: ${trustlineAddress}`);
+  tx = await registry.setupAddress(
     web3.utils.keccak256("whiteListed"),
-    "0x6310B7E8bDFD25EFbeDfB17987Ba69D9191a45bD",
+    trustlineAddress,
     { gasLimit: 300000 }
   );
+  await tx.wait();
 
   // Initialize vault collateral type
   console.log(`Initializing ${token} collateral`);
-  let tx = await vaultEngine
+  tx = await vaultEngine
     .connect(owner)
     .initCollType(COLLATERAL[token], { gasLimit: 400000 });
   await tx.wait();
