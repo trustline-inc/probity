@@ -14,8 +14,8 @@ if (!["FLR", "SGB"].includes(process.env.TOKEN.toUpperCase()))
 const token = process.env.TOKEN.toUpperCase();
 
 const COLLATERAL = {
-  FLR: ethers.utils.formatBytes32String("FLR"),
-  SGB: ethers.utils.formatBytes32String("SGB"),
+  FLR: web3.utils.keccak256("FLR"),
+  SGB: web3.utils.keccak256("SGB"),
 };
 
 const PRECISION_COLL = ethers.BigNumber.from("1000000000000000000");
