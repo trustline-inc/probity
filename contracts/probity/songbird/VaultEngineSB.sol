@@ -200,7 +200,7 @@ contract VaultEngineSB is Stateful, Eventful {
 
         require(totalCapital <= collateralTypes[collId].ceiling, "Vault/modifySupply: Supply ceiling reached");
         require(
-            vault.capital == 0 || vault.capital > collateralTypes[collId].floor,
+            vault.capital == 0 || (vault.capital * PRECISION_PRICE) > collateralTypes[collId].floor,
             "Vault/modifySupply: Capital floor reached"
         );
         certify(collId, vault);
