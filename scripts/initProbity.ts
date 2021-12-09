@@ -14,8 +14,8 @@ if (!["FLR", "SGB"].includes(process.env.TOKEN.toUpperCase()))
 const token = process.env.TOKEN.toUpperCase();
 
 const COLLATERAL = {
-  FLR: ethers.utils.formatBytes32String("FLR"),
-  SGB: ethers.utils.formatBytes32String("SGB"),
+  FLR: web3.utils.keccak256("FLR"),
+  SGB: web3.utils.keccak256("SGB"),
 };
 
 const PRECISION_COLL = ethers.BigNumber.from("1000000000000000000");
@@ -61,69 +61,72 @@ const init = async () => {
   );
 
   // One address can only have one role
+  await registry.setupAddress(web3.utils.keccak256("gov"), owner.address, {
+    gasLimit: 300000,
+  });
   await registry.setupAddress(
-    ethers.utils.formatBytes32String("gov"),
-    owner.address,
-    {
-      gasLimit: 300000,
-    }
-  );
-  await registry.setupAddress(
-    ethers.utils.formatBytes32String("whiteListed"),
+    web3.utils.keccak256("whiteListed"),
     "0x6310B7E8bDFD25EFbeDfB17987Ba69D9191a45bD",
     { gasLimit: 300000 }
   );
 
   // Initialize vault collateral type
   console.log(`Initializing ${token} collateral`);
-  await vaultEngine
+  let tx = await vaultEngine
     .connect(owner)
-    .initCollType(COLLATERAL[token], { gasLimit: 300000 });
+    .initCollType(COLLATERAL[token], { gasLimit: 400000 });
+  await tx.wait();
   console.log(`Vault: ${token} initialized.`);
 
   // Set individual vault limit
   if (token === "SGB") {
     console.log(`Setting individual vault limit`);
-    await vaultEngine
+    tx = await vaultEngine
       .connect(owner)
       .updateIndividualVaultLimit(PRECISION_COLL.mul(1000), {
         gasLimit: 300000,
       });
+    await tx.wait();
     console.log(`Vault: individual limit set.`);
   }
 
   // Update debt ceiling
-  await vaultEngine
+  tx = await vaultEngine
     .connect(owner)
     .updateCeiling(COLLATERAL[token], PRECISION_AUR.mul(10000000), {
       gasLimit: 300000,
     });
+  await tx.wait();
   console.log(`Vault: ${token} ceiling updated.`);
 
   // Initialize teller collateral type
-  await teller
+  tx = await teller
     .connect(owner)
     .initCollType(COLLATERAL[token], 0, { gasLimit: 300000 });
+  await tx.wait();
   console.log(`Teller: ${token} initialized.`);
 
   // Initialize liquidator collateral type
-  await liquidator
+  tx = await liquidator
     .connect(owner)
     .init(COLLATERAL[token], process.env.AUCTIONEER, { gasLimit: 300000 });
+  await tx.wait();
   console.log(`Liquidator: ${token} initialized.`);
 
   // Initialize price feed collateral type
-  await priceFeed
+  tx = await priceFeed
     .connect(owner)
     .init(COLLATERAL[token], PRECISION_COLL.mul(15).div(10), process.env.FTSO, {
       gasLimit: 300000,
     });
+  await tx.wait();
   console.log(`PriceFeed: ${token} price initialized.`);
 
   // Update collateral price
-  await priceFeed
+  tx = await priceFeed
     .connect(owner)
     .updateAdjustedPrice(COLLATERAL[token], { gasLimit: 300000 });
+  await tx.wait();
   console.log(`PriceFeed: ${token} price updated.`);
 };
 
