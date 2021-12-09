@@ -88,7 +88,7 @@ const init = async () => {
     const limit = 1000;
     tx = await vaultEngine
       .connect(owner)
-      .updateIndividualVaultLimit(PRECISION_COLL.mul(limit), {
+      .updateIndividualVaultLimit(PRECISION_AUR.mul(limit), {
         gasLimit: 300000,
       });
     await tx.wait();
@@ -99,7 +99,7 @@ const init = async () => {
   const ceiling = 10000000;
   tx = await vaultEngine
     .connect(owner)
-    .updateCeiling(COLLATERAL[token], PRECISION_COLL.mul(ceiling), {
+    .updateCeiling(COLLATERAL[token], PRECISION_AUR.mul(ceiling), {
       gasLimit: 300000,
     });
   await tx.wait();
@@ -109,7 +109,7 @@ const init = async () => {
   const floor = 1;
   tx = await vaultEngine
     .connect(owner)
-    .updateFloor(COLLATERAL[token], PRECISION_COLL.mul(floor), {
+    .updateFloor(COLLATERAL[token], PRECISION_AUR.mul(floor), {
       gasLimit: 300000,
     });
   await tx.wait();
