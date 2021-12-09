@@ -112,7 +112,7 @@ contract VaultEngine is Stateful, Eventful {
      * @param to The address of the beneficiary vault owner
      * @param amount The amount of Aurei to move
      */
-    function moveAurei(
+    function moveStablecoin(
         address from,
         address to,
         uint256 amount
@@ -126,7 +126,7 @@ contract VaultEngine is Stateful, Eventful {
      * @param user The address of the beneficiary vault owner
      * @param amount The amount of Aurei to add
      */
-    function addAurei(address user, uint256 amount) external onlyBy("treasury") {
+    function addStablecoin(address user, uint256 amount) external onlyBy("treasury") {
         stablecoin[user] += amount;
     }
 

@@ -69,7 +69,7 @@ describe("Treasury Unit Tests", function () {
       await aurei.mint(owner.address, AMOUNT_TO_MINT);
     });
 
-    it("tests that deposit calls vaultEngine.addAurei function", async () => {
+    it("tests that deposit calls vaultEngine.addStablecoin function", async () => {
       const aurBalanceBefore = await vaultEngine.stablecoin(owner.address);
       await treasury.deposit(AMOUNT_TO_MINT);
       const aurBalanceAfter = await vaultEngine.stablecoin(owner.address);
@@ -143,13 +143,13 @@ describe("Treasury Unit Tests", function () {
 
   describe("withdrawTcn Unit Tests", function () {
     beforeEach(async function () {
-      await vaultEngine.addTcn(
+      await vaultEngine.addPbt(
         owner.address,
         AMOUNT_TO_MINT.mul(PRECISION_PRICE)
       );
     });
 
-    it("tests that withdrawTcn call vaultEngine.removeTcn function", async () => {
+    it("tests that withdrawTcn call vaultEngine.removePbt function", async () => {
       const tcnBalanceBefore = await vaultEngine.pbt(owner.address);
       await treasury.withdrawTcn(AMOUNT_TO_WITHDRAW);
       const tcnBalanceAfter = await vaultEngine.pbt(owner.address);

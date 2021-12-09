@@ -13,7 +13,7 @@ interface VaultEngineLike {
         uint256 amount
     ) external;
 
-    function moveAurei(
+    function moveStablecoin(
         address from,
         address to,
         uint256 amount
@@ -162,7 +162,7 @@ contract Auctioneer is Stateful, Eventful {
             bidAmount = bidAbleAmount;
         }
 
-        vaultEngine.moveAurei(msg.sender, address(this), bidAmount);
+        vaultEngine.moveStablecoin(msg.sender, address(this), bidAmount);
         address indexToAdd = findIndex(auctionId, bidPrice);
 
         nextHighestBidder[auctionId][msg.sender] = nextHighestBidder[auctionId][indexToAdd];
@@ -197,7 +197,7 @@ contract Auctioneer is Stateful, Eventful {
 
         uint256 lotToBuy = buyableAmount / currentPrice;
 
-        vaultEngine.moveAurei(msg.sender, auctions[auctionId].beneficiary, buyableAmount);
+        vaultEngine.moveStablecoin(msg.sender, auctions[auctionId].beneficiary, buyableAmount);
         vaultEngine.moveCollateral(auctions[auctionId].collId, address(this), msg.sender, lotToBuy);
 
         auctions[auctionId].debt = auctions[auctionId].debt - buyableAmount;
@@ -214,7 +214,7 @@ contract Auctioneer is Stateful, Eventful {
             "Auctioneer/finalizeSale: the current price has not passed the bid price"
         );
         uint256 buyAmount = bids[auctionId][msg.sender].price * bids[auctionId][msg.sender].lot;
-        vaultEngine.moveAurei(msg.sender, auctions[auctionId].beneficiary, buyAmount);
+        vaultEngine.moveStablecoin(msg.sender, auctions[auctionId].beneficiary, buyAmount);
         vaultEngine.moveCollateral(
             auctions[auctionId].collId,
             address(this),
@@ -320,12 +320,12 @@ contract Auctioneer is Stateful, Eventful {
                 // this bidder's lot is going to change to amountLeftOver
                 uint256 lotDiff = bids[auctionId][index].lot - ((amountLeft / bids[auctionId][index].price) * ONE);
                 bids[auctionId][index].lot = (amountLeft / bids[auctionId][index].price) * ONE;
-                vaultEngine.moveAurei(address(this), index, lotDiff * bids[auctionId][index].price * ONE);
+                vaultEngine.moveStablecoin(address(this), index, lotDiff * bids[auctionId][index].price * ONE);
 
                 amountLeft = 0;
             } else {
                 // amount left == 0, we remove the bidder and return the funds
-                vaultEngine.moveAurei(
+                vaultEngine.moveStablecoin(
                     address(this),
                     index,
                     bids[auctionId][index].lot * bids[auctionId][index].price * ONE

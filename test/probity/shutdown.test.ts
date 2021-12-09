@@ -614,11 +614,14 @@ describe("Shutdown Unit Tests", function () {
 
       await vaultEngine.setTotalDebt(TOTAL_DEBT_TO_SET);
       await vaultEngine.setTotalCapital(TOTAL_CAP_TO_SET);
-      await vaultEngine.setunbackedStablecoin(
+      await vaultEngine.setUnbackedStablecoin(
         reservePool.address,
         SYSTEM_DEBT_TO_SET
       );
-      await vaultEngine.setAurei(reservePool.address, SYSTEM_RESERVE_TO_SET);
+      await vaultEngine.setStablecoin(
+        reservePool.address,
+        SYSTEM_RESERVE_TO_SET
+      );
       await increaseTime(TIME_TO_FORWARD);
     });
 
@@ -637,7 +640,7 @@ describe("Shutdown Unit Tests", function () {
       await vaultEngine.setTotalDebt(TOTAL_DEBT_TO_SET);
       await vaultEngine.setTotalCapital(TOTAL_CAP_TO_SET);
 
-      await vaultEngine.setunbackedStablecoin(reservePool.address, 0);
+      await vaultEngine.setUnbackedStablecoin(reservePool.address, 0);
 
       await shutdown.fillInAurGap();
       await shutdown.setFinalDebtBalance();
@@ -657,10 +660,13 @@ describe("Shutdown Unit Tests", function () {
         PRECISION_AUR.mul(100)
       );
 
-      await vaultEngine.setAurei(reservePool.address, SYSTEM_RESERVE_TO_SET);
+      await vaultEngine.setStablecoin(
+        reservePool.address,
+        SYSTEM_RESERVE_TO_SET
+      );
       await shutdown.processUserDebt(flrCollId, user.address);
 
-      await vaultEngine.setunbackedStablecoin(reservePool.address, 0);
+      await vaultEngine.setUnbackedStablecoin(reservePool.address, 0);
 
       await shutdown.fillInAurGap();
       await shutdown.setFinalDebtBalance();
@@ -678,10 +684,13 @@ describe("Shutdown Unit Tests", function () {
 
       const EXPECTED_SUPP_OBLIGATION = PRECISION_COLL;
 
-      await vaultEngine.setAurei(reservePool.address, SYSTEM_RESERVE_TO_SET);
+      await vaultEngine.setStablecoin(
+        reservePool.address,
+        SYSTEM_RESERVE_TO_SET
+      );
       await shutdown.processUserDebt(flrCollId, user.address);
 
-      await vaultEngine.setunbackedStablecoin(reservePool.address, 0);
+      await vaultEngine.setUnbackedStablecoin(reservePool.address, 0);
 
       await shutdown.fillInAurGap();
       await shutdown.setFinalDebtBalance();
@@ -699,7 +708,7 @@ describe("Shutdown Unit Tests", function () {
         "shutdown/setFinalDebtBalance: finalDebtBalance must be set first"
       );
 
-      await vaultEngine.setunbackedStablecoin(reservePool.address, 0);
+      await vaultEngine.setUnbackedStablecoin(reservePool.address, 0);
 
       await shutdown.fillInAurGap();
       await shutdown.setFinalDebtBalance();
@@ -746,14 +755,14 @@ describe("Shutdown Unit Tests", function () {
         0
       );
 
-      await vaultEngine.setunbackedStablecoin(
+      await vaultEngine.setUnbackedStablecoin(
         reservePool.address,
         SYSTEM_DEBT_TO_SET
       );
-      await vaultEngine.setAurei(reservePool.address, 0);
+      await vaultEngine.setStablecoin(reservePool.address, 0);
       await shutdown.processUserDebt(flrCollId, user.address);
       await increaseTime(172800);
-      await vaultEngine.setunbackedStablecoin(reservePool.address, 0);
+      await vaultEngine.setUnbackedStablecoin(reservePool.address, 0);
 
       await shutdown.setFinalDebtBalance();
     });
@@ -834,14 +843,14 @@ describe("Shutdown Unit Tests", function () {
     it("fails if system Debt and system reserve is non zero", async () => {
       await increaseTime(172800 * 2);
 
-      await vaultEngine.setAurei(reservePool.address, 1);
-      await vaultEngine.setunbackedStablecoin(reservePool.address, 1);
+      await vaultEngine.setStablecoin(reservePool.address, 1);
+      await vaultEngine.setUnbackedStablecoin(reservePool.address, 1);
       await assertRevert(
         shutdown.setFinalDebtBalance(),
         "shutdown/setFinalDebtBalance: system reserve or debt must be zero"
       );
 
-      await vaultEngine.setunbackedStablecoin(reservePool.address, 0);
+      await vaultEngine.setUnbackedStablecoin(reservePool.address, 0);
 
       // await shutdown.setFinalDebtBalance()
     });
@@ -907,7 +916,7 @@ describe("Shutdown Unit Tests", function () {
 
     it("fails if reservePool unBacked Aurei is not zero", async () => {
       await shutdown.setFinalDebtBalance();
-      await vaultEngine.setunbackedStablecoin(
+      await vaultEngine.setUnbackedStablecoin(
         reservePool.address,
         PRECISION_AUR
       );
@@ -915,7 +924,7 @@ describe("Shutdown Unit Tests", function () {
         shutdown.calculateRedeemRatio(flrCollId),
         "shutdown/calculateRedeemRatio: unBacked Aurei of reservePool is not zero"
       );
-      await vaultEngine.setunbackedStablecoin(reservePool.address, 0);
+      await vaultEngine.setUnbackedStablecoin(reservePool.address, 0);
       await shutdown.calculateRedeemRatio(flrCollId);
     });
 
@@ -954,7 +963,7 @@ describe("Shutdown Unit Tests", function () {
   describe("returnAurei Unit Tests", function () {
     const AUREI_AMOUNT_TO_SET = PRECISION_AUR.mul(2000);
     beforeEach(async function () {
-      await vaultEngine.setAurei(owner.address, AUREI_AMOUNT_TO_SET);
+      await vaultEngine.setStablecoin(owner.address, AUREI_AMOUNT_TO_SET);
     });
 
     it("tests that correct amount of aurei are transferred", async () => {
@@ -1032,7 +1041,7 @@ describe("Shutdown Unit Tests", function () {
       await shutdown.setFinalDebtBalance();
       await shutdown.calculateRedeemRatio(flrCollId);
 
-      await vaultEngine.setAurei(owner.address, AUREI_AMOUNT_TO_SET);
+      await vaultEngine.setStablecoin(owner.address, AUREI_AMOUNT_TO_SET);
       await vaultEngine.updateVault(
         flrCollId,
         shutdown.address,
@@ -1096,7 +1105,10 @@ describe("Shutdown Unit Tests", function () {
       await increaseTime(172800);
       await shutdown.setFinalDebtBalance();
       await reservePool.setTotalIous(PRECISION_AUR);
-      await vaultEngine.setAurei(reservePool.address, PRECISION_AUR.mul(1000));
+      await vaultEngine.setStablecoin(
+        reservePool.address,
+        PRECISION_AUR.mul(1000)
+      );
     });
 
     it("fails if finalTotalReserve is not set", async () => {
@@ -1143,7 +1155,10 @@ describe("Shutdown Unit Tests", function () {
         shutdown.redeemIou(),
         "shutdown/redeemIou: no aur to redeem"
       );
-      await vaultEngine.setAurei(reservePool.address, PRECISION_AUR.mul(1000));
+      await vaultEngine.setStablecoin(
+        reservePool.address,
+        PRECISION_AUR.mul(1000)
+      );
       await shutdown.redeemIou();
     });
 
@@ -1152,7 +1167,7 @@ describe("Shutdown Unit Tests", function () {
       const USER_IOU = PRECISION_AUR.mul(28);
       const finalTotalReserve = PRECISION_AUR.mul(100);
 
-      await vaultEngine.setAurei(reservePool.address, finalTotalReserve);
+      await vaultEngine.setStablecoin(reservePool.address, finalTotalReserve);
       await shutdown.setFinalSystemReserve();
 
       const EXPECTED_AMOUNT = rmul(

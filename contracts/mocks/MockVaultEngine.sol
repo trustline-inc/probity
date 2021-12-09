@@ -41,7 +41,7 @@ contract MockVaultEngine {
     uint256 public totalCapital;
     LiquidateVaultCall public lastLiquidateVaultCall;
 
-    function addAurei(address user, uint256 amount) external {
+    function addStablecoin(address user, uint256 amount) external {
         stablecoin[user] += amount;
     }
 
@@ -49,7 +49,7 @@ contract MockVaultEngine {
         stablecoin[user] -= amount;
     }
 
-    function moveAurei(
+    function moveStablecoin(
         address from,
         address to,
         uint256 amount
@@ -58,20 +58,20 @@ contract MockVaultEngine {
         stablecoin[to] += amount;
     }
 
-    function setAurei(address user, uint256 amount) external {
+    function setStablecoin(address user, uint256 amount) external {
         stablecoin[user] = amount;
     }
 
-    function setunbackedStablecoin(address user, uint256 amount) external {
+    function setUnbackedStablecoin(address user, uint256 amount) external {
         unbackedStablecoin[user] = amount;
     }
 
-    function removeTcn(address user, uint256 amount) external {
+    function removePbt(address user, uint256 amount) external {
         pbt[user] -= amount;
     }
 
     // added for testing purposes
-    function addTcn(address user, uint256 amount) external {
+    function addPbt(address user, uint256 amount) external {
         pbt[user] += amount;
     }
 

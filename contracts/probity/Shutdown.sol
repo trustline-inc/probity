@@ -36,7 +36,7 @@ interface VaultLike {
 
     function totalCapital() external returns (uint256 value);
 
-    function moveAurei(
+    function moveStablecoin(
         address from,
         address to,
         uint256 amount
@@ -321,7 +321,7 @@ contract Shutdown is Stateful, Eventful {
         uint256 reserveBalance = vaultEngine.stablecoin(address(reservePool));
 
         uint256 amountToMove = min(aurGap, reserveBalance);
-        vaultEngine.moveAurei(address(reservePool), address(this), amountToMove);
+        vaultEngine.moveStablecoin(address(reservePool), address(this), amountToMove);
 
         aurGap -= amountToMove;
     }
@@ -401,7 +401,7 @@ contract Shutdown is Stateful, Eventful {
     }
 
     function returnAurei(uint256 amount) external {
-        vaultEngine.moveAurei(msg.sender, address(this), amount);
+        vaultEngine.moveStablecoin(msg.sender, address(this), amount);
         stablecoin[msg.sender] += amount;
     }
 

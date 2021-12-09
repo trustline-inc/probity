@@ -5,17 +5,17 @@ pragma solidity ^0.8.0;
 import "../dependencies/Stateful.sol";
 
 interface VaultEngineLike {
-    function addAurei(address user, uint256 amount) external;
+    function addStablecoin(address user, uint256 amount) external;
 
     function removeStablecoin(address user, uint256 amount) external;
 
-    function moveAurei(
+    function moveStablecoin(
         address from,
         address to,
         uint256 amount
     ) external;
 
-    function removeTcn(address user, uint256 amount) external;
+    function removePbt(address user, uint256 amount) external;
 }
 
 interface TokenLike {
@@ -68,7 +68,7 @@ contract Treasury is Stateful {
     // External Functions
     /////////////////////////////////////////
     function deposit(uint256 amount) external {
-        vaultEngine.addAurei(msg.sender, amount * 1e27);
+        vaultEngine.addStablecoin(msg.sender, amount * 1e27);
         aurei.burn(msg.sender, amount);
         emit DepositAurei(msg.sender, amount);
     }
@@ -80,12 +80,12 @@ contract Treasury is Stateful {
     }
 
     function transferAurei(address recipient, uint256 amount) external {
-        vaultEngine.moveAurei(msg.sender, recipient, amount * 1e27);
+        vaultEngine.moveStablecoin(msg.sender, recipient, amount * 1e27);
         emit TransferAurei(msg.sender, recipient, amount);
     }
 
     function withdrawTcn(uint256 amount) external {
-        vaultEngine.removeTcn(msg.sender, amount * 1e27);
+        vaultEngine.removePbt(msg.sender, amount * 1e27);
         pbt.mint(msg.sender, amount);
         emit WithdrawTcn(msg.sender, amount);
     }
