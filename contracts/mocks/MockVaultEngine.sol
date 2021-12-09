@@ -45,7 +45,7 @@ contract MockVaultEngine {
         stablecoin[user] += amount;
     }
 
-    function removeAurei(address user, uint256 amount) external {
+    function removeStablecoin(address user, uint256 amount) external {
         stablecoin[user] -= amount;
     }
 

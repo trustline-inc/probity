@@ -103,7 +103,7 @@ describe("Treasury Unit Tests", function () {
       await treasury.deposit(AMOUNT_TO_MINT);
     });
 
-    it("tests that withdrawAurei calls vaultEngine.removeAurei function", async () => {
+    it("tests that withdrawAurei calls vaultEngine.removeStablecoin function", async () => {
       const aurBalanceBefore = await vaultEngine.stablecoin(owner.address);
       await treasury.withdrawAurei(AMOUNT_TO_WITHDRAW);
       const aurBalanceAfter = await vaultEngine.stablecoin(owner.address);

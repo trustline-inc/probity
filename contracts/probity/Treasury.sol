@@ -7,7 +7,7 @@ import "../dependencies/Stateful.sol";
 interface VaultEngineLike {
     function addAurei(address user, uint256 amount) external;
 
-    function removeAurei(address user, uint256 amount) external;
+    function removeStablecoin(address user, uint256 amount) external;
 
     function moveAurei(
         address from,
@@ -74,7 +74,7 @@ contract Treasury is Stateful {
     }
 
     function withdrawAurei(uint256 amount) external {
-        vaultEngine.removeAurei(msg.sender, amount * 1e27);
+        vaultEngine.removeStablecoin(msg.sender, amount * 1e27);
         aurei.mint(msg.sender, amount);
         emit WithdrawAurei(msg.sender, amount);
     }

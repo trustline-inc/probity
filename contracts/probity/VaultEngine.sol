@@ -135,7 +135,7 @@ contract VaultEngine is Stateful, Eventful {
      * @param user The address of the beneficiary vault owner
      * @param amount The amount of Aurei to remove
      */
-    function removeAurei(address user, uint256 amount) external onlyBy("treasury") {
+    function removeStablecoin(address user, uint256 amount) external onlyBy("treasury") {
         stablecoin[user] -= amount;
     }
 
@@ -144,7 +144,7 @@ contract VaultEngine is Stateful, Eventful {
      * @param user The address of the vault to reduce PBT from.
      * @param amount The amount of PBT to reduce.
      */
-    function reduceTCN(address user, uint256 amount) external onlyBy("treasury") {
+    function reducePBT(address user, uint256 amount) external onlyBy("treasury") {
         pbt[user] -= amount;
     }
 
