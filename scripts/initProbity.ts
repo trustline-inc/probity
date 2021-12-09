@@ -63,20 +63,18 @@ const init = async () => {
 
   // One address can only have one role
   console.log(`Setting gov address: ${owner.address}`);
-  let tx = await registry.setupAddress(
-    web3.utils.keccak256("gov"),
-    owner.address,
-    {
+  let tx = await registry
+    .connect(owner)
+    .setupAddress(web3.utils.keccak256("gov"), owner.address, {
       gasLimit: 300000,
-    }
-  );
+    });
   await tx.wait();
   console.log(`Whitelisting address: ${trustlineAddress}`);
-  tx = await registry.setupAddress(
-    web3.utils.keccak256("whiteListed"),
-    trustlineAddress,
-    { gasLimit: 300000 }
-  );
+  tx = await registry
+    .connect(owner)
+    .setupAddress(web3.utils.keccak256("whiteListed"), trustlineAddress, {
+      gasLimit: 300000,
+    });
   await tx.wait();
 
   // Initialize vault collateral type
