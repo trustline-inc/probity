@@ -14,8 +14,8 @@ if (!["FLR", "SGB"].includes(process.env.TOKEN.toUpperCase()))
 const token = process.env.TOKEN.toUpperCase();
 
 const COLLATERAL = {
-  FLR: web3.utils.keccak256("FLR"),
-  SGB: web3.utils.keccak256("SGB"),
+  FLR: ethers.utils.formatBytes32String("FLR"),
+  SGB: ethers.utils.formatBytes32String("SGB"),
 };
 
 const PRECISION_COLL = ethers.BigNumber.from("1000000000000000000");
@@ -62,19 +62,17 @@ const init = async () => {
   );
 
   // One address can only have one role
-  console.log(`Setting gov address: ${owner.address}`);
+  // Note: governance address is set at deployment
+  console.log(`Whitelisting address: ${trustlineAddress}`);
   let tx = await registry
     .connect(owner)
-    .setupAddress(web3.utils.keccak256("gov"), owner.address, {
-      gasLimit: 300000,
-    });
-  await tx.wait();
-  console.log(`Whitelisting address: ${trustlineAddress}`);
-  tx = await registry
-    .connect(owner)
-    .setupAddress(web3.utils.keccak256("whiteListed"), trustlineAddress, {
-      gasLimit: 300000,
-    });
+    .setupAddress(
+      ethers.utils.formatBytes32String("whiteListed"),
+      trustlineAddress,
+      {
+        gasLimit: 300000,
+      }
+    );
   await tx.wait();
 
   // Initialize vault collateral type
