@@ -146,15 +146,17 @@ If you get the error `ProviderError: err: Invalid value for block.coinbase`, tha
 
 ## Initialization
 
-### Collateral Types
-
-You can use the `initialize` script to initialize a new collateral type.
+You can use the `initialize` script to initialize the system with a new collateral type.
 
 ```
 TOKEN=SGB \
 FLARE_DIR=~/Desktop/flare \
 yarn run initProbity
 ```
+
+## Utility Scripts
+
+Use `yarn run rateUpdater` to call `Teller.updateAccumulators()` every 5 seconds.
 
 ## Contract Addresses
 
