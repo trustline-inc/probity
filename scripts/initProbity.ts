@@ -81,58 +81,74 @@ const init = async () => {
     .connect(owner)
     .initCollType(COLLATERAL[token], { gasLimit: 400000 });
   await tx.wait();
-  console.log(`Vault: ${token} initialized.`);
+  console.log(`Vault: ${token} initialized`);
 
   // Set individual vault limit
   if (token === "SGB") {
-    console.log(`Setting individual vault limit`);
+    const limit = 1000;
     tx = await vaultEngine
       .connect(owner)
-      .updateIndividualVaultLimit(PRECISION_COLL.mul(1000), {
+      .updateIndividualVaultLimit(PRECISION_COLL.mul(limit), {
         gasLimit: 300000,
       });
     await tx.wait();
-    console.log(`Vault: individual limit set.`);
+    console.log(`Vault: individual limit set to ${limit} ${token}`);
   }
 
   // Update debt ceiling
+  const ceiling = 10000000;
   tx = await vaultEngine
     .connect(owner)
-    .updateCeiling(COLLATERAL[token], PRECISION_AUR.mul(10000000), {
+    .updateCeiling(COLLATERAL[token], PRECISION_AUR.mul(ceiling), {
       gasLimit: 300000,
     });
   await tx.wait();
-  console.log(`Vault: ${token} ceiling updated.`);
+  console.log(`Vault: ceiling updated to ${ceiling} ${token}`);
+
+  // Update debt floor
+  const floor = 1;
+  tx = await vaultEngine
+    .connect(owner)
+    .updateCeiling(COLLATERAL[token], PRECISION_AUR.mul(floor), {
+      gasLimit: 300000,
+    });
+  await tx.wait();
+  console.log(`Vault: floor updated to ${floor} ${token}`);
 
   // Initialize teller collateral type
   tx = await teller
     .connect(owner)
     .initCollType(COLLATERAL[token], 0, { gasLimit: 300000 });
   await tx.wait();
-  console.log(`Teller: ${token} initialized.`);
+  console.log(`Teller: ${token} initialized`);
 
   // Initialize liquidator collateral type
   tx = await liquidator
     .connect(owner)
     .init(COLLATERAL[token], process.env.AUCTIONEER, { gasLimit: 300000 });
   await tx.wait();
-  console.log(`Liquidator: ${token} initialized.`);
+  console.log(`Liquidator: ${token} initialized`);
 
   // Initialize price feed collateral type
+  const liqRatio = PRECISION_COLL.mul(15).div(10);
   tx = await priceFeed
     .connect(owner)
-    .init(COLLATERAL[token], PRECISION_COLL.mul(15).div(10), process.env.FTSO, {
+    .init(COLLATERAL[token], liqRatio, process.env.FTSO, {
       gasLimit: 300000,
     });
   await tx.wait();
-  console.log(`PriceFeed: ${token} price initialized.`);
+  console.log(
+    `PriceFeed: ${token} price initialized with ${ethers.utils
+      .formatEther(liqRatio)
+      .toString()} liq. ratio`
+  );
 
   // Update collateral price
   tx = await priceFeed
     .connect(owner)
     .updateAdjustedPrice(COLLATERAL[token], { gasLimit: 300000 });
   await tx.wait();
-  console.log(`PriceFeed: ${token} price updated.`);
+  console.log(`PriceFeed: ${token} price updated`);
 };
 
 init();
