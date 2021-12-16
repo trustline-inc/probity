@@ -52,10 +52,11 @@ async function main() {
       .mul(Math.floor(response.data.USD * 1000))
       .div(1000);
     console.log("New price:", newPrice.toString());
-    await ftsoContract.setCurrentPrice(newPrice, {
+    let tx = await ftsoContract.setCurrentPrice(newPrice, {
       gasPrice: web3.utils.toWei("225", "Gwei"),
       gasLimit: 300000,
     });
+    await tx.wait();
 
     const PriceFeedABI = await artifacts.readArtifact("PriceFeed");
     const priceFeed = new ethers.Contract(
@@ -63,11 +64,12 @@ async function main() {
       PriceFeedABI.abi,
       provider
     );
-    await priceFeed
+    tx = await priceFeed
       .connect(wallet)
-      .updateAdjustedPrice(web3.utils.keccak256("FLR"), {
+      .updateAdjustedPrice(web3.utils.keccak256("SGB"), {
         gasLimit: 300000,
       });
+    await tx.wait();
 
     console.log(`sleeping for ${UPDATE_INTERVAL / 1000} seconds`);
     setTimeout(() => main(), UPDATE_INTERVAL);
