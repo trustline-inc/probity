@@ -19,7 +19,7 @@ interface VaultEngineLike {
 
     function increaseSystemDebt(uint256 amount) external;
 
-    function moveAurei(
+    function moveStablecoin(
         address from,
         address to,
         uint256 amount
@@ -137,7 +137,7 @@ contract ReservePool is Stateful, Eventful {
         require(sale.active, "ReservePool/buyIou: ious are not currently on sale");
         require(sale.saleAmount >= amount, "ReservePool/buyIou: Can't buy more amount than what's available");
 
-        vaultEngine.moveAurei(msg.sender, address(this), amount);
+        vaultEngine.moveStablecoin(msg.sender, address(this), amount);
         vaultEngine.settle(amount);
         uint256 amountToBuy = ((amount * iouPerAur()) / ONE);
         ious[msg.sender] += amountToBuy;
@@ -156,8 +156,8 @@ contract ReservePool is Stateful, Eventful {
         processRedemption(user, amount);
     }
 
-    function sendAurei(address to, uint256 amount) external onlyBy("gov") {
-        vaultEngine.moveAurei(address(this), to, amount);
+    function sendStablecoin(address to, uint256 amount) external onlyBy("gov") {
+        vaultEngine.moveStablecoin(address(this), to, amount);
     }
 
     /////////////////////////////////////////
@@ -175,6 +175,6 @@ contract ReservePool is Stateful, Eventful {
         );
 
         ious[user] -= amount;
-        vaultEngine.moveAurei(address(this), user, amount);
+        vaultEngine.moveStablecoin(address(this), user, amount);
     }
 }

@@ -28,8 +28,10 @@ ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 const init = async () => {
   // Wallets
   const [owner]: SignerWithAddress[] = await ethers.getSigners();
+  const trustlineAddress = "0x6310B7E8bDFD25EFbeDfB17987Ba69D9191a45bD";
 
   // ABIs
+  const RegistryABI = await artifacts.readArtifact("Registry");
   const LiquidatorABI = await artifacts.readArtifact("Liquidator");
   const PriceFeedABI = await artifacts.readArtifact("PriceFeed");
   const TellerABI = await artifacts.readArtifact("Teller");
@@ -37,6 +39,11 @@ const init = async () => {
   const VaultEngineSBABI = await artifacts.readArtifact("VaultEngineSB");
 
   // Contracts
+  const registry = new ethers.Contract(
+    process.env.REGISTRY,
+    RegistryABI.abi,
+    owner
+  );
   const liquidator = new ethers.Contract(
     process.env.LIQUIDATOR,
     LiquidatorABI.abi,
@@ -54,40 +61,94 @@ const init = async () => {
     owner
   );
 
+  // One address can only have one role
+  // Note: governance address is set at deployment
+  console.log(`Whitelisting address: ${trustlineAddress}`);
+  let tx = await registry
+    .connect(owner)
+    .setupAddress(
+      ethers.utils.formatBytes32String("whiteListed"),
+      trustlineAddress,
+      {
+        gasLimit: 300000,
+      }
+    );
+  await tx.wait();
+
   // Initialize vault collateral type
   console.log(`Initializing ${token} collateral`);
-  await vaultEngine.connect(owner).initCollType(COLLATERAL[token]);
-  console.log(`Vault: ${token} initialized.`);
+  tx = await vaultEngine
+    .connect(owner)
+    .initCollType(COLLATERAL[token], { gasLimit: 400000 });
+  await tx.wait();
+  console.log(`Vault: ${token} initialized`);
+
+  // Set individual vault limit
+  if (token === "SGB") {
+    const limit = 1000;
+    tx = await vaultEngine
+      .connect(owner)
+      .updateIndividualVaultLimit(PRECISION_AUR.mul(limit), {
+        gasLimit: 300000,
+      });
+    await tx.wait();
+    console.log(`Vault: individual limit set to ${limit} ${token}`);
+  }
 
   // Update debt ceiling
-  await vaultEngine
+  const ceiling = 10000000;
+  tx = await vaultEngine
     .connect(owner)
-    .updateCeiling(COLLATERAL[token], PRECISION_AUR.mul(10000000));
-  console.log(`Vault: ceiling updated.`);
+    .updateCeiling(COLLATERAL[token], PRECISION_AUR.mul(ceiling), {
+      gasLimit: 300000,
+    });
+  await tx.wait();
+  console.log(`Vault: ceiling updated to ${ceiling} ${token}`);
+
+  // Update debt floor
+  const floor = 1;
+  tx = await vaultEngine
+    .connect(owner)
+    .updateFloor(COLLATERAL[token], PRECISION_AUR.mul(floor), {
+      gasLimit: 300000,
+    });
+  await tx.wait();
+  console.log(`Vault: floor updated to ${floor} ${token}`);
 
   // Initialize teller collateral type
-  await teller
+  tx = await teller
     .connect(owner)
     .initCollType(COLLATERAL[token], 0, { gasLimit: 300000 });
-  console.log(`Teller: ${token} initialized.`);
+  await tx.wait();
+  console.log(`Teller: ${token} initialized`);
 
   // Initialize liquidator collateral type
-  await liquidator
+  tx = await liquidator
     .connect(owner)
-    .init(COLLATERAL[token], process.env.AUCTIONEER);
-  console.log(`Liquidator: ${token} initialized.`);
+    .init(COLLATERAL[token], process.env.AUCTIONEER, { gasLimit: 300000 });
+  await tx.wait();
+  console.log(`Liquidator: ${token} initialized`);
 
   // Initialize price feed collateral type
-  await priceFeed
+  const liqRatio = PRECISION_COLL.mul(15).div(10);
+  tx = await priceFeed
     .connect(owner)
-    .init(COLLATERAL[token], PRECISION_COLL.mul(15).div(10), process.env.FTSO);
-  console.log(`PriceFeed: ${token} price initialized.`);
+    .init(COLLATERAL[token], liqRatio, process.env.FTSO, {
+      gasLimit: 300000,
+    });
+  await tx.wait();
+  console.log(
+    `PriceFeed: ${token} price initialized with ${ethers.utils
+      .formatEther(liqRatio)
+      .toString()} liq. ratio`
+  );
 
   // Update collateral price
-  await priceFeed
+  tx = await priceFeed
     .connect(owner)
     .updateAdjustedPrice(COLLATERAL[token], { gasLimit: 300000 });
-  console.log(`PriceFeed: ${token} price updated.`);
+  await tx.wait();
+  console.log(`PriceFeed: ${token} price updated`);
 };
 
 init();

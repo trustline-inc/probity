@@ -64,12 +64,12 @@ describe("Treasury Unit Tests", function () {
     await registry.setupAddress(bytes32("treasury"), owner.address);
   });
 
-  describe("depositAurei Unit Tests", function () {
+  describe("depositStablecoin Unit Tests", function () {
     beforeEach(async function () {
       await aurei.mint(owner.address, AMOUNT_TO_MINT);
     });
 
-    it("tests that deposit calls vaultEngine.addAurei function", async () => {
+    it("tests that deposit calls vaultEngine.addStablecoin function", async () => {
       const aurBalanceBefore = await vaultEngine.stablecoin(owner.address);
       await treasury.deposit(AMOUNT_TO_MINT);
       const aurBalanceAfter = await vaultEngine.stablecoin(owner.address);
@@ -85,10 +85,10 @@ describe("Treasury Unit Tests", function () {
       expect(aurBalanceBefore.sub(aurBalanceAfter)).to.equal(AMOUNT_TO_MINT);
     });
 
-    it("tests that DepositAurei event is emitted properly", async () => {
+    it("tests that DepositStablecoin event is emitted properly", async () => {
       const parsedEvents = await parseEvents(
         treasury.deposit(AMOUNT_TO_MINT),
-        "DepositAurei",
+        "DepositStablecoin",
         treasury
       );
 
@@ -97,15 +97,15 @@ describe("Treasury Unit Tests", function () {
     });
   });
 
-  describe("withdrawAurei Unit Tests", function () {
+  describe("withdrawStablecoin Unit Tests", function () {
     beforeEach(async function () {
       await aurei.mint(owner.address, AMOUNT_TO_MINT);
       await treasury.deposit(AMOUNT_TO_MINT);
     });
 
-    it("tests that withdrawAurei calls vaultEngine.removeAurei function", async () => {
+    it("tests that withdrawStablecoin calls vaultEngine.removeStablecoin function", async () => {
       const aurBalanceBefore = await vaultEngine.stablecoin(owner.address);
-      await treasury.withdrawAurei(AMOUNT_TO_WITHDRAW);
+      await treasury.withdrawStablecoin(AMOUNT_TO_WITHDRAW);
       const aurBalanceAfter = await vaultEngine.stablecoin(owner.address);
       expect(
         aurBalanceBefore.sub(aurBalanceAfter).div(PRECISION_PRICE)
@@ -114,25 +114,25 @@ describe("Treasury Unit Tests", function () {
 
     it("fails when user doesn't have enough aur to be withdrawn", async () => {
       await assertRevert(
-        treasury.connect(user).withdrawAurei(AMOUNT_TO_WITHDRAW),
+        treasury.connect(user).withdrawStablecoin(AMOUNT_TO_WITHDRAW),
         "reverted with panic code 0x11"
       );
-      await treasury.withdrawAurei(AMOUNT_TO_WITHDRAW);
+      await treasury.withdrawStablecoin(AMOUNT_TO_WITHDRAW);
     });
 
     it("tests that aurei is minted for user's balance", async () => {
       const aurBalanceBefore = await aurei.balanceOf(owner.address);
-      await treasury.withdrawAurei(AMOUNT_TO_WITHDRAW);
+      await treasury.withdrawStablecoin(AMOUNT_TO_WITHDRAW);
       const aurBalanceAfter = await aurei.balanceOf(owner.address);
       expect(aurBalanceAfter.sub(aurBalanceBefore)).to.equal(
         AMOUNT_TO_WITHDRAW
       );
     });
 
-    it("tests that WithdrawAurei event is emitted properly", async () => {
+    it("tests that WithdrawStablecoin event is emitted properly", async () => {
       const parsedEvents = await parseEvents(
-        treasury.withdrawAurei(AMOUNT_TO_WITHDRAW),
-        "WithdrawAurei",
+        treasury.withdrawStablecoin(AMOUNT_TO_WITHDRAW),
+        "WithdrawStablecoin",
         treasury
       );
 
@@ -143,13 +143,13 @@ describe("Treasury Unit Tests", function () {
 
   describe("withdrawTcn Unit Tests", function () {
     beforeEach(async function () {
-      await vaultEngine.addTcn(
+      await vaultEngine.addPbt(
         owner.address,
         AMOUNT_TO_MINT.mul(PRECISION_PRICE)
       );
     });
 
-    it("tests that withdrawTcn call vaultEngine.removeTcn function", async () => {
+    it("tests that withdrawTcn call vaultEngine.removePbt function", async () => {
       const tcnBalanceBefore = await vaultEngine.pbt(owner.address);
       await treasury.withdrawTcn(AMOUNT_TO_WITHDRAW);
       const tcnBalanceAfter = await vaultEngine.pbt(owner.address);

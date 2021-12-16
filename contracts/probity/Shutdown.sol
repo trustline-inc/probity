@@ -36,7 +36,7 @@ interface VaultLike {
 
     function totalCapital() external returns (uint256 value);
 
-    function moveAurei(
+    function moveStablecoin(
         address from,
         address to,
         uint256 amount
@@ -321,7 +321,7 @@ contract Shutdown is Stateful, Eventful {
         uint256 reserveBalance = vaultEngine.stablecoin(address(reservePool));
 
         uint256 amountToMove = min(aurGap, reserveBalance);
-        vaultEngine.moveAurei(address(reservePool), address(this), amountToMove);
+        vaultEngine.moveStablecoin(address(reservePool), address(this), amountToMove);
 
         aurGap -= amountToMove;
     }
@@ -400,13 +400,13 @@ contract Shutdown is Stateful, Eventful {
         collateralTypes[collId].redeemRatio = ((max - collateralTypes[collId].gap) * RAY) / (finalDebtBalance / RAY);
     }
 
-    function returnAurei(uint256 amount) external {
-        vaultEngine.moveAurei(msg.sender, address(this), amount);
+    function returnStablecoin(uint256 amount) external {
+        vaultEngine.moveStablecoin(msg.sender, address(this), amount);
         stablecoin[msg.sender] += amount;
     }
 
     function redeemCollateral(bytes32 collId) external {
-        // can withdraw collateral returnedAurei * collateralPerAUR for collateral type
+        // can withdraw collateral returnedStablecoin * collateralPerAUR for collateral type
         uint256 redeemAmount = ((stablecoin[msg.sender] / 1e9) * collateralTypes[collId].redeemRatio) /
             WAD /
             RAY -
