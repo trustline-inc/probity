@@ -9,6 +9,10 @@ const web3 = new Web3(RPC_URL);
 
 const UPDATE_INTERVAL = 30000; // 30 sec
 
+if (!process.env.FLARE_DIR) {
+  throw Error("FLARE_DIR not set.");
+}
+
 // Add Flare local accounts from Flare config
 const flareLocalAccounts: any[] = [];
 const flareConfPath = `${process.env.FLARE_DIR}/src/stateco/client/config.json`;
@@ -20,7 +24,6 @@ if (existsSync(flareConfPath)) {
 }
 
 const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
-const FTSO_ADDRESS = "0x82756dc5c3a74422C1a95227e9A8832e33C337cb";
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -29,7 +32,7 @@ function sleep(ms: number) {
 async function main() {
   let wallet = new ethers.Wallet(flareLocalAccounts[0]).connect(provider);
   const ftso = new ethers.Contract(
-    FTSO_ADDRESS,
+    process.env.FTSO,
     (await artifacts.readArtifact("MockFtso")).abi,
     provider
   );
@@ -53,6 +56,18 @@ async function main() {
       gasPrice: web3.utils.toWei("225", "Gwei"),
       gasLimit: 300000,
     });
+
+    const PriceFeedABI = await artifacts.readArtifact("PriceFeed");
+    const priceFeed = new ethers.Contract(
+      process.env.PRICE_FEED,
+      PriceFeedABI.abi,
+      provider
+    );
+    await priceFeed
+      .connect(wallet)
+      .updateAdjustedPrice(web3.utils.keccak256("FLR"), {
+        gasLimit: 300000,
+      });
 
     console.log(`sleeping for ${UPDATE_INTERVAL / 1000} seconds`);
     setTimeout(() => main(), UPDATE_INTERVAL);
