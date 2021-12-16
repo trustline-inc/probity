@@ -196,10 +196,22 @@ describe("Auctioneer Unit Tests", function () {
         0,
         0
       );
-      await vaultEngine.addAurei(owner.address, PRECISION_AUR.mul(1000000));
-      await vaultEngine.addAurei(user1.address, PRECISION_AUR.mul(1000000));
-      await vaultEngine.addAurei(user2.address, PRECISION_AUR.mul(1000000));
-      await vaultEngine.addAurei(user3.address, PRECISION_AUR.mul(1000000));
+      await vaultEngine.addStablecoin(
+        owner.address,
+        PRECISION_AUR.mul(1000000)
+      );
+      await vaultEngine.addStablecoin(
+        user1.address,
+        PRECISION_AUR.mul(1000000)
+      );
+      await vaultEngine.addStablecoin(
+        user2.address,
+        PRECISION_AUR.mul(1000000)
+      );
+      await vaultEngine.addStablecoin(
+        user3.address,
+        PRECISION_AUR.mul(1000000)
+      );
     });
 
     it("fails if auction is over", async () => {
@@ -363,10 +375,22 @@ describe("Auctioneer Unit Tests", function () {
         0,
         0
       );
-      await vaultEngine.addAurei(owner.address, PRECISION_AUR.mul(1000000));
-      await vaultEngine.addAurei(user1.address, PRECISION_AUR.mul(1000000));
-      await vaultEngine.addAurei(user2.address, PRECISION_AUR.mul(1000000));
-      await vaultEngine.addAurei(user3.address, PRECISION_AUR.mul(1000000));
+      await vaultEngine.addStablecoin(
+        owner.address,
+        PRECISION_AUR.mul(1000000)
+      );
+      await vaultEngine.addStablecoin(
+        user1.address,
+        PRECISION_AUR.mul(1000000)
+      );
+      await vaultEngine.addStablecoin(
+        user2.address,
+        PRECISION_AUR.mul(1000000)
+      );
+      await vaultEngine.addStablecoin(
+        user3.address,
+        PRECISION_AUR.mul(1000000)
+      );
     });
 
     it("fails if auction is over", async () => {
@@ -514,10 +538,22 @@ describe("Auctioneer Unit Tests", function () {
         0,
         0
       );
-      await vaultEngine.addAurei(owner.address, PRECISION_AUR.mul(1000000));
-      await vaultEngine.addAurei(user1.address, PRECISION_AUR.mul(1000000));
-      await vaultEngine.addAurei(user2.address, PRECISION_AUR.mul(1000000));
-      await vaultEngine.addAurei(user3.address, PRECISION_AUR.mul(1000000));
+      await vaultEngine.addStablecoin(
+        owner.address,
+        PRECISION_AUR.mul(1000000)
+      );
+      await vaultEngine.addStablecoin(
+        user1.address,
+        PRECISION_AUR.mul(1000000)
+      );
+      await vaultEngine.addStablecoin(
+        user2.address,
+        PRECISION_AUR.mul(1000000)
+      );
+      await vaultEngine.addStablecoin(
+        user3.address,
+        PRECISION_AUR.mul(1000000)
+      );
     });
 
     it("fails if caller has no bid", async () => {
@@ -683,10 +719,22 @@ describe("Auctioneer Unit Tests", function () {
         0,
         0
       );
-      await vaultEngine.addAurei(owner.address, PRECISION_AUR.mul(1000000));
-      await vaultEngine.addAurei(user1.address, PRECISION_AUR.mul(1000000));
-      await vaultEngine.addAurei(user2.address, PRECISION_AUR.mul(1000000));
-      await vaultEngine.addAurei(user3.address, PRECISION_AUR.mul(1000000));
+      await vaultEngine.addStablecoin(
+        owner.address,
+        PRECISION_AUR.mul(1000000)
+      );
+      await vaultEngine.addStablecoin(
+        user1.address,
+        PRECISION_AUR.mul(1000000)
+      );
+      await vaultEngine.addStablecoin(
+        user2.address,
+        PRECISION_AUR.mul(1000000)
+      );
+      await vaultEngine.addStablecoin(
+        user3.address,
+        PRECISION_AUR.mul(1000000)
+      );
     });
 
     it("tests that only Probity can call the function", async () => {

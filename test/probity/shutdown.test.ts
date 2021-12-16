@@ -914,20 +914,6 @@ describe("Shutdown Unit Tests", function () {
       await increaseTime(172800);
     });
 
-    it("fails if reservePool unbacked stablecoins is not zero", async () => {
-      await shutdown.setFinalDebtBalance();
-      await vaultEngine.setUnbackedStablecoin(
-        reservePool.address,
-        PRECISION_AUR
-      );
-      await assertRevert(
-        shutdown.calculateRedeemRatio(flrCollId),
-        "shutdown/calculateRedeemRatio: unBacked Aurei of reservePool is not zero"
-      );
-      await vaultEngine.setUnbackedStablecoin(reservePool.address, 0);
-      await shutdown.calculateRedeemRatio(flrCollId);
-    });
-
     it("tests that redeemRatio calculated correctly when gap is 0", async () => {
       let expected = PRECISION_PRICE;
 
@@ -1147,22 +1133,6 @@ describe("Shutdown Unit Tests", function () {
         "shutdown/redeemIou: no iou to redeem"
       );
       await reservePool.setTotalIous(PRECISION_AUR);
-      await shutdown.redeemIou();
-    });
-
-    it("fails if system reserve aurei balance is zero", async () => {
-      await shutdown.setFinalSystemReserve();
-      await reservePool.setIous(owner.address, PRECISION_AUR);
-      await reservePool.setTotalIous(PRECISION_AUR);
-
-      await assertRevert(
-        shutdown.redeemIou(),
-        "shutdown/redeemIou: no aur to redeem"
-      );
-      await vaultEngine.setStablecoin(
-        reservePool.address,
-        PRECISION_AUR.mul(1000)
-      );
       await shutdown.redeemIou();
     });
 
