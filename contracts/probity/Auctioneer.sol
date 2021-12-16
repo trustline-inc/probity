@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 
 import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
-import "hardhat/console.sol";
 
 interface VaultEngineLike {
     function moveCollateral(
@@ -165,10 +164,6 @@ contract Auctioneer is Stateful, Eventful {
         require(bids[auctionId][msg.sender].price == 0, "Auctioneer/placeBid: this user has already placed a bid");
 
         (uint256 totalBidValue, uint256 totalBidLot, address indexToAdd) = totalBidValueAtPrice(auctionId, bidPrice);
-        //        console.log("bidPrice Value      : %s", bidPrice * ONE);
-        //        console.log("totalBidValue       : %s", totalBidValue);
-        //        console.log("totalBidLot         : %s", totalBidLot);
-        //        console.log("debt left           : %s", auctions[auctionId].debt);
         uint256 bidAbleAmount = auctions[auctionId].debt - totalBidValue;
         uint256 bidAbleLot = auctions[auctionId].lot - totalBidLot;
         uint256 bidAmount = bidPrice * bidLot;
@@ -178,7 +173,6 @@ contract Auctioneer is Stateful, Eventful {
         }
 
         vaultEngine.moveStablecoin(msg.sender, address(this), bidAmount);
-        //        console.log('indexToAdd        : %s', indexToAdd);
 
         nextHighestBidder[auctionId][msg.sender] = nextHighestBidder[auctionId][indexToAdd];
         nextHighestBidder[auctionId][indexToAdd] = msg.sender;
@@ -201,10 +195,6 @@ contract Auctioneer is Stateful, Eventful {
         uint256 buyableAmount = lot * currentPrice;
 
         (uint256 bidValueAtCurrent, uint256 totalBidLot, address index) = totalBidValueAtPrice(auctionId, currentPrice);
-        //        console.log("bidValueAtCurrent     : %s", bidValueAtCurrent);
-        //        console.log("debt                  : %s", auctions[auctionId].debt);
-        //        console.log("totalBidLot           : %s", totalBidLot);
-        //        console.log("lot                   : %s", auctions[auctionId].lot);
 
         require(
             bidValueAtCurrent < auctions[auctionId].debt && totalBidLot < auctions[auctionId].lot,
@@ -220,18 +210,12 @@ contract Auctioneer is Stateful, Eventful {
         lotToBuy = min(lotToBuy, auctions[auctionId].lot);
         buyableAmount = lotToBuy * currentPrice;
 
-        //        console.log("buyableAmount        : %s ", lot);
-        //        console.log("buyableAmount        : %s ", buyableAmount);
-        //        console.log("lotToBuy             : %s ", lotToBuy);
-        //        console.log("lot                  : %s ", auctions[auctionId].lot);
-
         vaultEngine.moveStablecoin(msg.sender, auctions[auctionId].beneficiary, lotToBuy * currentPrice);
         vaultEngine.moveCollateral(auctions[auctionId].collId, address(this), msg.sender, lotToBuy);
 
         auctions[auctionId].debt = auctions[auctionId].debt - buyableAmount;
         auctions[auctionId].lot = auctions[auctionId].lot - lotToBuy;
-        //        console.log("debt                 : %s ", auctions[auctionId].debt);
-        //        console.log("lot                  : %s ", auctions[auctionId].lot);
+
         checkIfAuctionEnded(auctionId);
         emit Sale(auctions[auctionId].collId, auctionId, msg.sender, currentPrice, lotToBuy);
         // starting lot and startingValue is 0
@@ -239,9 +223,6 @@ contract Auctioneer is Stateful, Eventful {
     }
 
     function finalizeSale(uint256 auctionId) public {
-        //        console.log("price               : %s", calculatePrice(auctionId));
-        //        console.log("price with ratio    : %s", calculatePrice(auctionId) * nextBidRatio);
-        //        console.log("bid price           : %s", bids[auctionId][msg.sender].price * ONE);
         require(bids[auctionId][msg.sender].price != 0, "Auctioneer/finalizeSale: The caller has no active bids");
         require(
             (calculatePrice(auctionId) * nextBidRatio) / ONE <= bids[auctionId][msg.sender].price,
@@ -298,17 +279,10 @@ contract Auctioneer is Stateful, Eventful {
         if (nextHighestBidder[auctionId][HEAD] == address(0)) {
             return (totalBidsValue, totalLot, HEAD);
         }
-        //        console.log('totalBidValueAtPrice');
         prev = HEAD;
         address index = nextHighestBidder[auctionId][HEAD];
 
         while (true) {
-            //            console.log('next bidder          : %s', index);
-            //            console.log('next bidder price    : %s', bids[auctionId][index].price);
-            //            console.log('current BidPrice     : %s', cutOffPrice);
-            //            console.log("total Lot            : %s", totalLot);
-            //            console.log("totalBidValue        : %s", totalBidsValue);
-            //            console.log('next Bid Ratio       : %s', bids[auctionId][index].price * nextBidRatio / ONE);
             if ((bids[auctionId][index].price * nextBidRatio) / ONE < cutOffPrice) {
                 break;
             }
@@ -321,8 +295,6 @@ contract Auctioneer is Stateful, Eventful {
             }
             index = nextHighestBidder[auctionId][index];
         }
-        //        console.log('index          : %s', index);
-        //        console.log('');
         return (totalBidsValue, totalLot, prev);
     }
 
@@ -362,44 +334,23 @@ contract Auctioneer is Stateful, Eventful {
         uint256 startingLot,
         address prev
     ) internal {
-        //        console.log("prev                 : %s", prev);
-        //        console.log("total Lot            : %s", startingLot);
-        //        console.log("totalBidValue        : %s", startingValue);
-
         address index = nextHighestBidder[auctionId][prev];
         uint256 amountLeft = auctions[auctionId].debt - startingValue;
         uint256 lotLeft = auctions[auctionId].lot - startingLot;
 
-        //        console.log("auction Debt         : %s", auctions[auctionId].debt);
-        //        console.log("auction lot          : %s", auctions[auctionId].lot);
-
-        //                console.log('there');
         while (true) {
-            //            console.log("");
-            //            console.log("amount Left          : %s", amountLeft);
-            //            console.log("lot Left             : %s", lotLeft);
             uint256 bidPrice = bids[auctionId][index].price;
             uint256 bidLot = bids[auctionId][index].lot;
-            //            console.log("bidPrice             : %s", bidPrice);
-            //            console.log("bidLot               : %s", bidLot);
-            //            console.log("bidValue             : %s", bidPrice * bidLot);
             if (bidPrice * bidLot <= amountLeft && bidLot <= lotLeft) {
                 // we don't need to remove these as they are still valid
                 amountLeft -= bidPrice * ONE;
                 lotLeft -= bidLot;
             } else if (amountLeft > 0) {
-                //                console.log('here');
                 uint256 buyableLot = (amountLeft / bidPrice);
-                //                console.log("buyableLot           : %s", buyableLot);
-                //                console.log("lot Left             : %s", lotLeft);
                 buyableLot = min(lotLeft, buyableLot);
-                //                console.log("buyableLot           : %s", buyableLot);
                 if (buyableLot < bidLot) {
-                    // this bidder's lot is going to change to amountLeftOver
                     uint256 lotDiff = bidLot - buyableLot;
-                    //                    console.log("lotDiff              : %s", lotDiff);
                     bids[auctionId][index].lot = buyableLot;
-                    //                    console.log("amount To Return     : %s", lotDiff * bidPrice);
                     vaultEngine.moveStablecoin(address(this), index, lotDiff * bidPrice);
                 }
 
