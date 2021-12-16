@@ -71,6 +71,7 @@ contract Liquidator is Stateful, Eventful {
     // State Variables
     /////////////////////////////////////////
     uint256 private constant PRECISION_PRICE = 10**27;
+    uint256 private constant PRECISION_COLL = 10**18;
 
     VaultEngineLike public immutable vaultEngine;
     ReservePoolLike public immutable reserve;
@@ -94,8 +95,8 @@ contract Liquidator is Stateful, Eventful {
     /////////////////////////////////////////
     function init(bytes32 collId, AuctioneerLike auctioneer) external onlyBy("gov") {
         collateralTypes[collId].auctioneer = auctioneer;
-        collateralTypes[collId].debtPenaltyFee = 1.17E27;
-        collateralTypes[collId].suppPenaltyFee = 1.05E27;
+        collateralTypes[collId].debtPenaltyFee = 1.17E18;
+        collateralTypes[collId].suppPenaltyFee = 1.05E18;
     }
 
     function updatePenalties(
@@ -127,17 +128,16 @@ contract Liquidator is Stateful, Eventful {
 
     function liquidateVault(bytes32 collId, address user) external {
         // check if vault can be liquidated
-        (uint256 debtAccu, , uint256 price) = vaultEngine.collateralTypes(collId);
+        (uint256 debtAccu, uint256 capitalAccu, uint256 price) = vaultEngine.collateralTypes(collId);
         (, uint256 lockedColl, uint256 debt, uint256 supplied) = vaultEngine.vaults(collId, user);
 
         require(
-            lockedColl * price <= debt * debtAccu + supplied * PRECISION_PRICE,
+            lockedColl * price < debt * debtAccu + supplied * PRECISION_PRICE,
             "Liquidator: Vault collateral is still above required minimal ratio"
         );
 
         // transfer the debt to reservePool
-        reserve.addAuctionDebt(((debt + supplied) * PRECISION_PRICE) / 1E18);
-
+        reserve.addAuctionDebt(((debt + supplied) * PRECISION_PRICE));
         vaultEngine.liquidateVault(
             collId,
             user,
@@ -148,11 +148,10 @@ contract Liquidator is Stateful, Eventful {
             -int256(supplied)
         );
 
-        uint256 aurToRaise = debt *
-            collateralTypes[collId].debtPenaltyFee +
-            supplied *
-            collateralTypes[collId].suppPenaltyFee;
-
+        uint256 aurToRaise = (debt * debtAccu * collateralTypes[collId].debtPenaltyFee) /
+            PRECISION_COLL +
+            (supplied * capitalAccu * collateralTypes[collId].suppPenaltyFee) /
+            PRECISION_COLL;
         // start the auction
         collateralTypes[collId].auctioneer.startAuction(collId, lockedColl, aurToRaise, user, address(reserve));
     }
