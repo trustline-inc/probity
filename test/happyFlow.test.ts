@@ -456,22 +456,33 @@ describe("Probity happy flow", function () {
     expect(bidAfter[0]).to.equal(PRECISION_PRICE.mul(11).div(10));
     expect(bidAfter[1]).to.equal(PRECISION_COLL.mul("100"));
 
+    const EXPECTED_BUY_LOT = PRECISION_COLL.mul(10);
+    const EXPECTED_BUY_VALUE = PRECISION_PRICE.mul(12)
+      .div(10)
+      .mul(EXPECTED_BUY_LOT);
+
     let userVaultBefore = await vaultEngine.vaults(flrCollId, user.address);
     let userAurBefore = await vaultEngine.stablecoin(user.address);
     await auctioneerUser.buyItNow(
       0,
       PRECISION_PRICE.mul(12).div(10),
-      PRECISION_AUR.mul("200")
+      PRECISION_COLL.mul(10)
     );
     let userVaultAfter = await vaultEngine.vaults(flrCollId, user.address);
     let userAurAfter = await vaultEngine.stablecoin(user.address);
-    let expectedLot = PRECISION_AUR.mul("200").div(
-      PRECISION_PRICE.mul(12).div(10)
-    );
-    expect(userAurBefore.sub(userAurAfter)).to.equal(PRECISION_AUR.mul("200"));
+
     expect(
-      userVaultAfter[0].sub(userVaultBefore[0]).sub(expectedLot).toNumber() <=
-        1e17
+      userAurBefore
+        .sub(userAurAfter)
+        .sub(EXPECTED_BUY_VALUE)
+        .abs()
+        .lte(PRECISION_AUR)
+    ).to.equal(true);
+    expect(
+      userVaultAfter[0]
+        .sub(userVaultBefore[0])
+        .sub(EXPECTED_BUY_LOT)
+        .toNumber() <= 1e17
     ).to.equal(true);
   });
 

@@ -35,6 +35,7 @@ import {
   MockVPToken,
   MockVaultEngine,
   MockPriceFeed,
+  MockPriceCalc,
   MockAuctioneer,
   MockLiquidator,
   MockReservePool,
@@ -65,6 +66,7 @@ import {
   MockAuctioneer__factory,
   MockLiquidator__factory,
   MockPriceFeed__factory,
+  MockPriceCalc__factory,
   MockReservePool__factory,
   VaultEngineSB,
   VaultEngineSB__factory,
@@ -116,6 +118,7 @@ interface ContractDict {
   mockAuctioneer: MockAuctioneer;
   mockLiquidator: MockLiquidator;
   mockReserve: MockReservePool;
+  mockPriceCalc: MockPriceCalc;
 }
 
 const contracts: ContractDict = {
@@ -148,6 +151,7 @@ const contracts: ContractDict = {
   mockAuctioneer: null,
   mockLiquidator: null,
   mockReserve: null,
+  mockPriceCalc: null,
 };
 
 interface SignerDict {
@@ -808,6 +812,18 @@ const deployMockVaultEngine = async () => {
   return contracts;
 };
 
+const deployMockPriceCalc = async () => {
+  const signers = await getSigners();
+  const mockPriceCaclFactory = (await ethers.getContractFactory(
+    "MockPriceCalc",
+    signers.owner
+  )) as MockPriceCalc__factory;
+  contracts.mockPriceCalc = await mockPriceCaclFactory.deploy();
+  await contracts.mockPriceCalc.deployed();
+  if (process.env.NODE_ENV !== "test") console.info("mockPriceCalc deployed ✓");
+  return contracts;
+};
+
 const deployMockFtso = async () => {
   const signers = await getSigners();
   const ftsoFactory = (await ethers.getContractFactory(
@@ -1002,6 +1018,7 @@ const deployTest = async (token?: string) => {
   await deployERC20Collateral();
   await deployVPTokenCollateral();
   await deployMockVaultEngine();
+  await deployMockPriceCalc();
   return { contracts, signers };
 };
 
