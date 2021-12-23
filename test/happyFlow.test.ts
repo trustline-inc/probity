@@ -54,12 +54,12 @@ const PRECISION_AUR = ethers.BigNumber.from(
 const COLL_AMOUNT = PRECISION_COLL.mul(1000);
 const SUPPLY_COLL_AMOUNT = PRECISION_COLL.mul(400);
 const SUPPLY_COLL_TO_DECREASE = PRECISION_COLL.mul(-400);
-const SUPPLY_AMOUNT_TO_DECREASE = PRECISION_COLL.mul(-200);
-const SUPPLY_AMOUNT = PRECISION_COLL.mul(200);
+const SUPPLY_AMOUNT_TO_DECREASE = PRECISION_AUR.mul(-200);
+const SUPPLY_AMOUNT = PRECISION_AUR.mul(200);
 const LOAN_COLL_AMOUNT = PRECISION_COLL.mul(200);
-const LOAN_AMOUNT = PRECISION_COLL.mul(100);
+const LOAN_AMOUNT = PRECISION_AUR.mul(100);
 const LOAN_REPAY_COLL_AMOUNT = PRECISION_COLL.mul(-200);
-const LOAN_REPAY_AMOUNT = PRECISION_COLL.mul(-100);
+const LOAN_REPAY_AMOUNT = PRECISION_AUR.mul(-100);
 
 const flrCollId = web3.utils.keccak256("FLR");
 const fxrpCollId = web3.utils.keccak256("FXRP");
@@ -184,7 +184,9 @@ describe("Probity happy flow", function () {
     expect(userVaultBefore[0].sub(userVaultAfter[0])).to.equal(
       SUPPLY_COLL_AMOUNT
     );
-    expect(userVaultAfter[3].sub(userVaultBefore[3])).to.equal(SUPPLY_AMOUNT);
+    expect(userVaultAfter[3].sub(userVaultBefore[3])).to.equal(
+      SUPPLY_AMOUNT.div(PRECISION_PRICE)
+    );
 
     userVaultBefore = await vaultEngine.vaults(flrCollId, owner.address);
     let aurBefore = await vaultEngine.stablecoin(owner.address);
@@ -198,12 +200,14 @@ describe("Probity happy flow", function () {
     );
 
     let aurAfter = await vaultEngine.stablecoin(owner.address);
-    expect(aurAfter.sub(aurBefore)).to.equal(LOAN_AMOUNT.mul(PRECISION_PRICE));
+    expect(aurAfter.sub(aurBefore)).to.equal(LOAN_AMOUNT);
     userVaultAfter = await vaultEngine.vaults(flrCollId, owner.address);
     expect(userVaultBefore[0].sub(userVaultAfter[0])).to.equal(
       LOAN_COLL_AMOUNT
     );
-    expect(userVaultAfter[2].sub(userVaultBefore[2])).to.equal(LOAN_AMOUNT);
+    expect(userVaultAfter[2].sub(userVaultBefore[2])).to.equal(
+      LOAN_AMOUNT.div(PRECISION_PRICE)
+    );
 
     // test aur withdrawal
 
@@ -250,12 +254,14 @@ describe("Probity happy flow", function () {
     );
 
     let aurAfter = await vaultEngine.stablecoin(owner.address);
-    expect(aurAfter.sub(aurBefore)).to.equal(LOAN_AMOUNT.mul(PRECISION_PRICE));
+    expect(aurAfter.sub(aurBefore)).to.equal(LOAN_AMOUNT);
     let userVaultAfter = await vaultEngine.vaults(flrCollId, owner.address);
     expect(userVaultBefore[0].sub(userVaultAfter[0])).to.equal(
       LOAN_COLL_AMOUNT
     );
-    expect(userVaultAfter[2].sub(userVaultBefore[2])).to.equal(LOAN_AMOUNT);
+    expect(userVaultAfter[2].sub(userVaultBefore[2])).to.equal(
+      LOAN_AMOUNT.div(PRECISION_PRICE)
+    );
 
     userVaultBefore = await vaultEngine.vaults(flrCollId, owner.address);
     aurBefore = await vaultEngine.stablecoin(owner.address);
@@ -269,15 +275,13 @@ describe("Probity happy flow", function () {
     );
 
     aurAfter = await vaultEngine.stablecoin(owner.address);
-    expect(aurAfter.sub(aurBefore)).to.equal(
-      LOAN_REPAY_AMOUNT.mul(PRECISION_PRICE)
-    );
+    expect(aurAfter.sub(aurBefore)).to.equal(LOAN_REPAY_AMOUNT);
     userVaultAfter = await vaultEngine.vaults(flrCollId, owner.address);
     expect(userVaultBefore[0].sub(userVaultAfter[0])).to.equal(
       LOAN_REPAY_COLL_AMOUNT
     );
     expect(userVaultAfter[2].sub(userVaultBefore[2])).to.equal(
-      LOAN_REPAY_AMOUNT
+      LOAN_REPAY_AMOUNT.div(PRECISION_PRICE)
     );
   });
 
@@ -310,7 +314,9 @@ describe("Probity happy flow", function () {
     expect(userVaultBefore[0].sub(userVaultAfter[0])).to.equal(
       SUPPLY_COLL_AMOUNT
     );
-    expect(userVaultAfter[3].sub(userVaultBefore[3])).to.equal(SUPPLY_AMOUNT);
+    expect(userVaultAfter[3].sub(userVaultBefore[3])).to.equal(
+      SUPPLY_AMOUNT.div(PRECISION_PRICE)
+    );
 
     // test that you can remove the supply
     await vaultEngine.modifySupply(
@@ -328,7 +334,7 @@ describe("Probity happy flow", function () {
       SUPPLY_COLL_TO_DECREASE
     );
     expect(userVaultAfterDecrease[3].sub(userVaultAfter[3])).to.equal(
-      SUPPLY_AMOUNT_TO_DECREASE
+      SUPPLY_AMOUNT_TO_DECREASE.div(PRECISION_PRICE)
     );
   });
 
@@ -391,7 +397,7 @@ describe("Probity happy flow", function () {
     );
     let userVaultAfter = await vaultEngine.vaults(flrCollId, owner.address);
     expect(unBackedAurAfter.sub(unBackedAurBefore)).to.equal(
-      SUPPLY_AMOUNT.add(LOAN_AMOUNT).mul(PRECISION_PRICE)
+      SUPPLY_AMOUNT.add(LOAN_AMOUNT)
     );
     expect(userVaultBefore[1].sub(userVaultAfter[1])).to.equal(
       SUPPLY_COLL_AMOUNT.add(LOAN_COLL_AMOUNT)
@@ -438,13 +444,13 @@ describe("Probity happy flow", function () {
       flrCollId,
       treasury.address,
       PRECISION_COLL.mul(20000),
-      PRECISION_COLL.mul(1000)
+      PRECISION_AUR.mul(1000)
     );
     await vaultUser.modifyDebt(
       flrCollId,
       treasury.address,
       PRECISION_COLL.mul(900),
-      PRECISION_COLL.mul(600)
+      PRECISION_AUR.mul(600)
     );
 
     await auctioneerUser.placeBid(
@@ -525,14 +531,14 @@ describe("Probity happy flow", function () {
       flrCollId,
       treasury.address,
       PRECISION_COLL.mul(20000),
-      PRECISION_COLL.mul(1000)
+      PRECISION_AUR.mul(1000)
     );
 
     await vaultUser.modifyDebt(
       flrCollId,
       treasury.address,
       PRECISION_COLL.mul(900),
-      PRECISION_COLL.mul(600)
+      PRECISION_AUR.mul(600)
     );
 
     await liquidator.reduceAuctionDebt(PRECISION_AUR.mul(201));

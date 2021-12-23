@@ -188,12 +188,12 @@ contract VaultEngine is Stateful, Eventful {
         Vault storage vault = vaults[collId][msg.sender];
         vault.freeCollateral = sub(vault.freeCollateral, collAmount);
         vault.usedCollateral = add(vault.usedCollateral, collAmount);
-        vault.capital = add(vault.capital, capitalAmount);
+        int256 normalizedCapital = div(capitalAmount, collateralTypes[collId].capitalAccumulator);
+        vault.capital = add(vault.capital, normalizedCapital);
 
-        collateralTypes[collId].normCapital = add(collateralTypes[collId].normCapital, capitalAmount);
+        collateralTypes[collId].normCapital = add(collateralTypes[collId].normCapital, normalizedCapital);
 
-        int256 aurToModify = mul(collateralTypes[collId].capitalAccumulator, capitalAmount);
-        totalCapital = add(totalCapital, aurToModify);
+        totalCapital = add(totalCapital, capitalAmount);
 
         require(totalCapital <= collateralTypes[collId].ceiling, "Vault/modifySupply: Supply ceiling reached");
         require(
@@ -202,7 +202,7 @@ contract VaultEngine is Stateful, Eventful {
         );
         certify(collId, vault);
 
-        stablecoin[treasuryAddress] = add(stablecoin[treasuryAddress], aurToModify);
+        stablecoin[treasuryAddress] = add(stablecoin[treasuryAddress], capitalAmount);
 
         emit SupplyModified(msg.sender, collAmount, capitalAmount);
     }
@@ -237,12 +237,12 @@ contract VaultEngine is Stateful, Eventful {
         Vault memory vault = vaults[collId][msg.sender];
         vault.freeCollateral = sub(vault.freeCollateral, collAmount);
         vault.usedCollateral = add(vault.usedCollateral, collAmount);
-        vault.debt = add(vault.debt, debtAmount);
+        int256 normalizedDebt = div(debtAmount, collateralTypes[collId].debtAccumulator);
+        vault.debt = add(vault.debt, normalizedDebt);
 
-        collateralTypes[collId].normDebt = add(collateralTypes[collId].normDebt, debtAmount);
+        collateralTypes[collId].normDebt = add(collateralTypes[collId].normDebt, normalizedDebt);
 
-        int256 debtToModify = mul(collateralTypes[collId].debtAccumulator, debtAmount);
-        totalDebt = add(totalDebt, debtToModify);
+        totalDebt = add(totalDebt, debtAmount);
 
         require(totalDebt <= collateralTypes[collId].ceiling, "Vault/modifyDebt: Debt ceiling reached");
         require(
@@ -251,8 +251,8 @@ contract VaultEngine is Stateful, Eventful {
         );
         certify(collId, vault);
 
-        stablecoin[msg.sender] = add(stablecoin[msg.sender], debtToModify);
-        stablecoin[treasuryAddress] = sub(stablecoin[treasuryAddress], debtToModify);
+        stablecoin[msg.sender] = add(stablecoin[msg.sender], debtAmount);
+        stablecoin[treasuryAddress] = sub(stablecoin[treasuryAddress], debtAmount);
 
         vaults[collId][msg.sender] = vault;
 
@@ -430,6 +430,10 @@ contract VaultEngine is Stateful, Eventful {
         }
         require(b >= 0 || c <= a, "Vault/add: add op failed");
         require(b <= 0 || c >= a, "Vault/add: add op failed");
+    }
+
+    function div(int256 a, uint256 b) internal pure returns (int256 c) {
+        c = a / int256(b);
     }
 
     function mul(uint256 a, int256 b) internal pure returns (int256 c) {
