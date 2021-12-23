@@ -381,7 +381,6 @@ contract VaultEngine is Stateful, Eventful {
         coll.capitalAccumulator += capitalRateIncrease;
 
         uint256 protocolFeeToCollect = coll.normCapital * protocolFeeRates;
-
         require(
             newSupply + protocolFeeToCollect <= newDebt,
             "VaultEngine/UpdateAccumulator: new capital created is higher than new debt"
