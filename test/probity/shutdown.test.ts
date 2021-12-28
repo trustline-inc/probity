@@ -717,7 +717,7 @@ describe("Shutdown Unit Tests", function () {
     });
   });
 
-  describe("processUserSupply Unit Tests", function () {
+  describe("processUserCapital Unit Tests", function () {
     const PRICE_TO_SET = PRECISION_PRICE.mul(1);
     const COLL_TO_SET = PRECISION_COLL.mul(100);
     const DEBT_TO_SET = PRECISION_COLL.mul(150);
@@ -769,11 +769,11 @@ describe("Shutdown Unit Tests", function () {
 
     it("fails if supplierObligationRatio is zero", async () => {
       await assertRevert(
-        shutdown.processUserSupply(flrCollId, owner.address),
-        "Shutdown/processUserSupply:Supplier has no obligation"
+        shutdown.processUserCapital(flrCollId, owner.address),
+        "Shutdown/processUserCapital:Supplier has no obligation"
       );
       await shutdown.calculateSupplierObligation();
-      await shutdown.processUserSupply(flrCollId, owner.address);
+      await shutdown.processUserCapital(flrCollId, owner.address);
     });
 
     it("tests that correct amount of collateral is grabbed from supplier", async () => {
@@ -785,7 +785,7 @@ describe("Shutdown Unit Tests", function () {
       const before = await vaultEngine.vaults(flrCollId, owner.address);
       expect(before.usedCollateral).to.equal(COLL_TO_SET);
       expect(before.capital).to.equal(CAP_TO_SET);
-      await shutdown.processUserSupply(flrCollId, owner.address);
+      await shutdown.processUserCapital(flrCollId, owner.address);
 
       const EXPECTED_AMOUNT = before.capital
         .mul(PRECISION_PRICE)

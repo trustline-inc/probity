@@ -106,9 +106,9 @@ contract Teller is Stateful {
         Collateral memory coll = collateralTypes[collId];
         (uint256 debtAccumulator, uint256 suppAccumulator) = vaultEngine.collateralTypes(collId);
         uint256 totalDebt = vaultEngine.totalDebt();
-        uint256 totalSupply = vaultEngine.totalCapital();
+        uint256 totalCapital = vaultEngine.totalCapital();
 
-        require(totalSupply > 0, "Teller/UpdateAccumulator: Total capital can not be zero");
+        require(totalCapital > 0, "Teller/UpdateAccumulator: Total capital can not be zero");
 
         // Update debt accumulator
         uint256 debtRateIncrease = rmul(rpow(mpr, (block.timestamp - coll.lastUpdated)), debtAccumulator) -
@@ -132,7 +132,7 @@ contract Teller is Stateful {
         uint256 capitalRateIncrease = suppAccumulatorDiff - protocolFeeRate;
 
         // Set new APR (round to nearest 0.25%)
-        coll.lastUtilization = wdiv(totalDebt, totalSupply);
+        coll.lastUtilization = wdiv(totalDebt, totalCapital);
         if (coll.lastUtilization >= 1e18) {
             apr = MAX_APR;
         } else {

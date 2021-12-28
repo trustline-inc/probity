@@ -28,7 +28,7 @@ let registry: Registry;
 let reservePoolAddress: string;
 
 let flrCollId = bytes32("FLR");
-let SUPPLY_TO_SET = PRECISION_AUR.mul(2000);
+let CAPITAL_TO_SET = PRECISION_AUR.mul(2000);
 let DEBT_TO_SET = PRECISION_AUR.mul(1000);
 
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
@@ -126,7 +126,7 @@ describe("Teller Unit Tests", function () {
       await teller.initCollType(flrCollId, 0);
       await vaultEngine.initCollType(flrCollId);
       await vaultEngine.setTotalDebt(DEBT_TO_SET);
-      await vaultEngine.setTotalCapital(SUPPLY_TO_SET);
+      await vaultEngine.setTotalCapital(CAPITAL_TO_SET);
     });
 
     it("fails if collType has not been initialized", async () => {
@@ -140,7 +140,7 @@ describe("Teller Unit Tests", function () {
     });
 
     it("updates the lastUtilization", async () => {
-      const EXPECTED_UTILIAZATION_RATIO = wdiv(DEBT_TO_SET, SUPPLY_TO_SET);
+      const EXPECTED_UTILIAZATION_RATIO = wdiv(DEBT_TO_SET, CAPITAL_TO_SET);
       const before = await teller.collateralTypes(flrCollId);
       expect(before[0]).to.not.equal(0);
       expect(before[1]).to.equal(0);
@@ -151,13 +151,13 @@ describe("Teller Unit Tests", function () {
       expect(after[1]).to.equal(EXPECTED_UTILIAZATION_RATIO);
     });
 
-    it("fail if totalSupply is 0", async () => {
+    it("fail if totalCapital is 0", async () => {
       await vaultEngine.setTotalCapital(0);
       await assertRevert(
         teller.updateAccumulator(flrCollId),
         "Teller/UpdateAccumulator: Total capital can not be zero"
       );
-      await vaultEngine.setTotalCapital(SUPPLY_TO_SET);
+      await vaultEngine.setTotalCapital(CAPITAL_TO_SET);
 
       await teller.updateAccumulator(flrCollId);
     });

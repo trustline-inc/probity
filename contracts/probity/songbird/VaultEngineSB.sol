@@ -29,7 +29,7 @@ contract VaultEngineSB is Stateful, Eventful {
         uint256 capitalAccumulator; // Cumulative capital rate
         uint256 adjustedPrice; // Price adjusted for collateral ratio
         uint256 normDebt; // Normalized debt
-        uint256 normCapital; // Normalized supply
+        uint256 normCapital; // Normalized capital
         uint256 ceiling; // Max. amount that can be supplied/borrowed
         uint256 floor; // Min. amount of that must be supplied/borrowed
     }
@@ -57,7 +57,7 @@ contract VaultEngineSB is Stateful, Eventful {
     // Events
     /////////////////////////////////////////
 
-    event SupplyModified(address indexed user, int256 collAmount, int256 capitalAmount);
+    event CapitalModified(address indexed user, int256 collAmount, int256 capitalAmount);
     event DebtModified(address indexed user, int256 collAmount, int256 debtAmount);
 
     /////////////////////////////////////////
@@ -171,7 +171,7 @@ contract VaultEngineSB is Stateful, Eventful {
      * @param collAmount The amount of collateral to add
      * @param capitalAmount The amount of capital to add
      */
-    function modifySupply(
+    function modifyCapital(
         bytes32 collId,
         address treasuryAddress,
         int256 collAmount,
@@ -179,7 +179,7 @@ contract VaultEngineSB is Stateful, Eventful {
     ) external onlyByWhiteListed {
         require(
             registry.checkValidity("treasury", treasuryAddress),
-            "Vault/modifySupply: Treasury address is not valid"
+            "Vault/modifyCapital: Treasury address is not valid"
         );
 
         if (!userExists[msg.sender]) {
@@ -198,17 +198,17 @@ contract VaultEngineSB is Stateful, Eventful {
         int256 aurToModify = mul(collateralTypes[collId].capitalAccumulator, capitalAmount);
         totalCapital = add(totalCapital, aurToModify);
 
-        require(totalCapital <= collateralTypes[collId].ceiling, "Vault/modifySupply: Supply ceiling reached");
+        require(totalCapital <= collateralTypes[collId].ceiling, "Vault/modifyCapital: Capital ceiling reached");
         require(
             vault.capital == 0 || (vault.capital * PRECISION_PRICE) > collateralTypes[collId].floor,
-            "Vault/modifySupply: Capital floor reached"
+            "Vault/modifyCapital: Capital floor reached"
         );
         certify(collId, vault);
         checkVaultUnderLimit(collId, vault);
 
         stablecoin[treasuryAddress] = add(stablecoin[treasuryAddress], aurToModify);
 
-        emit SupplyModified(msg.sender, collAmount, capitalAmount);
+        emit CapitalModified(msg.sender, collAmount, capitalAmount);
     }
 
     /**
@@ -234,7 +234,7 @@ contract VaultEngineSB is Stateful, Eventful {
         if (debtAmount > 0) {
             require(
                 stablecoin[treasuryAddress] >= uint256(debtAmount),
-                "Vault/modifyDebt: Treasury doesn't have enough supply to loan this amount"
+                "Vault/modifyDebt: Treasury doesn't have enough capital to loan this amount"
             );
         }
 
@@ -400,7 +400,7 @@ contract VaultEngineSB is Stateful, Eventful {
 
         Collateral storage coll = collateralTypes[collId];
         uint256 newDebt = coll.normDebt * debtRateIncrease;
-        uint256 newSupply = coll.normCapital * capitalRateIncrease;
+        uint256 newCapital = coll.normCapital * capitalRateIncrease;
 
         coll.debtAccumulator += debtRateIncrease;
         coll.capitalAccumulator += capitalRateIncrease;
@@ -408,7 +408,7 @@ contract VaultEngineSB is Stateful, Eventful {
         uint256 protocolFeeToCollect = coll.normCapital * protocolFeeRates;
 
         require(
-            newSupply + protocolFeeToCollect <= newDebt,
+            newCapital + protocolFeeToCollect <= newDebt,
             "VaultEngine/UpdateAccumulator: new capital created is higher than new debt"
         );
         stablecoin[reservePool] += protocolFeeToCollect;
