@@ -182,6 +182,27 @@ describe("Liquidator Unit Tests", function () {
       );
     });
 
+    it("fails if vault has nothing to liquidate", async () => {
+      await vaultEngine.updateVault(flrCollId, user.address, 0, 0, 0, 0, 0);
+
+      await assertRevert(
+        liquidator.liquidateVault(flrCollId, user.address),
+        "Lidquidator: Nothing to liquidate"
+      );
+
+      await vaultEngine.updateVault(
+        flrCollId,
+        user.address,
+        0,
+        VAULT_LOCKED_COLL,
+        VAULT_DEBT,
+        VAULT_CAPITAL,
+        0
+      );
+
+      await liquidator.liquidateVault(flrCollId, user.address);
+    });
+
     it("fails if vault is not undercollateralized ", async () => {
       await vaultEngine.updateVault(
         flrCollId,

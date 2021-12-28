@@ -131,6 +131,8 @@ contract Liquidator is Stateful, Eventful {
         (uint256 debtAccu, uint256 capitalAccu, uint256 price) = vaultEngine.collateralTypes(collId);
         (, uint256 lockedColl, uint256 debt, uint256 supplied) = vaultEngine.vaults(collId, user);
 
+        require(lockedColl != 0 && debt + supplied != 0, "Lidquidator: Nothing to liquidate");
+
         require(
             lockedColl * price < debt * debtAccu + supplied * PRECISION_PRICE,
             "Liquidator: Vault collateral is still above required minimal ratio"
