@@ -11,7 +11,10 @@ const config: HardhatUserConfig = {
   networks: {
     coston: {
       url: "https://coston.trustline.co/ext/bc/C/rpc",
-      accounts: [],
+      accounts: [
+        "44b8de040dec19cf810efe64919b481e05e2ba643efe003223662f1626b114f0",
+        "d77b743a0b9170c230e4a4be446b8605aa45f1d00da3d8cd5e5f778c287e1f22",
+      ],
       chainId: 16,
     },
     hardhat: {
