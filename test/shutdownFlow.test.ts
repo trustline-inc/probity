@@ -221,7 +221,7 @@ describe("Shutdown Flow Test", function () {
         flrCollId,
         treasury.address,
         PRECISION_COLL.mul(2300),
-        PRECISION_COLL.mul(1000)
+        PRECISION_AUR.mul(1000)
       );
     balances.user1.flr = {
       lockedColl: PRECISION_COLL.mul(2300),
@@ -233,7 +233,7 @@ describe("Shutdown Flow Test", function () {
         fxrpCollId,
         treasury.address,
         PRECISION_COLL.mul(1000000),
-        PRECISION_COLL.mul(300000)
+        PRECISION_AUR.mul(300000)
       );
     balances.user1.fxrp = {
       lockedColl: PRECISION_COLL.mul(1000000),
@@ -251,7 +251,7 @@ describe("Shutdown Flow Test", function () {
         flrCollId,
         treasury.address,
         PRECISION_COLL.mul(2300),
-        PRECISION_COLL.mul(1500)
+        PRECISION_AUR.mul(1500)
       );
     balances.user2.flr = {
       lockedColl: PRECISION_COLL.mul(2300),
@@ -264,7 +264,7 @@ describe("Shutdown Flow Test", function () {
         fxrpCollId,
         treasury.address,
         PRECISION_COLL.mul(150000),
-        PRECISION_COLL.mul(135000)
+        PRECISION_AUR.mul(135000)
       );
     balances.user2.fxrp = {
       lockedColl: PRECISION_COLL.mul(150000),
@@ -280,7 +280,7 @@ describe("Shutdown Flow Test", function () {
         fxrpCollId,
         treasury.address,
         PRECISION_COLL.mul(400000),
-        PRECISION_COLL.mul(150000)
+        PRECISION_AUR.mul(150000)
       );
     await vaultEngine
       .connect(user3)
@@ -288,7 +288,7 @@ describe("Shutdown Flow Test", function () {
         fxrpCollId,
         treasury.address,
         PRECISION_COLL.mul(200000),
-        PRECISION_COLL.mul(150000)
+        PRECISION_AUR.mul(150000)
       );
     balances.user3.fxrp = {
       lockedColl: PRECISION_COLL.mul(600000),
@@ -307,7 +307,7 @@ describe("Shutdown Flow Test", function () {
         flrCollId,
         treasury.address,
         PRECISION_COLL.mul(6900),
-        PRECISION_COLL.mul(4500)
+        PRECISION_AUR.mul(4500)
       );
     balances.user4.flr = {
       lockedColl: PRECISION_COLL.mul(6900),
@@ -612,7 +612,7 @@ describe("Shutdown Flow Test", function () {
         flrCollId,
         treasury.address,
         PRECISION_COLL.mul(4500),
-        PRECISION_COLL.mul(5000)
+        PRECISION_AUR.mul(5000)
       );
     balances.user1.flr = {
       lockedColl: PRECISION_COLL.mul(4500),
@@ -625,7 +625,7 @@ describe("Shutdown Flow Test", function () {
         fxrpCollId,
         treasury.address,
         PRECISION_COLL.mul(1000000),
-        PRECISION_COLL.mul(2000000)
+        PRECISION_AUR.mul(2000000)
       );
     balances.user1.fxrp = {
       lockedColl: PRECISION_COLL.mul(1000000),
@@ -643,7 +643,7 @@ describe("Shutdown Flow Test", function () {
         flrCollId,
         treasury.address,
         PRECISION_COLL.mul(2300),
-        PRECISION_COLL.mul(6000)
+        PRECISION_AUR.mul(6000)
       );
     balances.user2.flr = {
       lockedColl: PRECISION_COLL.mul(2300),
@@ -655,7 +655,7 @@ describe("Shutdown Flow Test", function () {
         fxrpCollId,
         treasury.address,
         PRECISION_COLL.mul(270000),
-        PRECISION_COLL.mul(1100000)
+        PRECISION_AUR.mul(1100000)
       );
     balances.user2.fxrp = {
       lockedColl: PRECISION_COLL.mul(270000),
@@ -673,7 +673,7 @@ describe("Shutdown Flow Test", function () {
         flrCollId,
         treasury.address,
         PRECISION_COLL.mul(9000),
-        PRECISION_COLL.mul(15000)
+        PRECISION_AUR.mul(15000)
       );
     await vaultEngine
       .connect(user3)
@@ -681,7 +681,7 @@ describe("Shutdown Flow Test", function () {
         flrCollId,
         treasury.address,
         PRECISION_COLL.mul(0),
-        PRECISION_COLL.mul(10000)
+        PRECISION_AUR.mul(10000)
       );
 
     balances.user3.flr = {
@@ -698,7 +698,7 @@ describe("Shutdown Flow Test", function () {
         fxrpCollId,
         treasury.address,
         PRECISION_COLL.mul(400000),
-        PRECISION_COLL.mul(1000000)
+        PRECISION_AUR.mul(1000000)
       );
     await vaultEngine
       .connect(user4)
@@ -706,7 +706,7 @@ describe("Shutdown Flow Test", function () {
         fxrpCollId,
         treasury.address,
         PRECISION_COLL.mul(220000),
-        PRECISION_COLL.mul(1500000)
+        PRECISION_AUR.mul(1500000)
       );
 
     balances.user4.fxrp = {
@@ -727,7 +727,7 @@ describe("Shutdown Flow Test", function () {
         flrCollId,
         treasury.address,
         PRECISION_COLL.mul(1000),
-        PRECISION_COLL.mul(1500)
+        PRECISION_AUR.mul(1500)
       );
     await vaultEngine
       .connect(user5)
@@ -735,7 +735,7 @@ describe("Shutdown Flow Test", function () {
         flrCollId,
         treasury.address,
         PRECISION_COLL.mul(1000),
-        PRECISION_COLL.mul(1500)
+        PRECISION_AUR.mul(1500)
       );
 
     balances.user5.flr = {
@@ -750,7 +750,7 @@ describe("Shutdown Flow Test", function () {
         fxrpCollId,
         treasury.address,
         PRECISION_COLL.mul(1830000),
-        PRECISION_COLL.mul(1500000)
+        PRECISION_AUR.mul(1500000)
       );
     await vaultEngine
       .connect(user5)
@@ -758,7 +758,7 @@ describe("Shutdown Flow Test", function () {
         fxrpCollId,
         treasury.address,
         PRECISION_COLL.mul(0),
-        PRECISION_COLL.mul(1200000)
+        PRECISION_AUR.mul(1200000)
       );
 
     balances.user5.fxrp = {

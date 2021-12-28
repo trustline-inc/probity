@@ -267,8 +267,8 @@ describe("Vault Engine Unit Tests", function () {
   describe("updateAccumulator Unit Tests", function () {
     const COLL_AMOUNT_SUPPLY = PRECISION_COLL.mul(10000);
     const COLL_AMOUNT_DEBT = PRECISION_COLL.mul(10000);
-    const CAPITAL_AMOUNT = PRECISION_COLL.mul(2000);
-    const DEBT_AMOUNT = PRECISION_COLL.mul(1000);
+    const CAPITAL_AMOUNT = PRECISION_AUR.mul(2000);
+    const DEBT_AMOUNT = PRECISION_AUR.mul(1000);
 
     beforeEach(async function () {
       await owner.sendTransaction({
@@ -390,7 +390,7 @@ describe("Vault Engine Unit Tests", function () {
       const protocolFee = BigNumber.from("21035088626883475473007");
       const capToRaise = debtToRaise.div(2).sub(protocolFee);
 
-      const EXPECTED_AUR = protocolFee.mul(CAPITAL_AMOUNT);
+      const EXPECTED_AUR = protocolFee.mul(CAPITAL_AMOUNT.div(PRECISION_PRICE));
 
       const reserveAurBefore = await vaultEngine.stablecoin(
         reservePool.address
