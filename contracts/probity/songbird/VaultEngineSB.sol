@@ -79,6 +79,29 @@ contract VaultEngineSB is Stateful, Eventful {
     }
 
     /**
+     * @dev returned calculated balance of user's vault position balance
+     * @param collId collateral id
+     * @param user the vault owner's address
+     */
+    function vaultBalance(bytes32 collId, address user)
+        external
+        view
+        returns (
+            uint256 lockedCollValue,
+            uint256 debtPosition,
+            uint256 capitalPosition
+        )
+    {
+        Vault storage vault = vaults[collId][user];
+        Collateral storage coll = collateralTypes[collId];
+        return (
+            vault.usedCollateral * coll.adjustedPrice,
+            vault.debt * coll.debtAccumulator,
+            vault.capital * coll.capitalAccumulator
+        );
+    }
+
+    /**
      * @dev Modifies a vault's collateral.
      * @param collateral The collateral ID
      * @param user The address of the vault owner
