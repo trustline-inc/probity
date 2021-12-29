@@ -12,7 +12,7 @@ interface VaultEngineLike {
             uint256 freeColl,
             uint256 lockedColl,
             uint256 debt,
-            uint256 supplied
+            uint256 capital
         );
 
     function collateralTypes(bytes32 collId)
@@ -129,15 +129,15 @@ contract Liquidator is Stateful, Eventful {
     function liquidateVault(bytes32 collId, address user) external {
         // check if vault can be liquidated
         (uint256 debtAccu, uint256 capitalAccu, uint256 price) = vaultEngine.collateralTypes(collId);
-        (, uint256 lockedColl, uint256 debt, uint256 supplied) = vaultEngine.vaults(collId, user);
+        (, uint256 lockedColl, uint256 debt, uint256 capital) = vaultEngine.vaults(collId, user);
 
         require(
-            lockedColl * price < debt * debtAccu + supplied * PRECISION_PRICE,
+            lockedColl * price < debt * debtAccu + capital * PRECISION_PRICE,
             "Liquidator: Vault collateral is still above required minimal ratio"
         );
 
         // transfer the debt to reservePool
-        reserve.addAuctionDebt(((debt + supplied) * PRECISION_PRICE));
+        reserve.addAuctionDebt(((debt + capital) * PRECISION_PRICE));
         vaultEngine.liquidateVault(
             collId,
             user,
@@ -145,12 +145,12 @@ contract Liquidator is Stateful, Eventful {
             address(reserve),
             -int256(lockedColl),
             -int256(debt),
-            -int256(supplied)
+            -int256(capital)
         );
 
         uint256 aurToRaise = (debt * debtAccu * collateralTypes[collId].debtPenaltyFee) /
             PRECISION_COLL +
-            (supplied * capitalAccu * collateralTypes[collId].suppPenaltyFee) /
+            (capital * capitalAccu * collateralTypes[collId].suppPenaltyFee) /
             PRECISION_COLL;
         // start the auction
         collateralTypes[collId].auctioneer.startAuction(collId, lockedColl, aurToRaise, user, address(reserve));

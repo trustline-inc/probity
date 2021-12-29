@@ -217,7 +217,7 @@ describe("Shutdown Flow Test", function () {
     await fxrpDeposit(user1, PRECISION_COLL.mul(1000000));
     await vaultEngine
       .connect(user1)
-      .modifySupply(
+      .modifyCapital(
         flrCollId,
         treasury.address,
         PRECISION_COLL.mul(2300),
@@ -229,7 +229,7 @@ describe("Shutdown Flow Test", function () {
     };
     await vaultEngine
       .connect(user1)
-      .modifySupply(
+      .modifyCapital(
         fxrpCollId,
         treasury.address,
         PRECISION_COLL.mul(1000000),
@@ -276,7 +276,7 @@ describe("Shutdown Flow Test", function () {
     await fxrpDeposit(user3, PRECISION_COLL.mul(600000));
     await vaultEngine
       .connect(user3)
-      .modifySupply(
+      .modifyCapital(
         fxrpCollId,
         treasury.address,
         PRECISION_COLL.mul(400000),
@@ -608,7 +608,7 @@ describe("Shutdown Flow Test", function () {
     await fxrpDeposit(user1, PRECISION_COLL.mul(1000000));
     await vaultEngine
       .connect(user1)
-      .modifySupply(
+      .modifyCapital(
         flrCollId,
         treasury.address,
         PRECISION_COLL.mul(4500),
@@ -621,7 +621,7 @@ describe("Shutdown Flow Test", function () {
 
     await vaultEngine
       .connect(user1)
-      .modifySupply(
+      .modifyCapital(
         fxrpCollId,
         treasury.address,
         PRECISION_COLL.mul(1000000),
@@ -694,7 +694,7 @@ describe("Shutdown Flow Test", function () {
     await fxrpDeposit(user4, PRECISION_COLL.mul(620000));
     await vaultEngine
       .connect(user4)
-      .modifySupply(
+      .modifyCapital(
         fxrpCollId,
         treasury.address,
         PRECISION_COLL.mul(400000),
@@ -723,7 +723,7 @@ describe("Shutdown Flow Test", function () {
     await fxrpDeposit(user5, PRECISION_COLL.mul(1830000));
     await vaultEngine
       .connect(user5)
-      .modifySupply(
+      .modifyCapital(
         flrCollId,
         treasury.address,
         PRECISION_COLL.mul(1000),
@@ -746,7 +746,7 @@ describe("Shutdown Flow Test", function () {
 
     await vaultEngine
       .connect(user5)
-      .modifySupply(
+      .modifyCapital(
         fxrpCollId,
         treasury.address,
         PRECISION_COLL.mul(1830000),
@@ -972,7 +972,7 @@ describe("Shutdown Flow Test", function () {
         .lte(PRECISION_COLL.div(100))
     ).to.equal(true);
     // process supplier for flr collateral
-    await shutdown.processUserSupply(flrCollId, user1.address);
+    await shutdown.processUserCapital(flrCollId, user1.address);
     // user 1 has supplied $5000, 0.85043825585 = 4252.19127925 on hook
     // supplied amount * supplier obligation ratio
     // 4252.19127925  * 0.0382390449 = 162.599733251
@@ -986,7 +986,7 @@ describe("Shutdown Flow Test", function () {
         .abs()
         .lte(PRECISION_COLL.div(10))
     ).to.equal(true);
-    await shutdown.processUserSupply(flrCollId, user2.address);
+    await shutdown.processUserCapital(flrCollId, user2.address);
     expect(
       (await shutdown.collateralTypes(flrCollId)).gap
         .sub(EXPECTED_FLR_GAP)
@@ -994,21 +994,21 @@ describe("Shutdown Flow Test", function () {
         .lte(PRECISION_COLL.div(10))
     ).to.equal(true);
 
-    await shutdown.processUserSupply(flrCollId, user3.address);
+    await shutdown.processUserCapital(flrCollId, user3.address);
     expect(
       (await shutdown.collateralTypes(flrCollId)).gap
         .sub(EXPECTED_FLR_GAP)
         .abs()
         .lte(PRECISION_COLL.div(10))
     ).to.equal(true);
-    await shutdown.processUserSupply(flrCollId, user4.address);
+    await shutdown.processUserCapital(flrCollId, user4.address);
     expect(
       (await shutdown.collateralTypes(flrCollId)).gap
         .sub(EXPECTED_FLR_GAP)
         .abs()
         .lte(PRECISION_COLL.div(10))
     ).to.equal(true);
-    await shutdown.processUserSupply(flrCollId, user5.address);
+    await shutdown.processUserCapital(flrCollId, user5.address);
 
     // user5 supplied $1500 * 0.85043825585 = 1275.65738377
     // 1275.65738377 * 0.0382390449 = 48.779919975
@@ -1025,7 +1025,7 @@ describe("Shutdown Flow Test", function () {
     ).to.equal(true);
 
     // process supplier for fxrp collateral
-    await shutdown.processUserSupply(fxrpCollId, user1.address);
+    await shutdown.processUserCapital(fxrpCollId, user1.address);
     // user1 supplied $2000000 * 0.85043825585 = 1700876.5117
     // 1700876.5117 * 0.0382390449 = 65039.8933003
     // 65039.8933003 / 2.20 = 29563.5878638
@@ -1038,21 +1038,21 @@ describe("Shutdown Flow Test", function () {
         .abs()
         .lte(PRECISION_COLL.div(10))
     ).to.equal(true);
-    await shutdown.processUserSupply(fxrpCollId, user2.address);
+    await shutdown.processUserCapital(fxrpCollId, user2.address);
     expect(
       (await shutdown.collateralTypes(fxrpCollId)).gap
         .sub(EXPECTED_FXRP_GAP)
         .abs()
         .lte(PRECISION_COLL.div(10))
     ).to.equal(true);
-    await shutdown.processUserSupply(fxrpCollId, user3.address);
+    await shutdown.processUserCapital(fxrpCollId, user3.address);
     expect(
       (await shutdown.collateralTypes(fxrpCollId)).gap
         .sub(EXPECTED_FXRP_GAP)
         .abs()
         .lte(PRECISION_COLL.div(10))
     ).to.equal(true);
-    await shutdown.processUserSupply(fxrpCollId, user4.address);
+    await shutdown.processUserCapital(fxrpCollId, user4.address);
     expect(
       (await shutdown.collateralTypes(fxrpCollId)).gap
         .sub(EXPECTED_FXRP_GAP)
@@ -1067,7 +1067,7 @@ describe("Shutdown Flow Test", function () {
       PRECISION_COLL.mul("221726908977").div(1e7)
     );
 
-    await shutdown.processUserSupply(fxrpCollId, user5.address);
+    await shutdown.processUserCapital(fxrpCollId, user5.address);
     expect(
       (await shutdown.collateralTypes(fxrpCollId)).gap
         .sub(EXPECTED_FXRP_GAP)

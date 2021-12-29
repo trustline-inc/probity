@@ -68,8 +68,8 @@ describe("Vault Engine Unit Tests", function () {
     await registry.setupAddress(bytes32("whiteListed"), owner.address);
   });
 
-  describe("modifySupply Unit Tests", function () {
-    const COLL_AMOUNT_SUPPLY = PRECISION_COLL.mul(10000);
+  describe("modifyCapital Unit Tests", function () {
+    const COLL_AMOUNT_CAPITAL = PRECISION_COLL.mul(10000);
     const CAPITAL_AMOUNT = PRECISION_COLL.mul(2000);
 
     beforeEach(async function () {
@@ -89,18 +89,18 @@ describe("Vault Engine Unit Tests", function () {
         .updateAdjustedPrice(flrCollId, PRECISION_PRICE.mul(1));
       await vaultEngine
         .connect(coll)
-        .modifyCollateral(flrCollId, owner.address, COLL_AMOUNT_SUPPLY);
+        .modifyCollateral(flrCollId, owner.address, COLL_AMOUNT_CAPITAL);
     });
 
-    it("only whitelisted user can call modifySupply", async () => {
+    it("only whitelisted user can call modifyCapital", async () => {
       await registry
         .connect(gov)
         .setupAddress(bytes32("notWhitelisted"), owner.address);
       await assertRevert(
-        vaultEngine.modifySupply(
+        vaultEngine.modifyCapital(
           flrCollId,
           treasury.address,
-          COLL_AMOUNT_SUPPLY,
+          COLL_AMOUNT_CAPITAL,
           CAPITAL_AMOUNT
         ),
         "AccessControl/onlyByWhiteListed: Only Whitelisted user can call this"
@@ -110,10 +110,10 @@ describe("Vault Engine Unit Tests", function () {
         .connect(gov)
         .setupAddress(bytes32("whiteListed"), owner.address);
 
-      await vaultEngine.modifySupply(
+      await vaultEngine.modifyCapital(
         flrCollId,
         treasury.address,
-        COLL_AMOUNT_SUPPLY,
+        COLL_AMOUNT_CAPITAL,
         CAPITAL_AMOUNT
       );
     });
@@ -122,10 +122,10 @@ describe("Vault Engine Unit Tests", function () {
       const before = await vaultEngine.getUserList();
       expect(before.length).to.equal(0);
 
-      await vaultEngine.modifySupply(
+      await vaultEngine.modifyCapital(
         flrCollId,
         treasury.address,
-        COLL_AMOUNT_SUPPLY,
+        COLL_AMOUNT_CAPITAL,
         CAPITAL_AMOUNT
       );
 
@@ -135,20 +135,20 @@ describe("Vault Engine Unit Tests", function () {
     });
 
     it("tests existing user is NOT added to userList", async () => {
-      await vaultEngine.modifySupply(
+      await vaultEngine.modifyCapital(
         flrCollId,
         treasury.address,
-        COLL_AMOUNT_SUPPLY.div(2),
+        COLL_AMOUNT_CAPITAL.div(2),
         CAPITAL_AMOUNT.div(2)
       );
 
       const before = await vaultEngine.getUserList();
       expect(before.length).to.equal(1);
 
-      await vaultEngine.modifySupply(
+      await vaultEngine.modifyCapital(
         flrCollId,
         treasury.address,
-        COLL_AMOUNT_SUPPLY.div(2),
+        COLL_AMOUNT_CAPITAL.div(2),
         CAPITAL_AMOUNT.div(2)
       );
 
@@ -159,7 +159,7 @@ describe("Vault Engine Unit Tests", function () {
   });
 
   describe("modifyDebt Unit Tests", function () {
-    const COLL_AMOUNT_SUPPLY = PRECISION_COLL.mul(10000);
+    const COLL_AMOUNT_CAPITAL = PRECISION_COLL.mul(10000);
     const COLL_AMOUNT_DEBT = PRECISION_COLL.mul(10000);
     const CAPITAL_AMOUNT = PRECISION_COLL.mul(2000);
     const DEBT_AMOUNT = PRECISION_COLL.mul(1000);
@@ -190,10 +190,10 @@ describe("Vault Engine Unit Tests", function () {
 
       await vaultEngine
         .connect(user)
-        .modifySupply(
+        .modifyCapital(
           flrCollId,
           treasury.address,
-          COLL_AMOUNT_SUPPLY,
+          COLL_AMOUNT_CAPITAL,
           CAPITAL_AMOUNT
         );
     });
@@ -265,7 +265,7 @@ describe("Vault Engine Unit Tests", function () {
   });
 
   describe("updateAccumulator Unit Tests", function () {
-    const COLL_AMOUNT_SUPPLY = PRECISION_COLL.mul(10000);
+    const COLL_AMOUNT_CAPITAL = PRECISION_COLL.mul(10000);
     const COLL_AMOUNT_DEBT = PRECISION_COLL.mul(10000);
     const CAPITAL_AMOUNT = PRECISION_AUR.mul(2000);
     const DEBT_AMOUNT = PRECISION_AUR.mul(1000);
@@ -287,16 +287,16 @@ describe("Vault Engine Unit Tests", function () {
         .modifyCollateral(
           flrCollId,
           owner.address,
-          COLL_AMOUNT_DEBT.add(COLL_AMOUNT_SUPPLY)
+          COLL_AMOUNT_DEBT.add(COLL_AMOUNT_CAPITAL)
         );
       await vaultEngine
         .connect(gov)
         .updateAdjustedPrice(flrCollId, PRECISION_PRICE.mul(1));
 
-      await vaultEngine.modifySupply(
+      await vaultEngine.modifyCapital(
         flrCollId,
         treasury.address,
-        COLL_AMOUNT_SUPPLY,
+        COLL_AMOUNT_CAPITAL,
         CAPITAL_AMOUNT
       );
       await vaultEngine.modifyDebt(

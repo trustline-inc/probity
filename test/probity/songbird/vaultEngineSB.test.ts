@@ -68,8 +68,8 @@ describe("Vault Engine Songbird Unit Tests", function () {
     await registry.setupAddress(bytes32("whiteListed"), owner.address);
   });
 
-  describe("modifySupply Unit Tests", function () {
-    const COLL_AMOUNT_SUPPLY = PRECISION_COLL.mul(10000);
+  describe("modifyCapital Unit Tests", function () {
+    const COLL_AMOUNT_CAPITAL = PRECISION_COLL.mul(10000);
     const CAPITAL_AMOUNT = PRECISION_COLL.mul(2000);
 
     beforeEach(async function () {
@@ -89,7 +89,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
         .updateAdjustedPrice(flrCollId, PRECISION_PRICE.mul(1));
       await vaultEngine
         .connect(coll)
-        .modifyCollateral(flrCollId, owner.address, COLL_AMOUNT_SUPPLY);
+        .modifyCollateral(flrCollId, owner.address, COLL_AMOUNT_CAPITAL);
       await vaultEngine
         .connect(gov)
         .updateIndividualVaultLimit(PRECISION_AUR.mul(1000000));
@@ -99,10 +99,10 @@ describe("Vault Engine Songbird Unit Tests", function () {
       const before = await vaultEngine.getUserList();
       expect(before.length).to.equal(0);
 
-      await vaultEngine.modifySupply(
+      await vaultEngine.modifyCapital(
         flrCollId,
         treasury.address,
-        COLL_AMOUNT_SUPPLY,
+        COLL_AMOUNT_CAPITAL,
         CAPITAL_AMOUNT
       );
 
@@ -112,20 +112,20 @@ describe("Vault Engine Songbird Unit Tests", function () {
     });
 
     it("tests existing user is NOT added to userList", async () => {
-      await vaultEngine.modifySupply(
+      await vaultEngine.modifyCapital(
         flrCollId,
         treasury.address,
-        COLL_AMOUNT_SUPPLY.div(2),
+        COLL_AMOUNT_CAPITAL.div(2),
         CAPITAL_AMOUNT.div(2)
       );
 
       const before = await vaultEngine.getUserList();
       expect(before.length).to.equal(1);
 
-      await vaultEngine.modifySupply(
+      await vaultEngine.modifyCapital(
         flrCollId,
         treasury.address,
-        COLL_AMOUNT_SUPPLY.div(2),
+        COLL_AMOUNT_CAPITAL.div(2),
         CAPITAL_AMOUNT.div(2)
       );
 
@@ -136,7 +136,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
   });
 
   describe("modifyDebt Unit Tests", function () {
-    const COLL_AMOUNT_SUPPLY = PRECISION_COLL.mul(10000);
+    const COLL_AMOUNT_CAPITAL = PRECISION_COLL.mul(10000);
     const COLL_AMOUNT_DEBT = PRECISION_COLL.mul(10000);
     const CAPITAL_AMOUNT = PRECISION_COLL.mul(2000);
     const DEBT_AMOUNT = PRECISION_COLL.mul(1000);
@@ -170,10 +170,10 @@ describe("Vault Engine Songbird Unit Tests", function () {
 
       await vaultEngine
         .connect(user)
-        .modifySupply(
+        .modifyCapital(
           flrCollId,
           treasury.address,
-          COLL_AMOUNT_SUPPLY,
+          COLL_AMOUNT_CAPITAL,
           CAPITAL_AMOUNT
         );
     });
@@ -245,7 +245,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
     });
 
     it("modifyDebt uses individualVaultLimit", async () => {
-      const COLL_AMOUNT_SUPPLY = PRECISION_COLL.mul(10000);
+      const COLL_AMOUNT_CAPITAL = PRECISION_COLL.mul(10000);
       const COLL_AMOUNT_DEBT = PRECISION_COLL.mul(10000);
       const CAPITAL_AMOUNT = PRECISION_COLL.mul(500);
       const NEW_INDIVIDUAL_VAULT_LIMTI = PRECISION_AUR.mul(500);
@@ -255,17 +255,17 @@ describe("Vault Engine Songbird Unit Tests", function () {
         .modifyCollateral(
           flrCollId,
           owner.address,
-          COLL_AMOUNT_DEBT.add(COLL_AMOUNT_SUPPLY)
+          COLL_AMOUNT_DEBT.add(COLL_AMOUNT_CAPITAL)
         );
       await vaultEngine
         .connect(gov)
         .updateAdjustedPrice(flrCollId, PRECISION_PRICE.mul(1));
 
       await assertRevert(
-        vaultEngine.modifySupply(
+        vaultEngine.modifyCapital(
           flrCollId,
           treasury.address,
-          COLL_AMOUNT_SUPPLY,
+          COLL_AMOUNT_CAPITAL,
           CAPITAL_AMOUNT
         ),
         "Vault is over the individual vault limit"
@@ -275,16 +275,16 @@ describe("Vault Engine Songbird Unit Tests", function () {
         .connect(gov)
         .updateIndividualVaultLimit(NEW_INDIVIDUAL_VAULT_LIMTI);
 
-      await vaultEngine.modifySupply(
+      await vaultEngine.modifyCapital(
         flrCollId,
         treasury.address,
-        COLL_AMOUNT_SUPPLY,
+        COLL_AMOUNT_CAPITAL,
         CAPITAL_AMOUNT
       );
     });
 
     it("modifyDebt uses individualVaultLimit", async () => {
-      const COLL_AMOUNT_SUPPLY = PRECISION_COLL.mul(10000);
+      const COLL_AMOUNT_CAPITAL = PRECISION_COLL.mul(10000);
       const COLL_AMOUNT_DEBT = PRECISION_COLL.mul(10000);
       const DEBT_AMOUNT = PRECISION_COLL.mul(500);
       const NEW_INDIVIDUAL_VAULT_LIMIT = PRECISION_AUR.mul(1000);
@@ -294,7 +294,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
         .modifyCollateral(
           flrCollId,
           owner.address,
-          COLL_AMOUNT_DEBT.add(COLL_AMOUNT_SUPPLY)
+          COLL_AMOUNT_DEBT.add(COLL_AMOUNT_CAPITAL)
         );
       await vaultEngine
         .connect(gov)
@@ -304,10 +304,10 @@ describe("Vault Engine Songbird Unit Tests", function () {
         .connect(gov)
         .updateIndividualVaultLimit(PRECISION_AUR.mul(500));
 
-      await vaultEngine.modifySupply(
+      await vaultEngine.modifyCapital(
         flrCollId,
         treasury.address,
-        COLL_AMOUNT_SUPPLY,
+        COLL_AMOUNT_CAPITAL,
         DEBT_AMOUNT
       );
 
@@ -315,7 +315,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
         vaultEngine.modifyDebt(
           flrCollId,
           treasury.address,
-          COLL_AMOUNT_SUPPLY,
+          COLL_AMOUNT_CAPITAL,
           DEBT_AMOUNT
         ),
         "Vault is over the individual vault limit"
@@ -328,14 +328,14 @@ describe("Vault Engine Songbird Unit Tests", function () {
       await vaultEngine.modifyDebt(
         flrCollId,
         treasury.address,
-        COLL_AMOUNT_SUPPLY,
+        COLL_AMOUNT_CAPITAL,
         DEBT_AMOUNT
       );
     });
   });
 
   describe("updateAccumulator Unit Tests", function () {
-    const COLL_AMOUNT_SUPPLY = PRECISION_COLL.mul(10000);
+    const COLL_AMOUNT_CAPITAL = PRECISION_COLL.mul(10000);
     const COLL_AMOUNT_DEBT = PRECISION_COLL.mul(10000);
     const CAPITAL_AMOUNT = PRECISION_COLL.mul(2000);
     const DEBT_AMOUNT = PRECISION_COLL.mul(1000);
@@ -360,16 +360,16 @@ describe("Vault Engine Songbird Unit Tests", function () {
         .modifyCollateral(
           flrCollId,
           owner.address,
-          COLL_AMOUNT_DEBT.add(COLL_AMOUNT_SUPPLY)
+          COLL_AMOUNT_DEBT.add(COLL_AMOUNT_CAPITAL)
         );
       await vaultEngine
         .connect(gov)
         .updateAdjustedPrice(flrCollId, PRECISION_PRICE.mul(1));
 
-      await vaultEngine.modifySupply(
+      await vaultEngine.modifyCapital(
         flrCollId,
         treasury.address,
-        COLL_AMOUNT_SUPPLY,
+        COLL_AMOUNT_CAPITAL,
         CAPITAL_AMOUNT
       );
       await vaultEngine.modifyDebt(
