@@ -15,7 +15,7 @@ interface VaultEngineLike {
         uint256 amount
     ) external;
 
-    function removePbt(address user, uint256 amount) external;
+    function reducePbt(address user, uint256 amount) external;
 }
 
 interface TokenLike {
@@ -84,8 +84,8 @@ contract Treasury is Stateful {
         emit TransferStablecoin(msg.sender, recipient, amount);
     }
 
-    function withdrawTcn(uint256 amount) external {
-        vaultEngine.removePbt(msg.sender, amount * 1e27);
+    function withdrawPbt(uint256 amount) external {
+        vaultEngine.reducePbt(msg.sender, amount * 1e27);
         pbt.mint(msg.sender, amount);
         emit WithdrawTcn(msg.sender, amount);
     }

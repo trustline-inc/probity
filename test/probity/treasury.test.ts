@@ -141,7 +141,7 @@ describe("Treasury Unit Tests", function () {
     });
   });
 
-  describe("withdrawTcn Unit Tests", function () {
+  describe("withdrawPbt Unit Tests", function () {
     beforeEach(async function () {
       await vaultEngine.addPbt(
         owner.address,
@@ -149,9 +149,9 @@ describe("Treasury Unit Tests", function () {
       );
     });
 
-    it("tests that withdrawTcn call vaultEngine.removePbt function", async () => {
+    it("tests that withdrawPbt call vaultEngine.reducePbt function", async () => {
       const tcnBalanceBefore = await vaultEngine.pbt(owner.address);
-      await treasury.withdrawTcn(AMOUNT_TO_WITHDRAW);
+      await treasury.withdrawPbt(AMOUNT_TO_WITHDRAW);
       const tcnBalanceAfter = await vaultEngine.pbt(owner.address);
       expect(
         tcnBalanceBefore.sub(tcnBalanceAfter).div(PRECISION_PRICE)
@@ -160,7 +160,7 @@ describe("Treasury Unit Tests", function () {
 
     it("tests that pbt is minted for user's balance", async () => {
       const tcnBalanceBefore = await pbt.balanceOf(owner.address);
-      await treasury.withdrawTcn(AMOUNT_TO_WITHDRAW);
+      await treasury.withdrawPbt(AMOUNT_TO_WITHDRAW);
       const tcnBalanceAfter = await pbt.balanceOf(owner.address);
       expect(tcnBalanceAfter.sub(tcnBalanceBefore)).to.equal(
         AMOUNT_TO_WITHDRAW
@@ -169,7 +169,7 @@ describe("Treasury Unit Tests", function () {
 
     it("tests that WithdrawTcn event is emitted properly", async () => {
       const parsedEvents = await parseEvents(
-        treasury.withdrawTcn(AMOUNT_TO_WITHDRAW),
+        treasury.withdrawPbt(AMOUNT_TO_WITHDRAW),
         "WithdrawTcn",
         treasury
       );
