@@ -109,7 +109,7 @@ const init = async () => {
   const floor = 1;
   tx = await vaultEngine
     .connect(owner)
-    .updateFloor(COLLATERAL[token], PRECISION_AUR.mul(floor), {
+    .updateFloor(COLLATERAL[token], PRECISION_COLL.mul(floor), {
       gasLimit: 300000,
     });
   await tx.wait();

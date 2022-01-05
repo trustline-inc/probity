@@ -496,6 +496,7 @@ const deployNativeCollateral = async (param?: {
   await contracts.nativeCollateral.deployed();
   if (process.env.NODE_ENV !== "test") {
     console.info("nativeCollateral deployed ✓");
+    console.info(`with native Token ${NETWORK_NATIVE_TOKEN}`);
     console.info({
       registry,
       collateralId,
