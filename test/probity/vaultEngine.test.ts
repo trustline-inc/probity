@@ -70,7 +70,7 @@ describe("Vault Engine Unit Tests", function () {
 
   describe("modifyCapital Unit Tests", function () {
     const COLL_AMOUNT_CAPITAL = PRECISION_COLL.mul(10000);
-    const CAPITAL_AMOUNT = PRECISION_COLL.mul(2000);
+    const CAPITAL_AMOUNT = PRECISION_AUR.mul(2000);
 
     beforeEach(async function () {
       await owner.sendTransaction({
@@ -109,6 +109,35 @@ describe("Vault Engine Unit Tests", function () {
       await registry
         .connect(gov)
         .setupAddress(bytes32("whiteListed"), owner.address);
+
+      await vaultEngine.modifyCapital(
+        flrCollId,
+        treasury.address,
+        COLL_AMOUNT_CAPITAL,
+        CAPITAL_AMOUNT
+      );
+    });
+
+    it("fail if vault value is below the minimum(floor)", async () => {
+      const FLOOR_AMOUNT = PRECISION_AUR.mul(1000);
+      const CAPITAL_AMOUNT_UNDER_FLOOR = FLOOR_AMOUNT.sub(1);
+      await registry
+        .connect(gov)
+        .setupAddress(bytes32("whiteListed"), owner.address);
+
+      await vaultEngine
+        .connect(gov)
+        .updateFloor(flrCollId, PRECISION_AUR.mul(1000));
+
+      await assertRevert(
+        vaultEngine.modifyCapital(
+          flrCollId,
+          treasury.address,
+          COLL_AMOUNT_CAPITAL,
+          CAPITAL_AMOUNT_UNDER_FLOOR
+        ),
+        "Vault/modifyCapital: Capital smaller than floor"
+      );
 
       await vaultEngine.modifyCapital(
         flrCollId,
@@ -161,8 +190,8 @@ describe("Vault Engine Unit Tests", function () {
   describe("modifyDebt Unit Tests", function () {
     const COLL_AMOUNT_CAPITAL = PRECISION_COLL.mul(10000);
     const COLL_AMOUNT_DEBT = PRECISION_COLL.mul(10000);
-    const CAPITAL_AMOUNT = PRECISION_COLL.mul(2000);
-    const DEBT_AMOUNT = PRECISION_COLL.mul(1000);
+    const CAPITAL_AMOUNT = PRECISION_AUR.mul(2000);
+    const DEBT_AMOUNT = PRECISION_AUR.mul(1000);
 
     beforeEach(async function () {
       await owner.sendTransaction({
@@ -215,6 +244,34 @@ describe("Vault Engine Unit Tests", function () {
       await registry
         .connect(gov)
         .setupAddress(bytes32("whiteListed"), owner.address);
+
+      await vaultEngine.modifyDebt(
+        flrCollId,
+        treasury.address,
+        COLL_AMOUNT_DEBT,
+        DEBT_AMOUNT
+      );
+    });
+
+    it("fails if vault value is below the minimum(floor)", async () => {
+      const FLOOR_AMOUNT = PRECISION_AUR.mul(800);
+      const DEBT_AMOUNT_UNDER_FLOOR = FLOOR_AMOUNT.sub(1);
+
+      await registry
+        .connect(gov)
+        .setupAddress(bytes32("whiteListed"), owner.address);
+
+      await vaultEngine.connect(gov).updateFloor(flrCollId, FLOOR_AMOUNT);
+
+      await assertRevert(
+        vaultEngine.modifyDebt(
+          flrCollId,
+          treasury.address,
+          COLL_AMOUNT_DEBT,
+          DEBT_AMOUNT_UNDER_FLOOR
+        ),
+        "Vault/modifyDebt: Debt Smaller than floor"
+      );
 
       await vaultEngine.modifyDebt(
         flrCollId,

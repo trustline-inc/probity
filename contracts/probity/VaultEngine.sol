@@ -220,8 +220,8 @@ contract VaultEngine is Stateful, Eventful {
 
         require(totalCapital <= collateralTypes[collId].ceiling, "Vault/modifyCapital: Supply ceiling reached");
         require(
-            vault.capital == 0 || vault.capital > collateralTypes[collId].floor,
-            "Vault/modifyCapital: Capital floor reached"
+            vault.capital == 0 || (vault.capital * PRECISION_PRICE) > collateralTypes[collId].floor,
+            "Vault/modifyCapital: Capital smaller than floor"
         );
         certify(collId, vault);
 
@@ -269,7 +269,7 @@ contract VaultEngine is Stateful, Eventful {
 
         require(totalDebt <= collateralTypes[collId].ceiling, "Vault/modifyDebt: Debt ceiling reached");
         require(
-            vault.debt == 0 || vault.debt > collateralTypes[collId].floor,
+            vault.debt == 0 || (vault.debt * PRECISION_PRICE) > collateralTypes[collId].floor,
             "Vault/modifyDebt: Debt Smaller than floor"
         );
         certify(collId, vault);

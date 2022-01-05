@@ -66,7 +66,7 @@ contract MockVaultEngine {
         unbackedStablecoin[user] = amount;
     }
 
-    function removePbt(address user, uint256 amount) external {
+    function reducePbt(address user, uint256 amount) external {
         pbt[user] -= amount;
     }
 
