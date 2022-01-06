@@ -414,6 +414,29 @@ describe("Vault Engine Unit Tests", function () {
       );
     });
 
+    it("tests that totalDebt and totalCapital are added properly", async () => {
+      const totalDebtBefore = await vaultEngine.totalDebt();
+      const totalCapitalBefore = await vaultEngine.totalCapital();
+
+      const debtToRaise = BigNumber.from("251035088626883475473007");
+      const capToRaise = BigNumber.from("125509667994754929166541");
+      await vaultEngine
+        .connect(user)
+        .updateAccumulators(
+          flrCollId,
+          reservePool.address,
+          debtToRaise,
+          capToRaise,
+          BigNumber.from(0)
+        );
+
+      const totalDebtAfter = await vaultEngine.totalDebt();
+      const totalCapitalAfter = await vaultEngine.totalCapital();
+
+      expect(totalDebtAfter.sub(totalDebtBefore).gte(0)).to.equal(true);
+      expect(totalCapitalAfter.sub(totalCapitalBefore).gte(0)).to.equal(true);
+    });
+
     it("fails if new capital + protocolFee is higher than new debt", async () => {
       const debtToRaise = BigNumber.from("251035088626883475473007");
       let capToRaise = debtToRaise.add(1);

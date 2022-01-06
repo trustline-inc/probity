@@ -425,6 +425,9 @@ contract VaultEngineSB is Stateful, Eventful {
         uint256 newDebt = coll.normDebt * debtRateIncrease;
         uint256 newCapital = coll.normCapital * capitalRateIncrease;
 
+        totalCapital += newCapital;
+        totalDebt += newDebt;
+
         coll.debtAccumulator += debtRateIncrease;
         coll.capitalAccumulator += capitalRateIncrease;
 
