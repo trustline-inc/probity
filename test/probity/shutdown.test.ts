@@ -443,7 +443,7 @@ describe("Shutdown Unit Tests", function () {
       await shutdown.setFinalPrice(flrCollId);
 
       let lastLiquidateVaultCall = await vaultEngine.lastLiquidateVaultCall();
-      expect(lastLiquidateVaultCall.assetId).to.equal(BYTES32_ZERO);
+      expect(lastLiquidateVaultCall.collId).to.equal(BYTES32_ZERO);
       expect(lastLiquidateVaultCall.user).to.equal(ADDRESS_ZERO);
       expect(lastLiquidateVaultCall.auctioneer).to.equal(ADDRESS_ZERO);
       expect(lastLiquidateVaultCall.reservePool).to.equal(ADDRESS_ZERO);
@@ -454,7 +454,7 @@ describe("Shutdown Unit Tests", function () {
       await shutdown.processUserDebt(flrCollId, user.address);
 
       lastLiquidateVaultCall = await vaultEngine.lastLiquidateVaultCall();
-      expect(lastLiquidateVaultCall.assetId).to.equal(flrCollId);
+      expect(lastLiquidateVaultCall.collId).to.equal(flrCollId);
       expect(lastLiquidateVaultCall.user).to.equal(user.address);
       expect(lastLiquidateVaultCall.auctioneer).to.equal(shutdown.address);
       expect(lastLiquidateVaultCall.reservePool).to.equal(shutdown.address);
@@ -516,7 +516,7 @@ describe("Shutdown Unit Tests", function () {
       await shutdown.freeExcessCollateral(flrCollId, owner.address);
 
       let lastLiquidateVaultCall = await vaultEngine.lastLiquidateVaultCall();
-      expect(lastLiquidateVaultCall.assetId).to.equal(flrCollId);
+      expect(lastLiquidateVaultCall.collId).to.equal(flrCollId);
       expect(lastLiquidateVaultCall.user).to.equal(owner.address);
       expect(lastLiquidateVaultCall.auctioneer).to.equal(owner.address);
       expect(lastLiquidateVaultCall.reservePool).to.equal(shutdown.address);
@@ -796,7 +796,7 @@ describe("Shutdown Unit Tests", function () {
         .div(PRICE_TO_SET);
 
       const lastLiqudateVaultCall = await vaultEngine.lastLiquidateVaultCall();
-      expect(lastLiqudateVaultCall.assetId).to.equal(flrCollId);
+      expect(lastLiqudateVaultCall.collId).to.equal(flrCollId);
       expect(lastLiqudateVaultCall.user).to.equal(owner.address);
       expect(lastLiqudateVaultCall.auctioneer).to.equal(shutdown.address);
       expect(lastLiqudateVaultCall.reservePool).to.equal(shutdown.address);
