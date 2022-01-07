@@ -214,22 +214,22 @@ contract VaultEngineSB is Stateful, Eventful {
         Vault storage vault = vaults[collId][msg.sender];
         vault.freeCollateral = sub(vault.freeCollateral, collAmount);
         vault.usedCollateral = add(vault.usedCollateral, collAmount);
-        vault.capital = add(vault.capital, capitalAmount);
+        int256 normalizedCapital = div(capitalAmount, collateralTypes[collId].capitalAccumulator);
+        vault.capital = add(vault.capital, normalizedCapital);
 
-        collateralTypes[collId].normCapital = add(collateralTypes[collId].normCapital, capitalAmount);
+        collateralTypes[collId].normCapital = add(collateralTypes[collId].normCapital, normalizedCapital);
 
-        int256 aurToModify = mul(collateralTypes[collId].capitalAccumulator, capitalAmount);
-        totalCapital = add(totalCapital, aurToModify);
+        totalCapital = add(totalCapital, capitalAmount);
 
-        require(totalCapital <= collateralTypes[collId].ceiling, "Vault/modifyCapital: Capital ceiling reached");
+        require(totalCapital <= collateralTypes[collId].ceiling, "Vault/modifyCapital: Supply ceiling reached");
         require(
             vault.capital == 0 || (vault.capital * PRECISION_PRICE) > collateralTypes[collId].floor,
-            "Vault/modifyCapital: Capital floor reached"
+            "Vault/modifyCapital: Capital smaller than floor"
         );
         certify(collId, vault);
         checkVaultUnderLimit(collId, vault);
 
-        stablecoin[treasuryAddress] = add(stablecoin[treasuryAddress], aurToModify);
+        stablecoin[treasuryAddress] = add(stablecoin[treasuryAddress], capitalAmount);
 
         emit CapitalModified(msg.sender, collAmount, capitalAmount);
     }
@@ -264,23 +264,23 @@ contract VaultEngineSB is Stateful, Eventful {
         Vault memory vault = vaults[collId][msg.sender];
         vault.freeCollateral = sub(vault.freeCollateral, collAmount);
         vault.usedCollateral = add(vault.usedCollateral, collAmount);
-        vault.debt = add(vault.debt, debtAmount);
+        int256 normalizedDebt = div(debtAmount, collateralTypes[collId].debtAccumulator);
+        vault.debt = add(vault.debt, normalizedDebt);
 
-        collateralTypes[collId].normDebt = add(collateralTypes[collId].normDebt, debtAmount);
+        collateralTypes[collId].normDebt = add(collateralTypes[collId].normDebt, normalizedDebt);
 
-        int256 debtToModify = mul(collateralTypes[collId].debtAccumulator, debtAmount);
-        totalDebt = add(totalDebt, debtToModify);
+        totalDebt = add(totalDebt, debtAmount);
 
         require(totalDebt <= collateralTypes[collId].ceiling, "Vault/modifyDebt: Debt ceiling reached");
         require(
             vault.debt == 0 || (vault.debt * PRECISION_PRICE) > collateralTypes[collId].floor,
-            "Vault/modifyDebt: Debt smaller than floor"
+            "Vault/modifyDebt: Debt Smaller than floor"
         );
         certify(collId, vault);
         checkVaultUnderLimit(collId, vault);
 
-        stablecoin[msg.sender] = add(stablecoin[msg.sender], debtToModify);
-        stablecoin[treasuryAddress] = sub(stablecoin[treasuryAddress], debtToModify);
+        stablecoin[msg.sender] = add(stablecoin[msg.sender], debtAmount);
+        stablecoin[treasuryAddress] = sub(stablecoin[treasuryAddress], debtAmount);
 
         vaults[collId][msg.sender] = vault;
 
