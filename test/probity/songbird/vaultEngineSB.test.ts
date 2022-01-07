@@ -247,7 +247,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
     it("modifyDebt uses individualVaultLimit", async () => {
       const COLL_AMOUNT_EQUITY = PRECISION_COLL.mul(10000);
       const COLL_AMOUNT_DEBT = PRECISION_COLL.mul(10000);
-      const EQUITY_AMOUNT = PRECISION_COLL.mul(500);
+      const EQUITY_AMOUNT = PRECISION_AUR.mul(500);
       const NEW_INDIVIDUAL_VAULT_LIMTI = PRECISION_AUR.mul(500);
 
       await vaultEngine
@@ -286,7 +286,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
     it("modifyDebt uses individualVaultLimit", async () => {
       const COLL_AMOUNT_EQUITY = PRECISION_COLL.mul(10000);
       const COLL_AMOUNT_DEBT = PRECISION_COLL.mul(10000);
-      const DEBT_AMOUNT = PRECISION_COLL.mul(500);
+      const DEBT_AMOUNT = PRECISION_AUR.mul(500);
       const NEW_INDIVIDUAL_VAULT_LIMIT = PRECISION_AUR.mul(1000);
 
       await vaultEngine
@@ -337,8 +337,8 @@ describe("Vault Engine Songbird Unit Tests", function () {
   describe("updateAccumulator Unit Tests", function () {
     const COLL_AMOUNT_EQUITY = PRECISION_COLL.mul(10000);
     const COLL_AMOUNT_DEBT = PRECISION_COLL.mul(10000);
-    const EQUITY_AMOUNT = PRECISION_COLL.mul(2000);
-    const DEBT_AMOUNT = PRECISION_COLL.mul(1000);
+    const EQUITY_AMOUNT = PRECISION_AUR.mul(2000);
+    const DEBT_AMOUNT = PRECISION_AUR.mul(1000);
 
     beforeEach(async function () {
       await owner.sendTransaction({
@@ -486,7 +486,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
       const protocolFee = BigNumber.from("21035088626883475473007");
       const capToRaise = debtToRaise.div(2).sub(protocolFee);
 
-      const EXPECTED_AUR = protocolFee.mul(EQUITY_AMOUNT);
+      const EXPECTED_AUR = protocolFee.mul(EQUITY_AMOUNT.div(PRECISION_PRICE));
 
       const reserveAurBefore = await vaultEngine.stablecoin(
         reservePool.address
