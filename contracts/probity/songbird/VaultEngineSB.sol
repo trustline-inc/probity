@@ -214,22 +214,22 @@ contract VaultEngineSB is Stateful, Eventful {
         Vault storage vault = vaults[collId][msg.sender];
         vault.freeCollateral = sub(vault.freeCollateral, collAmount);
         vault.usedCollateral = add(vault.usedCollateral, collAmount);
-        int256 normalizedCapital = div(capitalAmount, collateralTypes[collId].capitalAccumulator);
-        vault.capital = add(vault.capital, normalizedCapital);
+        int256 normalizedEquity = div(equityAmount, collateralTypes[collId].equityAccumulator);
+        vault.equity = add(vault.equity, normalizedEquity);
 
-        collateralTypes[collId].normCapital = add(collateralTypes[collId].normCapital, normalizedCapital);
+        collateralTypes[collId].normEquity = add(collateralTypes[collId].normEquity, normalizedEquity);
 
-        totalCapital = add(totalCapital, capitalAmount);
+        totalEquity = add(totalEquity, equityAmount);
 
-        require(totalCapital <= collateralTypes[collId].ceiling, "Vault/modifyCapital: Supply ceiling reached");
+        require(totalEquity <= collateralTypes[collId].ceiling, "Vault/modifyEquity: Supply ceiling reached");
         require(
-            vault.capital == 0 || (vault.capital * PRECISION_PRICE) > collateralTypes[collId].floor,
-            "Vault/modifyCapital: Capital smaller than floor"
+            vault.equity == 0 || (vault.equity * PRECISION_PRICE) > collateralTypes[collId].floor,
+            "Vault/modifyEquity: Equity smaller than floor"
         );
         certify(collId, vault);
         checkVaultUnderLimit(collId, vault);
 
-        stablecoin[treasuryAddress] = add(stablecoin[treasuryAddress], capitalAmount);
+        stablecoin[treasuryAddress] = add(stablecoin[treasuryAddress], equityAmount);
 
         emit EquityModified(msg.sender, collAmount, equityAmount);
     }
