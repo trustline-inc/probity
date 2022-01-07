@@ -15,7 +15,7 @@ interface VaultEngineLike {
             uint256 equity
         );
 
-    function collateralTypes(bytes32 collId)
+    function assets(bytes32 collId)
         external
         returns (
             uint256 debtAccumulator,
@@ -119,7 +119,7 @@ contract Liquidator is Stateful, Eventful {
 
     function updateAuctioneer(bytes32 collId, AuctioneerLike newAuctioneer) external onlyBy("gov") {
         emit LogVarUpdate(
-            "priceFeed",
+            "adjustedPriceFeed",
             collId,
             "auctioneer",
             address(collateralTypes[collId].auctioneer),
@@ -134,13 +134,13 @@ contract Liquidator is Stateful, Eventful {
 
     function liquidateVault(bytes32 collId, address user) external {
         // check if vault can be liquidated
-        (uint256 debtAccu, uint256 equityAccu, uint256 price) = vaultEngine.collateralTypes(collId);
+        (uint256 debtAccumulator, uint256 equityAccumulator, uint256 adjustedPrice) = vaultEngine.assets(collId);
         (, uint256 lockedColl, uint256 debt, uint256 equity) = vaultEngine.vaults(collId, user);
 
         require(lockedColl != 0 && debt + equity != 0, "Lidquidator: Nothing to liquidate");
 
         require(
-            lockedColl * price < debt * debtAccu + equity * PRECISION_PRICE,
+            lockedColl * adjustedPrice < debt * debtAccumulator + equity * PRECISION_PRICE,
             "Liquidator: Vault collateral is still above required minimal ratio"
         );
 
@@ -156,9 +156,9 @@ contract Liquidator is Stateful, Eventful {
             -int256(equity)
         );
 
-        uint256 aurToRaise = (debt * debtAccu * collateralTypes[collId].debtPenaltyFee) /
+        uint256 aurToRaise = (debt * debtAccumulator * collateralTypes[collId].debtPenaltyFee) /
             PRECISION_COLL +
-            (equity * equityAccu * collateralTypes[collId].equityPenaltyFee) /
+            (equity * equityAccumulator * collateralTypes[collId].equityPenaltyFee) /
             PRECISION_COLL;
         // start the auction
         collateralTypes[collId].auctioneer.startAuction(collId, lockedColl, aurToRaise, user, address(reserve));
