@@ -160,7 +160,7 @@ describe("Probity happy flow", function () {
     await flrColl.deposit({ value: COLL_AMOUNT });
 
     // Initialize the FLR collateral type
-    await vaultEngine.connect(gov).initAsset(flrAssetId);
+    await vaultEngine.connect(gov).initAssetType(flrAssetId);
     await vaultEngine
       .connect(gov)
       .updateCeiling(flrAssetId, PRECISION_AUR.mul(10000000));
@@ -224,7 +224,7 @@ describe("Probity happy flow", function () {
     await flrColl.deposit({ value: COLL_AMOUNT });
 
     // Initialize the FLR collateral type
-    await vaultEngine.connect(gov).initAsset(flrAssetId);
+    await vaultEngine.connect(gov).initAssetType(flrAssetId);
     await vaultEngine
       .connect(gov)
       .updateCeiling(flrAssetId, PRECISION_AUR.mul(10000000));
@@ -290,7 +290,7 @@ describe("Probity happy flow", function () {
     await flrColl.deposit({ value: COLL_AMOUNT });
 
     // Initialize the FLR collateral type
-    await vaultEngine.connect(gov).initAsset(flrAssetId);
+    await vaultEngine.connect(gov).initAssetType(flrAssetId);
     await vaultEngine
       .connect(gov)
       .updateCeiling(flrAssetId, PRECISION_AUR.mul(10000000));
@@ -341,7 +341,7 @@ describe("Probity happy flow", function () {
   it("test priceFeed update", async () => {
     await flrColl.deposit({ value: COLL_AMOUNT });
 
-    await vaultEngine.connect(gov).initAsset(flrAssetId);
+    await vaultEngine.connect(gov).initAssetType(flrAssetId);
     await vaultEngine
       .connect(gov)
       .updateCeiling(flrAssetId, PRECISION_AUR.mul(10000000));
@@ -352,7 +352,7 @@ describe("Probity happy flow", function () {
 
     await priceFeed.updateAdjustedPrice(flrAssetId);
 
-    let collTypeAfter = await vaultEngine.assets(flrAssetId);
+    let collTypeAfter = await vaultEngine.assetTypes(flrAssetId);
     let expectedPrice = PRECISION_PRICE.div(3).mul(2);
     // as long as the expectedPrice is within a buffer, call it success
     expect(collTypeAfter[2].sub(expectedPrice).toNumber() <= 10).to.equal(true);
@@ -361,7 +361,7 @@ describe("Probity happy flow", function () {
   it("test liquidation start", async () => {
     await flrColl.deposit({ value: COLL_AMOUNT });
 
-    await vaultEngine.connect(gov).initAsset(flrAssetId);
+    await vaultEngine.connect(gov).initAssetType(flrAssetId);
     await vaultEngine
       .connect(gov)
       .updateCeiling(flrAssetId, PRECISION_AUR.mul(10000000));
@@ -403,7 +403,7 @@ describe("Probity happy flow", function () {
   it("test auction process", async () => {
     await flrColl.deposit({ value: COLL_AMOUNT });
 
-    await vaultEngine.connect(gov).initAsset(flrAssetId);
+    await vaultEngine.connect(gov).initAssetType(flrAssetId);
     await vaultEngine
       .connect(gov)
       .updateCeiling(flrAssetId, PRECISION_AUR.mul(10000000));
@@ -491,7 +491,7 @@ describe("Probity happy flow", function () {
   it("test reserve pool settlement + IOU sale", async () => {
     await flrColl.deposit({ value: COLL_AMOUNT });
 
-    await vaultEngine.connect(gov).initAsset(flrAssetId);
+    await vaultEngine.connect(gov).initAssetType(flrAssetId);
     await vaultEngine
       .connect(gov)
       .updateCeiling(flrAssetId, PRECISION_AUR.mul(10000000));

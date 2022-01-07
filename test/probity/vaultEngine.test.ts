@@ -77,7 +77,7 @@ describe("Vault Engine Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.connect(gov).initAsset(flrCollId);
+      await vaultEngine.connect(gov).initAssetType(flrCollId);
       await vaultEngine
         .connect(gov)
         .updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
@@ -198,7 +198,7 @@ describe("Vault Engine Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.connect(gov).initAsset(flrCollId);
+      await vaultEngine.connect(gov).initAssetType(flrCollId);
       await vaultEngine
         .connect(gov)
         .updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
@@ -332,7 +332,7 @@ describe("Vault Engine Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.connect(gov).initAsset(flrCollId);
+      await vaultEngine.connect(gov).initAssetType(flrCollId);
       await vaultEngine
         .connect(gov)
         .updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
@@ -392,7 +392,7 @@ describe("Vault Engine Unit Tests", function () {
     });
 
     it("tests the debt and equity accumulators are properly updated", async () => {
-      const collBefore = await vaultEngine.assets(flrCollId);
+      const collBefore = await vaultEngine.assetTypes(flrCollId);
       const debtToRaise = BigNumber.from("251035088626883475473007");
       const capToRaise = BigNumber.from("125509667994754929166541");
       await vaultEngine
@@ -405,7 +405,7 @@ describe("Vault Engine Unit Tests", function () {
           BigNumber.from(0)
         );
 
-      const collAfter = await vaultEngine.assets(flrCollId);
+      const collAfter = await vaultEngine.assetTypes(flrCollId);
       expect(collBefore.debtAccumulator.add(debtToRaise)).to.equal(
         collAfter.debtAccumulator
       );

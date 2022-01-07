@@ -59,7 +59,7 @@ interface VaultLike {
             uint256 lastEquityAccumulator
         );
 
-    function assets(bytes32 assetId)
+    function assetTypes(bytes32 assetId)
         external
         returns (
             uint256 debtAccumulator,
@@ -112,7 +112,7 @@ interface TreasuryLike {
 }
 
 interface LiquidatorLike {
-    function assets(bytes32 assetId)
+    function assetTypes(bytes32 assetId)
         external
         returns (
             address,
@@ -153,7 +153,7 @@ contract Shutdown is Stateful, Eventful {
     uint256 public initiatedAt;
     uint256 public auctionWaitPeriod = 2 days;
     uint256 public supplierWaitPeriod = 2 days;
-    mapping(bytes32 => Collateral) public assets;
+    mapping(bytes32 => Collateral) public assetTypes;
     mapping(bytes32 => mapping(address => uint256)) public collRedeemed;
     mapping(address => uint256) public stablecoin;
     uint256 public finalAurUtilizationRatio;
@@ -180,7 +180,7 @@ contract Shutdown is Stateful, Eventful {
 
     modifier onlyIfFinalPriceSet(bytes32 assetId) {
         require(
-            assets[assetId].finalPrice != 0,
+            assetTypes[assetId].finalPrice != 0,
             "Shutdown/onlyIfFinalPriceSet: Final Price has not been set for this assetId"
         );
         _;
@@ -272,9 +272,9 @@ contract Shutdown is Stateful, Eventful {
         uint256 price = priceFeed.getPrice(assetId);
         require(price != 0, "Shutdown/setFinalPrice: price retrieved is zero");
 
-        (, , , assets[assetId].normalizedDebt, , , ) = vaultEngine.assets(assetId);
+        (, , , assetTypes[assetId].normalizedDebt, , , ) = vaultEngine.assetTypes(assetId);
 
-        assets[assetId].finalPrice = price;
+        assetTypes[assetId].finalPrice = price;
     }
 
     // process the vault:
@@ -283,13 +283,13 @@ contract Shutdown is Stateful, Eventful {
     // suppliers's collateral should
     function processUserDebt(bytes32 assetId, address user) external onlyIfFinalPriceSet(assetId) {
         (, uint256 lockedColl, uint256 userDebt, , ) = vaultEngine.vaults(assetId, user);
-        (uint256 debtAccu, , , , , , ) = vaultEngine.assets(assetId);
+        (uint256 debtAccu, , , , , , ) = vaultEngine.assetTypes(assetId);
 
-        uint256 debtCollAmount = (userDebt * debtAccu) / assets[assetId].finalPrice;
+        uint256 debtCollAmount = (userDebt * debtAccu) / assetTypes[assetId].finalPrice;
         uint256 amountToGrab = min(lockedColl, debtCollAmount);
         uint256 gap = debtCollAmount - amountToGrab;
-        assets[assetId].gap += gap;
-        aurGap += gap * assets[assetId].finalPrice;
+        assetTypes[assetId].gap += gap;
+        aurGap += gap * assetTypes[assetId].finalPrice;
 
         vaultEngine.liquidateVault(
             assetId,
@@ -308,7 +308,7 @@ contract Shutdown is Stateful, Eventful {
 
         // how do we make it so this can be reused
         uint256 hookedAmount = (supplied * finalAurUtilizationRatio);
-        uint256 hookedCollAmount = hookedAmount / assets[assetId].finalPrice;
+        uint256 hookedCollAmount = hookedAmount / assetTypes[assetId].finalPrice;
         require(lockedColl > hookedCollAmount, "Shutdown/freeExcessCollateral: No collateral to free");
 
         uint256 amountToFree = lockedColl - hookedCollAmount;
@@ -351,17 +351,17 @@ contract Shutdown is Stateful, Eventful {
 
         (, uint256 lockedColl, , uint256 supplied, ) = vaultEngine.vaults(assetId, user);
 
-        (, uint256 equityAccumulator, , , , , ) = vaultEngine.assets(assetId);
+        (, uint256 equityAccumulator, , , , , ) = vaultEngine.assetTypes(assetId);
         uint256 hookedSuppliedAmount = (supplied * equityAccumulator * finalAurUtilizationRatio) / WAD;
         uint256 suppObligatedAmount = ((hookedSuppliedAmount * supplierObligationRatio) / WAD) /
-            assets[assetId].finalPrice;
+            assetTypes[assetId].finalPrice;
         uint256 amountToGrab = min(lockedColl, suppObligatedAmount);
 
-        if (amountToGrab > assets[assetId].gap) {
-            amountToGrab = assets[assetId].gap;
+        if (amountToGrab > assetTypes[assetId].gap) {
+            amountToGrab = assetTypes[assetId].gap;
         }
-        assets[assetId].gap -= amountToGrab;
-        aurGap -= amountToGrab * assets[assetId].finalPrice;
+        assetTypes[assetId].gap -= amountToGrab;
+        aurGap -= amountToGrab * assetTypes[assetId].finalPrice;
 
         vaultEngine.liquidateVault(
             assetId,
@@ -391,12 +391,12 @@ contract Shutdown is Stateful, Eventful {
     function calculateRedeemRatio(bytes32 assetId) external {
         require(finalDebtBalance != 0, "shutdown/calculateRedeemRatio: must set final debt balance first");
 
-        (uint256 debtAccu, , , , , , ) = vaultEngine.assets(assetId);
+        (uint256 debtAccu, , , , , , ) = vaultEngine.assetTypes(assetId);
 
-        uint256 normalizedDebt = assets[assetId].normalizedDebt;
+        uint256 normalizedDebt = assetTypes[assetId].normalizedDebt;
 
-        uint256 max = (normalizedDebt * debtAccu) / assets[assetId].finalPrice;
-        assets[assetId].redeemRatio = ((max - assets[assetId].gap) * RAY) / (finalDebtBalance / RAY);
+        uint256 max = (normalizedDebt * debtAccu) / assetTypes[assetId].finalPrice;
+        assetTypes[assetId].redeemRatio = ((max - assetTypes[assetId].gap) * RAY) / (finalDebtBalance / RAY);
     }
 
     function returnStablecoin(uint256 amount) external {
@@ -406,7 +406,7 @@ contract Shutdown is Stateful, Eventful {
 
     function redeemCollateral(bytes32 assetId) external {
         // can withdraw collateral returnedStablecoin * collateralPerAUR for collateral type
-        uint256 redeemAmount = ((stablecoin[msg.sender] / 1e9) * assets[assetId].redeemRatio) /
+        uint256 redeemAmount = ((stablecoin[msg.sender] / 1e9) * assetTypes[assetId].redeemRatio) /
             WAD /
             RAY -
             collRedeemed[assetId][msg.sender];

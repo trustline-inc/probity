@@ -79,7 +79,7 @@ const init = async () => {
   console.log(`Initializing ${token} collateral`);
   tx = await vaultEngine
     .connect(owner)
-    .initAsset(COLLATERAL[token], { gasLimit: 400000 });
+    .initAssetType(COLLATERAL[token], { gasLimit: 400000 });
   await tx.wait();
   console.log(`Vault: ${token} initialized`);
 
@@ -118,7 +118,7 @@ const init = async () => {
   // Initialize teller collateral type
   tx = await teller
     .connect(owner)
-    .initAsset(COLLATERAL[token], 0, { gasLimit: 300000 });
+    .initAssetType(COLLATERAL[token], 0, { gasLimit: 300000 });
   await tx.wait();
   console.log(`Teller: ${token} initialized`);
 
