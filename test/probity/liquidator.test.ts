@@ -256,7 +256,7 @@ describe("Liquidator Unit Tests", function () {
       expect(before.reservePool).to.equal(ADDRESS_ZERO);
       expect(before.collateralAmount).to.equal(0);
       expect(before.debtAmount).to.equal(0);
-      expect(before.capitalAmount).to.equal(0);
+      expect(before.equityAmount).to.equal(0);
 
       await liquidator.liquidateVault(flrCollId, user.address);
 
@@ -267,7 +267,7 @@ describe("Liquidator Unit Tests", function () {
       expect(after.reservePool).to.equal(reservePool.address);
       expect(after.collateralAmount).to.equal(EXPECTD_COLL_AMOUNT);
       expect(after.debtAmount).to.equal(EXPECTED_DEBT_AMOUNT);
-      expect(after.capitalAmount).to.equal(EXPECTED_CAPITAL_AMOUNT);
+      expect(after.equityAmount).to.equal(EXPECTED_CAPITAL_AMOUNT);
     });
 
     it("test that auctioneer's startAuction is called with correct parameters", async () => {

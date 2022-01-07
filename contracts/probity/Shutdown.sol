@@ -34,7 +34,7 @@ interface VaultLike {
 
     function totalDebt() external returns (uint256 value);
 
-    function totalCapital() external returns (uint256 value);
+    function totalEquity() external returns (uint256 value);
 
     function moveStablecoin(
         address from,
@@ -66,7 +66,7 @@ interface VaultLike {
             uint256 suppAccu,
             uint256 price,
             uint256 normDebt,
-            uint256 normCapital,
+            uint256 normEquity,
             uint256 ceiling,
             uint256 floor
         );
@@ -78,7 +78,7 @@ interface VaultLike {
         address reservePool,
         int256 collAmount,
         int256 debt,
-        int256 capital
+        int256 equity
     ) external;
 }
 
@@ -257,12 +257,12 @@ contract Shutdown is Stateful, Eventful {
         liquidator.setShutdownState();
 
         uint256 totalDebt = vaultEngine.totalDebt();
-        uint256 totalCapital = vaultEngine.totalCapital();
-        if (totalCapital != 0) {
-            if (totalDebt >= totalCapital) {
+        uint256 totalEquity = vaultEngine.totalEquity();
+        if (totalEquity != 0) {
+            if (totalDebt >= totalEquity) {
                 finalAurUtilizationRatio = RAY;
             } else {
-                finalAurUtilizationRatio = wdiv(totalDebt, totalCapital);
+                finalAurUtilizationRatio = wdiv(totalDebt, totalEquity);
             }
         }
     }
@@ -346,13 +346,13 @@ contract Shutdown is Stateful, Eventful {
     }
 
     // process supplier side to fill the aur Gap created by under collateralized vaults
-    function processUserCapital(bytes32 collId, address user) external {
-        require(supplierObligationRatio != 0, "Shutdown/processUserCapital:Supplier has no obligation");
+    function processUserEquity(bytes32 collId, address user) external {
+        require(supplierObligationRatio != 0, "Shutdown/processUserEquity:Supplier has no obligation");
 
         (, uint256 lockedColl, , uint256 supplied, ) = vaultEngine.vaults(collId, user);
 
-        (, uint256 capitalAccumulator, , , , , ) = vaultEngine.collateralTypes(collId);
-        uint256 hookedSuppliedAmount = (supplied * capitalAccumulator * finalAurUtilizationRatio) / WAD;
+        (, uint256 equityAccumulator, , , , , ) = vaultEngine.collateralTypes(collId);
+        uint256 hookedSuppliedAmount = (supplied * equityAccumulator * finalAurUtilizationRatio) / WAD;
         uint256 suppObligatedAmount = ((hookedSuppliedAmount * supplierObligationRatio) / WAD) /
             collateralTypes[collId].finalPrice;
         uint256 amountToGrab = min(lockedColl, suppObligatedAmount);

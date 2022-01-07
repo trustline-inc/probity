@@ -68,7 +68,7 @@ describe("Vault Engine Unit Tests", function () {
     await registry.setupAddress(bytes32("whiteListed"), owner.address);
   });
 
-  describe("modifyCapital Unit Tests", function () {
+  describe("modifyEquity Unit Tests", function () {
     const COLL_AMOUNT_CAPITAL = PRECISION_COLL.mul(10000);
     const CAPITAL_AMOUNT = PRECISION_AUR.mul(2000);
 
@@ -92,12 +92,12 @@ describe("Vault Engine Unit Tests", function () {
         .modifyCollateral(flrCollId, owner.address, COLL_AMOUNT_CAPITAL);
     });
 
-    it("only whitelisted user can call modifyCapital", async () => {
+    it("only whitelisted user can call modifyEquity", async () => {
       await registry
         .connect(gov)
         .setupAddress(bytes32("notWhitelisted"), owner.address);
       await assertRevert(
-        vaultEngine.modifyCapital(
+        vaultEngine.modifyEquity(
           flrCollId,
           treasury.address,
           COLL_AMOUNT_CAPITAL,
@@ -110,7 +110,7 @@ describe("Vault Engine Unit Tests", function () {
         .connect(gov)
         .setupAddress(bytes32("whiteListed"), owner.address);
 
-      await vaultEngine.modifyCapital(
+      await vaultEngine.modifyEquity(
         flrCollId,
         treasury.address,
         COLL_AMOUNT_CAPITAL,
@@ -130,16 +130,16 @@ describe("Vault Engine Unit Tests", function () {
         .updateFloor(flrCollId, PRECISION_AUR.mul(1000));
 
       await assertRevert(
-        vaultEngine.modifyCapital(
+        vaultEngine.modifyEquity(
           flrCollId,
           treasury.address,
           COLL_AMOUNT_CAPITAL,
           CAPITAL_AMOUNT_UNDER_FLOOR
         ),
-        "Vault/modifyCapital: Capital smaller than floor"
+        "Vault/modifyEquity: Equity smaller than floor"
       );
 
-      await vaultEngine.modifyCapital(
+      await vaultEngine.modifyEquity(
         flrCollId,
         treasury.address,
         COLL_AMOUNT_CAPITAL,
@@ -151,7 +151,7 @@ describe("Vault Engine Unit Tests", function () {
       const before = await vaultEngine.getUserList();
       expect(before.length).to.equal(0);
 
-      await vaultEngine.modifyCapital(
+      await vaultEngine.modifyEquity(
         flrCollId,
         treasury.address,
         COLL_AMOUNT_CAPITAL,
@@ -164,7 +164,7 @@ describe("Vault Engine Unit Tests", function () {
     });
 
     it("tests existing user is NOT added to userList", async () => {
-      await vaultEngine.modifyCapital(
+      await vaultEngine.modifyEquity(
         flrCollId,
         treasury.address,
         COLL_AMOUNT_CAPITAL.div(2),
@@ -174,7 +174,7 @@ describe("Vault Engine Unit Tests", function () {
       const before = await vaultEngine.getUserList();
       expect(before.length).to.equal(1);
 
-      await vaultEngine.modifyCapital(
+      await vaultEngine.modifyEquity(
         flrCollId,
         treasury.address,
         COLL_AMOUNT_CAPITAL.div(2),
@@ -219,7 +219,7 @@ describe("Vault Engine Unit Tests", function () {
 
       await vaultEngine
         .connect(user)
-        .modifyCapital(
+        .modifyEquity(
           flrCollId,
           treasury.address,
           COLL_AMOUNT_CAPITAL,
@@ -350,7 +350,7 @@ describe("Vault Engine Unit Tests", function () {
         .connect(gov)
         .updateAdjustedPrice(flrCollId, PRECISION_PRICE.mul(1));
 
-      await vaultEngine.modifyCapital(
+      await vaultEngine.modifyEquity(
         flrCollId,
         treasury.address,
         COLL_AMOUNT_CAPITAL,
@@ -391,7 +391,7 @@ describe("Vault Engine Unit Tests", function () {
         );
     });
 
-    it("tests the debt and capital accumulators are properly updated", async () => {
+    it("tests the debt and equity accumulators are properly updated", async () => {
       const collBefore = await vaultEngine.collateralTypes(flrCollId);
       const debtToRaise = BigNumber.from("251035088626883475473007");
       const capToRaise = BigNumber.from("125509667994754929166541");
@@ -409,12 +409,12 @@ describe("Vault Engine Unit Tests", function () {
       expect(collBefore.debtAccumulator.add(debtToRaise)).to.equal(
         collAfter.debtAccumulator
       );
-      expect(collBefore.capitalAccumulator.add(capToRaise)).to.equal(
-        collAfter.capitalAccumulator
+      expect(collBefore.equityAccumulator.add(capToRaise)).to.equal(
+        collAfter.equityAccumulator
       );
     });
 
-    it("fails if new capital + protocolFee is higher than new debt", async () => {
+    it("fails if new equity + protocolFee is higher than new debt", async () => {
       const debtToRaise = BigNumber.from("251035088626883475473007");
       let capToRaise = debtToRaise.add(1);
       await assertRevert(
@@ -427,7 +427,7 @@ describe("Vault Engine Unit Tests", function () {
             capToRaise,
             BigNumber.from(0)
           ),
-        "VaultEngine/UpdateAccumulator: new capital created is higher than new debt"
+        "VaultEngine/UpdateAccumulator: new equity created is higher than new debt"
       );
 
       capToRaise = BigNumber.from("125509667994754929166541");

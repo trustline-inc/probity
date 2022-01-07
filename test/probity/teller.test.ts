@@ -126,7 +126,7 @@ describe("Teller Unit Tests", function () {
       await teller.initCollType(flrCollId, 0);
       await vaultEngine.initCollType(flrCollId);
       await vaultEngine.setTotalDebt(DEBT_TO_SET);
-      await vaultEngine.setTotalCapital(CAPITAL_TO_SET);
+      await vaultEngine.setTotalEquity(CAPITAL_TO_SET);
     });
 
     it("fails if collType has not been initialized", async () => {
@@ -151,48 +151,48 @@ describe("Teller Unit Tests", function () {
       expect(after[1]).to.equal(EXPECTED_UTILIAZATION_RATIO);
     });
 
-    it("fail if totalCapital is 0", async () => {
-      await vaultEngine.setTotalCapital(0);
+    it("fail if totalEquity is 0", async () => {
+      await vaultEngine.setTotalEquity(0);
       await assertRevert(
         teller.updateAccumulator(flrCollId),
-        "Teller/UpdateAccumulator: Total capital can not be zero"
+        "Teller/UpdateAccumulator: Total equity can not be zero"
       );
-      await vaultEngine.setTotalCapital(CAPITAL_TO_SET);
+      await vaultEngine.setTotalEquity(CAPITAL_TO_SET);
 
       await teller.updateAccumulator(flrCollId);
     });
 
     it("tests that APR is set properly", async () => {
       await vaultEngine.setTotalDebt(PRECISION_AUR.mul(25));
-      await vaultEngine.setTotalCapital(PRECISION_AUR.mul(100));
+      await vaultEngine.setTotalEquity(PRECISION_AUR.mul(100));
 
       await teller.updateAccumulator(flrCollId);
       let apr = await teller.apr();
       expect(apr).to.equal("1015000000000000000000000000");
 
       await vaultEngine.setTotalDebt(PRECISION_AUR.mul(50));
-      await vaultEngine.setTotalCapital(PRECISION_AUR.mul(100));
+      await vaultEngine.setTotalEquity(PRECISION_AUR.mul(100));
 
       await teller.updateAccumulator(flrCollId);
       apr = await teller.apr();
       expect(apr).to.equal("1020000000000000000000000000");
 
       await vaultEngine.setTotalDebt(PRECISION_AUR.mul(75));
-      await vaultEngine.setTotalCapital(PRECISION_AUR.mul(100));
+      await vaultEngine.setTotalEquity(PRECISION_AUR.mul(100));
 
       await teller.updateAccumulator(flrCollId);
       apr = await teller.apr();
       expect(apr).to.equal("1040000000000000000000000000");
 
       await vaultEngine.setTotalDebt(PRECISION_AUR.mul(90));
-      await vaultEngine.setTotalCapital(PRECISION_AUR.mul(100));
+      await vaultEngine.setTotalEquity(PRECISION_AUR.mul(100));
 
       await teller.updateAccumulator(flrCollId);
       apr = await teller.apr();
       expect(apr).to.equal("1100000000000000000000000000");
 
       await vaultEngine.setTotalDebt(PRECISION_AUR.mul(95));
-      await vaultEngine.setTotalCapital(PRECISION_AUR.mul(100));
+      await vaultEngine.setTotalEquity(PRECISION_AUR.mul(100));
 
       await teller.updateAccumulator(flrCollId);
       apr = await teller.apr();
@@ -201,28 +201,28 @@ describe("Teller Unit Tests", function () {
 
     it("tests that APR won't go over MAX_APR", async () => {
       await vaultEngine.setTotalDebt(PRECISION_AUR.mul(990));
-      await vaultEngine.setTotalCapital(PRECISION_AUR.mul(1000));
+      await vaultEngine.setTotalEquity(PRECISION_AUR.mul(1000));
 
       await teller.updateAccumulator(flrCollId);
       let apr = await teller.apr();
       expect(apr).to.equal("2000000000000000000000000000");
 
       await vaultEngine.setTotalDebt(PRECISION_AUR.mul(995));
-      await vaultEngine.setTotalCapital(PRECISION_AUR.mul(1000));
+      await vaultEngine.setTotalEquity(PRECISION_AUR.mul(1000));
 
       await teller.updateAccumulator(flrCollId);
       apr = await teller.apr();
       expect(apr).to.equal("2000000000000000000000000000");
 
       await vaultEngine.setTotalDebt(PRECISION_AUR.mul(1000));
-      await vaultEngine.setTotalCapital(PRECISION_AUR.mul(1000));
+      await vaultEngine.setTotalEquity(PRECISION_AUR.mul(1000));
 
       await teller.updateAccumulator(flrCollId);
       apr = await teller.apr();
       expect(apr).to.equal("2000000000000000000000000000");
 
       await vaultEngine.setTotalDebt(PRECISION_AUR.mul(1100));
-      await vaultEngine.setTotalCapital(PRECISION_AUR.mul(1000));
+      await vaultEngine.setTotalEquity(PRECISION_AUR.mul(1000));
 
       await teller.updateAccumulator(flrCollId);
       apr = await teller.apr();
@@ -341,7 +341,7 @@ describe("Teller Unit Tests", function () {
       let lastUpdatedBefore = (await teller.collateralTypes(flrCollId))[0];
       let captialAccumulatorBefore = (
         await vaultEngine.collateralTypes(flrCollId)
-      ).capitalAccumulator;
+      ).equityAccumulator;
       let before = await vaultEngine.collateralTypes(flrCollId);
       expect(before[1]).to.equal(DEFAULT_SUPP_ACCUMULATOR);
       await increaseTime(TIME_TO_INCREASE);
