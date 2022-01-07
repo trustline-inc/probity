@@ -20,16 +20,16 @@ contract VaultEngineSB is Stateful, Eventful {
         uint256 freeCollateral; // Collateral that is currently free
         uint256 usedCollateral; // Collateral that is being utilized
         uint256 debt; // Vault's debt balance
-        uint256 capital; // Vault's capital balance
-        uint256 lastCapitalAccumulator; // Most recent value of the capital rate accumulator
+        uint256 equity; // Vault's equity balance
+        uint256 lastEquityAccumulator; // Most recent value of the equity rate accumulator
     }
 
     struct Collateral {
         uint256 debtAccumulator; // Cumulative debt rate
-        uint256 capitalAccumulator; // Cumulative capital rate
+        uint256 equityAccumulator; // Cumulative equity rate
         uint256 adjustedPrice; // Price adjusted for collateral ratio
         uint256 normDebt; // Normalized debt
-        uint256 normCapital; // Normalized capital
+        uint256 normEquity; // Normalized equity
         uint256 ceiling; // Max. amount that can be supplied/borrowed
         uint256 floor; // Min. amount of that must be supplied/borrowed
     }
@@ -40,7 +40,7 @@ contract VaultEngineSB is Stateful, Eventful {
     uint256 private constant PRECISION_PRICE = 10**27;
 
     uint256 public totalDebt;
-    uint256 public totalCapital;
+    uint256 public totalEquity;
     uint256 public totalunbackedStablecoin;
     address[] public userList;
     mapping(address => bool) userExists;
@@ -57,7 +57,7 @@ contract VaultEngineSB is Stateful, Eventful {
     // Events
     /////////////////////////////////////////
 
-    event CapitalModified(address indexed user, int256 collAmount, int256 capitalAmount);
+    event EquityModified(address indexed user, int256 collAmount, int256 equityAmount);
     event DebtModified(address indexed user, int256 collAmount, int256 debtAmount);
 
     /////////////////////////////////////////
@@ -89,7 +89,7 @@ contract VaultEngineSB is Stateful, Eventful {
         returns (
             uint256 lockedCollValue,
             uint256 debtPosition,
-            uint256 capitalPosition
+            uint256 equityPosition
         )
     {
         Vault storage vault = vaults[collId][user];
@@ -97,7 +97,7 @@ contract VaultEngineSB is Stateful, Eventful {
         return (
             vault.usedCollateral * coll.adjustedPrice,
             vault.debt * coll.debtAccumulator,
-            vault.capital * coll.capitalAccumulator
+            vault.equity * coll.equityAccumulator
         );
     }
 
@@ -181,28 +181,28 @@ contract VaultEngineSB is Stateful, Eventful {
     function collectInterest(bytes32 collId) public {
         Vault memory vault = vaults[collId][msg.sender];
         Collateral memory collateral = collateralTypes[collId];
-        pbt[msg.sender] += vault.capital * (collateral.capitalAccumulator - vault.lastCapitalAccumulator);
-        stablecoin[msg.sender] += vault.capital * (collateral.capitalAccumulator - vault.lastCapitalAccumulator);
+        pbt[msg.sender] += vault.equity * (collateral.equityAccumulator - vault.lastEquityAccumulator);
+        stablecoin[msg.sender] += vault.equity * (collateral.equityAccumulator - vault.lastEquityAccumulator);
 
-        vaults[collId][msg.sender].lastCapitalAccumulator = collateral.capitalAccumulator;
+        vaults[collId][msg.sender].lastEquityAccumulator = collateral.equityAccumulator;
     }
 
     /**
-     * @notice Adds capital to the caller's vault
+     * @notice Adds equity to the caller's vault
      * @param collId The ID of the collateral type being modified
      * @param treasuryAddress A registered treasury contract address
      * @param collAmount The amount of collateral to add
-     * @param capitalAmount The amount of capital to add
+     * @param equityAmount The amount of equity to add
      */
-    function modifyCapital(
+    function modifyEquity(
         bytes32 collId,
         address treasuryAddress,
         int256 collAmount,
-        int256 capitalAmount
+        int256 equityAmount
     ) external onlyByWhiteListed {
         require(
             registry.checkValidity("treasury", treasuryAddress),
-            "Vault/modifyCapital: Treasury address is not valid"
+            "Vault/modifyEquity: Treasury address is not valid"
         );
 
         if (!userExists[msg.sender]) {
@@ -231,7 +231,7 @@ contract VaultEngineSB is Stateful, Eventful {
 
         stablecoin[treasuryAddress] = add(stablecoin[treasuryAddress], capitalAmount);
 
-        emit CapitalModified(msg.sender, collAmount, capitalAmount);
+        emit EquityModified(msg.sender, collAmount, equityAmount);
     }
 
     /**
@@ -257,7 +257,7 @@ contract VaultEngineSB is Stateful, Eventful {
         if (debtAmount > 0) {
             require(
                 stablecoin[treasuryAddress] >= uint256(debtAmount),
-                "Vault/modifyDebt: Treasury doesn't have enough capital to loan this amount"
+                "Vault/modifyDebt: Treasury doesn't have enough equity to loan this amount"
             );
         }
 
@@ -295,7 +295,7 @@ contract VaultEngineSB is Stateful, Eventful {
      * @param reservePool The address of the desired reserve pool contract
      * @param collateralAmount The amount of collateral to liquidate
      * @param debtAmount The amount of debt to clear
-     * @param capitalAmount The amount of capital to clear
+     * @param equityAmount The amount of equity to clear
      */
     function liquidateVault(
         bytes32 collId,
@@ -304,17 +304,17 @@ contract VaultEngineSB is Stateful, Eventful {
         address reservePool,
         int256 collateralAmount,
         int256 debtAmount,
-        int256 capitalAmount
+        int256 equityAmount
     ) external onlyByProbity {
         Vault storage vault = vaults[collId][user];
         Collateral storage coll = collateralTypes[collId];
 
         vault.usedCollateral = add(vault.usedCollateral, collateralAmount);
         vault.debt = add(vault.debt, debtAmount);
-        vault.capital = add(vault.capital, capitalAmount);
+        vault.equity = add(vault.equity, equityAmount);
         coll.normDebt = add(coll.normDebt, debtAmount);
-        coll.normCapital = add(coll.normCapital, capitalAmount);
-        int256 aurToRaise = mul(coll.debtAccumulator, debtAmount) + mul(PRECISION_PRICE, capitalAmount);
+        coll.normEquity = add(coll.normEquity, equityAmount);
+        int256 aurToRaise = mul(coll.debtAccumulator, debtAmount) + mul(PRECISION_PRICE, equityAmount);
 
         vaults[collId][auctioneer].freeCollateral = sub(vaults[collId][auctioneer].freeCollateral, collateralAmount);
         unbackedStablecoin[reservePool] = sub(unbackedStablecoin[reservePool], aurToRaise);
@@ -349,7 +349,7 @@ contract VaultEngineSB is Stateful, Eventful {
      */
     function initCollType(bytes32 collId) external onlyBy("gov") {
         collateralTypes[collId].debtAccumulator = PRECISION_PRICE;
-        collateralTypes[collId].capitalAccumulator = PRECISION_PRICE;
+        collateralTypes[collId].equityAccumulator = PRECISION_PRICE;
     }
 
     /**
@@ -387,7 +387,7 @@ contract VaultEngineSB is Stateful, Eventful {
      */
     function checkVaultUnderLimit(bytes32 collId, Vault memory vault) internal view {
         require(
-            (vault.debt * collateralTypes[collId].debtAccumulator) + (vault.capital * PRECISION_PRICE) <=
+            (vault.debt * collateralTypes[collId].debtAccumulator) + (vault.equity * PRECISION_PRICE) <=
                 individualVaultLimit,
             "Vault is over the individual vault limit"
         );
@@ -397,13 +397,13 @@ contract VaultEngineSB is Stateful, Eventful {
      * @dev Updates cumulative indices for the specified collateral type
      * @param collId The collateral type ID
      * @param debtRateIncrease The new rate to increase for debt
-     * @param capitalRateIncrease The new rate to increase for capital
+     * @param equityRateIncrease The new rate to increase for equity
      */
     function updateAccumulators(
         bytes32 collId,
         address reservePool,
         uint256 debtRateIncrease,
-        uint256 capitalRateIncrease,
+        uint256 equityRateIncrease,
         uint256 protocolFeeRates
     ) external onlyBy("teller") {
         emit LogVarUpdate(
@@ -416,26 +416,26 @@ contract VaultEngineSB is Stateful, Eventful {
         emit LogVarUpdate(
             "Vault",
             collId,
-            "capitalAccumulator",
-            collateralTypes[collId].capitalAccumulator,
-            capitalRateIncrease
+            "equityAccumulator",
+            collateralTypes[collId].equityAccumulator,
+            equityRateIncrease
         );
 
         Collateral storage coll = collateralTypes[collId];
         uint256 newDebt = coll.normDebt * debtRateIncrease;
-        uint256 newCapital = coll.normCapital * capitalRateIncrease;
+        uint256 newEquity = coll.normEquity * equityRateIncrease;
 
-        totalCapital += newCapital;
+        totalEquity += newEquity;
         totalDebt += newDebt;
 
         coll.debtAccumulator += debtRateIncrease;
-        coll.capitalAccumulator += capitalRateIncrease;
+        coll.equityAccumulator += equityRateIncrease;
 
-        uint256 protocolFeeToCollect = coll.normCapital * protocolFeeRates;
+        uint256 protocolFeeToCollect = coll.normEquity * protocolFeeRates;
 
         require(
-            newCapital + protocolFeeToCollect <= newDebt,
-            "VaultEngine/UpdateAccumulator: new capital created is higher than new debt"
+            newEquity + protocolFeeToCollect <= newDebt,
+            "VaultEngine/UpdateAccumulator: new equity created is higher than new debt"
         );
         stablecoin[reservePool] += protocolFeeToCollect;
     }
@@ -461,7 +461,7 @@ contract VaultEngineSB is Stateful, Eventful {
      */
     function certify(bytes32 collId, Vault memory vault) internal view {
         require(
-            (vault.debt * collateralTypes[collId].debtAccumulator) + (vault.capital * PRECISION_PRICE) <=
+            (vault.debt * collateralTypes[collId].debtAccumulator) + (vault.equity * PRECISION_PRICE) <=
                 vault.usedCollateral * collateralTypes[collId].adjustedPrice,
             "Vault/certify: Not enough collateral"
         );

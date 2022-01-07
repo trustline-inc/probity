@@ -149,9 +149,9 @@ describe("Liquidator Unit Tests", function () {
   describe("liquidateVault Unit Tests", function () {
     const VAULT_LOCKED_COLL = PRECISION_COLL.mul(999);
     const VAULT_DEBT = PRECISION_COLL.mul(500);
-    const VAULT_CAPITAL = PRECISION_COLL.mul(500);
+    const VAULT_EQUITY = PRECISION_COLL.mul(500);
     const DEBT_ACCUMULATOR = PRECISION_PRICE;
-    const CAPITAL_ACCUMULATOR = PRECISION_PRICE;
+    const EQUITY_ACCUMULATOR = PRECISION_PRICE;
     const PRICE = PRECISION_PRICE;
 
     beforeEach(async function () {
@@ -160,7 +160,7 @@ describe("Liquidator Unit Tests", function () {
         flrCollId,
         PRICE,
         VAULT_DEBT,
-        VAULT_CAPITAL,
+        VAULT_EQUITY,
         PRECISION_AUR.mul(1000000),
         0
       );
@@ -168,7 +168,7 @@ describe("Liquidator Unit Tests", function () {
         flrCollId,
         reservePool.address,
         DEBT_ACCUMULATOR,
-        CAPITAL_ACCUMULATOR,
+        EQUITY_ACCUMULATOR,
         0
       );
       await vaultEngine.updateVault(
@@ -177,7 +177,7 @@ describe("Liquidator Unit Tests", function () {
         0,
         VAULT_LOCKED_COLL,
         VAULT_DEBT,
-        VAULT_CAPITAL,
+        VAULT_EQUITY,
         0
       );
     });
@@ -196,7 +196,7 @@ describe("Liquidator Unit Tests", function () {
         0,
         VAULT_LOCKED_COLL,
         VAULT_DEBT,
-        VAULT_CAPITAL,
+        VAULT_EQUITY,
         0
       );
 
@@ -210,7 +210,7 @@ describe("Liquidator Unit Tests", function () {
         0,
         VAULT_LOCKED_COLL.add(PRECISION_COLL.mul(2)),
         VAULT_DEBT,
-        VAULT_CAPITAL,
+        VAULT_EQUITY,
         0
       );
 
@@ -225,7 +225,7 @@ describe("Liquidator Unit Tests", function () {
         0,
         VAULT_LOCKED_COLL,
         VAULT_DEBT,
-        VAULT_CAPITAL,
+        VAULT_EQUITY,
         0
       );
 
@@ -234,7 +234,7 @@ describe("Liquidator Unit Tests", function () {
 
     it("test that reservePool's addAuctionDebt is called with correct parameters", async () => {
       const EXPECTED_AUCTION_DEBT =
-        VAULT_DEBT.add(VAULT_CAPITAL).mul(DEBT_ACCUMULATOR);
+        VAULT_DEBT.add(VAULT_EQUITY).mul(DEBT_ACCUMULATOR);
 
       const before = await reservePool.lastAddAuctionDebtAmount();
       expect(before).to.equal(0);
@@ -247,7 +247,7 @@ describe("Liquidator Unit Tests", function () {
     it("test that vaultEngine's liquidateVault is called with correct parameters", async () => {
       const EXPECTD_COLL_AMOUNT = PRECISION_COLL.mul(0).sub(VAULT_LOCKED_COLL);
       const EXPECTED_DEBT_AMOUNT = PRECISION_COLL.mul(0).sub(VAULT_DEBT);
-      const EXPECTED_CAPITAL_AMOUNT = PRECISION_COLL.mul(0).sub(VAULT_CAPITAL);
+      const EXPECTED_EQUITY_AMOUNT = PRECISION_COLL.mul(0).sub(VAULT_EQUITY);
 
       const before = await vaultEngine.lastLiquidateVaultCall();
       expect(before.collId).to.equal(bytes32(""));
@@ -256,7 +256,7 @@ describe("Liquidator Unit Tests", function () {
       expect(before.reservePool).to.equal(ADDRESS_ZERO);
       expect(before.collateralAmount).to.equal(0);
       expect(before.debtAmount).to.equal(0);
-      expect(before.capitalAmount).to.equal(0);
+      expect(before.equityAmount).to.equal(0);
 
       await liquidator.liquidateVault(flrCollId, user.address);
 
@@ -267,13 +267,13 @@ describe("Liquidator Unit Tests", function () {
       expect(after.reservePool).to.equal(reservePool.address);
       expect(after.collateralAmount).to.equal(EXPECTD_COLL_AMOUNT);
       expect(after.debtAmount).to.equal(EXPECTED_DEBT_AMOUNT);
-      expect(after.capitalAmount).to.equal(EXPECTED_CAPITAL_AMOUNT);
+      expect(after.equityAmount).to.equal(EXPECTED_EQUITY_AMOUNT);
     });
 
     it("test that auctioneer's startAuction is called with correct parameters", async () => {
       const EXPECTED_DEBT_SIZE = VAULT_DEBT.mul(117)
         .div(100)
-        .add(VAULT_CAPITAL.mul(105).div(100))
+        .add(VAULT_EQUITY.mul(105).div(100))
         .mul(DEBT_ACCUMULATOR);
       const before = await auctioneer.lastStartAuctionCall();
       expect(before.collId).to.equal(bytes32(""));

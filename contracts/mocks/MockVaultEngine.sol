@@ -5,16 +5,16 @@ contract MockVaultEngine {
         uint256 freeCollateral; // Collateral that is currently free
         uint256 usedCollateral; // Collateral that is being utilized
         uint256 debt; // Vault's debt balance
-        uint256 capital; // Vault's capital balance
-        uint256 lastCapitalAccumulator; // Most recent value of the capital rate accumulator
+        uint256 equity; // Vault's equity balance
+        uint256 lastEquityAccumulator; // Most recent value of the equity rate accumulator
     }
 
     struct Collateral {
         uint256 debtAccumulator; // Cumulative debt rate
-        uint256 capitalAccumulator; // Cumulative capital rate
+        uint256 equityAccumulator; // Cumulative equity rate
         uint256 price; // Price adjusted for collateral ratio
         uint256 normDebt; // Normalized debt
-        uint256 normCapital; // Normalized supply
+        uint256 normEquity; // Normalized supply
         uint256 ceiling; // Max. amount that can be supplied/borrowed
         uint256 floor; // Min. amount of that must be supplied/borrowed
     }
@@ -26,7 +26,7 @@ contract MockVaultEngine {
         address reservePool;
         int256 collateralAmount;
         int256 debtAmount;
-        int256 capitalAmount;
+        int256 equityAmount;
     }
 
     mapping(bytes32 => mapping(address => Vault)) public vaults;
@@ -38,7 +38,7 @@ contract MockVaultEngine {
 
     uint256 public protocolFeeRates;
     uint256 public totalDebt;
-    uint256 public totalCapital;
+    uint256 public totalEquity;
     LiquidateVaultCall public lastLiquidateVaultCall;
 
     function addStablecoin(address user, uint256 amount) external {
@@ -81,20 +81,20 @@ contract MockVaultEngine {
     }
 
     // added for testing purposes
-    function setTotalCapital(uint256 newTotalCapital) external {
-        totalCapital = newTotalCapital;
+    function setTotalEquity(uint256 newTotalEquity) external {
+        totalEquity = newTotalEquity;
     }
 
     function initCollType(bytes32 collId) external {
         collateralTypes[collId].debtAccumulator = 1e27;
-        collateralTypes[collId].capitalAccumulator = 1e27;
+        collateralTypes[collId].equityAccumulator = 1e27;
     }
 
     function updateCollateralType(
         bytes32 collId,
         uint256 price,
         uint256 normDebt,
-        uint256 normCapital,
+        uint256 normEquity,
         uint256 ceiling,
         uint256 floor
     ) external {
@@ -102,7 +102,7 @@ contract MockVaultEngine {
 
         coll.price = price;
         coll.normDebt = normDebt;
-        coll.normCapital = normCapital;
+        coll.normEquity = normEquity;
         coll.ceiling = ceiling;
         coll.floor = floor;
     }
@@ -111,22 +111,22 @@ contract MockVaultEngine {
         bytes32 collId,
         address reservePool,
         uint256 debtAccumulator,
-        uint256 capitalAccumulator,
+        uint256 equityAccumulator,
         uint256 protocolFeeRates_
     ) external {
         Collateral storage coll = collateralTypes[collId];
         coll.debtAccumulator += debtAccumulator;
-        coll.capitalAccumulator += capitalAccumulator;
+        coll.equityAccumulator += equityAccumulator;
         protocolFeeRates = protocolFeeRates_;
     }
 
     function updateNormValues(
         bytes32 collId,
         uint256 normDebt,
-        uint256 normCapital
+        uint256 normEquity
     ) external {
         collateralTypes[collId].normDebt = normDebt;
-        collateralTypes[collId].normCapital = normCapital;
+        collateralTypes[collId].normEquity = normEquity;
     }
 
     function updateVault(
@@ -135,15 +135,15 @@ contract MockVaultEngine {
         uint256 freeColl,
         uint256 usedColl,
         uint256 debt,
-        uint256 capital,
-        uint256 lastCapitalAccumulator
+        uint256 equity,
+        uint256 lastEquityAccumulator
     ) external {
         Vault storage vault = vaults[collId][user];
         vault.freeCollateral = freeColl;
         vault.usedCollateral = usedColl;
         vault.debt = debt;
-        vault.capital = capital;
-        vault.lastCapitalAccumulator = lastCapitalAccumulator;
+        vault.equity = equity;
+        vault.lastEquityAccumulator = lastEquityAccumulator;
     }
 
     function setShutdownState() external {
@@ -157,7 +157,7 @@ contract MockVaultEngine {
         address reservePool,
         int256 collateralAmount,
         int256 debtAmount,
-        int256 capitalAmount
+        int256 equityAmount
     ) external {
         lastLiquidateVaultCall = LiquidateVaultCall(
             collId,
@@ -166,7 +166,7 @@ contract MockVaultEngine {
             reservePool,
             collateralAmount,
             debtAmount,
-            capitalAmount
+            equityAmount
         );
     }
 
