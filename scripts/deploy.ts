@@ -4,12 +4,19 @@ import * as fs from "fs";
 
 async function main() {
   let deployment: Deployment;
+  let idempotent: boolean;
+  idempotent = false;
 
   const stablecoin: string = process.env.STABLECOIN
     ? process.env.STABLECOIN.toLowerCase()
     : "aurei";
   if (!["phi", "aurei"].includes(stablecoin))
     throw Error('STABLECOIN envvar must be set to "phi" or "aurei".');
+
+  if (process.env.IDEMPOTENT === "true") {
+    console.info("deploying idempotently");
+    idempotent = true;
+  }
 
   if (process.env.NETWORK === "local") {
     console.info("Deploying in Local Mode");

@@ -1060,14 +1060,23 @@ const deployMockReservePool = async () => {
 const deployMocks = async () => {
   const signers = await getSigners();
   await deployMockERC20();
+  await sleep(15000);
   await deployMockVPToken();
+  await sleep(15000);
   await deployMockFtso();
+  await sleep(15000);
   await deployMockFtsoManager();
+  await sleep(15000);
   await deployMockFtsoRewardManager();
+  await sleep(15000);
   await deployMockPriceFeed();
+  await sleep(15000);
   await deployMockReservePool();
+  await sleep(15000);
   await deployMockAuctioneer();
+  await sleep(15000);
   await deployMockLiquidator();
+  await sleep(15000);
 
   return { contracts, signers };
 };
@@ -1080,21 +1089,31 @@ const deployProbity = async (stablecoin?: string) => {
   let contracts =
     stablecoin === "aurei" ? await deployAurei() : await deployPhi();
   await deployPbt();
+  await sleep(15000);
   await deployApr();
+  await sleep(15000);
   contracts =
     stablecoin === "aurei"
       ? await deployVaultEngine()
       : await deployVaultEngineSB();
   await deployNativeCollateral();
+  await sleep(15000);
   await deployReservePool();
+  await sleep(15000);
   await deployTeller();
+  await sleep(15000);
   await deployPriceCalc();
+  await sleep(15000);
   await deployPriceFeed();
+  await sleep(15000);
   await deployTreasury({
     stablecoin: contracts[stablecoin.toLowerCase()].address,
   });
+  await sleep(15000);
   await deployLiquidator();
+  await sleep(15000);
   await deployShutdown();
+  await sleep(15000);
 
   return { contracts, signers };
 };
@@ -1103,14 +1122,25 @@ const deployProbity = async (stablecoin?: string) => {
 // Deployments by environment
 ////
 
-const deployLocal = async (stablecoin?: string) => {
+function sleep(ms: number) {
+  console.log(`sleeping for ${ms} ms`);
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+const deployLocal = async (stablecoin?: string, idempotent = false) => {
   const signers = await getSigners();
   await deployRegistry();
+  await sleep(15000);
   await deployMocks();
+  await sleep(15000);
   await deployProbity(stablecoin);
+  await sleep(15000);
   await deployAuctioneer();
+  await sleep(15000);
   await deployERC20Collateral();
+  await sleep(15000);
   await deployVPTokenCollateral();
+  await sleep(15000);
   return { contracts, signers };
 };
 
