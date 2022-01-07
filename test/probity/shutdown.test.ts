@@ -263,9 +263,9 @@ describe("Shutdown Unit Tests", function () {
     });
 
     it("tests values are properly set", async () => {
-      const CAPITAL_TO_SET = PRECISION_AUR.mul(1000);
+      const EQUITY_TO_SET = PRECISION_AUR.mul(1000);
       const DEBT_TO_SET = PRECISION_AUR.mul(342);
-      const EXPECTED_UTIL_RATIO = wdiv(DEBT_TO_SET, CAPITAL_TO_SET);
+      const EXPECTED_UTIL_RATIO = wdiv(DEBT_TO_SET, EQUITY_TO_SET);
 
       let initiated = await shutdown.initiated();
       expect(initiated).to.equal(false);
@@ -274,7 +274,7 @@ describe("Shutdown Unit Tests", function () {
       let utilRatio = await shutdown.finalAurUtilizationRatio();
       expect(utilRatio).to.equal(0);
 
-      await vaultEngine.setTotalEquity(CAPITAL_TO_SET);
+      await vaultEngine.setTotalEquity(EQUITY_TO_SET);
       await vaultEngine.setTotalDebt(DEBT_TO_SET);
 
       await shutdown.initiateShutdown();
@@ -298,14 +298,14 @@ describe("Shutdown Unit Tests", function () {
     });
 
     it("tests utilRatio is max out at 100%", async () => {
-      const CAPITAL_TO_SET = PRECISION_AUR.mul(1000);
+      const EQUITY_TO_SET = PRECISION_AUR.mul(1000);
       const DEBT_TO_SET = PRECISION_AUR.mul(1100);
       const EXPECTED_UTIL_RATIO = PRECISION_PRICE;
 
       let utilRatio = await shutdown.finalAurUtilizationRatio();
       expect(utilRatio).to.equal(0);
 
-      await vaultEngine.setTotalEquity(CAPITAL_TO_SET);
+      await vaultEngine.setTotalEquity(EQUITY_TO_SET);
       await vaultEngine.setTotalDebt(DEBT_TO_SET);
 
       await shutdown.initiateShutdown();
