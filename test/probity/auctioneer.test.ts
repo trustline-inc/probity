@@ -468,7 +468,7 @@ describe("Auctioneer Unit Tests", function () {
       );
 
       const after = await vaultEngine.vaults(flrCollId, owner.address);
-      expect(before.freeCollateral.add(after.freeCollateral)).to.equal(
+      expect(before.standbyAssetAmount.add(after.standbyAssetAmount)).to.equal(
         EXPECTED_LOT_SIZE
       );
     });
@@ -592,7 +592,7 @@ describe("Auctioneer Unit Tests", function () {
       await auctioneer.finalizeSale(0);
 
       const after = await vaultEngine.vaults(flrCollId, owner.address);
-      expect(before.freeCollateral.add(after.freeCollateral)).to.equal(
+      expect(before.standbyAssetAmount.add(after.standbyAssetAmount)).to.equal(
         EXPECTED_LOT_SIZE
       );
     });
@@ -766,7 +766,7 @@ describe("Auctioneer Unit Tests", function () {
       await auctioneer.cancelAuction(0, owner.address);
 
       const after = await vaultEngine.vaults(flrCollId, owner.address);
-      expect(before.freeCollateral.add(after.freeCollateral)).to.equal(
+      expect(before.standbyAssetAmount.add(after.standbyAssetAmount)).to.equal(
         LOT_SIZE
       );
     });

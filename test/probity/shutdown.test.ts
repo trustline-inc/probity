@@ -337,13 +337,13 @@ describe("Shutdown Unit Tests", function () {
       const PRICE_TO_SET = PRECISION_PRICE.mul(12).div(10);
       await priceFeed.setPrice(flrCollId, PRICE_TO_SET);
 
-      let coll = await shutdown.collateralTypes(flrCollId);
+      let coll = await shutdown.assetTypes(flrCollId);
       expect(coll.finalPrice).to.equal(0);
 
       await shutdown.initiateShutdown();
       await shutdown.setFinalPrice(flrCollId);
 
-      coll = await shutdown.collateralTypes(flrCollId);
+      coll = await shutdown.assetTypes(flrCollId);
       expect(coll.finalPrice).to.equal(PRICE_TO_SET);
     });
 
@@ -382,7 +382,7 @@ describe("Shutdown Unit Tests", function () {
       await shutdown.initiateShutdown();
       await priceFeed.setPrice(flrCollId, PRICE_TO_SET);
 
-      await vaultEngine.initCollType(flrCollId);
+      await vaultEngine.initAssetType(flrCollId);
 
       // overCollateralized
       await vaultEngine.updateVault(
@@ -414,7 +414,7 @@ describe("Shutdown Unit Tests", function () {
       const EXPECTED_AUR_GAP = EXPECTED_GAP.mul(PRICE_TO_SET);
       await shutdown.setFinalPrice(flrCollId);
 
-      let coll = await shutdown.collateralTypes(flrCollId);
+      let coll = await shutdown.assetTypes(flrCollId);
       expect(coll.gap).to.equal(0);
       let aurGap = await shutdown.aurGap();
       expect(aurGap).to.equal(0);
@@ -422,7 +422,7 @@ describe("Shutdown Unit Tests", function () {
       // overcollateralized vaults
       await shutdown.processUserDebt(flrCollId, user.address);
 
-      coll = await shutdown.collateralTypes(flrCollId);
+      coll = await shutdown.assetTypes(flrCollId);
       expect(coll.gap).to.equal(0);
       aurGap = await shutdown.aurGap();
       expect(aurGap).to.equal(0);
@@ -430,7 +430,7 @@ describe("Shutdown Unit Tests", function () {
       // undercollateralized vaults
       await shutdown.processUserDebt(flrCollId, owner.address);
 
-      coll = await shutdown.collateralTypes(flrCollId);
+      coll = await shutdown.assetTypes(flrCollId);
       expect(coll.gap).to.equal(EXPECTED_GAP);
       aurGap = await shutdown.aurGap();
       expect(aurGap).to.equal(EXPECTED_AUR_GAP);
@@ -470,7 +470,7 @@ describe("Shutdown Unit Tests", function () {
     it("fail if final price is not set", async () => {
       await assertRevert(
         shutdown.processUserDebt(flrCollId, user.address),
-        "Shutdown/onlyIfFinalPriceSet: Final Price has not been set for this collId"
+        "Shutdown/onlyIfFinalPriceSet: Final Price has not been set for this assetId"
       );
       await shutdown.setFinalPrice(flrCollId);
       await shutdown.processUserDebt(flrCollId, user.address);
@@ -486,7 +486,7 @@ describe("Shutdown Unit Tests", function () {
       await shutdown.initiateShutdown();
       await priceFeed.setPrice(flrCollId, PRICE_TO_SET);
 
-      await vaultEngine.initCollType(flrCollId);
+      await vaultEngine.initAssetType(flrCollId);
 
       // overCollateralized
       await vaultEngine.updateVault(
@@ -532,7 +532,7 @@ describe("Shutdown Unit Tests", function () {
     it("fail if final price is not set", async () => {
       await assertRevert(
         shutdown.freeExcessCollateral(flrCollId, owner.address),
-        "Shutdown/onlyIfFinalPriceSet: Final Price has not been set for this collId"
+        "Shutdown/onlyIfFinalPriceSet: Final Price has not been set for this assetId"
       );
       await shutdown.setFinalPrice(flrCollId);
       await shutdown.freeExcessCollateral(flrCollId, owner.address);
@@ -590,7 +590,7 @@ describe("Shutdown Unit Tests", function () {
     beforeEach(async function () {
       await shutdown.initiateShutdown();
       await priceFeed.setPrice(flrCollId, PRICE_TO_SET);
-      await vaultEngine.initCollType(flrCollId);
+      await vaultEngine.initAssetType(flrCollId);
       await shutdown.setFinalPrice(flrCollId);
 
       await vaultEngine.updateVault(
@@ -614,7 +614,7 @@ describe("Shutdown Unit Tests", function () {
 
       await vaultEngine.setTotalDebt(TOTAL_DEBT_TO_SET);
       await vaultEngine.setTotalEquity(TOTAL_CAP_TO_SET);
-      await vaultEngine.setUnbackedStablecoin(
+      await vaultEngine.setUnbackedDebt(
         reservePool.address,
         SYSTEM_DEBT_TO_SET
       );
@@ -640,7 +640,7 @@ describe("Shutdown Unit Tests", function () {
       await vaultEngine.setTotalDebt(TOTAL_DEBT_TO_SET);
       await vaultEngine.setTotalEquity(TOTAL_CAP_TO_SET);
 
-      await vaultEngine.setUnbackedStablecoin(reservePool.address, 0);
+      await vaultEngine.setUnbackedDebt(reservePool.address, 0);
 
       await shutdown.fillInAurGap();
       await shutdown.setFinalDebtBalance();
@@ -666,7 +666,7 @@ describe("Shutdown Unit Tests", function () {
       );
       await shutdown.processUserDebt(flrCollId, user.address);
 
-      await vaultEngine.setUnbackedStablecoin(reservePool.address, 0);
+      await vaultEngine.setUnbackedDebt(reservePool.address, 0);
 
       await shutdown.fillInAurGap();
       await shutdown.setFinalDebtBalance();
@@ -690,7 +690,7 @@ describe("Shutdown Unit Tests", function () {
       );
       await shutdown.processUserDebt(flrCollId, user.address);
 
-      await vaultEngine.setUnbackedStablecoin(reservePool.address, 0);
+      await vaultEngine.setUnbackedDebt(reservePool.address, 0);
 
       await shutdown.fillInAurGap();
       await shutdown.setFinalDebtBalance();
@@ -708,7 +708,7 @@ describe("Shutdown Unit Tests", function () {
         "shutdown/setFinalDebtBalance: finalDebtBalance must be set first"
       );
 
-      await vaultEngine.setUnbackedStablecoin(reservePool.address, 0);
+      await vaultEngine.setUnbackedDebt(reservePool.address, 0);
 
       await shutdown.fillInAurGap();
       await shutdown.setFinalDebtBalance();
@@ -733,7 +733,7 @@ describe("Shutdown Unit Tests", function () {
 
       await shutdown.initiateShutdown();
       await priceFeed.setPrice(flrCollId, PRICE_TO_SET);
-      await vaultEngine.initCollType(flrCollId);
+      await vaultEngine.initAssetType(flrCollId);
       await shutdown.setFinalPrice(flrCollId);
 
       await vaultEngine.updateVault(
@@ -755,14 +755,14 @@ describe("Shutdown Unit Tests", function () {
         0
       );
 
-      await vaultEngine.setUnbackedStablecoin(
+      await vaultEngine.setUnbackedDebt(
         reservePool.address,
         SYSTEM_DEBT_TO_SET
       );
       await vaultEngine.setStablecoin(reservePool.address, 0);
       await shutdown.processUserDebt(flrCollId, user.address);
       await increaseTime(172800);
-      await vaultEngine.setUnbackedStablecoin(reservePool.address, 0);
+      await vaultEngine.setUnbackedDebt(reservePool.address, 0);
 
       await shutdown.setFinalDebtBalance();
     });
@@ -783,7 +783,7 @@ describe("Shutdown Unit Tests", function () {
         await shutdown.finalAurUtilizationRatio();
 
       const before = await vaultEngine.vaults(flrCollId, owner.address);
-      expect(before.usedCollateral).to.equal(COLL_TO_SET);
+      expect(before.activeAssetAmount).to.equal(COLL_TO_SET);
       expect(before.equity).to.equal(CAP_TO_SET);
       await shutdown.processUserEquity(flrCollId, owner.address);
 
@@ -844,13 +844,13 @@ describe("Shutdown Unit Tests", function () {
       await increaseTime(172800 * 2);
 
       await vaultEngine.setStablecoin(reservePool.address, 1);
-      await vaultEngine.setUnbackedStablecoin(reservePool.address, 1);
+      await vaultEngine.setUnbackedDebt(reservePool.address, 1);
       await assertRevert(
         shutdown.setFinalDebtBalance(),
         "shutdown/setFinalDebtBalance: system reserve or debt must be zero"
       );
 
-      await vaultEngine.setUnbackedStablecoin(reservePool.address, 0);
+      await vaultEngine.setUnbackedDebt(reservePool.address, 0);
 
       // await shutdown.setFinalDebtBalance()
     });
@@ -896,7 +896,7 @@ describe("Shutdown Unit Tests", function () {
 
       await vaultEngine.setTotalDebt(TOTAL_DEBT_TO_SET);
       await vaultEngine.setTotalEquity(TOTAL_CAP_TO_SET);
-      await vaultEngine.updateCollateralType(
+      await vaultEngine.updateAsset(
         flrCollId,
         0,
         DEBT_TO_SET,
@@ -907,7 +907,7 @@ describe("Shutdown Unit Tests", function () {
 
       await shutdown.initiateShutdown();
       await priceFeed.setPrice(flrCollId, PRICE_TO_SET);
-      await vaultEngine.initCollType(flrCollId);
+      await vaultEngine.initAssetType(flrCollId);
       await shutdown.setFinalPrice(flrCollId);
 
       await increaseTime(172800);
@@ -920,7 +920,7 @@ describe("Shutdown Unit Tests", function () {
       await shutdown.setFinalDebtBalance();
       await shutdown.calculateRedeemRatio(flrCollId);
 
-      const collType = await shutdown.collateralTypes(flrCollId);
+      const collType = await shutdown.assetTypes(flrCollId);
       expect(collType.redeemRatio).to.equal(expected);
     });
 
@@ -931,7 +931,7 @@ describe("Shutdown Unit Tests", function () {
 
       await shutdown.calculateRedeemRatio(flrCollId);
 
-      const collType = await shutdown.collateralTypes(flrCollId);
+      const collType = await shutdown.assetTypes(flrCollId);
       expect(collType.redeemRatio).to.equal(expected);
     });
 
@@ -1012,7 +1012,7 @@ describe("Shutdown Unit Tests", function () {
 
       await vaultEngine.setTotalDebt(TOTAL_DEBT_TO_SET);
       await vaultEngine.setTotalEquity(TOTAL_CAP_TO_SET);
-      await vaultEngine.updateCollateralType(
+      await vaultEngine.updateAsset(
         flrCollId,
         0,
         DEBT_TO_SET,
@@ -1023,7 +1023,7 @@ describe("Shutdown Unit Tests", function () {
 
       await shutdown.initiateShutdown();
       await priceFeed.setPrice(flrCollId, PRICE_TO_SET);
-      await vaultEngine.initCollType(flrCollId);
+      await vaultEngine.initAssetType(flrCollId);
       await shutdown.setFinalPrice(flrCollId);
 
       await increaseTime(172800);
@@ -1078,7 +1078,7 @@ describe("Shutdown Unit Tests", function () {
       await shutdown.redeemCollateral(flrCollId);
       const after = await vaultEngine.vaults(flrCollId, owner.address);
 
-      expect(after.freeCollateral.sub(before.freeCollateral)).to.equal(
+      expect(after.standbyAssetAmount.sub(before.standbyAssetAmount)).to.equal(
         DEBT_TO_SET
       );
     });

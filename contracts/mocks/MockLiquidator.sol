@@ -4,7 +4,7 @@ contract MockLiquidator {
     struct Collateral {
         address auctioneer;
         uint256 debtPenaltyFee;
-        uint256 suppPenaltyFee;
+        uint256 equityPenaltyFee;
     }
 
     /////////////////////////////////////////

@@ -82,7 +82,7 @@ async function expectBalancesToMatch(user, balance) {
     let vault = await vaultEngine.vaults(flrCollId, user.address);
 
     if (balance.flr.lockedColl !== undefined) {
-      expect(vault.usedCollateral).to.equal(balance.flr.lockedColl);
+      expect(vault.activeAssetAmount).to.equal(balance.flr.lockedColl);
     }
 
     if (balance.flr.debt !== undefined) {
@@ -97,7 +97,7 @@ async function expectBalancesToMatch(user, balance) {
     let vault = await vaultEngine.vaults(fxrpCollId, user.address);
 
     if (balance.fxrp.lockedColl !== undefined) {
-      expect(vault.usedCollateral).to.equal(balance.fxrp.lockedColl);
+      expect(vault.activeAssetAmount).to.equal(balance.fxrp.lockedColl);
     }
 
     if (balance.fxrp.debt !== undefined) {
@@ -113,7 +113,7 @@ async function checkReserveBalances(reserveBalances) {
   expect(await vaultEngine.stablecoin(reserve.address)).to.equal(
     reserveBalances.reserve
   );
-  expect(await vaultEngine.unbackedStablecoin(reserve.address)).to.equal(
+  expect(await vaultEngine.unbackedDebt(reserve.address)).to.equal(
     reserveBalances.debt
   );
 }
@@ -156,7 +156,7 @@ describe("Shutdown Flow Test", function () {
     user5 = signers.lender;
     user6 = signers.borrower;
 
-    await vaultEngine.initCollType(flrCollId);
+    await vaultEngine.initAssetType(flrCollId);
     await vaultEngine.updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
     await teller.initCollType(flrCollId, 0);
     await priceFeed.init(
@@ -166,7 +166,7 @@ describe("Shutdown Flow Test", function () {
     );
     await liquidator.init(flrCollId, auctioneerFlr.address);
 
-    await vaultEngine.initCollType(fxrpCollId);
+    await vaultEngine.initAssetType(fxrpCollId);
     await vaultEngine.updateCeiling(fxrpCollId, PRECISION_AUR.mul(10000000));
     await teller.initCollType(fxrpCollId, 0);
     await priceFeed.init(
@@ -418,11 +418,11 @@ describe("Shutdown Flow Test", function () {
 
     // set final prices
     await shutdown.setFinalPrice(flrCollId);
-    expect((await shutdown.collateralTypes(flrCollId)).finalPrice).to.equal(
+    expect((await shutdown.assetTypes(flrCollId)).finalPrice).to.equal(
       PRECISION_PRICE.mul(42).div(100)
     );
     await shutdown.setFinalPrice(fxrpCollId);
-    expect((await shutdown.collateralTypes(fxrpCollId)).finalPrice).to.equal(
+    expect((await shutdown.assetTypes(fxrpCollId)).finalPrice).to.equal(
       PRECISION_PRICE.mul(103).div(100)
     );
 
@@ -431,7 +431,7 @@ describe("Shutdown Flow Test", function () {
     await shutdown.processUserDebt(flrCollId, user1.address);
 
     let EXPECTED_FLR_GAP = "0";
-    expect((await shutdown.collateralTypes(flrCollId)).gap).to.equal(
+    expect((await shutdown.assetTypes(flrCollId)).gap).to.equal(
       EXPECTED_FLR_GAP
     );
 
@@ -439,7 +439,7 @@ describe("Shutdown Flow Test", function () {
     await shutdown.processUserDebt(flrCollId, user2.address);
 
     EXPECTED_FLR_GAP = "0";
-    expect((await shutdown.collateralTypes(flrCollId)).gap).to.equal(
+    expect((await shutdown.assetTypes(flrCollId)).gap).to.equal(
       EXPECTED_FLR_GAP
     );
 
@@ -447,7 +447,7 @@ describe("Shutdown Flow Test", function () {
     await shutdown.processUserDebt(flrCollId, user3.address);
 
     EXPECTED_FLR_GAP = "0";
-    expect((await shutdown.collateralTypes(flrCollId)).gap).to.equal(
+    expect((await shutdown.assetTypes(flrCollId)).gap).to.equal(
       EXPECTED_FLR_GAP
     );
 
@@ -457,7 +457,7 @@ describe("Shutdown Flow Test", function () {
     EXPECTED_FLR_GAP = "3814285714285714285714";
     let EXPECTED_AUR_GAP = PRECISION_AUR.mul(1602);
 
-    expect((await shutdown.collateralTypes(flrCollId)).gap).to.equal(
+    expect((await shutdown.assetTypes(flrCollId)).gap).to.equal(
       EXPECTED_FLR_GAP
     );
     expect(
@@ -472,7 +472,7 @@ describe("Shutdown Flow Test", function () {
 
     const EXPECTED_FXRP_GAP = 0;
 
-    expect((await shutdown.collateralTypes(fxrpCollId)).gap).to.equal(
+    expect((await shutdown.assetTypes(fxrpCollId)).gap).to.equal(
       EXPECTED_FXRP_GAP
     );
 
@@ -518,7 +518,7 @@ describe("Shutdown Flow Test", function () {
     // 6900 / $154500 = 0.0446601941
 
     const EXPECTED_FLR_REDEEM_RATIO = "44660194174757281553398058";
-    expect((await shutdown.collateralTypes(flrCollId)).redeemRatio).to.equal(
+    expect((await shutdown.assetTypes(flrCollId)).redeemRatio).to.equal(
       EXPECTED_FLR_REDEEM_RATIO
     );
 
@@ -526,7 +526,7 @@ describe("Shutdown Flow Test", function () {
     // redeem Ratio = theoretical max - gap / total aur in circulation
     // 150000 / $1.03 / $154500 = 0.9425959091
     const EXPECTED_FXRP_REDEEM_RATIO = "942595909133754359506077669";
-    expect((await shutdown.collateralTypes(fxrpCollId)).redeemRatio).to.equal(
+    expect((await shutdown.assetTypes(fxrpCollId)).redeemRatio).to.equal(
       EXPECTED_FXRP_REDEEM_RATIO
     );
 
@@ -540,10 +540,10 @@ describe("Shutdown Flow Test", function () {
 
     // redeem collateral
     let before = (await vaultEngine.vaults(flrCollId, user2.address))
-      .freeCollateral;
+      .standbyAssetAmount;
     await shutdown.connect(user2).redeemCollateral(flrCollId);
     let after = (await vaultEngine.vaults(flrCollId, user2.address))
-      .freeCollateral;
+      .standbyAssetAmount;
     // redeem ratio * aur returned
     // 0.0446601941 * 66500 = 2969.90290765
     const EXPECTED_FLR_COLL_REDEEMED =
@@ -557,10 +557,10 @@ describe("Shutdown Flow Test", function () {
     ).to.equal(true);
 
     before = (await vaultEngine.vaults(fxrpCollId, user2.address))
-      .freeCollateral;
+      .standbyAssetAmount;
     await shutdown.connect(user2).redeemCollateral(fxrpCollId);
     after = (await vaultEngine.vaults(fxrpCollId, user2.address))
-      .freeCollateral;
+      .standbyAssetAmount;
 
     // redeem ratio * aur returned
     // 0.9425959091 * 66500 = 62682.6279552
@@ -839,22 +839,22 @@ describe("Shutdown Flow Test", function () {
 
     // set final prices
     await shutdown.setFinalPrice(flrCollId);
-    expect((await shutdown.collateralTypes(flrCollId)).finalPrice).to.equal(
+    expect((await shutdown.assetTypes(flrCollId)).finalPrice).to.equal(
       PRECISION_PRICE.mul(223).div(100)
     );
     await shutdown.setFinalPrice(fxrpCollId);
-    expect((await shutdown.collateralTypes(fxrpCollId)).finalPrice).to.equal(
+    expect((await shutdown.assetTypes(fxrpCollId)).finalPrice).to.equal(
       PRECISION_PRICE.mul(220).div(100)
     );
 
     // process debt for flr collateral
     await shutdown.processUserDebt(flrCollId, user1.address);
     let EXPECTED_FLR_GAP = PRECISION_COLL.mul(0);
-    expect((await shutdown.collateralTypes(flrCollId)).gap).to.equal(
+    expect((await shutdown.assetTypes(flrCollId)).gap).to.equal(
       EXPECTED_FLR_GAP
     );
     await shutdown.processUserDebt(flrCollId, user2.address);
-    expect((await shutdown.collateralTypes(flrCollId)).gap).to.equal(
+    expect((await shutdown.assetTypes(flrCollId)).gap).to.equal(
       EXPECTED_FLR_GAP
     );
     await shutdown.processUserDebt(flrCollId, user3.address);
@@ -871,7 +871,7 @@ describe("Shutdown Flow Test", function () {
         .lte(PRECISION_AUR.div(100))
     ).to.equal(true);
     expect(
-      (await shutdown.collateralTypes(flrCollId)).gap
+      (await shutdown.assetTypes(flrCollId)).gap
         .sub(EXPECTED_FLR_GAP)
         .abs()
         .lte(PRECISION_COLL.div(100))
@@ -879,14 +879,14 @@ describe("Shutdown Flow Test", function () {
 
     await shutdown.processUserDebt(flrCollId, user4.address);
     expect(
-      (await shutdown.collateralTypes(flrCollId)).gap
+      (await shutdown.assetTypes(flrCollId)).gap
         .sub(EXPECTED_FLR_GAP)
         .abs()
         .lte(PRECISION_COLL.div(100))
     ).to.equal(true);
     await shutdown.processUserDebt(flrCollId, user5.address);
     expect(
-      (await shutdown.collateralTypes(flrCollId)).gap
+      (await shutdown.assetTypes(flrCollId)).gap
         .sub(EXPECTED_FLR_GAP)
         .abs()
         .lte(PRECISION_COLL.div(100))
@@ -895,17 +895,17 @@ describe("Shutdown Flow Test", function () {
     // process debt for fxrp collateral
     await shutdown.processUserDebt(fxrpCollId, user1.address);
     let EXPECTED_FXRP_GAP = PRECISION_COLL.mul(0);
-    expect((await shutdown.collateralTypes(fxrpCollId)).gap).to.equal(
+    expect((await shutdown.assetTypes(fxrpCollId)).gap).to.equal(
       EXPECTED_FXRP_GAP
     );
 
     await shutdown.processUserDebt(fxrpCollId, user2.address);
-    expect((await shutdown.collateralTypes(fxrpCollId)).gap).to.equal(
+    expect((await shutdown.assetTypes(fxrpCollId)).gap).to.equal(
       EXPECTED_FXRP_GAP
     );
 
     await shutdown.processUserDebt(fxrpCollId, user3.address);
-    expect((await shutdown.collateralTypes(fxrpCollId)).gap).to.equal(
+    expect((await shutdown.assetTypes(fxrpCollId)).gap).to.equal(
       EXPECTED_FXRP_GAP
     );
 
@@ -922,7 +922,7 @@ describe("Shutdown Flow Test", function () {
         .lte(PRECISION_AUR.div(100))
     ).to.equal(true);
     expect(
-      (await shutdown.collateralTypes(fxrpCollId)).gap
+      (await shutdown.assetTypes(fxrpCollId)).gap
         .sub(EXPECTED_FXRP_GAP)
         .abs()
         .lte(PRECISION_COLL.div(100))
@@ -936,7 +936,7 @@ describe("Shutdown Flow Test", function () {
         .lte(PRECISION_AUR.div(100))
     ).to.equal(true);
     expect(
-      (await shutdown.collateralTypes(fxrpCollId)).gap
+      (await shutdown.assetTypes(fxrpCollId)).gap
         .sub(EXPECTED_FXRP_GAP)
         .abs()
         .lte(PRECISION_COLL.div(100))
@@ -981,14 +981,14 @@ describe("Shutdown Flow Test", function () {
       PRECISION_COLL.mul("729146785877").div(1e10)
     );
     expect(
-      (await shutdown.collateralTypes(flrCollId)).gap
+      (await shutdown.assetTypes(flrCollId)).gap
         .sub(EXPECTED_FLR_GAP)
         .abs()
         .lte(PRECISION_COLL.div(10))
     ).to.equal(true);
     await shutdown.processUserEquity(flrCollId, user2.address);
     expect(
-      (await shutdown.collateralTypes(flrCollId)).gap
+      (await shutdown.assetTypes(flrCollId)).gap
         .sub(EXPECTED_FLR_GAP)
         .abs()
         .lte(PRECISION_COLL.div(10))
@@ -996,14 +996,14 @@ describe("Shutdown Flow Test", function () {
 
     await shutdown.processUserEquity(flrCollId, user3.address);
     expect(
-      (await shutdown.collateralTypes(flrCollId)).gap
+      (await shutdown.assetTypes(flrCollId)).gap
         .sub(EXPECTED_FLR_GAP)
         .abs()
         .lte(PRECISION_COLL.div(10))
     ).to.equal(true);
     await shutdown.processUserEquity(flrCollId, user4.address);
     expect(
-      (await shutdown.collateralTypes(flrCollId)).gap
+      (await shutdown.assetTypes(flrCollId)).gap
         .sub(EXPECTED_FLR_GAP)
         .abs()
         .lte(PRECISION_COLL.div(10))
@@ -1018,7 +1018,7 @@ describe("Shutdown Flow Test", function () {
     );
 
     expect(
-      (await shutdown.collateralTypes(flrCollId)).gap
+      (await shutdown.assetTypes(flrCollId)).gap
         .sub(EXPECTED_FLR_GAP)
         .abs()
         .lte(PRECISION_COLL.div(10))
@@ -1033,28 +1033,28 @@ describe("Shutdown Flow Test", function () {
       PRECISION_COLL.mul("295635878638").div(1e7)
     );
     expect(
-      (await shutdown.collateralTypes(fxrpCollId)).gap
+      (await shutdown.assetTypes(fxrpCollId)).gap
         .sub(EXPECTED_FXRP_GAP)
         .abs()
         .lte(PRECISION_COLL.div(10))
     ).to.equal(true);
     await shutdown.processUserEquity(fxrpCollId, user2.address);
     expect(
-      (await shutdown.collateralTypes(fxrpCollId)).gap
+      (await shutdown.assetTypes(fxrpCollId)).gap
         .sub(EXPECTED_FXRP_GAP)
         .abs()
         .lte(PRECISION_COLL.div(10))
     ).to.equal(true);
     await shutdown.processUserEquity(fxrpCollId, user3.address);
     expect(
-      (await shutdown.collateralTypes(fxrpCollId)).gap
+      (await shutdown.assetTypes(fxrpCollId)).gap
         .sub(EXPECTED_FXRP_GAP)
         .abs()
         .lte(PRECISION_COLL.div(10))
     ).to.equal(true);
     await shutdown.processUserEquity(fxrpCollId, user4.address);
     expect(
-      (await shutdown.collateralTypes(fxrpCollId)).gap
+      (await shutdown.assetTypes(fxrpCollId)).gap
         .sub(EXPECTED_FXRP_GAP)
         .abs()
         .lte(PRECISION_COLL.div(10))
@@ -1069,7 +1069,7 @@ describe("Shutdown Flow Test", function () {
 
     await shutdown.processUserEquity(fxrpCollId, user5.address);
     expect(
-      (await shutdown.collateralTypes(fxrpCollId)).gap
+      (await shutdown.assetTypes(fxrpCollId)).gap
         .sub(EXPECTED_FXRP_GAP)
         .abs()
         .lte(PRECISION_COLL.div(10))
@@ -1088,7 +1088,7 @@ describe("Shutdown Flow Test", function () {
     const EXPECTED_FLR_REDEEM_RATIO =
       PRECISION_PRICE.mul("265023329").div(1e11);
     expect(
-      (await shutdown.collateralTypes(flrCollId)).redeemRatio
+      (await shutdown.assetTypes(flrCollId)).redeemRatio
         .sub(EXPECTED_FLR_REDEEM_RATIO)
         .abs()
         .lte(PRECISION_COLL.div(100))
@@ -1103,7 +1103,7 @@ describe("Shutdown Flow Test", function () {
       PRECISION_PRICE.mul("3302647739").div(1e10);
 
     expect(
-      (await shutdown.collateralTypes(fxrpCollId)).redeemRatio
+      (await shutdown.assetTypes(fxrpCollId)).redeemRatio
         .sub(EXPECTED_FXRP_REDEEM_RATIO)
         .abs()
         .lte(PRECISION_COLL.div(100))
@@ -1117,10 +1117,10 @@ describe("Shutdown Flow Test", function () {
 
     // redeem collateral
     let before = (await vaultEngine.vaults(flrCollId, user2.address))
-      .freeCollateral;
+      .standbyAssetAmount;
     await shutdown.connect(user2).redeemCollateral(flrCollId);
     let after = (await vaultEngine.vaults(flrCollId, user2.address))
-      .freeCollateral;
+      .standbyAssetAmount;
     // user2 aur balance: 1099000
     // aur balance * flr Redeemed Collateral
     // 1099000 * 0.00265023329 = 2912.60638571
@@ -1135,10 +1135,10 @@ describe("Shutdown Flow Test", function () {
     ).to.equal(true);
 
     before = (await vaultEngine.vaults(fxrpCollId, user2.address))
-      .freeCollateral;
+      .standbyAssetAmount;
     await shutdown.connect(user2).redeemCollateral(fxrpCollId);
     after = (await vaultEngine.vaults(fxrpCollId, user2.address))
-      .freeCollateral;
+      .standbyAssetAmount;
     // user2 aur balance: 1099000
     // aur balance * flr Redeemed Collateral
     // 1099000 * 0.3302647739 = 362960.986516

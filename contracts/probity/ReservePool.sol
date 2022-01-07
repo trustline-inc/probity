@@ -13,7 +13,7 @@ import "../dependencies/Eventful.sol";
 interface VaultEngineLike {
     function stablecoin(address user) external returns (uint256 balance);
 
-    function unbackedStablecoin(address user) external returns (uint256 balance);
+    function unbackedDebt(address user) external returns (uint256 balance);
 
     function settle(uint256 balance) external;
 
@@ -107,7 +107,7 @@ contract ReservePool is Stateful, Eventful {
 
     function settle(uint256 amountToSettle) external {
         require(
-            amountToSettle <= vaultEngine.unbackedStablecoin(address(this)),
+            amountToSettle <= vaultEngine.unbackedDebt(address(this)),
             "ReservePool/settle: Settlement amount is more than the debt"
         );
         require(
@@ -123,7 +123,7 @@ contract ReservePool is Stateful, Eventful {
 
     function startIouSale() external {
         require(
-            vaultEngine.unbackedStablecoin(address(this)) - debtOnAuction > debtThreshold,
+            vaultEngine.unbackedDebt(address(this)) - debtOnAuction > debtThreshold,
             "ReservePool/startIouSale: Debt Threshold is not yet crossed"
         );
         require(vaultEngine.stablecoin(address(this)) == 0, "ReservePool/startIouSale: AUR balance is still positive");
