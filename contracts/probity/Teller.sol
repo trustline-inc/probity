@@ -9,13 +9,13 @@ interface VaultEngineLike {
 
     function totalDebt() external returns (uint256);
 
-    function totalCapital() external returns (uint256);
+    function totalEquity() external returns (uint256);
 
     function updateAccumulators(
         bytes32 collId,
         address reservePool,
         uint256 debtRateIncrease,
-        uint256 capitalRateIncrease,
+        uint256 equityRateIncrease,
         uint256 protocolFeeRates
     ) external;
 }
@@ -98,7 +98,7 @@ contract Teller is Stateful {
     }
 
     /**
-     * @dev Updates the debt and capital rate accumulators
+     * @dev Updates the debt and equity rate accumulators
      */
     function updateAccumulator(bytes32 collId) external {
         require(collateralTypes[collId].lastUpdated != 0, "Teller/updateAccumulator: Collateral type not initialized");
@@ -106,9 +106,9 @@ contract Teller is Stateful {
         Collateral memory coll = collateralTypes[collId];
         (uint256 debtAccumulator, uint256 suppAccumulator) = vaultEngine.collateralTypes(collId);
         uint256 totalDebt = vaultEngine.totalDebt();
-        uint256 totalCapital = vaultEngine.totalCapital();
+        uint256 totalEquity = vaultEngine.totalEquity();
 
-        require(totalCapital > 0, "Teller/UpdateAccumulator: Total capital can not be zero");
+        require(totalEquity > 0, "Teller/UpdateAccumulator: Total equity can not be zero");
 
         // Update debt accumulator
         uint256 debtRateIncrease = rmul(rpow(mpr, (block.timestamp - coll.lastUpdated)), debtAccumulator) -
@@ -116,7 +116,7 @@ contract Teller is Stateful {
 
         uint256 exponentiated;
         {
-            // Update capital accumulator
+            // Update equity accumulator
             uint256 multipliedByUtilization = rmul(mpr - RAY, coll.lastUtilization * 1e9);
             uint256 multipliedByUtilizationPlusOne = multipliedByUtilization + RAY;
 
@@ -129,10 +129,10 @@ contract Teller is Stateful {
             protocolFeeRate = (suppAccumulatorDiff * collateralTypes[collId].protocolFee) / WAD;
         }
 
-        uint256 capitalRateIncrease = suppAccumulatorDiff - protocolFeeRate;
+        uint256 equityRateIncrease = suppAccumulatorDiff - protocolFeeRate;
 
         // Set new APR (round to nearest 0.25%)
-        coll.lastUtilization = wdiv(totalDebt, totalCapital);
+        coll.lastUtilization = wdiv(totalDebt, totalEquity);
         if (coll.lastUtilization >= 1e18) {
             apr = MAX_APR;
         } else {
@@ -156,7 +156,7 @@ contract Teller is Stateful {
 
         // Update time index
         coll.lastUpdated = block.timestamp;
-        vaultEngine.updateAccumulators(collId, reservePool, debtRateIncrease, capitalRateIncrease, protocolFeeRate);
+        vaultEngine.updateAccumulators(collId, reservePool, debtRateIncrease, equityRateIncrease, protocolFeeRate);
 
         // collect Fees by adding AUR to reserve pool
 

@@ -52,10 +52,10 @@ const PRECISION_AUR = ethers.BigNumber.from(
 );
 
 const COLL_AMOUNT = PRECISION_COLL.mul(1000);
-const CAPITAL_COLL_AMOUNT = PRECISION_COLL.mul(400);
-const CAPITAL_COLL_TO_DECREASE = PRECISION_COLL.mul(-400);
-const CAPITAL_AMOUNT_TO_DECREASE = PRECISION_AUR.mul(-200);
-const CAPITAL_AMOUNT = PRECISION_AUR.mul(200);
+const EQUITY_COLL_AMOUNT = PRECISION_COLL.mul(400);
+const EQUITY_COLL_TO_DECREASE = PRECISION_COLL.mul(-400);
+const EQUITY_AMOUNT_TO_DECREASE = PRECISION_AUR.mul(-200);
+const EQUITY_AMOUNT = PRECISION_AUR.mul(200);
 const LOAN_COLL_AMOUNT = PRECISION_COLL.mul(200);
 const LOAN_AMOUNT = PRECISION_AUR.mul(100);
 const LOAN_REPAY_COLL_AMOUNT = PRECISION_COLL.mul(-200);
@@ -155,7 +155,7 @@ describe("Probity happy flow", function () {
     );
   });
 
-  it("test modifyCapital, modifyDebt and aur withdrawal", async () => {
+  it("test modifyEquity, modifyDebt and aur withdrawal", async () => {
     // Deposit FLR collateral
     await flrColl.deposit({ value: COLL_AMOUNT });
 
@@ -173,19 +173,19 @@ describe("Probity happy flow", function () {
     let userVaultBefore = await vaultEngine.vaults(flrCollId, owner.address);
 
     // Create Aurei
-    await vaultEngine.modifyCapital(
+    await vaultEngine.modifyEquity(
       flrCollId,
       treasury.address,
-      CAPITAL_COLL_AMOUNT,
-      CAPITAL_AMOUNT
+      EQUITY_COLL_AMOUNT,
+      EQUITY_AMOUNT
     );
 
     let userVaultAfter = await vaultEngine.vaults(flrCollId, owner.address);
     expect(userVaultBefore[0].sub(userVaultAfter[0])).to.equal(
-      CAPITAL_COLL_AMOUNT
+      EQUITY_COLL_AMOUNT
     );
     expect(userVaultAfter[3].sub(userVaultBefore[3])).to.equal(
-      CAPITAL_AMOUNT.div(PRECISION_PRICE)
+      EQUITY_AMOUNT.div(PRECISION_PRICE)
     );
 
     userVaultBefore = await vaultEngine.vaults(flrCollId, owner.address);
@@ -235,11 +235,11 @@ describe("Probity happy flow", function () {
     await priceFeed.updateAdjustedPrice(flrCollId);
 
     // Create Aurei
-    await vaultEngine.modifyCapital(
+    await vaultEngine.modifyEquity(
       flrCollId,
       treasury.address,
-      CAPITAL_COLL_AMOUNT,
-      CAPITAL_AMOUNT
+      EQUITY_COLL_AMOUNT,
+      EQUITY_AMOUNT
     );
 
     let userVaultBefore = await vaultEngine.vaults(flrCollId, owner.address);
@@ -285,7 +285,7 @@ describe("Probity happy flow", function () {
     );
   });
 
-  it("test that modifyCapital can be reduced", async () => {
+  it("test that modifyEquity can be reduced", async () => {
     // Deposit FLR collateral
     await flrColl.deposit({ value: COLL_AMOUNT });
 
@@ -303,27 +303,27 @@ describe("Probity happy flow", function () {
     let userVaultBefore = await vaultEngine.vaults(flrCollId, owner.address);
 
     // Create Aurei
-    await vaultEngine.modifyCapital(
+    await vaultEngine.modifyEquity(
       flrCollId,
       treasury.address,
-      CAPITAL_COLL_AMOUNT,
-      CAPITAL_AMOUNT
+      EQUITY_COLL_AMOUNT,
+      EQUITY_AMOUNT
     );
 
     let userVaultAfter = await vaultEngine.vaults(flrCollId, owner.address);
     expect(userVaultBefore[0].sub(userVaultAfter[0])).to.equal(
-      CAPITAL_COLL_AMOUNT
+      EQUITY_COLL_AMOUNT
     );
     expect(userVaultAfter[3].sub(userVaultBefore[3])).to.equal(
-      CAPITAL_AMOUNT.div(PRECISION_PRICE)
+      EQUITY_AMOUNT.div(PRECISION_PRICE)
     );
 
-    // test that you can remove the capital
-    await vaultEngine.modifyCapital(
+    // test that you can remove the equity
+    await vaultEngine.modifyEquity(
       flrCollId,
       treasury.address,
-      CAPITAL_COLL_TO_DECREASE,
-      CAPITAL_AMOUNT_TO_DECREASE
+      EQUITY_COLL_TO_DECREASE,
+      EQUITY_AMOUNT_TO_DECREASE
     );
 
     let userVaultAfterDecrease = await vaultEngine.vaults(
@@ -331,10 +331,10 @@ describe("Probity happy flow", function () {
       owner.address
     );
     expect(userVaultAfter[0].sub(userVaultAfterDecrease[0])).to.equal(
-      CAPITAL_COLL_TO_DECREASE
+      EQUITY_COLL_TO_DECREASE
     );
     expect(userVaultAfterDecrease[3].sub(userVaultAfter[3])).to.equal(
-      CAPITAL_AMOUNT_TO_DECREASE.div(PRECISION_PRICE)
+      EQUITY_AMOUNT_TO_DECREASE.div(PRECISION_PRICE)
     );
   });
 
@@ -370,11 +370,11 @@ describe("Probity happy flow", function () {
     await priceFeed.connect(gov).init(flrCollId, PRECISION_COLL, ftso.address);
     await priceFeed.updateAdjustedPrice(flrCollId);
 
-    await vaultEngine.modifyCapital(
+    await vaultEngine.modifyEquity(
       flrCollId,
       treasury.address,
-      CAPITAL_COLL_AMOUNT,
-      CAPITAL_AMOUNT
+      EQUITY_COLL_AMOUNT,
+      EQUITY_AMOUNT
     );
     await vaultEngine.modifyDebt(
       flrCollId,
@@ -397,10 +397,10 @@ describe("Probity happy flow", function () {
     );
     let userVaultAfter = await vaultEngine.vaults(flrCollId, owner.address);
     expect(unBackedAurAfter.sub(unBackedAurBefore)).to.equal(
-      CAPITAL_AMOUNT.add(LOAN_AMOUNT)
+      EQUITY_AMOUNT.add(LOAN_AMOUNT)
     );
     expect(userVaultBefore[1].sub(userVaultAfter[1])).to.equal(
-      CAPITAL_COLL_AMOUNT.add(LOAN_COLL_AMOUNT)
+      EQUITY_COLL_AMOUNT.add(LOAN_COLL_AMOUNT)
     );
   });
 
@@ -416,11 +416,11 @@ describe("Probity happy flow", function () {
     await priceFeed.connect(gov).init(flrCollId, PRECISION_COLL, ftso.address);
     await priceFeed.updateAdjustedPrice(flrCollId);
 
-    await vaultEngine.modifyCapital(
+    await vaultEngine.modifyEquity(
       flrCollId,
       treasury.address,
-      CAPITAL_COLL_AMOUNT,
-      CAPITAL_AMOUNT
+      EQUITY_COLL_AMOUNT,
+      EQUITY_AMOUNT
     );
     await vaultEngine.modifyDebt(
       flrCollId,
@@ -440,7 +440,7 @@ describe("Probity happy flow", function () {
     const vaultUser = vaultEngine.connect(user);
     const auctioneerUser = auctioneer.connect(user);
     await flrCollUser.deposit({ value: PRECISION_COLL.mul(30000) });
-    await vaultUser.modifyCapital(
+    await vaultUser.modifyEquity(
       flrCollId,
       treasury.address,
       PRECISION_COLL.mul(20000),
@@ -504,11 +504,11 @@ describe("Probity happy flow", function () {
     await priceFeed.connect(gov).init(flrCollId, PRECISION_COLL, ftso.address);
     await priceFeed.updateAdjustedPrice(flrCollId);
 
-    await vaultEngine.modifyCapital(
+    await vaultEngine.modifyEquity(
       flrCollId,
       treasury.address,
-      CAPITAL_COLL_AMOUNT,
-      CAPITAL_AMOUNT
+      EQUITY_COLL_AMOUNT,
+      EQUITY_AMOUNT
     );
     await vaultEngine.modifyDebt(
       flrCollId,
@@ -527,7 +527,7 @@ describe("Probity happy flow", function () {
     const flrCollUser = flrColl.connect(user);
     const vaultUser = vaultEngine.connect(user);
     await flrCollUser.deposit({ value: PRECISION_COLL.mul(30000) });
-    await vaultUser.modifyCapital(
+    await vaultUser.modifyEquity(
       flrCollId,
       treasury.address,
       PRECISION_COLL.mul(20000),

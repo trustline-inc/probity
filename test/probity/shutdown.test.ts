@@ -263,9 +263,9 @@ describe("Shutdown Unit Tests", function () {
     });
 
     it("tests values are properly set", async () => {
-      const CAPITAL_TO_SET = PRECISION_AUR.mul(1000);
+      const EQUITY_TO_SET = PRECISION_AUR.mul(1000);
       const DEBT_TO_SET = PRECISION_AUR.mul(342);
-      const EXPECTED_UTIL_RATIO = wdiv(DEBT_TO_SET, CAPITAL_TO_SET);
+      const EXPECTED_UTIL_RATIO = wdiv(DEBT_TO_SET, EQUITY_TO_SET);
 
       let initiated = await shutdown.initiated();
       expect(initiated).to.equal(false);
@@ -274,7 +274,7 @@ describe("Shutdown Unit Tests", function () {
       let utilRatio = await shutdown.finalAurUtilizationRatio();
       expect(utilRatio).to.equal(0);
 
-      await vaultEngine.setTotalCapital(CAPITAL_TO_SET);
+      await vaultEngine.setTotalEquity(EQUITY_TO_SET);
       await vaultEngine.setTotalDebt(DEBT_TO_SET);
 
       await shutdown.initiateShutdown();
@@ -287,7 +287,7 @@ describe("Shutdown Unit Tests", function () {
       expect(utilRatio).to.equal(EXPECTED_UTIL_RATIO);
     });
 
-    it("tests utilRatio is zero when total capital is 0", async () => {
+    it("tests utilRatio is zero when total equity is 0", async () => {
       let utilRatio = await shutdown.finalAurUtilizationRatio();
       expect(utilRatio).to.equal(0);
 
@@ -298,14 +298,14 @@ describe("Shutdown Unit Tests", function () {
     });
 
     it("tests utilRatio is max out at 100%", async () => {
-      const CAPITAL_TO_SET = PRECISION_AUR.mul(1000);
+      const EQUITY_TO_SET = PRECISION_AUR.mul(1000);
       const DEBT_TO_SET = PRECISION_AUR.mul(1100);
       const EXPECTED_UTIL_RATIO = PRECISION_PRICE;
 
       let utilRatio = await shutdown.finalAurUtilizationRatio();
       expect(utilRatio).to.equal(0);
 
-      await vaultEngine.setTotalCapital(CAPITAL_TO_SET);
+      await vaultEngine.setTotalEquity(EQUITY_TO_SET);
       await vaultEngine.setTotalDebt(DEBT_TO_SET);
 
       await shutdown.initiateShutdown();
@@ -449,7 +449,7 @@ describe("Shutdown Unit Tests", function () {
       expect(lastLiquidateVaultCall.reservePool).to.equal(ADDRESS_ZERO);
       expect(lastLiquidateVaultCall.collateralAmount).to.equal(0);
       expect(lastLiquidateVaultCall.debtAmount).to.equal(0);
-      expect(lastLiquidateVaultCall.capitalAmount).to.equal(0);
+      expect(lastLiquidateVaultCall.equityAmount).to.equal(0);
 
       await shutdown.processUserDebt(flrCollId, user.address);
 
@@ -464,7 +464,7 @@ describe("Shutdown Unit Tests", function () {
       expect(lastLiquidateVaultCall.debtAmount).to.equal(
         BigNumber.from(0).sub(EXPECTED_USER_DEBT)
       );
-      expect(lastLiquidateVaultCall.capitalAmount).to.equal(0);
+      expect(lastLiquidateVaultCall.equityAmount).to.equal(0);
     });
 
     it("fail if final price is not set", async () => {
@@ -526,7 +526,7 @@ describe("Shutdown Unit Tests", function () {
       expect(lastLiquidateVaultCall.debtAmount).to.equal(
         BigNumber.from(0).sub(0)
       );
-      expect(lastLiquidateVaultCall.capitalAmount).to.equal(0);
+      expect(lastLiquidateVaultCall.equityAmount).to.equal(0);
     });
 
     it("fail if final price is not set", async () => {
@@ -613,7 +613,7 @@ describe("Shutdown Unit Tests", function () {
       );
 
       await vaultEngine.setTotalDebt(TOTAL_DEBT_TO_SET);
-      await vaultEngine.setTotalCapital(TOTAL_CAP_TO_SET);
+      await vaultEngine.setTotalEquity(TOTAL_CAP_TO_SET);
       await vaultEngine.setUnbackedStablecoin(
         reservePool.address,
         SYSTEM_DEBT_TO_SET
@@ -638,7 +638,7 @@ describe("Shutdown Unit Tests", function () {
       expect(aurGap).to.equal(EXPECTED_AUR_GAP);
       expect(suppObligation).to.equal(0);
       await vaultEngine.setTotalDebt(TOTAL_DEBT_TO_SET);
-      await vaultEngine.setTotalCapital(TOTAL_CAP_TO_SET);
+      await vaultEngine.setTotalEquity(TOTAL_CAP_TO_SET);
 
       await vaultEngine.setUnbackedStablecoin(reservePool.address, 0);
 
@@ -717,7 +717,7 @@ describe("Shutdown Unit Tests", function () {
     });
   });
 
-  describe("processUserCapital Unit Tests", function () {
+  describe("processUserEquity Unit Tests", function () {
     const PRICE_TO_SET = PRECISION_PRICE.mul(1);
     const COLL_TO_SET = PRECISION_COLL.mul(100);
     const DEBT_TO_SET = PRECISION_COLL.mul(150);
@@ -729,7 +729,7 @@ describe("Shutdown Unit Tests", function () {
 
     beforeEach(async function () {
       await vaultEngine.setTotalDebt(TOTAL_DEBT_TO_SET);
-      await vaultEngine.setTotalCapital(TOTAL_CAP_TO_SET);
+      await vaultEngine.setTotalEquity(TOTAL_CAP_TO_SET);
 
       await shutdown.initiateShutdown();
       await priceFeed.setPrice(flrCollId, PRICE_TO_SET);
@@ -769,11 +769,11 @@ describe("Shutdown Unit Tests", function () {
 
     it("fails if supplierObligationRatio is zero", async () => {
       await assertRevert(
-        shutdown.processUserCapital(flrCollId, owner.address),
-        "Shutdown/processUserCapital:Supplier has no obligation"
+        shutdown.processUserEquity(flrCollId, owner.address),
+        "Shutdown/processUserEquity:Supplier has no obligation"
       );
       await shutdown.calculateSupplierObligation();
-      await shutdown.processUserCapital(flrCollId, owner.address);
+      await shutdown.processUserEquity(flrCollId, owner.address);
     });
 
     it("tests that correct amount of collateral is grabbed from supplier", async () => {
@@ -784,10 +784,10 @@ describe("Shutdown Unit Tests", function () {
 
       const before = await vaultEngine.vaults(flrCollId, owner.address);
       expect(before.usedCollateral).to.equal(COLL_TO_SET);
-      expect(before.capital).to.equal(CAP_TO_SET);
-      await shutdown.processUserCapital(flrCollId, owner.address);
+      expect(before.equity).to.equal(CAP_TO_SET);
+      await shutdown.processUserEquity(flrCollId, owner.address);
 
-      const EXPECTED_AMOUNT = before.capital
+      const EXPECTED_AMOUNT = before.equity
         .mul(PRECISION_PRICE)
         .mul(finalAurUtilizationRatio)
         .div(PRECISION_COLL)
@@ -805,8 +805,8 @@ describe("Shutdown Unit Tests", function () {
       );
 
       expect(lastLiqudateVaultCall.debtAmount).to.equal(0);
-      expect(lastLiqudateVaultCall.capitalAmount).to.equal(
-        BigNumber.from(0).sub(before.capital)
+      expect(lastLiqudateVaultCall.equityAmount).to.equal(
+        BigNumber.from(0).sub(before.equity)
       );
     });
   });
@@ -895,7 +895,7 @@ describe("Shutdown Unit Tests", function () {
       );
 
       await vaultEngine.setTotalDebt(TOTAL_DEBT_TO_SET);
-      await vaultEngine.setTotalCapital(TOTAL_CAP_TO_SET);
+      await vaultEngine.setTotalEquity(TOTAL_CAP_TO_SET);
       await vaultEngine.updateCollateralType(
         flrCollId,
         0,
@@ -1011,7 +1011,7 @@ describe("Shutdown Unit Tests", function () {
       );
 
       await vaultEngine.setTotalDebt(TOTAL_DEBT_TO_SET);
-      await vaultEngine.setTotalCapital(TOTAL_CAP_TO_SET);
+      await vaultEngine.setTotalEquity(TOTAL_CAP_TO_SET);
       await vaultEngine.updateCollateralType(
         flrCollId,
         0,
