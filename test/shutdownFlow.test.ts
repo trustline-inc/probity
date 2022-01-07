@@ -360,8 +360,8 @@ describe("Shutdown Flow Test", function () {
     );
     await expectBalancesToMatch(user2, balances.user2);
 
-    await reserve.startIouSale();
-    await reserve.connect(user3).buyIou(DEBT_THRESHOLD.mul(3).div(4));
+    await reserve.startSale();
+    await reserve.connect(user3).purchaseShares(DEBT_THRESHOLD.mul(3).div(4));
     reserveBalances.debt = reserveBalances.debt.sub(
       DEBT_THRESHOLD.mul(3).div(4)
     );
@@ -372,7 +372,7 @@ describe("Shutdown Flow Test", function () {
     );
     await expectBalancesToMatch(user3, balances.user3);
 
-    await reserve.connect(user2).buyIou(DEBT_THRESHOLD.div(4));
+    await reserve.connect(user2).purchaseShares(DEBT_THRESHOLD.div(4));
     reserveBalances.debt = reserveBalances.debt.sub(DEBT_THRESHOLD.div(4));
     await checkReserveBalances(reserveBalances);
 
@@ -584,9 +584,9 @@ describe("Shutdown Flow Test", function () {
         .lte(PRECISION_AUR.div(100))
     ).to.equal(true);
 
-    before = await reserve.ious(user2.address);
-    await shutdown.connect(user2).redeemIou();
-    after = await reserve.ious(user2.address);
+    before = await reserve.shares(user2.address);
+    await shutdown.connect(user2).redeemShares();
+    after = await reserve.shares(user2.address);
     const EXPECTED_IOU_BALANCE_CHANGE = DEBT_THRESHOLD.div(4);
     expect(before.sub(after)).to.equal(EXPECTED_IOU_BALANCE_CHANGE);
   });

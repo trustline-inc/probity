@@ -83,9 +83,9 @@ interface VaultLike {
 }
 
 interface ReservePoolLike {
-    function ious(address user) external returns (uint256 balance);
+    function shares(address user) external returns (uint256 balance);
 
-    function totalIous() external returns (uint256);
+    function totalShares() external returns (uint256);
 
     function shutdownRedemption(address user, uint256 amount) external;
 
@@ -421,7 +421,7 @@ contract Shutdown is Stateful, Eventful {
     }
 
     function setFinalSystemReserve() external {
-        require(finalDebtBalance != 0, "shutdown/redeemIou: finalDebtBalance must be set first");
+        require(finalDebtBalance != 0, "shutdown/redeemShares: finalDebtBalance must be set first");
 
         uint256 totalSystemReserve = vaultEngine.stablecoin(address(reservePool));
         require(totalSystemReserve != 0, "shutdown/setFinalSystemReserve: system reserve is zero");
@@ -429,19 +429,19 @@ contract Shutdown is Stateful, Eventful {
         finalTotalReserve = totalSystemReserve;
     }
 
-    function redeemIou() external {
-        require(finalTotalReserve != 0, "shutdown/redeemIou: finalTotalReserve must be set first");
+    function redeemShares() external {
+        require(finalTotalReserve != 0, "shutdown/redeemShares: finalTotalReserve must be set first");
 
-        uint256 userIouBalance = reservePool.ious(msg.sender);
-        uint256 totalIouBalance = reservePool.totalIous();
+        uint256 userShares = reservePool.shares(msg.sender);
+        uint256 totalShares = reservePool.totalShares();
 
-        require(userIouBalance != 0 && totalIouBalance != 0, "shutdown/redeemIou: no iou to redeem");
+        require(userShares != 0 && totalShares != 0, "shutdown/redeemShares: no shares to redeem");
 
-        uint256 percentageOfIous = rdiv(userIouBalance, totalIouBalance);
+        uint256 percentageOfIous = rdiv(userShares, totalShares);
         uint256 shareOfAur = rmul(percentageOfIous, finalTotalReserve);
 
-        if (shareOfAur > userIouBalance) {
-            shareOfAur = userIouBalance;
+        if (shareOfAur > userShares) {
+            shareOfAur = userShares;
         }
 
         reservePool.shutdownRedemption(msg.sender, shareOfAur);
