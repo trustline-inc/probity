@@ -213,19 +213,19 @@ contract VaultEngineSB is Stateful, Eventful {
         Vault storage vault = vaults[assetId][msg.sender];
         vault.standbyAssetAmount = sub(vault.standbyAssetAmount, underlyingAmount);
         vault.activeAssetAmount = add(vault.activeAssetAmount, underlyingAmount);
-        int256 normalizedEquity = div(equityAmount, collateralTypes[collId].equityAccumulator);
-        vault.equity = add(vault.equity, equityAmount);
+        int256 normalizedEquity = div(equityAmount, assetTypes[assetId].equityAccumulator);
+        vault.equity = add(vault.equity, normalizedEquity);
 
-        assetTypes[assetId].normEquity = add(assetTypes[assetId].normEquity, equityAmount);
+        assetTypes[assetId].normEquity = add(assetTypes[assetId].normEquity, normalizedEquity);
 
-        int256 aurToModify = mul(assetTypes[assetId].equityAccumulator, equityAmount);
-        totalEquity = add(totalEquity, aurToModify);
+        totalEquity = add(totalEquity, equityAmount);
 
         require(totalEquity <= assetTypes[assetId].ceiling, "Vault/modifyEquity: Equity ceiling reached");
         require(
             vault.equity == 0 || (vault.equity * PRECISION_PRICE) > assetTypes[assetId].floor,
             "Vault/modifyEquity: Equity floor reached"
         );
+
         certify(assetId, vault);
         checkVaultUnderLimit(assetId, vault);
 
@@ -264,8 +264,8 @@ contract VaultEngineSB is Stateful, Eventful {
         Vault memory vault = vaults[assetId][msg.sender];
         vault.standbyAssetAmount = sub(vault.standbyAssetAmount, collAmount);
         vault.activeAssetAmount = add(vault.activeAssetAmount, collAmount);
-        int256 normalizedDebt = div(debtAmount, collateralTypes[collId].debtAccumulator);
-        vault.debt = add(vault.debt, debtAmount);
+        int256 normalizedDebt = div(debtAmount, assetTypes[assetId].debtAccumulator);
+        vault.debt = add(vault.debt, normalizedDebt);
 
         assetTypes[assetId].normDebt = add(assetTypes[assetId].normDebt, normalizedDebt);
 
