@@ -5,11 +5,6 @@ pragma solidity ^0.8.0;
 import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
 
-// reserve pool holds the extra aur that comes from liquidation penalty fee, protocol fees
-// whenever the system have bad debt, this pool will be used to pay it off
-// if there are no more reserve to pay off the outstanding bad debt,
-// the reserve will sell IOUs in order to cover it
-// people with IOU can redeem it after the reserve replenishes
 interface VaultEngineLike {
     function stablecoin(address user) external returns (uint256 balance);
 
@@ -26,14 +21,19 @@ interface VaultEngineLike {
     ) external;
 }
 
+// The reserve pool holds the extra stablecoins that come from liquidation penalty fees
+// and protocol fees. When the system has bad debt, this reserve pool will be used to pay
+// it off. If there are no more reserves to pay off the outstanding bad debt, the reserve
+// will issue shares in order to cover it. People with IOUs can redeem it after the reserve
+// replenishes.
 contract ReservePool is Stateful, Eventful {
     /////////////////////////////////////////
     // Type Declarations
     /////////////////////////////////////////
-    struct IOUSale {
+    struct Offering {
         bool active;
         uint256 startTime;
-        uint256 saleAmount;
+        uint256 amount;
     }
 
     /////////////////////////////////////////
@@ -42,16 +42,18 @@ contract ReservePool is Stateful, Eventful {
     uint256 private constant ONE = 1E18;
     VaultEngineLike public immutable vaultEngine;
 
-    IOUSale public sale;
-    uint256 public debtThreshold; // the bad debt threshold, after which to start selling IOU
+    Offering public offering;
+    uint256 public debtThreshold; // The bad debt threshold, after which to start issuing shares
     uint256 public debtOnAuction;
-    // every Y hours , IOU received per AUR goes up by X% @todo evaluate these values
+    // Every Y hours, shares received per stablecoin goes up by X%
+    // TODO: evaluate these values
     uint256 public salePriceIncreasePerStep = 5E16;
     uint256 public saleStepPeriod = 6 hours;
-    // max IOU received per AUR is 50% @todo evaluate this max value
+    // Max shares received per stablecoin is 50%
+    // TODO: evaluate this max value
     uint256 public saleMaxPrice = 1.5E18;
-    mapping(address => uint256) public ious;
-    uint256 public totalIous;
+    mapping(address => uint256) public shares;
+    uint256 public totalShares;
 
     /////////////////////////////////////////
     // Constructor
@@ -63,9 +65,13 @@ contract ReservePool is Stateful, Eventful {
     /////////////////////////////////////////
     // Public functions
     /////////////////////////////////////////
-    // step wise price increase until maxPrice
-    function iouPerAur() public view returns (uint256 price) {
-        uint256 steps = (block.timestamp - sale.startTime) / saleStepPeriod;
+
+    /**
+     * @notice Returns the amount of shares received per stablecoin
+     * @dev Stepwise price increases until max price is met
+     */
+    function sharesPerStablecoin() public view returns (uint256 price) {
+        uint256 steps = (block.timestamp - offering.startTime) / saleStepPeriod;
 
         if (ONE + (salePriceIncreasePerStep * steps) > saleMaxPrice) {
             return saleMaxPrice;
@@ -77,34 +83,63 @@ contract ReservePool is Stateful, Eventful {
     /////////////////////////////////////////
     // External functions
     /////////////////////////////////////////
+
+    /**
+     * @notice Updates the maximum price for a sale
+     * @param newMaxPrice The maximum price to set
+     */
     function updateSaleMaxPrice(uint256 newMaxPrice) external onlyBy("gov") {
         emit LogVarUpdate("reserve", "saleMaxPrice", saleMaxPrice, newMaxPrice);
         saleMaxPrice = newMaxPrice;
     }
 
+    /**
+     * @notice Updates the sale step period
+     * @param newStepPeriod The new period of time per step
+     */
     function updateSaleStepPeriod(uint256 newStepPeriod) external onlyBy("gov") {
         emit LogVarUpdate("reserve", "saleStepPeriod", saleStepPeriod, newStepPeriod);
         saleStepPeriod = newStepPeriod;
     }
 
+    /**
+     * @notice Updates the sale price increase per step
+     * @param newPriceIncreasePerStep The new price increase per step
+     */
     function updateSalePriceIncreasePerStep(uint256 newPriceIncreasePerStep) external onlyBy("gov") {
         emit LogVarUpdate("reserve", "salePriceIncreasePerStep", salePriceIncreasePerStep, newPriceIncreasePerStep);
         salePriceIncreasePerStep = newPriceIncreasePerStep;
     }
 
+    /**
+     * @notice Updates the debt threshold required for a sale
+     * @param newThreshold The new debt threshold
+     */
     function updateDebtThreshold(uint256 newThreshold) external onlyBy("gov") {
         emit LogVarUpdate("reserve", "debtThreshold", debtThreshold, newThreshold);
         debtThreshold = newThreshold;
     }
 
+    /**
+     * @notice Adds auction debt. Only callable by Liquidator.
+     * @param newDebt The amount of debt to add
+     */
     function addAuctionDebt(uint256 newDebt) external onlyBy("liquidator") {
         debtOnAuction += newDebt;
     }
 
+    /**
+     * @notice Reduces auction debt. Only callable by Liquidator.
+     * @param debtToReduce The amount of debt to reduce
+     */
     function reduceAuctionDebt(uint256 debtToReduce) external onlyBy("liquidator") {
         debtOnAuction -= debtToReduce;
     }
 
+    /**
+     * @notice Settles bad debt
+     * @param amountToSettle The amount of bad debt to settle
+     */
     function settle(uint256 amountToSettle) external {
         require(
             amountToSettle <= vaultEngine.unbackedDebt(address(this)),
@@ -117,45 +152,76 @@ contract ReservePool is Stateful, Eventful {
         vaultEngine.settle(amountToSettle);
     }
 
+    /**
+     * @notice Increases system debt
+     * @param amountToSettle The amount of debt to settle
+     */
     function increaseSystemDebt(uint256 amountToSettle) external {
         vaultEngine.increaseSystemDebt(amountToSettle);
     }
 
-    function startIouSale() external {
+    /**
+     * @notice Starts a sale for future reserve pool profits
+     */
+    function startSale() external {
         require(
             vaultEngine.unbackedDebt(address(this)) - debtOnAuction > debtThreshold,
-            "ReservePool/startIouSale: Debt Threshold is not yet crossed"
+            "ReservePool/startSale: Debt threshold is not yet crossed"
         );
-        require(vaultEngine.stablecoin(address(this)) == 0, "ReservePool/startIouSale: AUR balance is still positive");
-        require(sale.active == false, "ReservePool/startIouSale: the current sale is not over yet");
-        sale.active = true;
-        sale.startTime = block.timestamp;
-        sale.saleAmount = debtThreshold;
+        require(
+            vaultEngine.stablecoin(address(this)) == 0,
+            "ReservePool/startSale: Stablecoin balance is still positive"
+        );
+        require(offering.active == false, "ReservePool/startSale: the current offering is not over yet");
+        offering.active = true;
+        offering.startTime = block.timestamp;
+        offering.amount = debtThreshold;
     }
 
-    function buyIou(uint256 amount) external {
-        require(sale.active, "ReservePool/buyIou: ious are not currently on sale");
-        require(sale.saleAmount >= amount, "ReservePool/buyIou: Can't buy more amount than what's available");
+    /**
+     * @notice Purchases shares of an offering
+     * @param amount The amount to be purchased
+     */
+    function purchaseShares(uint256 amount) external {
+        require(offering.active, "ReservePool/purchaseShares: shares are not currently on sale");
+        require(
+            offering.amount >= amount,
+            "ReservePool/purchaseShares: Can't purchase more shares than amount available"
+        );
 
         vaultEngine.moveStablecoin(msg.sender, address(this), amount);
         vaultEngine.settle(amount);
-        uint256 amountToBuy = ((amount * iouPerAur()) / ONE);
-        ious[msg.sender] += amountToBuy;
-        totalIous += amountToBuy;
-        sale.saleAmount = sale.saleAmount - amount;
-        if (sale.saleAmount == 0) {
-            sale.active = false;
+        uint256 amountToBuy = ((amount * sharesPerStablecoin()) / ONE);
+        shares[msg.sender] += amountToBuy;
+        totalShares += amountToBuy;
+        offering.amount = offering.amount - amount;
+        if (offering.amount == 0) {
+            offering.active = false;
         }
     }
 
-    function redeemIou(uint256 amount) external {
+    /**
+     * @notice Redeems shares for assets
+     * @param amount The amount to redeem
+     */
+    function redeemShares(uint256 amount) external {
         processRedemption(msg.sender, amount);
     }
 
+    /**
+     * @notice Processes a redemption when the system is shut down
+     * @param user The user to process for
+     * @param amount The amount to redeem
+     */
     function shutdownRedemption(address user, uint256 amount) external onlyWhen("shutdown", true) onlyBy("shutdown") {
         processRedemption(user, amount);
     }
 
+    /**
+     * @notice Sends reserve pool stablecoins elsewhere
+     * @param to The receiving address
+     * @param amount The amount to send
+     */
     function sendStablecoin(address to, uint256 amount) external onlyBy("gov") {
         vaultEngine.moveStablecoin(address(this), to, amount);
     }
@@ -164,17 +230,22 @@ contract ReservePool is Stateful, Eventful {
     // Internal functions
     /////////////////////////////////////////
 
+    /**
+     * @notice Processes a redemption
+     * @param user The user to process a redemption for
+     * @param amount The amount to redeem
+     */
     function processRedemption(address user, uint256 amount) internal {
         require(
             vaultEngine.stablecoin(address(this)) >= amount,
-            "ReservePool/processRedemption: The reserve pool doesn't have enough AUR"
+            "ReservePool/processRedemption: The reserve pool doesn't have enough funds"
         );
         require(
-            ious[user] >= amount,
-            "ReservePool/processRedemption: User doesn't have enough iou to redeem this much"
+            shares[user] >= amount,
+            "ReservePool/processRedemption: User doesn't have enough shares to redeem this amount"
         );
 
-        ious[user] -= amount;
+        shares[user] -= amount;
         vaultEngine.moveStablecoin(address(this), user, amount);
     }
 }

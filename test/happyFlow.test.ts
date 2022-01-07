@@ -539,14 +539,14 @@ describe("Probity happy flow", function () {
 
     await liquidator.reduceAuctionDebt(PRECISION_AUR.mul(201));
     await reserve.connect(gov).updateDebtThreshold(PRECISION_AUR.mul(200));
-    await reserve.startIouSale();
+    await reserve.startSale();
 
     const reserveUser = reserve.connect(user);
     await ethers.provider.send("evm_increaseTime", [21601]);
     await ethers.provider.send("evm_mine", []);
-    await reserveUser.buyIou(PRECISION_AUR.mul(100));
+    await reserveUser.purchaseShares(PRECISION_AUR.mul(100));
 
-    let userIOU = await reserve.ious(user.address);
+    let userIOU = await reserve.shares(user.address);
     expect(userIOU > PRECISION_AUR.mul(100)).to.equal(true);
   });
 });
