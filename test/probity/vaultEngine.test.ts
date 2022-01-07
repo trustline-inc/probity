@@ -77,7 +77,7 @@ describe("Vault Engine Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.connect(gov).initCollType(flrCollId);
+      await vaultEngine.connect(gov).initAssetType(flrCollId);
       await vaultEngine
         .connect(gov)
         .updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
@@ -89,7 +89,7 @@ describe("Vault Engine Unit Tests", function () {
         .updateAdjustedPrice(flrCollId, PRECISION_PRICE.mul(1));
       await vaultEngine
         .connect(coll)
-        .modifyCollateral(flrCollId, owner.address, COLL_AMOUNT_EQUITY);
+        .modifyStandbyAsset(flrCollId, owner.address, COLL_AMOUNT_EQUITY);
     });
 
     it("only whitelisted user can call modifyEquity", async () => {
@@ -198,7 +198,7 @@ describe("Vault Engine Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.connect(gov).initCollType(flrCollId);
+      await vaultEngine.connect(gov).initAssetType(flrCollId);
       await vaultEngine
         .connect(gov)
         .updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
@@ -211,11 +211,11 @@ describe("Vault Engine Unit Tests", function () {
 
       await vaultEngine
         .connect(coll)
-        .modifyCollateral(flrCollId, owner.address, COLL_AMOUNT_DEBT);
+        .modifyStandbyAsset(flrCollId, owner.address, COLL_AMOUNT_DEBT);
 
       await vaultEngine
         .connect(coll)
-        .modifyCollateral(flrCollId, user.address, COLL_AMOUNT_DEBT);
+        .modifyStandbyAsset(flrCollId, user.address, COLL_AMOUNT_DEBT);
 
       await vaultEngine
         .connect(user)
@@ -332,7 +332,7 @@ describe("Vault Engine Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.connect(gov).initCollType(flrCollId);
+      await vaultEngine.connect(gov).initAssetType(flrCollId);
       await vaultEngine
         .connect(gov)
         .updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
@@ -341,7 +341,7 @@ describe("Vault Engine Unit Tests", function () {
         .setupAddress(bytes32("collateral"), coll.address);
       await vaultEngine
         .connect(coll)
-        .modifyCollateral(
+        .modifyStandbyAsset(
           flrCollId,
           owner.address,
           COLL_AMOUNT_DEBT.add(COLL_AMOUNT_EQUITY)
@@ -392,7 +392,7 @@ describe("Vault Engine Unit Tests", function () {
     });
 
     it("tests the debt and equity accumulators are properly updated", async () => {
-      const collBefore = await vaultEngine.collateralTypes(flrCollId);
+      const collBefore = await vaultEngine.assetTypes(flrCollId);
       const debtToRaise = BigNumber.from("251035088626883475473007");
       const capToRaise = BigNumber.from("125509667994754929166541");
       await vaultEngine
@@ -405,7 +405,7 @@ describe("Vault Engine Unit Tests", function () {
           BigNumber.from(0)
         );
 
-      const collAfter = await vaultEngine.collateralTypes(flrCollId);
+      const collAfter = await vaultEngine.assetTypes(flrCollId);
       expect(collBefore.debtAccumulator.add(debtToRaise)).to.equal(
         collAfter.debtAccumulator
       );

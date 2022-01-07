@@ -6,7 +6,7 @@ import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
 
 interface VaultEngineLike {
-    function moveCollateral(
+    function moveAsset(
         bytes32 collateral,
         address from,
         address to,
@@ -211,7 +211,7 @@ contract Auctioneer is Stateful, Eventful {
         buyableAmount = lotToBuy * currentPrice;
 
         vaultEngine.moveStablecoin(msg.sender, auctions[auctionId].beneficiary, lotToBuy * currentPrice);
-        vaultEngine.moveCollateral(auctions[auctionId].collId, address(this), msg.sender, lotToBuy);
+        vaultEngine.moveAsset(auctions[auctionId].collId, address(this), msg.sender, lotToBuy);
 
         auctions[auctionId].debt = auctions[auctionId].debt - buyableAmount;
         auctions[auctionId].lot = auctions[auctionId].lot - lotToBuy;
@@ -230,12 +230,7 @@ contract Auctioneer is Stateful, Eventful {
         );
         uint256 buyAmount = bids[auctionId][msg.sender].price * bids[auctionId][msg.sender].lot;
 
-        vaultEngine.moveCollateral(
-            auctions[auctionId].collId,
-            address(this),
-            msg.sender,
-            bids[auctionId][msg.sender].lot
-        );
+        vaultEngine.moveAsset(auctions[auctionId].collId, address(this), msg.sender, bids[auctionId][msg.sender].lot);
 
         auctions[auctionId].debt -= buyAmount;
         auctions[auctionId].lot -= bids[auctionId][msg.sender].lot;
@@ -261,7 +256,7 @@ contract Auctioneer is Stateful, Eventful {
         cancelOldBids(auctionId, auction.debt, auction.lot, HEAD);
         // accept the debt?
         liquidator.reduceAuctionDebt(auction.debt);
-        vaultEngine.moveCollateral(auction.collId, address(this), recipient, auction.lot);
+        vaultEngine.moveAsset(auction.collId, address(this), recipient, auction.lot);
 
         auction.debt = 0;
         auction.lot = 0;
@@ -308,7 +303,7 @@ contract Auctioneer is Stateful, Eventful {
 
             auctions[auctionId].lot = 0;
 
-            vaultEngine.moveCollateral(
+            vaultEngine.moveAsset(
                 auctions[auctionId].collId,
                 address(this),
                 auctions[auctionId].owner,
