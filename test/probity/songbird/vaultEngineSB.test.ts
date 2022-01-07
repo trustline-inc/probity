@@ -77,7 +77,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.connect(gov).initCollType(flrCollId);
+      await vaultEngine.connect(gov).initAsset(flrCollId);
       await vaultEngine
         .connect(gov)
         .updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
@@ -89,7 +89,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
         .updateAdjustedPrice(flrCollId, PRECISION_PRICE.mul(1));
       await vaultEngine
         .connect(coll)
-        .modifyCollateral(flrCollId, owner.address, COLL_AMOUNT_EQUITY);
+        .modifyStandbyAsset(flrCollId, owner.address, COLL_AMOUNT_EQUITY);
       await vaultEngine
         .connect(gov)
         .updateIndividualVaultLimit(PRECISION_AUR.mul(1000000));
@@ -146,7 +146,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.connect(gov).initCollType(flrCollId);
+      await vaultEngine.connect(gov).initAsset(flrCollId);
       await vaultEngine
         .connect(gov)
         .updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
@@ -162,11 +162,11 @@ describe("Vault Engine Songbird Unit Tests", function () {
 
       await vaultEngine
         .connect(coll)
-        .modifyCollateral(flrCollId, owner.address, COLL_AMOUNT_DEBT);
+        .modifyStandbyAsset(flrCollId, owner.address, COLL_AMOUNT_DEBT);
 
       await vaultEngine
         .connect(coll)
-        .modifyCollateral(flrCollId, user.address, COLL_AMOUNT_DEBT);
+        .modifyStandbyAsset(flrCollId, user.address, COLL_AMOUNT_DEBT);
 
       await vaultEngine
         .connect(user)
@@ -224,7 +224,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.connect(gov).initCollType(flrCollId);
+      await vaultEngine.connect(gov).initAsset(flrCollId);
       await vaultEngine
         .connect(gov)
         .updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
@@ -252,7 +252,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
 
       await vaultEngine
         .connect(coll)
-        .modifyCollateral(
+        .modifyStandbyAsset(
           flrCollId,
           owner.address,
           COLL_AMOUNT_DEBT.add(COLL_AMOUNT_EQUITY)
@@ -291,7 +291,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
 
       await vaultEngine
         .connect(coll)
-        .modifyCollateral(
+        .modifyStandbyAsset(
           flrCollId,
           owner.address,
           COLL_AMOUNT_DEBT.add(COLL_AMOUNT_EQUITY)
@@ -345,7 +345,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.connect(gov).initCollType(flrCollId);
+      await vaultEngine.connect(gov).initAsset(flrCollId);
       await vaultEngine
         .connect(gov)
         .updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
@@ -357,7 +357,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
         .updateIndividualVaultLimit(PRECISION_AUR.mul(1000000));
       await vaultEngine
         .connect(coll)
-        .modifyCollateral(
+        .modifyStandbyAsset(
           flrCollId,
           owner.address,
           COLL_AMOUNT_DEBT.add(COLL_AMOUNT_EQUITY)
@@ -408,7 +408,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
     });
 
     it("tests the debt and equity accumulators are properly updated", async () => {
-      const collBefore = await vaultEngine.collateralTypes(flrCollId);
+      const collBefore = await vaultEngine.assets(flrCollId);
       const debtToRaise = BigNumber.from("251035088626883475473007");
       const capToRaise = BigNumber.from("125509667994754929166541");
       await vaultEngine
@@ -421,7 +421,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
           BigNumber.from(0)
         );
 
-      const collAfter = await vaultEngine.collateralTypes(flrCollId);
+      const collAfter = await vaultEngine.assets(flrCollId);
       expect(collBefore.debtAccumulator.add(debtToRaise)).to.equal(
         collAfter.debtAccumulator
       );

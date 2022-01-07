@@ -2,25 +2,25 @@ pragma solidity ^0.8.0;
 
 contract MockVaultEngine {
     struct Vault {
-        uint256 freeCollateral; // Collateral that is currently free
-        uint256 usedCollateral; // Collateral that is being utilized
+        uint256 standbyAssetAmount; // Assets that are on standby
+        uint256 activeAssetAmount; // Assets that are actively covering a position
         uint256 debt; // Vault's debt balance
         uint256 equity; // Vault's equity balance
         uint256 lastEquityAccumulator; // Most recent value of the equity rate accumulator
     }
 
-    struct Collateral {
+    struct Asset {
         uint256 debtAccumulator; // Cumulative debt rate
         uint256 equityAccumulator; // Cumulative equity rate
-        uint256 price; // Price adjusted for collateral ratio
-        uint256 normDebt; // Normalized debt
-        uint256 normEquity; // Normalized supply
-        uint256 ceiling; // Max. amount that can be supplied/borrowed
-        uint256 floor; // Min. amount of that must be supplied/borrowed
+        uint256 adjustedPrice; // The asset price, adjusted for the asset ratio
+        uint256 normDebt; // Normalized debt amount
+        uint256 normEquity; // Normalized equity amount
+        uint256 ceiling; // Max. amount of asset that can be active in a position
+        uint256 floor; // Min. amount of asset that must be active to open a position
     }
 
     struct LiquidateVaultCall {
-        bytes32 collId;
+        bytes32 assetId;
         address user;
         address auctioneer;
         address reservePool;
@@ -31,10 +31,10 @@ contract MockVaultEngine {
 
     mapping(bytes32 => mapping(address => Vault)) public vaults;
     mapping(bytes32 => bool) public states;
-    mapping(bytes32 => Collateral) public collateralTypes;
+    mapping(bytes32 => Asset) public assets;
     mapping(address => uint256) public stablecoin;
     mapping(address => uint256) public pbt;
-    mapping(address => uint256) public unbackedStablecoin;
+    mapping(address => uint256) public unbackedDebt;
 
     uint256 public protocolFeeRates;
     uint256 public totalDebt;
@@ -62,8 +62,8 @@ contract MockVaultEngine {
         stablecoin[user] = amount;
     }
 
-    function setUnbackedStablecoin(address user, uint256 amount) external {
-        unbackedStablecoin[user] = amount;
+    function setUnbackedDebt(address user, uint256 amount) external {
+        unbackedDebt[user] = amount;
     }
 
     function reducePbt(address user, uint256 amount) external {
@@ -85,62 +85,62 @@ contract MockVaultEngine {
         totalEquity = newTotalEquity;
     }
 
-    function initCollType(bytes32 collId) external {
-        collateralTypes[collId].debtAccumulator = 1e27;
-        collateralTypes[collId].equityAccumulator = 1e27;
+    function initAsset(bytes32 assetId) external {
+        assets[assetId].debtAccumulator = 1e27;
+        assets[assetId].equityAccumulator = 1e27;
     }
 
-    function updateCollateralType(
-        bytes32 collId,
-        uint256 price,
+    function updateAsset(
+        bytes32 assetId,
+        uint256 adjustedPrice,
         uint256 normDebt,
         uint256 normEquity,
         uint256 ceiling,
         uint256 floor
     ) external {
-        Collateral storage coll = collateralTypes[collId];
+        Asset storage asset = assets[assetId];
 
-        coll.price = price;
-        coll.normDebt = normDebt;
-        coll.normEquity = normEquity;
-        coll.ceiling = ceiling;
-        coll.floor = floor;
+        asset.adjustedPrice = adjustedPrice;
+        asset.normDebt = normDebt;
+        asset.normEquity = normEquity;
+        asset.ceiling = ceiling;
+        asset.floor = floor;
     }
 
     function updateAccumulators(
-        bytes32 collId,
+        bytes32 assetId,
         address reservePool,
         uint256 debtAccumulator,
         uint256 equityAccumulator,
         uint256 protocolFeeRates_
     ) external {
-        Collateral storage coll = collateralTypes[collId];
-        coll.debtAccumulator += debtAccumulator;
-        coll.equityAccumulator += equityAccumulator;
+        Asset storage asset = assets[assetId];
+        asset.debtAccumulator += debtAccumulator;
+        asset.equityAccumulator += equityAccumulator;
         protocolFeeRates = protocolFeeRates_;
     }
 
     function updateNormValues(
-        bytes32 collId,
+        bytes32 assetId,
         uint256 normDebt,
         uint256 normEquity
     ) external {
-        collateralTypes[collId].normDebt = normDebt;
-        collateralTypes[collId].normEquity = normEquity;
+        assets[assetId].normDebt = normDebt;
+        assets[assetId].normEquity = normEquity;
     }
 
     function updateVault(
-        bytes32 collId,
+        bytes32 assetId,
         address user,
-        uint256 freeColl,
-        uint256 usedColl,
+        uint256 standbyAmount,
+        uint256 activeAmount,
         uint256 debt,
         uint256 equity,
         uint256 lastEquityAccumulator
     ) external {
-        Vault storage vault = vaults[collId][user];
-        vault.freeCollateral = freeColl;
-        vault.usedCollateral = usedColl;
+        Vault storage vault = vaults[assetId][user];
+        vault.standbyAssetAmount = standbyAmount;
+        vault.activeAssetAmount = activeAmount;
         vault.debt = debt;
         vault.equity = equity;
         vault.lastEquityAccumulator = lastEquityAccumulator;
@@ -151,7 +151,7 @@ contract MockVaultEngine {
     }
 
     function liquidateVault(
-        bytes32 collId,
+        bytes32 assetId,
         address user,
         address auctioneer,
         address reservePool,
@@ -160,7 +160,7 @@ contract MockVaultEngine {
         int256 equityAmount
     ) external {
         lastLiquidateVaultCall = LiquidateVaultCall(
-            collId,
+            assetId,
             user,
             auctioneer,
             reservePool,
@@ -170,14 +170,14 @@ contract MockVaultEngine {
         );
     }
 
-    function moveCollateral(
+    function moveAsset(
         bytes32 collateral,
         address from,
         address to,
         uint256 amount
     ) external {
-        vaults[collateral][from].freeCollateral -= amount;
-        vaults[collateral][to].freeCollateral += amount;
+        vaults[collateral][from].standbyAssetAmount -= amount;
+        vaults[collateral][to].standbyAssetAmount += amount;
     }
 
     function sub(uint256 a, int256 b) internal pure returns (uint256 c) {

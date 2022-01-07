@@ -75,14 +75,14 @@ describe("Liquidator Unit Tests", function () {
       const before = await liquidator.collateralTypes(flrCollId);
       expect(before.auctioneer).to.equal(ADDRESS_ZERO);
       expect(before.debtPenaltyFee).to.equal(0);
-      expect(before.suppPenaltyFee).to.equal(0);
+      expect(before.equityPenaltyFee).to.equal(0);
 
       await liquidator.init(flrCollId, EXPECTED_AUCTIONEER_ADDRESS);
 
       const after = await liquidator.collateralTypes(flrCollId);
       expect(after.auctioneer).to.equal(EXPECTED_AUCTIONEER_ADDRESS);
       expect(after.debtPenaltyFee).to.equal(EXPECTED_DEBT_PENALTY_FEE);
-      expect(after.suppPenaltyFee).to.equal(EXPECTED_SUPP_PENALTY_FEE);
+      expect(after.equityPenaltyFee).to.equal(EXPECTED_SUPP_PENALTY_FEE);
     });
   });
 
@@ -98,7 +98,7 @@ describe("Liquidator Unit Tests", function () {
       const NEW_SUPP_PENALTY_FEE = PRECISION_PRICE.mul(107).div(100);
       const before = await liquidator.collateralTypes(flrCollId);
       expect(before.debtPenaltyFee).to.equal(DEFAULT_DEBT_PENALTY_FEE);
-      expect(before.suppPenaltyFee).to.equal(DEFAULT_SUPP_PENALTY_FEE);
+      expect(before.equityPenaltyFee).to.equal(DEFAULT_SUPP_PENALTY_FEE);
 
       await liquidator.updatePenalties(
         flrCollId,
@@ -108,7 +108,7 @@ describe("Liquidator Unit Tests", function () {
 
       const after = await liquidator.collateralTypes(flrCollId);
       expect(after.debtPenaltyFee).to.equal(NEW_DEBT_PENALTY_FEE);
-      expect(after.suppPenaltyFee).to.equal(NEW_SUPP_PENALTY_FEE);
+      expect(after.equityPenaltyFee).to.equal(NEW_SUPP_PENALTY_FEE);
     });
   });
 
@@ -156,7 +156,7 @@ describe("Liquidator Unit Tests", function () {
 
     beforeEach(async function () {
       await liquidator.init(flrCollId, auctioneer.address);
-      await vaultEngine.updateCollateralType(
+      await vaultEngine.updateAsset(
         flrCollId,
         PRICE,
         VAULT_DEBT,
@@ -250,7 +250,7 @@ describe("Liquidator Unit Tests", function () {
       const EXPECTED_EQUITY_AMOUNT = PRECISION_COLL.mul(0).sub(VAULT_EQUITY);
 
       const before = await vaultEngine.lastLiquidateVaultCall();
-      expect(before.collId).to.equal(bytes32(""));
+      expect(before.assetId).to.equal(bytes32(""));
       expect(before.user).to.equal(ADDRESS_ZERO);
       expect(before.auctioneer).to.equal(ADDRESS_ZERO);
       expect(before.reservePool).to.equal(ADDRESS_ZERO);
@@ -261,7 +261,7 @@ describe("Liquidator Unit Tests", function () {
       await liquidator.liquidateVault(flrCollId, user.address);
 
       const after = await vaultEngine.lastLiquidateVaultCall();
-      expect(after.collId).to.equal(flrCollId);
+      expect(after.assetId).to.equal(flrCollId);
       expect(after.user).to.equal(user.address);
       expect(after.auctioneer).to.equal(auctioneer.address);
       expect(after.reservePool).to.equal(reservePool.address);

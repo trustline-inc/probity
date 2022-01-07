@@ -9,16 +9,8 @@ contract VPTokenCollateral is Delegatable {
     // Events
     /////////////////////////////////////////
 
-    event DepositVPToken(
-        address indexed user,
-        uint256 amount,
-        address indexed token
-    );
-    event WithdrawVPToken(
-        address indexed user,
-        uint256 amount,
-        address indexed token
-    );
+    event DepositVPToken(address indexed user, uint256 amount, address indexed token);
+    event WithdrawVPToken(address indexed user, uint256 amount, address indexed token);
 
     /////////////////////////////////////////
     // Constructor
@@ -49,44 +41,25 @@ contract VPTokenCollateral is Delegatable {
     /////////////////////////////////////////
 
     function deposit(uint256 amount) external onlyWhen("paused", false) {
-        require(
-            token.transferFrom(msg.sender, address(this), amount),
-            "VPTokenCollateral/deposit: transfer failed"
-        );
-        vaultEngine.modifyCollateral(collId, msg.sender, int256(amount));
-        recentDeposits[msg.sender][
-            ftsoManager.getCurrentRewardEpoch()
-        ] += amount;
+        require(token.transferFrom(msg.sender, address(this), amount), "VPTokenCollateral/deposit: transfer failed");
+        vaultEngine.modifyStandbyAsset(collId, msg.sender, int256(amount));
+        recentDeposits[msg.sender][ftsoManager.getCurrentRewardEpoch()] += amount;
         recentTotalDeposit[msg.sender] += amount;
 
         emit DepositVPToken(msg.sender, amount, address(token));
     }
 
     function withdraw(uint256 amount) external onlyWhen("paused", false) {
-        require(
-            token.transfer(msg.sender, amount),
-            "VPTokenCollateral/withdraw: transfer failed"
-        );
+        require(token.transfer(msg.sender, amount), "VPTokenCollateral/withdraw: transfer failed");
 
-        vaultEngine.modifyCollateral(collId, msg.sender, -int256(amount));
+        vaultEngine.modifyStandbyAsset(collId, msg.sender, -int256(amount));
         // only reduce recentDeposits if it exists
-        if (
-            recentDeposits[msg.sender][ftsoManager.getCurrentRewardEpoch()] >=
-            amount
-        ) {
-            recentDeposits[msg.sender][
-                ftsoManager.getCurrentRewardEpoch()
-            ] -= amount;
+        if (recentDeposits[msg.sender][ftsoManager.getCurrentRewardEpoch()] >= amount) {
+            recentDeposits[msg.sender][ftsoManager.getCurrentRewardEpoch()] -= amount;
             recentTotalDeposit[msg.sender] -= amount;
-        } else if (
-            recentDeposits[msg.sender][ftsoManager.getCurrentRewardEpoch()] > 0
-        ) {
-            recentTotalDeposit[msg.sender] -= recentDeposits[msg.sender][
-                ftsoManager.getCurrentRewardEpoch()
-            ];
-            recentDeposits[msg.sender][
-                ftsoManager.getCurrentRewardEpoch()
-            ] -= 0;
+        } else if (recentDeposits[msg.sender][ftsoManager.getCurrentRewardEpoch()] > 0) {
+            recentTotalDeposit[msg.sender] -= recentDeposits[msg.sender][ftsoManager.getCurrentRewardEpoch()];
+            recentDeposits[msg.sender][ftsoManager.getCurrentRewardEpoch()] -= 0;
         }
 
         emit WithdrawVPToken(msg.sender, amount, address(token));

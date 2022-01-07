@@ -5,14 +5,14 @@ pragma solidity ^0.8.0;
 import "../dependencies/Stateful.sol";
 
 interface VaultEngineLike {
-    function collateralTypes(bytes32) external returns (uint256 debtAccumulator, uint256 suppAccumulator);
+    function collateralTypes(bytes32) external returns (uint256 debtAccumulator, uint256 equityAccumulator);
 
     function totalDebt() external returns (uint256);
 
     function totalEquity() external returns (uint256);
 
     function updateAccumulators(
-        bytes32 collId,
+        bytes32 assetId,
         address reservePool,
         uint256 debtRateIncrease,
         uint256 equityRateIncrease,
@@ -58,7 +58,7 @@ contract Teller is Stateful {
     /////////////////////////////////////////
     // Events
     /////////////////////////////////////////
-    event RatesUpdated(uint256 timestamp, uint256 debtAccumulator, uint256 suppAccumulator);
+    event RatesUpdated(uint256 timestamp, uint256 debtAccumulator, uint256 equityAccumulator);
 
     /////////////////////////////////////////
     // Constructor
@@ -81,16 +81,16 @@ contract Teller is Stateful {
     /////////////////////////////////////////
     // Public Functions
     /////////////////////////////////////////
-    function setProtocolFee(bytes32 collId, uint256 protocolFee) public onlyBy("gov") {
-        collateralTypes[collId].protocolFee = protocolFee;
+    function setProtocolFee(bytes32 assetId, uint256 protocolFee) public onlyBy("gov") {
+        collateralTypes[assetId].protocolFee = protocolFee;
     }
 
     /////////////////////////////////////////
     // External Functions
     /////////////////////////////////////////
-    function initCollType(bytes32 collId, uint256 protocolFee) external onlyBy("gov") {
-        collateralTypes[collId].lastUpdated = block.timestamp;
-        collateralTypes[collId].protocolFee = protocolFee;
+    function initCollType(bytes32 assetId, uint256 protocolFee) external onlyBy("gov") {
+        collateralTypes[assetId].lastUpdated = block.timestamp;
+        collateralTypes[assetId].protocolFee = protocolFee;
     }
 
     function setReservePoolAddress(address newReservePool) public onlyBy("gov") {
@@ -100,11 +100,11 @@ contract Teller is Stateful {
     /**
      * @dev Updates the debt and equity rate accumulators
      */
-    function updateAccumulator(bytes32 collId) external {
-        require(collateralTypes[collId].lastUpdated != 0, "Teller/updateAccumulator: Collateral type not initialized");
+    function updateAccumulator(bytes32 assetId) external {
+        require(collateralTypes[assetId].lastUpdated != 0, "Teller/updateAccumulator: Collateral type not initialized");
 
-        Collateral memory coll = collateralTypes[collId];
-        (uint256 debtAccumulator, uint256 suppAccumulator) = vaultEngine.collateralTypes(collId);
+        Collateral memory coll = collateralTypes[assetId];
+        (uint256 debtAccumulator, uint256 equityAccumulator) = vaultEngine.collateralTypes(assetId);
         uint256 totalDebt = vaultEngine.totalDebt();
         uint256 totalEquity = vaultEngine.totalEquity();
 
@@ -123,13 +123,13 @@ contract Teller is Stateful {
             exponentiated = rpow(multipliedByUtilizationPlusOne, (block.timestamp - coll.lastUpdated));
         }
 
-        uint256 suppAccumulatorDiff = rmul(exponentiated, suppAccumulator) - suppAccumulator;
+        uint256 equityAccumulatorDiff = rmul(exponentiated, equityAccumulator) - equityAccumulator;
         uint256 protocolFeeRate = 0;
-        if (collateralTypes[collId].protocolFee != 0) {
-            protocolFeeRate = (suppAccumulatorDiff * collateralTypes[collId].protocolFee) / WAD;
+        if (collateralTypes[assetId].protocolFee != 0) {
+            protocolFeeRate = (equityAccumulatorDiff * collateralTypes[assetId].protocolFee) / WAD;
         }
 
-        uint256 equityRateIncrease = suppAccumulatorDiff - protocolFeeRate;
+        uint256 equityRateIncrease = equityAccumulatorDiff - protocolFeeRate;
 
         // Set new APR (round to nearest 0.25%)
         coll.lastUtilization = wdiv(totalDebt, totalEquity);
@@ -156,11 +156,11 @@ contract Teller is Stateful {
 
         // Update time index
         coll.lastUpdated = block.timestamp;
-        vaultEngine.updateAccumulators(collId, reservePool, debtRateIncrease, equityRateIncrease, protocolFeeRate);
+        vaultEngine.updateAccumulators(assetId, reservePool, debtRateIncrease, equityRateIncrease, protocolFeeRate);
 
         // collect Fees by adding AUR to reserve pool
 
-        collateralTypes[collId] = coll;
+        collateralTypes[assetId] = coll;
     }
 
     /////////////////////////////////////////

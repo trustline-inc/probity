@@ -30,10 +30,12 @@ interface VPTokenLike {
 }
 
 interface VaultEngineLike {
-    function vaults(bytes32 collId, address user) external returns (uint256 freeColl, uint256 lockedColl);
+    function vaults(bytes32 assetId, address user)
+        external
+        returns (uint256 standbyAssetAmount, uint256 activeAssetAmount);
 
-    function modifyCollateral(
-        bytes32 collateral,
+    function modifyStandbyAsset(
+        bytes32 assetId,
         address user,
         int256 amount
     ) external;

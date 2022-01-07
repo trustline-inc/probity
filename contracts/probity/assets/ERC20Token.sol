@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import "../../dependencies/Stateful.sol";
 
 interface VaultEngineLike {
-    function modifyCollateral(
+    function modifyStandbyAsset(
         bytes32 collateral,
         address user,
         int256 amount
@@ -13,9 +13,7 @@ interface VaultEngineLike {
 }
 
 interface TokenLike {
-    function transfer(address recipient, uint256 amount)
-        external
-        returns (bool);
+    function transfer(address recipient, uint256 amount) external returns (bool);
 
     function transferFrom(
         address sender,
@@ -29,55 +27,41 @@ contract ERC20Collateral is Stateful {
     // State Variables
     /////////////////////////////////////////
     VaultEngineLike public immutable vaultEngine;
-    TokenLike public immutable collateralToken;
-    bytes32 public immutable collateralId;
+    TokenLike public immutable token;
+    bytes32 public immutable assetId;
 
     /////////////////////////////////////////
     // Events
     /////////////////////////////////////////
-    event DepositToken(
-        address indexed user,
-        uint256 amount,
-        address indexed token
-    );
-    event WithdrawToken(
-        address indexed user,
-        uint256 amount,
-        address indexed token
-    );
+    event DepositToken(address indexed user, uint256 amount, address indexed token);
+    event WithdrawToken(address indexed user, uint256 amount, address indexed token);
 
     /////////////////////////////////////////
     // Constructor
     /////////////////////////////////////////
     constructor(
         address registryAddress,
-        bytes32 collId,
-        TokenLike collateral,
+        bytes32 id,
+        TokenLike asset,
         VaultEngineLike vaultEngineAddress
     ) Stateful(registryAddress) {
-        collateralId = collId;
+        assetId = id;
         vaultEngine = vaultEngineAddress;
-        collateralToken = collateral;
+        token = asset;
     }
 
     /////////////////////////////////////////
     // External Functions
     /////////////////////////////////////////
     function deposit(uint256 amount) external onlyWhen("paused", false) {
-        require(
-            collateralToken.transferFrom(msg.sender, address(this), amount),
-            "ERC20Collateral/deposit: transfer failed"
-        );
-        vaultEngine.modifyCollateral(collateralId, msg.sender, int256(amount));
-        emit DepositToken(msg.sender, amount, address(collateralToken));
+        require(token.transferFrom(msg.sender, address(this), amount), "ERC20Collateral/deposit: transfer failed");
+        vaultEngine.modifyStandbyAsset(assetId, msg.sender, int256(amount));
+        emit DepositToken(msg.sender, amount, address(token));
     }
 
     function withdraw(uint256 amount) external onlyWhen("paused", false) {
-        require(
-            collateralToken.transfer(msg.sender, amount),
-            "ERC20Collateral/withdraw: transfer failed"
-        );
-        vaultEngine.modifyCollateral(collateralId, msg.sender, -int256(amount));
-        emit WithdrawToken(msg.sender, amount, address(collateralToken));
+        require(token.transfer(msg.sender, amount), "ERC20Collateral/withdraw: transfer failed");
+        vaultEngine.modifyStandbyAsset(assetId, msg.sender, -int256(amount));
+        emit WithdrawToken(msg.sender, amount, address(token));
     }
 }

@@ -9,8 +9,8 @@ interface VaultEngineLike {
     function vaults(bytes32 collId, address user)
         external
         returns (
-            uint256 freeColl,
-            uint256 lockedColl,
+            uint256 standbyCollateralAmount,
+            uint256 activeCollateralAmount,
             uint256 debt,
             uint256 equity
         );
@@ -18,9 +18,9 @@ interface VaultEngineLike {
     function collateralTypes(bytes32 collId)
         external
         returns (
-            uint256 debtAccu,
-            uint256 suppAccu,
-            uint256 price
+            uint256 debtAccumulator,
+            uint256 equityAccumulator,
+            uint256 adjustedPrice
         );
 
     function liquidateVault(
@@ -30,7 +30,7 @@ interface VaultEngineLike {
         address reservePool,
         int256 collateralAmount,
         int256 debtAmount,
-        int256 suppAmount
+        int256 equityAmount
     ) external;
 }
 
@@ -64,7 +64,7 @@ contract Liquidator is Stateful, Eventful {
     struct Collateral {
         AuctioneerLike auctioneer;
         uint256 debtPenaltyFee;
-        uint256 suppPenaltyFee;
+        uint256 equityPenaltyFee;
     }
 
     /////////////////////////////////////////
@@ -96,19 +96,25 @@ contract Liquidator is Stateful, Eventful {
     function init(bytes32 collId, AuctioneerLike auctioneer) external onlyBy("gov") {
         collateralTypes[collId].auctioneer = auctioneer;
         collateralTypes[collId].debtPenaltyFee = 1.17E18;
-        collateralTypes[collId].suppPenaltyFee = 1.05E18;
+        collateralTypes[collId].equityPenaltyFee = 1.05E18;
     }
 
     function updatePenalties(
         bytes32 collId,
         uint256 debtPenalty,
-        uint256 suppPenalty
+        uint256 equityPenalty
     ) external onlyBy("gov") {
         emit LogVarUpdate("liquidator", collId, "debtPenaltyFee", collateralTypes[collId].debtPenaltyFee, debtPenalty);
-        emit LogVarUpdate("liquidator", collId, "suppPenaltyFee", collateralTypes[collId].suppPenaltyFee, suppPenalty);
+        emit LogVarUpdate(
+            "liquidator",
+            collId,
+            "equityPenaltyFee",
+            collateralTypes[collId].equityPenaltyFee,
+            equityPenalty
+        );
 
         collateralTypes[collId].debtPenaltyFee = debtPenalty;
-        collateralTypes[collId].suppPenaltyFee = suppPenalty;
+        collateralTypes[collId].equityPenaltyFee = equityPenalty;
     }
 
     function updateAuctioneer(bytes32 collId, AuctioneerLike newAuctioneer) external onlyBy("gov") {
@@ -152,7 +158,7 @@ contract Liquidator is Stateful, Eventful {
 
         uint256 aurToRaise = (debt * debtAccu * collateralTypes[collId].debtPenaltyFee) /
             PRECISION_COLL +
-            (equity * equityAccu * collateralTypes[collId].suppPenaltyFee) /
+            (equity * equityAccu * collateralTypes[collId].equityPenaltyFee) /
             PRECISION_COLL;
         // start the auction
         collateralTypes[collId].auctioneer.startAuction(collId, lockedColl, aurToRaise, user, address(reserve));
