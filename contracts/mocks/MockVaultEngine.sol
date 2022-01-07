@@ -20,7 +20,7 @@ contract MockVaultEngine {
     }
 
     struct LiquidateVaultCall {
-        bytes32 assetId;
+        bytes32 collId;
         address user;
         address auctioneer;
         address reservePool;
@@ -151,7 +151,7 @@ contract MockVaultEngine {
     }
 
     function liquidateVault(
-        bytes32 assetId,
+        bytes32 collId,
         address user,
         address auctioneer,
         address reservePool,
@@ -160,7 +160,7 @@ contract MockVaultEngine {
         int256 equityAmount
     ) external {
         lastLiquidateVaultCall = LiquidateVaultCall(
-            assetId,
+            collId,
             user,
             auctioneer,
             reservePool,
