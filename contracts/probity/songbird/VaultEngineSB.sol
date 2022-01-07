@@ -483,6 +483,10 @@ contract VaultEngineSB is Stateful, Eventful {
         require(b <= 0 || c >= a, "Vault/add: add op failed");
     }
 
+    function div(int256 a, uint256 b) internal pure returns (int256 c) {
+        c = a / int256(b);
+    }
+
     function mul(uint256 a, int256 b) internal pure returns (int256 c) {
         c = int256(a) * b;
         require(int256(a) >= 0, "Vault/mul: mul op failed");
