@@ -28,14 +28,14 @@ contract PriceFeed is Stateful, Eventful {
     uint256 private constant RAY = 1e27;
     VaultEngineLike public immutable vaultEngine;
 
-    mapping(bytes32 => Asset) public assetTypes;
+    mapping(bytes32 => Asset) public assets;
 
     /////////////////////////////////////////
     // Modifiers
     /////////////////////////////////////////
 
     modifier collateralExists(bytes32 assetId) {
-        require(address(assetTypes[assetId].ftso) != address(0), "PriceFeed/AssetExists: Asset is not set");
+        require(address(assets[assetId].ftso) != address(0), "PriceFeed/AssetExists: Asset is not set");
         _;
     }
 
@@ -54,35 +54,29 @@ contract PriceFeed is Stateful, Eventful {
         uint256 liquidationRatio,
         FtsoLike ftso
     ) external onlyBy("gov") {
-        assetTypes[assetId].liquidationRatio = liquidationRatio;
-        assetTypes[assetId].ftso = ftso;
+        assets[assetId].liquidationRatio = liquidationRatio;
+        assets[assetId].ftso = ftso;
     }
 
     function updateLiquidationRatio(bytes32 assetId, uint256 liquidationRatio) external onlyBy("gov") {
-        emit LogVarUpdate(
-            "priceFeed",
-            assetId,
-            "liquidationRatio",
-            assetTypes[assetId].liquidationRatio,
-            liquidationRatio
-        );
-        assetTypes[assetId].liquidationRatio = liquidationRatio;
+        emit LogVarUpdate("priceFeed", assetId, "liquidationRatio", assets[assetId].liquidationRatio, liquidationRatio);
+        assets[assetId].liquidationRatio = liquidationRatio;
     }
 
     function updateFtso(bytes32 assetId, FtsoLike newFtso) external onlyBy("gov") {
-        emit LogVarUpdate("priceFeed", assetId, "ftso", address(assetTypes[assetId].ftso), address(newFtso));
-        assetTypes[assetId].ftso = newFtso;
+        emit LogVarUpdate("priceFeed", assetId, "ftso", address(assets[assetId].ftso), address(newFtso));
+        assets[assetId].ftso = newFtso;
     }
 
     function getPrice(bytes32 assetId) public collateralExists(assetId) returns (uint256 price) {
-        (price, ) = assetTypes[assetId].ftso.getCurrentPrice();
+        (price, ) = assets[assetId].ftso.getCurrentPrice();
     }
 
     // @todo figure out how many places of precision the ftso provides and fix the math accordingly
     function updateAdjustedPrice(bytes32 assetId) external {
-        require(address(assetTypes[assetId].ftso) != address(0), "PriceFeed/UpdatePrice: Asset is not initialized");
-        (uint256 price, ) = assetTypes[assetId].ftso.getCurrentPrice();
-        uint256 adjustedPrice = rdiv(rdiv(price, RAY), assetTypes[assetId].liquidationRatio * 1e9);
+        require(address(assets[assetId].ftso) != address(0), "PriceFeed/UpdatePrice: Asset is not initialized");
+        (uint256 price, ) = assets[assetId].ftso.getCurrentPrice();
+        uint256 adjustedPrice = rdiv(rdiv(price, RAY), assets[assetId].liquidationRatio * 1e9);
 
         vaultEngine.updateAdjustedPrice(assetId, adjustedPrice);
     }

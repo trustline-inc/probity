@@ -352,7 +352,7 @@ describe("Probity happy flow", function () {
 
     await priceFeed.updateAdjustedPrice(flrAssetId);
 
-    let collTypeAfter = await vaultEngine.assetTypes(flrAssetId);
+    let collTypeAfter = await vaultEngine.assets(flrAssetId);
     let expectedPrice = PRECISION_PRICE.div(3).mul(2);
     // as long as the expectedPrice is within a buffer, call it success
     expect(collTypeAfter[2].sub(expectedPrice).toNumber() <= 10).to.equal(true);

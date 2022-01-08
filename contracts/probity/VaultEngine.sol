@@ -17,8 +17,8 @@ contract VaultEngine is Stateful, Eventful {
     // Type Declarations
     /////////////////////////////////////////
     struct Vault {
-        uint256 standbyAssetAmount; // assetTypes that are on standby
-        uint256 activeAssetAmount; // assetTypes that are actively covering a position
+        uint256 standbyAssetAmount; // assets that are on standby
+        uint256 activeAssetAmount; // assets that are actively covering a position
         uint256 debt; // Vault's debt balance
         uint256 equity; // Vault's equity balance
         uint256 lastEquityAccumulator; // Most recent value of the equity rate accumulator
@@ -47,7 +47,7 @@ contract VaultEngine is Stateful, Eventful {
     mapping(address => uint256) public stablecoin;
     mapping(address => uint256) public pbt;
     mapping(address => uint256) public unbackedDebt;
-    mapping(bytes32 => Asset) public assetTypes;
+    mapping(bytes32 => Asset) public assets;
     mapping(bytes32 => mapping(address => Vault)) public vaults;
 
     /////////////////////////////////////////
@@ -90,7 +90,7 @@ contract VaultEngine is Stateful, Eventful {
         )
     {
         Vault storage vault = vaults[assetId][user];
-        Asset storage asset = assetTypes[assetId];
+        Asset storage asset = assets[assetId];
         return (
             vault.activeAssetAmount * asset.adjustedPrice,
             vault.debt * asset.debtAccumulator,
@@ -177,7 +177,7 @@ contract VaultEngine is Stateful, Eventful {
      */
     function collectInterest(bytes32 assetId) public {
         Vault memory vault = vaults[assetId][msg.sender];
-        Asset memory asset = assetTypes[assetId];
+        Asset memory asset = assets[assetId];
         pbt[msg.sender] += vault.equity * (asset.equityAccumulator - vault.lastEquityAccumulator);
         stablecoin[msg.sender] += vault.equity * (asset.equityAccumulator - vault.lastEquityAccumulator);
         vaults[assetId][msg.sender].lastEquityAccumulator = asset.equityAccumulator;
@@ -210,16 +210,16 @@ contract VaultEngine is Stateful, Eventful {
         Vault storage vault = vaults[assetId][msg.sender];
         vault.standbyAssetAmount = sub(vault.standbyAssetAmount, underlyingAmount);
         vault.activeAssetAmount = add(vault.activeAssetAmount, underlyingAmount);
-        int256 normalizedEquity = div(equityAmount, assetTypes[assetId].equityAccumulator);
+        int256 normalizedEquity = div(equityAmount, assets[assetId].equityAccumulator);
         vault.equity = add(vault.equity, normalizedEquity);
 
-        assetTypes[assetId].normEquity = add(assetTypes[assetId].normEquity, normalizedEquity);
+        assets[assetId].normEquity = add(assets[assetId].normEquity, normalizedEquity);
 
         totalEquity = add(totalEquity, equityAmount);
 
-        require(totalEquity <= assetTypes[assetId].ceiling, "Vault/modifyEquity: Supply ceiling reached");
+        require(totalEquity <= assets[assetId].ceiling, "Vault/modifyEquity: Supply ceiling reached");
         require(
-            vault.equity == 0 || (vault.equity * PRECISION_PRICE) > assetTypes[assetId].floor,
+            vault.equity == 0 || (vault.equity * PRECISION_PRICE) > assets[assetId].floor,
             "Vault/modifyEquity: Equity smaller than floor"
         );
         certify(assetId, vault);
@@ -259,16 +259,16 @@ contract VaultEngine is Stateful, Eventful {
         Vault memory vault = vaults[assetId][msg.sender];
         vault.standbyAssetAmount = sub(vault.standbyAssetAmount, collAmount);
         vault.activeAssetAmount = add(vault.activeAssetAmount, collAmount);
-        int256 normalizedDebt = div(debtAmount, assetTypes[assetId].debtAccumulator);
+        int256 normalizedDebt = div(debtAmount, assets[assetId].debtAccumulator);
         vault.debt = add(vault.debt, normalizedDebt);
 
-        assetTypes[assetId].normDebt = add(assetTypes[assetId].normDebt, normalizedDebt);
+        assets[assetId].normDebt = add(assets[assetId].normDebt, normalizedDebt);
 
         totalDebt = add(totalDebt, debtAmount);
 
-        require(totalDebt <= assetTypes[assetId].ceiling, "Vault/modifyDebt: Debt ceiling reached");
+        require(totalDebt <= assets[assetId].ceiling, "Vault/modifyDebt: Debt ceiling reached");
         require(
-            vault.debt == 0 || (vault.debt * PRECISION_PRICE) > assetTypes[assetId].floor,
+            vault.debt == 0 || (vault.debt * PRECISION_PRICE) > assets[assetId].floor,
             "Vault/modifyDebt: Debt Smaller than floor"
         );
         certify(assetId, vault);
@@ -301,7 +301,7 @@ contract VaultEngine is Stateful, Eventful {
         int256 equityAmount
     ) external onlyByProbity {
         Vault storage vault = vaults[assetId][user];
-        Asset storage asset = assetTypes[assetId];
+        Asset storage asset = assets[assetId];
 
         vault.activeAssetAmount = add(vault.activeAssetAmount, assetAmount);
         vault.debt = add(vault.debt, debtAmount);
@@ -345,8 +345,8 @@ contract VaultEngine is Stateful, Eventful {
      * @param assetId The asset type ID
      */
     function initAssetType(bytes32 assetId) external onlyBy("gov") {
-        assetTypes[assetId].debtAccumulator = PRECISION_PRICE;
-        assetTypes[assetId].equityAccumulator = PRECISION_PRICE;
+        assets[assetId].debtAccumulator = PRECISION_PRICE;
+        assets[assetId].equityAccumulator = PRECISION_PRICE;
     }
 
     /**
@@ -355,8 +355,8 @@ contract VaultEngine is Stateful, Eventful {
      * @param ceiling The new ceiling amount
      */
     function updateCeiling(bytes32 assetId, uint256 ceiling) external onlyBy("gov") {
-        emit LogVarUpdate("Vault", assetId, "ceiling", assetTypes[assetId].ceiling, ceiling);
-        assetTypes[assetId].ceiling = ceiling;
+        emit LogVarUpdate("Vault", assetId, "ceiling", assets[assetId].ceiling, ceiling);
+        assets[assetId].ceiling = ceiling;
     }
 
     /**
@@ -366,8 +366,8 @@ contract VaultEngine is Stateful, Eventful {
      * @param floor The new floor amount
      */
     function updateFloor(bytes32 assetId, uint256 floor) external onlyBy("gov") {
-        emit LogVarUpdate("Vault", assetId, "floor", assetTypes[assetId].floor, floor);
-        assetTypes[assetId].floor = floor;
+        emit LogVarUpdate("Vault", assetId, "floor", assets[assetId].floor, floor);
+        assets[assetId].floor = floor;
     }
 
     /**
@@ -383,16 +383,10 @@ contract VaultEngine is Stateful, Eventful {
         uint256 equityRateIncrease,
         uint256 protocolFeeRates
     ) external onlyBy("teller") {
-        emit LogVarUpdate("Vault", assetId, "debtAccumulator", assetTypes[assetId].debtAccumulator, debtRateIncrease);
-        emit LogVarUpdate(
-            "Vault",
-            assetId,
-            "equityAccumulator",
-            assetTypes[assetId].equityAccumulator,
-            equityRateIncrease
-        );
+        emit LogVarUpdate("Vault", assetId, "debtAccumulator", assets[assetId].debtAccumulator, debtRateIncrease);
+        emit LogVarUpdate("Vault", assetId, "equityAccumulator", assets[assetId].equityAccumulator, equityRateIncrease);
 
-        Asset storage asset = assetTypes[assetId];
+        Asset storage asset = assets[assetId];
         uint256 newDebt = asset.normDebt * debtRateIncrease;
         uint256 newEquity = asset.normEquity * equityRateIncrease;
 
@@ -416,8 +410,8 @@ contract VaultEngine is Stateful, Eventful {
      * @param price The new price
      */
     function updateAdjustedPrice(bytes32 assetId, uint256 price) external onlyByProbity {
-        emit LogVarUpdate("Vault", assetId, "price", assetTypes[assetId].adjustedPrice, price);
-        assetTypes[assetId].adjustedPrice = price;
+        emit LogVarUpdate("Vault", assetId, "price", assets[assetId].adjustedPrice, price);
+        assets[assetId].adjustedPrice = price;
     }
 
     /////////////////////////////////////////
@@ -431,8 +425,8 @@ contract VaultEngine is Stateful, Eventful {
      */
     function certify(bytes32 assetId, Vault memory vault) internal view {
         require(
-            (vault.debt * assetTypes[assetId].debtAccumulator) + (vault.equity * PRECISION_PRICE) <=
-                vault.activeAssetAmount * assetTypes[assetId].adjustedPrice,
+            (vault.debt * assets[assetId].debtAccumulator) + (vault.equity * PRECISION_PRICE) <=
+                vault.activeAssetAmount * assets[assetId].adjustedPrice,
             "Vault/certify: Not enough underlying/collateral"
         );
     }

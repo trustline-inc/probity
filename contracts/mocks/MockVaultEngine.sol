@@ -2,8 +2,8 @@ pragma solidity ^0.8.0;
 
 contract MockVaultEngine {
     struct Vault {
-        uint256 standbyAssetAmount; // assetTypes that are on standby
-        uint256 activeAssetAmount; // assetTypes that are actively covering a position
+        uint256 standbyAssetAmount; // assets that are on standby
+        uint256 activeAssetAmount; // assets that are actively covering a position
         uint256 debt; // Vault's debt balance
         uint256 equity; // Vault's equity balance
         uint256 lastEquityAccumulator; // Most recent value of the equity rate accumulator
@@ -31,7 +31,7 @@ contract MockVaultEngine {
 
     mapping(bytes32 => mapping(address => Vault)) public vaults;
     mapping(bytes32 => bool) public states;
-    mapping(bytes32 => Asset) public assetTypes;
+    mapping(bytes32 => Asset) public assets;
     mapping(address => uint256) public stablecoin;
     mapping(address => uint256) public pbt;
     mapping(address => uint256) public unbackedDebt;
@@ -86,8 +86,8 @@ contract MockVaultEngine {
     }
 
     function initAssetType(bytes32 assetId) external {
-        assetTypes[assetId].debtAccumulator = 1e27;
-        assetTypes[assetId].equityAccumulator = 1e27;
+        assets[assetId].debtAccumulator = 1e27;
+        assets[assetId].equityAccumulator = 1e27;
     }
 
     function updateAsset(
@@ -98,7 +98,7 @@ contract MockVaultEngine {
         uint256 ceiling,
         uint256 floor
     ) external {
-        Asset storage asset = assetTypes[assetId];
+        Asset storage asset = assets[assetId];
 
         asset.adjustedPrice = adjustedPrice;
         asset.normDebt = normDebt;
@@ -114,7 +114,7 @@ contract MockVaultEngine {
         uint256 equityAccumulator,
         uint256 protocolFeeRates_
     ) external {
-        Asset storage asset = assetTypes[assetId];
+        Asset storage asset = assets[assetId];
         asset.debtAccumulator += debtAccumulator;
         asset.equityAccumulator += equityAccumulator;
         protocolFeeRates = protocolFeeRates_;
@@ -125,8 +125,8 @@ contract MockVaultEngine {
         uint256 normDebt,
         uint256 normEquity
     ) external {
-        assetTypes[assetId].normDebt = normDebt;
-        assetTypes[assetId].normEquity = normEquity;
+        assets[assetId].normDebt = normDebt;
+        assets[assetId].normEquity = normEquity;
     }
 
     function updateVault(

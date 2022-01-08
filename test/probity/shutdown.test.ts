@@ -337,13 +337,13 @@ describe("Shutdown Unit Tests", function () {
       const PRICE_TO_SET = PRECISION_PRICE.mul(12).div(10);
       await priceFeed.setPrice(flrCollId, PRICE_TO_SET);
 
-      let coll = await shutdown.assetTypes(flrCollId);
+      let coll = await shutdown.assets(flrCollId);
       expect(coll.finalPrice).to.equal(0);
 
       await shutdown.initiateShutdown();
       await shutdown.setFinalPrice(flrCollId);
 
-      coll = await shutdown.assetTypes(flrCollId);
+      coll = await shutdown.assets(flrCollId);
       expect(coll.finalPrice).to.equal(PRICE_TO_SET);
     });
 
@@ -414,7 +414,7 @@ describe("Shutdown Unit Tests", function () {
       const EXPECTED_AUR_GAP = EXPECTED_GAP.mul(PRICE_TO_SET);
       await shutdown.setFinalPrice(flrCollId);
 
-      let coll = await shutdown.assetTypes(flrCollId);
+      let coll = await shutdown.assets(flrCollId);
       expect(coll.gap).to.equal(0);
       let aurGap = await shutdown.aurGap();
       expect(aurGap).to.equal(0);
@@ -422,7 +422,7 @@ describe("Shutdown Unit Tests", function () {
       // overcollateralized vaults
       await shutdown.processUserDebt(flrCollId, user.address);
 
-      coll = await shutdown.assetTypes(flrCollId);
+      coll = await shutdown.assets(flrCollId);
       expect(coll.gap).to.equal(0);
       aurGap = await shutdown.aurGap();
       expect(aurGap).to.equal(0);
@@ -430,7 +430,7 @@ describe("Shutdown Unit Tests", function () {
       // undercollateralized vaults
       await shutdown.processUserDebt(flrCollId, owner.address);
 
-      coll = await shutdown.assetTypes(flrCollId);
+      coll = await shutdown.assets(flrCollId);
       expect(coll.gap).to.equal(EXPECTED_GAP);
       aurGap = await shutdown.aurGap();
       expect(aurGap).to.equal(EXPECTED_AUR_GAP);
@@ -920,7 +920,7 @@ describe("Shutdown Unit Tests", function () {
       await shutdown.setFinalDebtBalance();
       await shutdown.calculateRedeemRatio(flrCollId);
 
-      const collType = await shutdown.assetTypes(flrCollId);
+      const collType = await shutdown.assets(flrCollId);
       expect(collType.redeemRatio).to.equal(expected);
     });
 
@@ -931,7 +931,7 @@ describe("Shutdown Unit Tests", function () {
 
       await shutdown.calculateRedeemRatio(flrCollId);
 
-      const collType = await shutdown.assetTypes(flrCollId);
+      const collType = await shutdown.assets(flrCollId);
       expect(collType.redeemRatio).to.equal(expected);
     });
 
