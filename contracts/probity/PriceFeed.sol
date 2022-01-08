@@ -6,7 +6,7 @@ import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
 
 interface VaultEngineLike {
-    function updateAdjustedPrice(bytes32 collId, uint256 price) external;
+    function updateAdjustedPrice(bytes32 assetId, uint256 price) external;
 }
 
 interface FtsoLike {
@@ -17,7 +17,7 @@ contract PriceFeed is Stateful, Eventful {
     /////////////////////////////////////////
     // Type Declaration
     /////////////////////////////////////////
-    struct Collateral {
+    struct Asset {
         uint256 liquidationRatio;
         FtsoLike ftso;
     }
@@ -28,17 +28,14 @@ contract PriceFeed is Stateful, Eventful {
     uint256 private constant RAY = 1e27;
     VaultEngineLike public immutable vaultEngine;
 
-    mapping(bytes32 => Collateral) public collateralTypes;
+    mapping(bytes32 => Asset) public assetTypes;
 
     /////////////////////////////////////////
     // Modifiers
     /////////////////////////////////////////
 
-    modifier collateralExists(bytes32 collId) {
-        require(
-            address(collateralTypes[collId].ftso) != address(0),
-            "PriceFeed/CollateralExists: Collateral Type is not Set"
-        );
+    modifier collateralExists(bytes32 assetId) {
+        require(address(assetTypes[assetId].ftso) != address(0), "PriceFeed/AssetExists: Asset is not set");
         _;
     }
 
@@ -53,44 +50,41 @@ contract PriceFeed is Stateful, Eventful {
     // External functions
     /////////////////////////////////////////
     function init(
-        bytes32 collId,
+        bytes32 assetId,
         uint256 liquidationRatio,
         FtsoLike ftso
     ) external onlyBy("gov") {
-        collateralTypes[collId].liquidationRatio = liquidationRatio;
-        collateralTypes[collId].ftso = ftso;
+        assetTypes[assetId].liquidationRatio = liquidationRatio;
+        assetTypes[assetId].ftso = ftso;
     }
 
-    function updateLiquidationRatio(bytes32 collId, uint256 liquidationRatio) external onlyBy("gov") {
+    function updateLiquidationRatio(bytes32 assetId, uint256 liquidationRatio) external onlyBy("gov") {
         emit LogVarUpdate(
             "priceFeed",
-            collId,
+            assetId,
             "liquidationRatio",
-            collateralTypes[collId].liquidationRatio,
+            assetTypes[assetId].liquidationRatio,
             liquidationRatio
         );
-        collateralTypes[collId].liquidationRatio = liquidationRatio;
+        assetTypes[assetId].liquidationRatio = liquidationRatio;
     }
 
-    function updateFtso(bytes32 collId, FtsoLike newFtso) external onlyBy("gov") {
-        emit LogVarUpdate("priceFeed", collId, "ftso", address(collateralTypes[collId].ftso), address(newFtso));
-        collateralTypes[collId].ftso = newFtso;
+    function updateFtso(bytes32 assetId, FtsoLike newFtso) external onlyBy("gov") {
+        emit LogVarUpdate("priceFeed", assetId, "ftso", address(assetTypes[assetId].ftso), address(newFtso));
+        assetTypes[assetId].ftso = newFtso;
     }
 
-    function getPrice(bytes32 collId) public collateralExists(collId) returns (uint256 price) {
-        (price, ) = collateralTypes[collId].ftso.getCurrentPrice();
+    function getPrice(bytes32 assetId) public collateralExists(assetId) returns (uint256 price) {
+        (price, ) = assetTypes[assetId].ftso.getCurrentPrice();
     }
 
     // @todo figure out how many places of precision the ftso provides and fix the math accordingly
-    function updateAdjustedPrice(bytes32 collId) external {
-        require(
-            address(collateralTypes[collId].ftso) != address(0),
-            "PriceFeed/UpdatePrice: Collateral Type is not initialized"
-        );
-        (uint256 price, ) = collateralTypes[collId].ftso.getCurrentPrice();
-        uint256 adjustedPrice = rdiv(rdiv(price, RAY), collateralTypes[collId].liquidationRatio * 1e9);
+    function updateAdjustedPrice(bytes32 assetId) external {
+        require(address(assetTypes[assetId].ftso) != address(0), "PriceFeed/UpdatePrice: Asset is not initialized");
+        (uint256 price, ) = assetTypes[assetId].ftso.getCurrentPrice();
+        uint256 adjustedPrice = rdiv(rdiv(price, RAY), assetTypes[assetId].liquidationRatio * 1e9);
 
-        vaultEngine.updateAdjustedPrice(collId, adjustedPrice);
+        vaultEngine.updateAdjustedPrice(assetId, adjustedPrice);
     }
 
     /////////////////////////////////////////

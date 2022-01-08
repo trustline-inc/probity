@@ -544,9 +544,9 @@ describe("Probity happy flow", function () {
     const reserveUser = reserve.connect(user);
     await ethers.provider.send("evm_increaseTime", [21601]);
     await ethers.provider.send("evm_mine", []);
-    await reserveUser.purchaseShares(PRECISION_AUR.mul(100));
+    await reserveUser.purchaseVouchers(PRECISION_AUR.mul(100));
 
-    let userIOU = await reserve.shares(user.address);
+    let userIOU = await reserve.vouchers(user.address);
     expect(userIOU > PRECISION_AUR.mul(100)).to.equal(true);
   });
 });

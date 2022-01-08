@@ -83,9 +83,9 @@ interface VaultLike {
 }
 
 interface ReservePoolLike {
-    function shares(address user) external returns (uint256 balance);
+    function vouchers(address user) external returns (uint256 balance);
 
-    function totalShares() external returns (uint256);
+    function totalVouchers() external returns (uint256);
 
     function shutdownRedemption(address user, uint256 amount) external;
 
@@ -421,7 +421,7 @@ contract Shutdown is Stateful, Eventful {
     }
 
     function setFinalSystemReserve() external {
-        require(finalDebtBalance != 0, "shutdown/redeemShares: finalDebtBalance must be set first");
+        require(finalDebtBalance != 0, "shutdown/redeemVouchers: finalDebtBalance must be set first");
 
         uint256 totalSystemReserve = vaultEngine.stablecoin(address(reservePool));
         require(totalSystemReserve != 0, "shutdown/setFinalSystemReserve: system reserve is zero");
@@ -429,19 +429,19 @@ contract Shutdown is Stateful, Eventful {
         finalTotalReserve = totalSystemReserve;
     }
 
-    function redeemShares() external {
-        require(finalTotalReserve != 0, "shutdown/redeemShares: finalTotalReserve must be set first");
+    function redeemVouchers() external {
+        require(finalTotalReserve != 0, "shutdown/redeemVouchers: finalTotalReserve must be set first");
 
-        uint256 userShares = reservePool.shares(msg.sender);
-        uint256 totalShares = reservePool.totalShares();
+        uint256 userVouchers = reservePool.vouchers(msg.sender);
+        uint256 totalVouchers = reservePool.totalVouchers();
 
-        require(userShares != 0 && totalShares != 0, "shutdown/redeemShares: no shares to redeem");
+        require(userVouchers != 0 && totalVouchers != 0, "shutdown/redeemVouchers: no vouchers to redeem");
 
-        uint256 percentageOfIous = rdiv(userShares, totalShares);
+        uint256 percentageOfIous = rdiv(userVouchers, totalVouchers);
         uint256 shareOfAur = rmul(percentageOfIous, finalTotalReserve);
 
-        if (shareOfAur > userShares) {
-            shareOfAur = userShares;
+        if (shareOfAur > userVouchers) {
+            shareOfAur = userVouchers;
         }
 
         reservePool.shutdownRedemption(msg.sender, shareOfAur);
