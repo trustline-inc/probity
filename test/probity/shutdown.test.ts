@@ -142,10 +142,10 @@ describe("Shutdown Unit Tests", function () {
       expect(after).to.equal(NEW_ADDRESS);
     });
 
-    it("fail if switch is unknown", async () => {
+    it("fail if which is unknown", async () => {
       await assertRevert(
         shutdown.switchAddress(bytes32("unknown"), user.address),
-        "shutdown/switchAddress: unknown switch"
+        "shutdown/switchAddress: unknown which"
       );
       await shutdown.switchAddress(bytes32("VaultEngine"), user.address);
     });
@@ -202,12 +202,12 @@ describe("Shutdown Unit Tests", function () {
       expect(after).to.equal(NEW_ADDRESS);
     });
 
-    it("fail if switch is unknown", async () => {
+    it("fail if which is unknown", async () => {
       const NEW_WAIT_PERIOD = 86400;
 
       await assertRevert(
         shutdown.changeWaitPeriod(bytes32("unknown"), NEW_WAIT_PERIOD),
-        "shutdown/changeWaitPeriod: unknown switch"
+        "shutdown/changeWaitPeriod: unknown which"
       );
       await shutdown.changeWaitPeriod(
         bytes32("auctionWaitPeriod"),
