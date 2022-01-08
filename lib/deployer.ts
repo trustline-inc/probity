@@ -1104,7 +1104,7 @@ const deployProbity = async (stablecoin?: string) => {
 // Deployments by environment
 ////
 
-const deployLocal = async (stablecoin?: string) => {
+const deployDev = async (stablecoin?: string) => {
   const signers = await getSigners();
   await deployRegistry();
   await deployMocks();
@@ -1165,4 +1165,4 @@ const mock = {
   deployMockPriceFeed,
 };
 
-export { deployLocal, deployProd, deployTest, probity, mock };
+export { deployDev, deployProd, deployTest, probity, mock };

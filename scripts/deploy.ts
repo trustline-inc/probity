@@ -1,5 +1,5 @@
 import "@nomiclabs/hardhat-ethers";
-import { deployLocal, Deployment, deployProd } from "../lib/deployer";
+import { deployDev, Deployment, deployProd } from "../lib/deployer";
 import * as fs from "fs";
 
 async function main() {
@@ -11,9 +11,9 @@ async function main() {
   if (!["PHI", "AUR"].includes(stablecoin))
     throw Error('STABLECOIN envvar must be set to "PHI" or "AUR".');
 
-  if (process.env.NETWORK === "local") {
-    console.info("Deploying in Local Mode");
-    deployment = await deployLocal(stablecoin);
+  if (["local", "internal"].includes(process.env.NETWORK)) {
+    console.info("Deploying in Dev Mode");
+    deployment = await deployDev(stablecoin);
   } else {
     console.info("Deploying in Production Mode");
     deployment = await deployProd(stablecoin);
