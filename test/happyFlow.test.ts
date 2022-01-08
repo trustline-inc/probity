@@ -6,7 +6,7 @@ import * as hre from "hardhat";
 
 import {
   Aurei,
-  ERC20Collateral,
+  ERC20Token,
   VaultEngine,
   NativeToken,
   Teller,
@@ -35,7 +35,7 @@ let aurei: Aurei;
 let vaultEngine: VaultEngine;
 let registry: Registry;
 let flrColl: NativeToken;
-let fxrpColl: ERC20Collateral;
+let fxrpColl: ERC20Token;
 let teller: Teller;
 let treasury: Treasury;
 let ftso: MockFtso;
@@ -71,8 +71,8 @@ describe("Probity happy flow", function () {
 
     // Set contracts
     vaultEngine = contracts.vaultEngine;
-    flrColl = contracts.nativeCollateral;
-    fxrpColl = contracts.erc20Collateral;
+    flrColl = contracts.nativeToken;
+    fxrpColl = contracts.erc20Token;
     aurei = contracts.aurei;
     teller = contracts.teller;
     treasury = contracts.treasury;
@@ -82,7 +82,7 @@ describe("Probity happy flow", function () {
     liquidator = contracts.liquidator;
     reserve = contracts.reservePool;
     registry = contracts.registry;
-    erc20 = contracts.erc20Token;
+    erc20 = contracts.mockErc20Token;
 
     owner = signers.owner;
     user = signers.alice;

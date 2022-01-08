@@ -5,7 +5,7 @@ import {
   VaultEngine,
   Registry,
   MockVPToken,
-  VPTokenCollateral,
+  VPToken,
 } from "../../../typechain";
 
 import { deployTest } from "../../../lib/deployer";
@@ -21,8 +21,8 @@ let owner: SignerWithAddress;
 let user: SignerWithAddress;
 
 // Contracts
-let vpTokenCollateral: VPTokenCollateral;
-let vpToken: MockVPToken;
+let vpToken: VPToken;
+let mockVpToken: MockVPToken;
 let vaultEngine: VaultEngine;
 let registry: Registry;
 
@@ -31,7 +31,7 @@ const AMOUNT_TO_WITHDRAW = PRECISION_COLL.mul(50);
 
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
-describe("VP Token Collateral Unit Test", function () {
+describe("VP Token  Unit Test", function () {
   beforeEach(async function () {
     const { contracts, signers } = await deployTest();
 
@@ -39,19 +39,19 @@ describe("VP Token Collateral Unit Test", function () {
     vaultEngine = contracts.vaultEngine;
     registry = contracts.registry;
     vpToken = contracts.vpToken;
-    vpTokenCollateral = contracts.vpTokenCollateral;
+    mockVpToken = contracts.mockVpToken;
 
     owner = signers.owner;
     user = signers.alice;
   });
 
   it("test DepositVPToken event is emitted properly", async () => {
-    await vpToken.mint(owner.address, AMOUNT_TO_MINT);
-    await vpToken.approve(vpTokenCollateral.address, AMOUNT_TO_MINT);
+    await mockVpToken.mint(owner.address, AMOUNT_TO_MINT);
+    await mockVpToken.approve(vpToken.address, AMOUNT_TO_MINT);
     let parsedEvents = await parseEvents(
-      vpTokenCollateral.deposit(AMOUNT_TO_MINT),
+      vpToken.deposit(AMOUNT_TO_MINT),
       "DepositVPToken",
-      vpTokenCollateral
+      vpToken
     );
 
     expect(parsedEvents[0].args[0]).to.equal(owner.address);
@@ -59,14 +59,14 @@ describe("VP Token Collateral Unit Test", function () {
   });
 
   it("test WithdrawVPToken event is emitted properly", async () => {
-    await vpToken.mint(owner.address, AMOUNT_TO_MINT);
-    await vpToken.approve(vpTokenCollateral.address, AMOUNT_TO_MINT);
-    await vpTokenCollateral.deposit(AMOUNT_TO_MINT);
+    await mockVpToken.mint(owner.address, AMOUNT_TO_MINT);
+    await mockVpToken.approve(vpToken.address, AMOUNT_TO_MINT);
+    await vpToken.deposit(AMOUNT_TO_MINT);
 
     let parsedEvents = await parseEvents(
-      vpTokenCollateral.withdraw(AMOUNT_TO_WITHDRAW),
+      vpToken.withdraw(AMOUNT_TO_WITHDRAW),
       "WithdrawVPToken",
-      vpTokenCollateral
+      vpToken
     );
     expect(parsedEvents[0].args[0]).to.equal(owner.address);
     expect(parsedEvents[0].args[1]).to.equal(AMOUNT_TO_WITHDRAW);

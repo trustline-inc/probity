@@ -93,7 +93,7 @@ describe("Liquidator Unit Tests", function () {
       await liquidator.init(flrCollId, auctioneer.address);
     });
 
-    it("tests that penaltyFees are e is updated correctly", async () => {
+    it("tests that penaltyFees are updated correctly", async () => {
       const NEW_DEBT_PENALTY_FEE = PRECISION_PRICE.mul(123).div(100);
       const NEW_SUPP_PENALTY_FEE = PRECISION_PRICE.mul(107).div(100);
       const before = await liquidator.collateralTypes(flrCollId);

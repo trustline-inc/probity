@@ -15,7 +15,7 @@ let owner: SignerWithAddress;
 let user: SignerWithAddress;
 
 // Contracts
-let nativeCollataral: NativeToken;
+let nativeToken: NativeToken;
 let vaultEngine: VaultEngine;
 let registry: Registry;
 
@@ -24,14 +24,14 @@ const AMOUNT_TO_WITHDRAW = PRECISION_COLL.mul(50);
 
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
-describe("Native Collateral Unit Test", function () {
+describe("Native Token Unit Test", function () {
   beforeEach(async function () {
     const { contracts, signers } = await deployTest();
 
     // Set contracts
     vaultEngine = contracts.vaultEngine;
     registry = contracts.registry;
-    nativeCollataral = contracts.nativeCollateral;
+    nativeToken = contracts.nativeToken;
 
     owner = signers.owner;
     user = signers.alice;
@@ -39,21 +39,21 @@ describe("Native Collateral Unit Test", function () {
 
   it("test DepositNativeCrypto event is emitted properly", async () => {
     let parsedEvents = await parseEvents(
-      nativeCollataral.deposit({ value: AMOUNT_TO_DEPOSIT }),
+      nativeToken.deposit({ value: AMOUNT_TO_DEPOSIT }),
       "DepositNativeCrypto",
-      nativeCollataral
+      nativeToken
     );
     expect(parsedEvents[0].args[0]).to.equal(owner.address);
     expect(parsedEvents[0].args[1]).to.equal(AMOUNT_TO_DEPOSIT);
   });
 
   it("test WithdrawNativeCrypto event is emitted properly", async () => {
-    await nativeCollataral.deposit({ value: AMOUNT_TO_DEPOSIT });
+    await nativeToken.deposit({ value: AMOUNT_TO_DEPOSIT });
 
     let parsedEvents = await parseEvents(
-      nativeCollataral.withdraw(AMOUNT_TO_WITHDRAW),
+      nativeToken.withdraw(AMOUNT_TO_WITHDRAW),
       "WithdrawNativeCrypto",
-      nativeCollataral
+      nativeToken
     );
     expect(parsedEvents[0].args[0]).to.equal(owner.address);
     expect(parsedEvents[0].args[1]).to.equal(AMOUNT_TO_WITHDRAW);

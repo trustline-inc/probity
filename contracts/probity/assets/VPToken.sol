@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import "../../dependencies/Delegatable.sol";
 
-contract VPTokenCollateral is Delegatable {
+contract VPToken is Delegatable {
     /////////////////////////////////////////
     // Events
     /////////////////////////////////////////
@@ -41,7 +41,7 @@ contract VPTokenCollateral is Delegatable {
     /////////////////////////////////////////
 
     function deposit(uint256 amount) external onlyWhen("paused", false) {
-        require(token.transferFrom(msg.sender, address(this), amount), "VPTokenCollateral/deposit: transfer failed");
+        require(token.transferFrom(msg.sender, address(this), amount), "VPToken/deposit: transfer failed");
         vaultEngine.modifyStandbyAsset(collId, msg.sender, int256(amount));
         recentDeposits[msg.sender][ftsoManager.getCurrentRewardEpoch()] += amount;
         recentTotalDeposit[msg.sender] += amount;
@@ -50,7 +50,7 @@ contract VPTokenCollateral is Delegatable {
     }
 
     function withdraw(uint256 amount) external onlyWhen("paused", false) {
-        require(token.transfer(msg.sender, amount), "VPTokenCollateral/withdraw: transfer failed");
+        require(token.transfer(msg.sender, amount), "VPToken/withdraw: transfer failed");
 
         vaultEngine.modifyStandbyAsset(collId, msg.sender, -int256(amount));
         // only reduce recentDeposits if it exists

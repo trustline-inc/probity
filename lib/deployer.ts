@@ -16,7 +16,7 @@ import {
   PbtToken,
   VaultEngine,
   NativeToken,
-  ERC20Collateral,
+  ERC20Token,
   Teller,
   Treasury,
   PriceFeed,
@@ -25,7 +25,7 @@ import {
   Liquidator,
   ReservePool,
   MockERC20Token,
-  VPTokenCollateral,
+  VPToken,
   LowAPR,
   HighAPR,
   Shutdown,
@@ -46,8 +46,8 @@ import {
   LowAPR__factory,
   HighAPR__factory,
   VaultEngine__factory,
-  VPTokenCollateral__factory,
-  ERC20Collateral__factory,
+  VPToken__factory,
+  ERC20Token__factory,
   NativeToken__factory,
   Teller__factory,
   Treasury__factory,
@@ -96,8 +96,8 @@ interface ContractDict {
   pbtToken: PbtToken;
   vaultEngine: VaultEngine;
   vaultEngineSB: VaultEngineSB;
-  nativeCollateral: NativeToken;
-  erc20Collateral: ERC20Collateral;
+  nativeToken: NativeToken;
+  erc20Token: ERC20Token;
   ftsoManager: MockFtsoManager;
   ftsoRewardManager: MockFtsoRewardManager;
   teller: Teller;
@@ -107,10 +107,10 @@ interface ContractDict {
   linearDecrease: LinearDecrease;
   liquidator: Liquidator;
   reservePool: ReservePool;
-  erc20Token: MockERC20Token;
+  mockErc20Token: MockERC20Token;
   shutdown: Shutdown;
-  vpToken: MockVPToken;
-  vpTokenCollateral: VPTokenCollateral;
+  mockVpToken: MockVPToken;
+  vpToken: VPToken;
   lowApr: LowAPR;
   highApr: HighAPR;
   mockVaultEngine: MockVaultEngine;
@@ -129,8 +129,8 @@ const contracts: ContractDict = {
   pbtToken: null,
   vaultEngine: null,
   vaultEngineSB: null,
-  nativeCollateral: null,
-  erc20Collateral: null,
+  nativeToken: null,
+  erc20Token: null,
   ftsoManager: null,
   ftsoRewardManager: null,
   teller: null,
@@ -140,9 +140,9 @@ const contracts: ContractDict = {
   linearDecrease: null,
   liquidator: null,
   reservePool: null,
-  erc20Token: null,
+  mockErc20Token: null,
   vpToken: null,
-  vpTokenCollateral: null,
+  mockVpToken: null,
   shutdown: null,
   lowApr: null,
   highApr: null,
@@ -346,20 +346,18 @@ const deployVaultEngineSB = async (param?: { registry?: string }) => {
   return contracts;
 };
 
-const deployVPTokenCollateral = async (param?: {
+const deployVPToken = async (param?: {
   registry?: Registry;
-  collateralId?: string;
+  assetId?: string;
   ftsoManager?: string;
   ftsoRewardManager?: string;
-  vpToken?: string;
+  mockVpToken?: string;
   vaultEngine?: string;
 }) => {
   const registry =
     param && param.registry ? param.registry : contracts.registry;
-  const collateralId =
-    param && param.collateralId
-      ? param.collateralId
-      : web3.utils.keccak256("VPToken");
+  const assetId =
+    param && param.assetId ? param.assetId : web3.utils.keccak256("VPToken");
   const ftsoManager =
     param && param.ftsoManager
       ? param.ftsoManager
@@ -368,8 +366,10 @@ const deployVPTokenCollateral = async (param?: {
     param && param.ftsoRewardManager
       ? param.ftsoRewardManager
       : contracts.ftsoRewardManager.address;
-  const vpToken =
-    param && param.vpToken ? param.vpToken : contracts.vpToken.address;
+  const mockVpToken =
+    param && param.mockVpToken
+      ? param.mockVpToken
+      : contracts.mockVpToken.address;
   const vaultEngine =
     param && param.vaultEngine
       ? param.vaultEngine
@@ -379,53 +379,50 @@ const deployVPTokenCollateral = async (param?: {
 
   const signers = await getSigners();
 
-  const vpTokenCollateralFactory = (await ethers.getContractFactory(
-    "VPTokenCollateral",
+  const vpTokenFactory = (await ethers.getContractFactory(
+    "VPToken",
     signers.owner
-  )) as VPTokenCollateral__factory;
-  contracts.vpTokenCollateral = await vpTokenCollateralFactory.deploy(
+  )) as VPToken__factory;
+  contracts.vpToken = await vpTokenFactory.deploy(
     registry.address,
-    collateralId,
+    assetId,
     ftsoManager,
     ftsoRewardManager,
-    vpToken,
+    mockVpToken,
     vaultEngine
   );
-  await contracts.vpTokenCollateral.deployed();
+  await contracts.vpToken.deployed();
   if (process.env.NODE_ENV !== "test") {
-    console.info("vpTokenCollateral deployed ✓");
+    console.info("vpToken deployed ✓");
     console.info({
       registry: registry.address,
-      collateralId,
+      assetId,
       ftsoManager,
       ftsoRewardManager,
-      vpToken,
+      mockVpToken,
       vaultEngine,
     });
   }
 
-  await registry.setupAddress(
-    bytes32("collateral"),
-    contracts.vpTokenCollateral.address
-  );
+  await registry.setupAddress(bytes32("collateral"), contracts.vpToken.address);
 
   return contracts;
 };
 
-const deployERC20Collateral = async (param?: {
+const deployERC20Token = async (param?: {
   registry?: Registry;
-  collateralId?: string;
-  erc20?: string;
+  assetId?: string;
+  mockErc20Token?: string;
   vaultEngine?: string;
 }) => {
   const registry =
     param && param.registry ? param.registry : contracts.registry;
-  const collateralId =
-    param && param.collateralId
-      ? param.collateralId
-      : web3.utils.keccak256("FXRP");
-  const erc20Token =
-    param && param.erc20 ? param.erc20 : contracts.erc20Token.address;
+  const assetId =
+    param && param.assetId ? param.assetId : web3.utils.keccak256("FXRP");
+  const mockErc20Token =
+    param && param.mockErc20Token
+      ? param.mockErc20Token
+      : contracts.mockErc20Token.address;
   const vaultEngine =
     param && param.vaultEngine
       ? param.vaultEngine
@@ -435,30 +432,30 @@ const deployERC20Collateral = async (param?: {
 
   const signers = await getSigners();
 
-  const erc20CollateralFactory = (await ethers.getContractFactory(
-    "ERC20Collateral",
+  const erc20TokenFactory = (await ethers.getContractFactory(
+    "ERC20Token",
     signers.owner
-  )) as ERC20Collateral__factory;
-  contracts.erc20Collateral = await erc20CollateralFactory.deploy(
+  )) as ERC20Token__factory;
+  contracts.erc20Token = await erc20TokenFactory.deploy(
     registry.address,
-    collateralId,
-    erc20Token,
+    assetId,
+    mockErc20Token,
     vaultEngine
   );
-  await contracts.erc20Collateral.deployed();
+  await contracts.erc20Token.deployed();
   if (process.env.NODE_ENV !== "test") {
-    console.info("erc20Collateral deployed ✓");
+    console.info("erc20Token deployed ✓");
     console.info({
       registry: registry.address,
-      collateralId,
-      erc20Token,
+      assetId,
+      mockErc20Token,
       vaultEngine,
     });
   }
 
   await registry.setupAddress(
     bytes32("collateral"),
-    contracts.erc20Collateral.address
+    contracts.erc20Token.address
   );
 
   return contracts;
@@ -466,14 +463,14 @@ const deployERC20Collateral = async (param?: {
 
 const deployNativeToken = async (param?: {
   registry?: string;
-  collateralId?: string;
+  assetId?: string;
   vaultEngine?: string;
 }) => {
   const registry =
     param && param.registry ? param.registry : contracts.registry.address;
-  const collateralId =
-    param && param.collateralId
-      ? param.collateralId
+  const assetId =
+    param && param.assetId
+      ? param.assetId
       : web3.utils.keccak256(NETWORK_NATIVE_TOKEN);
   const vaultEngine =
     param && param.vaultEngine
@@ -484,29 +481,29 @@ const deployNativeToken = async (param?: {
 
   const signers = await getSigners();
 
-  const nativeCollateralFactory = (await ethers.getContractFactory(
+  const nativeTokenFactory = (await ethers.getContractFactory(
     "NativeToken",
     signers.owner
   )) as NativeToken__factory;
-  contracts.nativeCollateral = await nativeCollateralFactory.deploy(
+  contracts.nativeToken = await nativeTokenFactory.deploy(
     registry,
-    collateralId,
+    assetId,
     vaultEngine
   );
-  await contracts.nativeCollateral.deployed();
+  await contracts.nativeToken.deployed();
   if (process.env.NODE_ENV !== "test") {
-    console.info("nativeCollateral deployed ✓");
+    console.info("nativeToken deployed ✓");
     console.info(`with native Token ${NETWORK_NATIVE_TOKEN}`);
     console.info({
       registry,
-      collateralId,
+      assetId,
       vaultEngine,
     });
   }
 
   await contracts.registry.setupAddress(
     bytes32("collateral"),
-    contracts.nativeCollateral.address
+    contracts.nativeToken.address
   );
 
   return contracts;
@@ -879,24 +876,24 @@ const deployLiquidator = async (param?: {
 
 const deployMockERC20 = async () => {
   const signers = await getSigners();
-  const erc20TokenFactory = (await ethers.getContractFactory(
+  const mockErc20TokenFactory = (await ethers.getContractFactory(
     "MockERC20Token",
     signers.owner
   )) as MockERC20Token__factory;
-  contracts.erc20Token = await erc20TokenFactory.deploy();
-  await contracts.erc20Token.deployed();
+  contracts.mockErc20Token = await mockErc20TokenFactory.deploy();
+  await contracts.mockErc20Token.deployed();
   return contracts;
 };
 
 const deployMockVPToken = async () => {
   const signers = await getSigners();
-  const vpTokenFactory = (await ethers.getContractFactory(
+  const mockVpTokenFactory = (await ethers.getContractFactory(
     "MockVPToken",
     signers.owner
   )) as MockVPToken__factory;
-  contracts.vpToken = await vpTokenFactory.deploy();
-  await contracts.vpToken.deployed();
-  if (process.env.NODE_ENV !== "test") console.info("vpToken deployed ✓");
+  contracts.mockVpToken = await mockVpTokenFactory.deploy();
+  await contracts.mockVpToken.deployed();
+  if (process.env.NODE_ENV !== "test") console.info("mockVpToken deployed ✓");
   return contracts;
 };
 
@@ -915,11 +912,11 @@ const deployMockVaultEngine = async () => {
 
 const deployMockPriceCalc = async () => {
   const signers = await getSigners();
-  const mockPriceCaclFactory = (await ethers.getContractFactory(
+  const mockPriceCalcFactory = (await ethers.getContractFactory(
     "MockPriceCalc",
     signers.owner
   )) as MockPriceCalc__factory;
-  contracts.mockPriceCalc = await mockPriceCaclFactory.deploy();
+  contracts.mockPriceCalc = await mockPriceCalcFactory.deploy();
   await contracts.mockPriceCalc.deployed();
   if (process.env.NODE_ENV !== "test") console.info("mockPriceCalc deployed ✓");
   return contracts;
@@ -1109,8 +1106,8 @@ const deployLocal = async (stablecoin?: string) => {
   await deployMocks();
   await deployProbity(stablecoin);
   await deployAuctioneer();
-  await deployERC20Collateral();
-  await deployVPTokenCollateral();
+  await deployERC20Token();
+  await deployVPToken();
   return { contracts, signers };
 };
 
@@ -1121,8 +1118,8 @@ const deployTest = async (stablecoin?: string) => {
   await deployProbity(stablecoin);
   await deployVaultEngineSB();
   await deployAuctioneer();
-  await deployERC20Collateral();
-  await deployVPTokenCollateral();
+  await deployERC20Token();
+  await deployVPToken();
   await deployMockVaultEngine();
   await deployMockPriceCalc();
   return { contracts, signers };
@@ -1142,8 +1139,8 @@ const probity = {
   deployApr,
   deployVaultEngine,
   deployNativeToken,
-  deployERC20Collateral,
-  deployVPTokenCollateral,
+  deployERC20Token,
+  deployVPToken,
   deployTeller,
   deployPriceCalc,
   deployPriceFeed,

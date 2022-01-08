@@ -18,7 +18,7 @@ async function main() {
     console.info("Deploying in Production Mode");
     deployment = await deployProd(stablecoin);
     console.warn(
-      "This deployment of Probity in Production does not include ERC20Collateral, VPTokenCollateral and Auctioneer contracts. Please deploy them separately."
+      "This deployment of Probity in Production does not include ERC20Token, VPToken and Auctioneer contracts. Please deploy them separately."
     );
   }
 

@@ -4,7 +4,7 @@ import "@nomiclabs/hardhat-ethers";
 import {
   VaultEngine,
   Registry,
-  ERC20Collateral,
+  ERC20Token,
   MockERC20Token,
 } from "../../../typechain";
 
@@ -20,7 +20,7 @@ let owner: SignerWithAddress;
 let user: SignerWithAddress;
 
 // Contracts
-let erc20Collateral: ERC20Collateral;
+let erc20Token: ERC20Token;
 let erc20: MockERC20Token;
 let vaultEngine: VaultEngine;
 let registry: Registry;
@@ -37,8 +37,8 @@ describe("ERC20 Collateral Unit Test", function () {
     // Set contracts
     vaultEngine = contracts.vaultEngine;
     registry = contracts.registry;
-    erc20 = contracts.erc20Token;
-    erc20Collateral = contracts.erc20Collateral;
+    erc20 = contracts.mockErc20Token;
+    erc20Token = contracts.erc20Token;
 
     owner = signers.owner;
     user = signers.alice;
@@ -46,12 +46,12 @@ describe("ERC20 Collateral Unit Test", function () {
 
   it("test DepositToken event is emitted properly", async () => {
     await erc20.mint(owner.address, AMOUNT_TO_MINT);
-    await erc20.approve(erc20Collateral.address, AMOUNT_TO_MINT);
+    await erc20.approve(erc20Token.address, AMOUNT_TO_MINT);
 
     let parsedEvents = await parseEvents(
-      erc20Collateral.deposit(AMOUNT_TO_MINT),
+      erc20Token.deposit(AMOUNT_TO_MINT),
       "DepositToken",
-      erc20Collateral
+      erc20Token
     );
     expect(parsedEvents[0].args[0]).to.equal(owner.address);
     expect(parsedEvents[0].args[1]).to.equal(AMOUNT_TO_MINT);
@@ -59,13 +59,13 @@ describe("ERC20 Collateral Unit Test", function () {
 
   it("test WithdrawToken event is emitted properly", async () => {
     await erc20.mint(owner.address, AMOUNT_TO_MINT);
-    await erc20.approve(erc20Collateral.address, AMOUNT_TO_MINT);
-    await erc20Collateral.deposit(AMOUNT_TO_MINT);
+    await erc20.approve(erc20Token.address, AMOUNT_TO_MINT);
+    await erc20Token.deposit(AMOUNT_TO_MINT);
 
     let parsedEvents = await parseEvents(
-      erc20Collateral.withdraw(AMOUNT_TO_WITHDRAW),
+      erc20Token.withdraw(AMOUNT_TO_WITHDRAW),
       "WithdrawToken",
-      erc20Collateral
+      erc20Token
     );
     expect(parsedEvents[0].args[0]).to.equal(owner.address);
     expect(parsedEvents[0].args[1]).to.equal(AMOUNT_TO_WITHDRAW);

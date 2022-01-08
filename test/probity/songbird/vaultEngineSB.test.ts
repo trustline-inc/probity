@@ -35,7 +35,7 @@ let coll: SignerWithAddress;
 let vaultEngine: VaultEngineSB;
 let registry: Registry;
 let reservePool: ReservePool;
-let nativeColl: NativeToken;
+let nativeToken: NativeToken;
 let ftso: MockFtso;
 let teller: Teller;
 let priceFeed: PriceFeed;
@@ -52,7 +52,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
     registry = contracts.registry;
     vaultEngine = contracts.vaultEngineSB;
     reservePool = contracts.reservePool;
-    nativeColl = contracts.nativeCollateral;
+    nativeToken = contracts.nativeToken;
     teller = contracts.teller;
     priceFeed = contracts.priceFeed;
     ftso = contracts.ftso;
