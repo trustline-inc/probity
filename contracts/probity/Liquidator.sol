@@ -15,7 +15,7 @@ interface VaultEngineLike {
             uint256 equity
         );
 
-    function assetTypes(bytes32 collId)
+    function assets(bytes32 collId)
         external
         returns (
             uint256 debtAccumulator,
@@ -134,7 +134,7 @@ contract Liquidator is Stateful, Eventful {
 
     function liquidateVault(bytes32 collId, address user) external {
         // check if vault can be liquidated
-        (uint256 debtAccumulator, uint256 equityAccumulator, uint256 adjustedPrice) = vaultEngine.assetTypes(collId);
+        (uint256 debtAccumulator, uint256 equityAccumulator, uint256 adjustedPrice) = vaultEngine.assets(collId);
         (, uint256 lockedColl, uint256 debt, uint256 equity) = vaultEngine.vaults(collId, user);
 
         require(lockedColl != 0 && debt + equity != 0, "Lidquidator: Nothing to liquidate");

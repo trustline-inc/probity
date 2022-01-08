@@ -408,7 +408,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
     });
 
     it("tests the debt and equity accumulators are properly updated", async () => {
-      const collBefore = await vaultEngine.assetTypes(flrCollId);
+      const collBefore = await vaultEngine.assets(flrCollId);
       const debtToRaise = BigNumber.from("251035088626883475473007");
       const capToRaise = BigNumber.from("125509667994754929166541");
       await vaultEngine
@@ -421,7 +421,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
           BigNumber.from(0)
         );
 
-      const collAfter = await vaultEngine.assetTypes(flrCollId);
+      const collAfter = await vaultEngine.assets(flrCollId);
       expect(collBefore.debtAccumulator.add(debtToRaise)).to.equal(
         collAfter.debtAccumulator
       );

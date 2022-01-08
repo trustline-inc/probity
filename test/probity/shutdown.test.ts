@@ -337,13 +337,13 @@ describe("Shutdown Unit Tests", function () {
       const PRICE_TO_SET = PRECISION_PRICE.mul(12).div(10);
       await priceFeed.setPrice(flrCollId, PRICE_TO_SET);
 
-      let coll = await shutdown.assetTypes(flrCollId);
+      let coll = await shutdown.assets(flrCollId);
       expect(coll.finalPrice).to.equal(0);
 
       await shutdown.initiateShutdown();
       await shutdown.setFinalPrice(flrCollId);
 
-      coll = await shutdown.assetTypes(flrCollId);
+      coll = await shutdown.assets(flrCollId);
       expect(coll.finalPrice).to.equal(PRICE_TO_SET);
     });
 
@@ -414,7 +414,7 @@ describe("Shutdown Unit Tests", function () {
       const EXPECTED_AUR_GAP = EXPECTED_GAP.mul(PRICE_TO_SET);
       await shutdown.setFinalPrice(flrCollId);
 
-      let coll = await shutdown.assetTypes(flrCollId);
+      let coll = await shutdown.assets(flrCollId);
       expect(coll.gap).to.equal(0);
       let aurGap = await shutdown.aurGap();
       expect(aurGap).to.equal(0);
@@ -422,7 +422,7 @@ describe("Shutdown Unit Tests", function () {
       // overcollateralized vaults
       await shutdown.processUserDebt(flrCollId, user.address);
 
-      coll = await shutdown.assetTypes(flrCollId);
+      coll = await shutdown.assets(flrCollId);
       expect(coll.gap).to.equal(0);
       aurGap = await shutdown.aurGap();
       expect(aurGap).to.equal(0);
@@ -430,7 +430,7 @@ describe("Shutdown Unit Tests", function () {
       // undercollateralized vaults
       await shutdown.processUserDebt(flrCollId, owner.address);
 
-      coll = await shutdown.assetTypes(flrCollId);
+      coll = await shutdown.assets(flrCollId);
       expect(coll.gap).to.equal(EXPECTED_GAP);
       aurGap = await shutdown.aurGap();
       expect(aurGap).to.equal(EXPECTED_AUR_GAP);
@@ -920,7 +920,7 @@ describe("Shutdown Unit Tests", function () {
       await shutdown.setFinalDebtBalance();
       await shutdown.calculateRedeemRatio(flrCollId);
 
-      const collType = await shutdown.assetTypes(flrCollId);
+      const collType = await shutdown.assets(flrCollId);
       expect(collType.redeemRatio).to.equal(expected);
     });
 
@@ -931,7 +931,7 @@ describe("Shutdown Unit Tests", function () {
 
       await shutdown.calculateRedeemRatio(flrCollId);
 
-      const collType = await shutdown.assetTypes(flrCollId);
+      const collType = await shutdown.assets(flrCollId);
       expect(collType.redeemRatio).to.equal(expected);
     });
 
@@ -1084,7 +1084,7 @@ describe("Shutdown Unit Tests", function () {
     });
   });
 
-  describe("redeemShares Unit Tests", function () {
+  describe("redeemVouchers Unit Tests", function () {
     const TOTAL_DEBT_TO_SET = PRECISION_AUR.mul(150);
 
     beforeEach(async function () {
@@ -1094,7 +1094,7 @@ describe("Shutdown Unit Tests", function () {
       await increaseTime(172800 * 2);
       await increaseTime(172800);
       await shutdown.setFinalDebtBalance();
-      await reservePool.setTotalShares(PRECISION_AUR);
+      await reservePool.setTotalVouchers(PRECISION_AUR);
       await vaultEngine.setStablecoin(
         reservePool.address,
         PRECISION_AUR.mul(1000)
@@ -1102,38 +1102,38 @@ describe("Shutdown Unit Tests", function () {
     });
 
     it("fails if finalTotalReserve is not set", async () => {
-      await reservePool.setShares(owner.address, PRECISION_AUR);
+      await reservePool.setVouchers(owner.address, PRECISION_AUR);
       await assertRevert(
-        shutdown.redeemShares(),
-        "shutdown/redeemShares: finalTotalReserve must be set first"
+        shutdown.redeemVouchers(),
+        "shutdown/redeemVouchers: finalTotalReserve must be set first"
       );
       await shutdown.setFinalSystemReserve();
 
-      await shutdown.redeemShares();
+      await shutdown.redeemVouchers();
     });
 
-    it("fails if user's amount of shares is zero", async () => {
+    it("fails if user's amount of vouchers is zero", async () => {
       await shutdown.setFinalSystemReserve();
 
       await assertRevert(
-        shutdown.redeemShares(),
-        "shutdown/redeemShares: no shares to redeem"
+        shutdown.redeemVouchers(),
+        "shutdown/redeemVouchers: no vouchers to redeem"
       );
-      await reservePool.setShares(owner.address, PRECISION_AUR);
-      await shutdown.redeemShares();
+      await reservePool.setVouchers(owner.address, PRECISION_AUR);
+      await shutdown.redeemVouchers();
     });
 
-    it("fails if total shares are zero", async () => {
+    it("fails if total vouchers are zero", async () => {
       await shutdown.setFinalSystemReserve();
-      await reservePool.setShares(owner.address, PRECISION_AUR);
-      await reservePool.setTotalShares(0);
+      await reservePool.setVouchers(owner.address, PRECISION_AUR);
+      await reservePool.setTotalVouchers(0);
 
       await assertRevert(
-        shutdown.redeemShares(),
-        "shutdown/redeemShares: no shares to redeem"
+        shutdown.redeemVouchers(),
+        "shutdown/redeemVouchers: no vouchers to redeem"
       );
-      await reservePool.setTotalShares(PRECISION_AUR);
-      await shutdown.redeemShares();
+      await reservePool.setTotalVouchers(PRECISION_AUR);
+      await shutdown.redeemVouchers();
     });
 
     it("tests that shutdownRedemption is called with correct parameter", async () => {
@@ -1148,10 +1148,10 @@ describe("Shutdown Unit Tests", function () {
         rdiv(USER_IOU, TOTAL_IOU),
         finalTotalReserve
       );
-      await reservePool.setShares(owner.address, USER_IOU);
-      await reservePool.setTotalShares(TOTAL_IOU);
+      await reservePool.setVouchers(owner.address, USER_IOU);
+      await reservePool.setTotalVouchers(TOTAL_IOU);
 
-      await shutdown.redeemShares();
+      await shutdown.redeemVouchers();
 
       const lastCall = await reservePool.lastRedemptionCall();
       expect(lastCall.user).to.equal(owner.address);

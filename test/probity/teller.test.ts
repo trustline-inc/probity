@@ -234,11 +234,11 @@ describe("Teller Unit Tests", function () {
       let TIME_TO_INCREASE = 400000;
 
       await teller.updateAccumulator(flrCollId);
-      let vaultColl = await vaultEngine.assetTypes(flrCollId);
+      let vaultColl = await vaultEngine.assets(flrCollId);
       let mpr = await teller.mpr();
 
       let lastUpdatedBefore = (await teller.collateralTypes(flrCollId))[0];
-      const before = await vaultEngine.assetTypes(flrCollId);
+      const before = await vaultEngine.assets(flrCollId);
       expect(before[0]).to.equal(DEFAULT_DEBT_ACCUMULATOR);
 
       await increaseTime(TIME_TO_INCREASE);
@@ -250,10 +250,10 @@ describe("Teller Unit Tests", function () {
         vaultColl[0]
       );
 
-      let after = await vaultEngine.assetTypes(flrCollId);
+      let after = await vaultEngine.assets(flrCollId);
       expect(after[0]).to.equal(EXPECTED_DEBT_ACCUMULATOR);
 
-      vaultColl = await vaultEngine.assetTypes(flrCollId);
+      vaultColl = await vaultEngine.assets(flrCollId);
       mpr = await teller.mpr();
       TIME_TO_INCREASE = 23000;
 
@@ -268,7 +268,7 @@ describe("Teller Unit Tests", function () {
         vaultColl[0]
       );
 
-      after = await vaultEngine.assetTypes(flrCollId);
+      after = await vaultEngine.assets(flrCollId);
       expect(after[0]).to.equal(EXPECTED_DEBT_ACCUMULATOR);
     });
 
@@ -278,9 +278,9 @@ describe("Teller Unit Tests", function () {
 
       await teller.updateAccumulator(flrCollId);
 
-      let vaultColl = await vaultEngine.assetTypes(flrCollId);
+      let vaultColl = await vaultEngine.assets(flrCollId);
       let lastUpdatedBefore = (await teller.collateralTypes(flrCollId))[0];
-      let before = await vaultEngine.assetTypes(flrCollId);
+      let before = await vaultEngine.assets(flrCollId);
       expect(before[1]).to.equal(DEFAULT_SUPP_ACCUMULATOR);
       await increaseTime(TIME_TO_INCREASE);
       await teller.updateAccumulator(flrCollId);
@@ -300,7 +300,7 @@ describe("Teller Unit Tests", function () {
 
       let EXPECTED_SUPP_ACCUMULATOR = rmul(exponentiated, vaultColl[1]);
 
-      let after = await vaultEngine.assetTypes(flrCollId);
+      let after = await vaultEngine.assets(flrCollId);
       expect(after[1]).to.equal(EXPECTED_SUPP_ACCUMULATOR);
 
       TIME_TO_INCREASE = 394000;
@@ -308,7 +308,7 @@ describe("Teller Unit Tests", function () {
       await vaultEngine.setTotalDebt(0);
       mpr = await teller.mpr();
       await teller.updateAccumulator(flrCollId);
-      vaultColl = await vaultEngine.assetTypes(flrCollId);
+      vaultColl = await vaultEngine.assets(flrCollId);
       lastUpdatedBefore = (await teller.collateralTypes(flrCollId))[0];
       await increaseTime(TIME_TO_INCREASE);
       await teller.updateAccumulator(flrCollId);
@@ -326,7 +326,7 @@ describe("Teller Unit Tests", function () {
 
       EXPECTED_SUPP_ACCUMULATOR = rmul(exponentiated, vaultColl[1]);
 
-      after = await vaultEngine.assetTypes(flrCollId);
+      after = await vaultEngine.assets(flrCollId);
       expect(after[1]).to.equal(EXPECTED_SUPP_ACCUMULATOR);
     });
 
@@ -337,11 +337,11 @@ describe("Teller Unit Tests", function () {
       let TIME_TO_INCREASE = 400000;
       await teller.updateAccumulator(flrCollId);
 
-      let vaultColl = await vaultEngine.assetTypes(flrCollId);
+      let vaultColl = await vaultEngine.assets(flrCollId);
       let lastUpdatedBefore = (await teller.collateralTypes(flrCollId))[0];
-      let captialAccumulatorBefore = (await vaultEngine.assetTypes(flrCollId))
+      let captialAccumulatorBefore = (await vaultEngine.assets(flrCollId))
         .equityAccumulator;
-      let before = await vaultEngine.assetTypes(flrCollId);
+      let before = await vaultEngine.assets(flrCollId);
       expect(before[1]).to.equal(DEFAULT_SUPP_ACCUMULATOR);
       await increaseTime(TIME_TO_INCREASE);
       await teller.updateAccumulator(flrCollId);
@@ -370,7 +370,7 @@ describe("Teller Unit Tests", function () {
         EXPECTED_PROTOCOL_FEE_RATE
       );
 
-      let after = await vaultEngine.assetTypes(flrCollId);
+      let after = await vaultEngine.assets(flrCollId);
       expect(after[1]).to.equal(
         captialAccumulatorBefore.add(EXPECTED_SUPP_ACCUMULATOR_RATE)
       );

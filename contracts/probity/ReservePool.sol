@@ -24,7 +24,7 @@ interface VaultEngineLike {
 // The reserve pool holds the extra stablecoins that come from liquidation penalty fees
 // and protocol fees. When the system has bad debt, this reserve pool will be used to pay
 // it off. If there are no more reserves to pay off the outstanding bad debt, the reserve
-// will issue shares in order to cover it. People with IOUs can redeem it after the reserve
+// will issue vouchers in order to cover it. People with IOUs can redeem it after the reserve
 // replenishes.
 contract ReservePool is Stateful, Eventful {
     /////////////////////////////////////////
@@ -43,17 +43,17 @@ contract ReservePool is Stateful, Eventful {
     VaultEngineLike public immutable vaultEngine;
 
     Offering public offering;
-    uint256 public debtThreshold; // The bad debt threshold, after which to start issuing shares
+    uint256 public debtThreshold; // The bad debt threshold, after which to start issuing vouchers
     uint256 public debtOnAuction;
-    // Every Y hours, shares received per stablecoin goes up by X%
+    // Every Y hours, vouchers received per stablecoin goes up by X%
     // TODO: evaluate these values
     uint256 public salePriceIncreasePerStep = 5E16;
     uint256 public saleStepPeriod = 6 hours;
-    // Max shares received per stablecoin is 50%
+    // Max vouchers received per stablecoin is 50%
     // TODO: evaluate this max value
     uint256 public saleMaxPrice = 1.5E18;
-    mapping(address => uint256) public shares;
-    uint256 public totalShares;
+    mapping(address => uint256) public vouchers;
+    uint256 public totalVouchers;
 
     /////////////////////////////////////////
     // Constructor
@@ -67,10 +67,10 @@ contract ReservePool is Stateful, Eventful {
     /////////////////////////////////////////
 
     /**
-     * @notice Returns the amount of shares received per stablecoin
+     * @notice Returns the amount of vouchers received per stablecoin
      * @dev Stepwise price increases until max price is met
      */
-    function sharesPerStablecoin() public view returns (uint256 price) {
+    function vouchersPerStablecoin() public view returns (uint256 price) {
         uint256 steps = (block.timestamp - offering.startTime) / saleStepPeriod;
 
         if (ONE + (salePriceIncreasePerStep * steps) > saleMaxPrice) {
@@ -179,21 +179,21 @@ contract ReservePool is Stateful, Eventful {
     }
 
     /**
-     * @notice Purchases shares of an offering
+     * @notice Purchases vouchers of an offering
      * @param amount The amount to be purchased
      */
-    function purchaseShares(uint256 amount) external {
-        require(offering.active, "ReservePool/purchaseShares: shares are not currently on sale");
+    function purchaseVouchers(uint256 amount) external {
+        require(offering.active, "ReservePool/purchaseVouchers: vouchers are not currently on sale");
         require(
             offering.amount >= amount,
-            "ReservePool/purchaseShares: Can't purchase more shares than amount available"
+            "ReservePool/purchaseVouchers: Can't purchase more vouchers than amount available"
         );
 
         vaultEngine.moveStablecoin(msg.sender, address(this), amount);
         vaultEngine.settle(amount);
-        uint256 amountToBuy = ((amount * sharesPerStablecoin()) / ONE);
-        shares[msg.sender] += amountToBuy;
-        totalShares += amountToBuy;
+        uint256 amountToBuy = ((amount * vouchersPerStablecoin()) / ONE);
+        vouchers[msg.sender] += amountToBuy;
+        totalVouchers += amountToBuy;
         offering.amount = offering.amount - amount;
         if (offering.amount == 0) {
             offering.active = false;
@@ -201,10 +201,10 @@ contract ReservePool is Stateful, Eventful {
     }
 
     /**
-     * @notice Redeems shares for assets
+     * @notice Redeems vouchers for assets
      * @param amount The amount to redeem
      */
-    function redeemShares(uint256 amount) external {
+    function redeemVouchers(uint256 amount) external {
         processRedemption(msg.sender, amount);
     }
 
@@ -241,11 +241,11 @@ contract ReservePool is Stateful, Eventful {
             "ReservePool/processRedemption: The reserve pool doesn't have enough funds"
         );
         require(
-            shares[user] >= amount,
-            "ReservePool/processRedemption: User doesn't have enough shares to redeem this amount"
+            vouchers[user] >= amount,
+            "ReservePool/processRedemption: User doesn't have enough vouchers to redeem this amount"
         );
 
-        shares[user] -= amount;
+        vouchers[user] -= amount;
         vaultEngine.moveStablecoin(address(this), user, amount);
     }
 }
