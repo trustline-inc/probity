@@ -15,7 +15,7 @@ import {
   Registry,
   PbtToken,
   VaultEngine,
-  NativeCollateral,
+  NativeToken,
   ERC20Collateral,
   Teller,
   Treasury,
@@ -48,7 +48,7 @@ import {
   VaultEngine__factory,
   VPTokenCollateral__factory,
   ERC20Collateral__factory,
-  NativeCollateral__factory,
+  NativeToken__factory,
   Teller__factory,
   Treasury__factory,
   PriceFeed__factory,
@@ -96,7 +96,7 @@ interface ContractDict {
   pbtToken: PbtToken;
   vaultEngine: VaultEngine;
   vaultEngineSB: VaultEngineSB;
-  nativeCollateral: NativeCollateral;
+  nativeCollateral: NativeToken;
   erc20Collateral: ERC20Collateral;
   ftsoManager: MockFtsoManager;
   ftsoRewardManager: MockFtsoRewardManager;
@@ -464,7 +464,7 @@ const deployERC20Collateral = async (param?: {
   return contracts;
 };
 
-const deployNativeCollateral = async (param?: {
+const deployNativeToken = async (param?: {
   registry?: string;
   collateralId?: string;
   vaultEngine?: string;
@@ -485,9 +485,9 @@ const deployNativeCollateral = async (param?: {
   const signers = await getSigners();
 
   const nativeCollateralFactory = (await ethers.getContractFactory(
-    "NativeCollateral",
+    "NativeToken",
     signers.owner
-  )) as NativeCollateral__factory;
+  )) as NativeToken__factory;
   contracts.nativeCollateral = await nativeCollateralFactory.deploy(
     registry,
     collateralId,
@@ -1085,7 +1085,7 @@ const deployProbity = async (stablecoin?: string) => {
     stablecoin === "aurei"
       ? await deployVaultEngine()
       : await deployVaultEngineSB();
-  await deployNativeCollateral();
+  await deployNativeToken();
   await deployReservePool();
   await deployTeller();
   await deployPriceCalc();
@@ -1141,7 +1141,7 @@ const probity = {
   deployPbt,
   deployApr,
   deployVaultEngine,
-  deployNativeCollateral,
+  deployNativeToken,
   deployERC20Collateral,
   deployVPTokenCollateral,
   deployTeller,

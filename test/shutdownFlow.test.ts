@@ -7,7 +7,7 @@ import {
   Aurei,
   ERC20Collateral,
   VaultEngine,
-  NativeCollateral,
+  NativeToken,
   Teller,
   Treasury,
   MockFtso,
@@ -41,7 +41,7 @@ let user6: SignerWithAddress;
 let aurei: Aurei;
 let vaultEngine: VaultEngine;
 let registry: Registry;
-let flrColl: NativeCollateral;
+let flrColl: NativeToken;
 let fxrpColl: ERC20Collateral;
 let teller: Teller;
 let treasury: Treasury;

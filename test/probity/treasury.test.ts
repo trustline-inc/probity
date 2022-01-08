@@ -6,7 +6,7 @@ import {
   Aurei,
   PbtToken,
   Treasury,
-  NativeCollateral,
+  NativeToken,
   MockVaultEngine,
 } from "../../typechain";
 
@@ -33,7 +33,7 @@ let pbt: PbtToken;
 let vaultEngine: MockVaultEngine;
 let treasury: Treasury;
 let registry: Registry;
-let flrCollateral: NativeCollateral;
+let flrCollateral: NativeToken;
 
 const AMOUNT_TO_MINT = PRECISION_COLL.mul(100);
 const AMOUNT_TO_WITHDRAW = PRECISION_COLL.mul(50);
