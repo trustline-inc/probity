@@ -67,7 +67,7 @@ ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
 describe("Probity happy flow", function () {
   beforeEach(async function () {
-    const { contracts, signers } = await deployTest("aurei");
+    const { contracts, signers } = await deployTest("AUR");
 
     // Set contracts
     vaultEngine = contracts.vaultEngine;

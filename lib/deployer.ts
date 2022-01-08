@@ -1088,7 +1088,10 @@ const deployProbity = async (stablecoin?: string) => {
   await deployPriceCalc();
   await deployPriceFeed();
   await deployTreasury({
-    stablecoin: contracts[stablecoin.toUpperCase()].address,
+    stablecoin:
+      stablecoin.toUpperCase() === "PHI"
+        ? contracts.phi.address
+        : contracts.aurei.address,
   });
   await deployLiquidator();
   await deployShutdown();
