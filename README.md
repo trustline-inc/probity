@@ -153,7 +153,7 @@ You can use the `initProbity` script to initialize the system with a new collate
 ```
 TOKEN=SGB \
 FLARE_DIR=~/Desktop/flare \
-yarn run initProbity
+yarn run initProbity:local
 ```
 
 ## Utility Scripts
