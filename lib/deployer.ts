@@ -78,6 +78,7 @@ import {
 const NETWORK_NATIVE_TOKENS = {
   local: process.env.NATIVE_TOKEN_LOCAL || "FLR",
   hardhat: "FLR", // tests always use FLR and AUR
+  internal: process.env.NATIVE_TOKEN_INTERNAL || "FLR",
   coston: process.env.NATIVE_TOKEN_COSTON || "CFLR",
   songbird: "SGB",
   flare: "FLR",
