@@ -1,6 +1,7 @@
 import "@nomiclabs/hardhat-ethers";
 import { deployDev, Deployment, deployProd } from "../lib/deployer";
 import * as fs from "fs";
+import * as hre from "hardhat";
 
 async function main() {
   let deployment: Deployment;
@@ -11,7 +12,7 @@ async function main() {
   if (!["PHI", "AUR"].includes(stablecoin))
     throw Error('STABLECOIN envvar must be set to "PHI" or "AUR".');
 
-  if (["local", "internal"].includes(process.env.NETWORK)) {
+  if (["local", "internal"].includes(hre.network.name)) {
     console.info("Deploying in Dev Mode");
     deployment = await deployDev(stablecoin);
   } else {
