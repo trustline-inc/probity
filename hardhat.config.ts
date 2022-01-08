@@ -9,14 +9,6 @@ import { HardhatUserConfig } from "hardhat/config";
 const config: HardhatUserConfig = {
   defaultNetwork: "coston",
   networks: {
-    coston: {
-      url: "https://coston.trustline.co/ext/bc/C/rpc",
-      accounts: [
-        "44b8de040dec19cf810efe64919b481e05e2ba643efe003223662f1626b114f0",
-        "d77b743a0b9170c230e4a4be446b8605aa45f1d00da3d8cd5e5f778c287e1f22",
-      ],
-      chainId: 16,
-    },
     hardhat: {
       chainId: 1337,
       allowUnlimitedContractSize: true,
@@ -35,6 +27,26 @@ const config: HardhatUserConfig = {
         "d77b743a0b9170c230e4a4be446b8605aa45f1d00da3d8cd5e5f778c287e1f22",
       ],
       chainId: 16,
+    },
+    internal: {
+      url: "https://coston.trustline.co/ext/bc/C/rpc",
+      accounts: [
+        "44b8de040dec19cf810efe64919b481e05e2ba643efe003223662f1626b114f0",
+        "d77b743a0b9170c230e4a4be446b8605aa45f1d00da3d8cd5e5f778c287e1f22",
+      ],
+      chainId: 16,
+    },
+    coston: {
+      url: "https://coston-api.flare.network/ext/bc/C/rpc",
+      accounts: [
+        "44b8de040dec19cf810efe64919b481e05e2ba643efe003223662f1626b114f0",
+        "d77b743a0b9170c230e4a4be446b8605aa45f1d00da3d8cd5e5f778c287e1f22",
+      ],
+      chainId: 16,
+    },
+    songbird: {
+      url: "https://songbird.towolabs.com/rpc",
+      chainId: 19,
     },
   },
   solidity: "0.8.4",
