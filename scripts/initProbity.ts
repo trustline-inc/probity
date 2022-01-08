@@ -8,12 +8,13 @@ dotenv.config();
 
 if (!process.env.TOKEN)
   throw Error("Must sent the TOKEN environment variable.");
-if (!["FLR", "SGB"].includes(process.env.TOKEN.toUpperCase()))
+if (!["CFLR", "FLR", "SGB"].includes(process.env.TOKEN.toUpperCase()))
   throw Error("Invalid token type.");
 
 const token = process.env.TOKEN.toUpperCase();
 
 const ASSETS = {
+  CFLR: web3.utils.keccak256("CFLR"),
   FLR: web3.utils.keccak256("FLR"),
   SGB: web3.utils.keccak256("SGB"),
 };
@@ -75,8 +76,8 @@ const init = async () => {
     );
   await tx.wait();
 
-  // Initialize vault collateral type
-  console.log(`Initializing ${token} collateral`);
+  // Initialize vault asset for token
+  console.log(`Initializing ${token} asset`);
   tx = await vaultEngine
     .connect(owner)
     .initAssetType(ASSETS[token], { gasLimit: 400000 });
@@ -129,7 +130,7 @@ const init = async () => {
   await tx.wait();
   console.log(`Liquidator: ${token} initialized`);
 
-  // Initialize price feed collateral type
+  // Initialize price feed asset type
   const liqRatio = PRECISION_COLL.mul(15).div(10);
   tx = await priceFeed
     .connect(owner)
@@ -143,7 +144,7 @@ const init = async () => {
       .toString()} liq. ratio`
   );
 
-  // Update collateral price
+  // Update asset price
   tx = await priceFeed
     .connect(owner)
     .updateAdjustedPrice(ASSETS[token], { gasLimit: 300000 });
