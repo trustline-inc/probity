@@ -1071,7 +1071,7 @@ const deployMocks = async () => {
 
 const deployProbity = async (stablecoin?: string) => {
   const signers = await getSigners();
-  if (stablecoin && !["AUR", "phi"].includes(stablecoin))
+  if (stablecoin && !["AUR", "PHI"].includes(stablecoin))
     throw Error('Token must be either "AUR" or "PHI".');
   stablecoin = stablecoin === undefined ? "AUR" : stablecoin;
   let contracts =
