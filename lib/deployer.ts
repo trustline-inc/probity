@@ -78,7 +78,7 @@ import {
 const NETWORK_NATIVE_TOKENS = {
   local: process.env.NATIVE_TOKEN_LOCAL || "FLR",
   hardhat: "FLR", // tests always use FLR and AUR
-  coston: process.env.NATIVE_TOKEN_COSTON || "FLR",
+  coston: process.env.NATIVE_TOKEN_COSTON || "CFLR",
   songbird: "SGB",
   flare: "FLR",
 };
@@ -373,7 +373,7 @@ const deployVPToken = async (param?: {
   const vaultEngine =
     param && param.vaultEngine
       ? param.vaultEngine
-      : process.env.STABLECOIN?.toLowerCase() === "phi"
+      : process.env.STABLECOIN?.toUpperCase() === "PHI"
       ? contracts.vaultEngineSB.address
       : contracts.vaultEngine.address;
 
@@ -426,7 +426,7 @@ const deployERC20Token = async (param?: {
   const vaultEngine =
     param && param.vaultEngine
       ? param.vaultEngine
-      : process.env.STABLECOIN?.toLowerCase() === "phi"
+      : process.env.STABLECOIN?.toUpperCase() === "PHI"
       ? contracts.vaultEngineSB.address
       : contracts.vaultEngine.address;
 
@@ -475,7 +475,7 @@ const deployNativeToken = async (param?: {
   const vaultEngine =
     param && param.vaultEngine
       ? param.vaultEngine
-      : process.env.STABLECOIN?.toLowerCase() === "phi"
+      : process.env.STABLECOIN?.toUpperCase() === "PHI"
       ? contracts.vaultEngineSB.address
       : contracts.vaultEngine.address;
 
@@ -523,7 +523,7 @@ const deployShutdown = async (param?: {
   const vaultEngine =
     param && param.vaultEngine
       ? param.vaultEngine
-      : process.env.STABLECOIN?.toLowerCase() === "phi"
+      : process.env.STABLECOIN?.toUpperCase() === "PHI"
       ? contracts.vaultEngineSB.address
       : contracts.vaultEngine.address;
   const priceFeed =
@@ -589,7 +589,7 @@ const deployTeller = async (param?: {
   const vaultEngine =
     param && param.vaultEngine
       ? param.vaultEngine
-      : process.env.STABLECOIN?.toLowerCase() === "phi"
+      : process.env.STABLECOIN?.toUpperCase() === "PHI"
       ? contracts.vaultEngineSB.address
       : contracts.vaultEngine.address;
   const lowApr =
@@ -645,7 +645,7 @@ const deployTreasury = async (param?: {
   const vaultEngine =
     param && param.vaultEngine
       ? param.vaultEngine
-      : process.env.STABLECOIN?.toLowerCase() === "phi"
+      : process.env.STABLECOIN?.toUpperCase() === "PHI"
       ? contracts.vaultEngineSB.address
       : contracts.vaultEngine.address;
   const stablecoin =
@@ -693,7 +693,7 @@ const deployPriceFeed = async (param?: {
   const vaultEngine =
     param && param.vaultEngine
       ? param.vaultEngine
-      : process.env.STABLECOIN?.toLowerCase() === "phi"
+      : process.env.STABLECOIN?.toUpperCase() === "PHI"
       ? contracts.vaultEngineSB.address
       : contracts.vaultEngine.address;
 
@@ -730,7 +730,7 @@ const deployAuctioneer = async (param?: {
   const vaultEngine =
     param && param.vaultEngine
       ? param.vaultEngine
-      : process.env.STABLECOIN?.toLowerCase() === "phi"
+      : process.env.STABLECOIN?.toUpperCase() === "PHI"
       ? contracts.vaultEngineSB.address
       : contracts.vaultEngine.address;
   const linearDecrease =
@@ -800,7 +800,7 @@ const deployReservePool = async (param?: {
   const vaultEngine =
     param && param.vaultEngine
       ? param.vaultEngine
-      : process.env.STABLECOIN?.toLowerCase() === "phi"
+      : process.env.STABLECOIN?.toUpperCase() === "PHI"
       ? contracts.vaultEngineSB.address
       : contracts.vaultEngine.address;
 
@@ -839,7 +839,7 @@ const deployLiquidator = async (param?: {
   const vaultEngine =
     param && param.vaultEngine
       ? param.vaultEngine
-      : process.env.STABLECOIN?.toLowerCase() === "phi"
+      : process.env.STABLECOIN?.toUpperCase() === "PHI"
       ? contracts.vaultEngineSB.address
       : contracts.vaultEngine.address;
   const reservePool =
@@ -1071,15 +1071,15 @@ const deployMocks = async () => {
 
 const deployProbity = async (stablecoin?: string) => {
   const signers = await getSigners();
-  if (stablecoin && !["aurei", "phi"].includes(stablecoin))
-    throw Error('Token must be either "aurei" or "phi".');
-  stablecoin = stablecoin === undefined ? "aurei" : stablecoin;
+  if (stablecoin && !["AUR", "phi"].includes(stablecoin))
+    throw Error('Token must be either "AUR" or "PHI".');
+  stablecoin = stablecoin === undefined ? "AUR" : stablecoin;
   let contracts =
-    stablecoin === "aurei" ? await deployAurei() : await deployPhi();
+    stablecoin === "AUR" ? await deployAurei() : await deployPhi();
   await deployPbt();
   await deployApr();
   contracts =
-    stablecoin === "aurei"
+    stablecoin === "AUR"
       ? await deployVaultEngine()
       : await deployVaultEngineSB();
   await deployNativeToken();
@@ -1088,7 +1088,7 @@ const deployProbity = async (stablecoin?: string) => {
   await deployPriceCalc();
   await deployPriceFeed();
   await deployTreasury({
-    stablecoin: contracts[stablecoin.toLowerCase()].address,
+    stablecoin: contracts[stablecoin.toUpperCase()].address,
   });
   await deployLiquidator();
   await deployShutdown();

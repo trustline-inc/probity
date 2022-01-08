@@ -27,7 +27,7 @@
     "deployERC20Token:local": "npx hardhat --network local run ./scripts/deployERC20Token.ts",
     "deployVpToken:local": "npx hardhat --network local run ./scripts/deployVpToken.ts",
     "deploy:local": "NETWORK=local && npx hardhat --network local run ./scripts/deploy.ts",
-    "deploy:coston": "STABLECOIN=AUR && NATIVE_TOKEN_COSTON=CFLR && NETWORK=local && npx hardhat --network coston run ./scripts/deploy.ts",
+    "deploy:coston": "STABLECOIN=AUR && NATIVE_TOKEN_COSTON=CFLR && npx hardhat --network coston run ./scripts/deploy.ts",
     "deploy:hardhat": "npx hardhat --network localhost run ./scripts/deploy.ts",
     "test": "NODE_ENV=test npx hardhat test --network hardhat",
     "test:happy": "NODE_ENV=test npx hardhat test test/happyFlow.test.ts --network hardhat",

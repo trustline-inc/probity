@@ -6,10 +6,10 @@ async function main() {
   let deployment: Deployment;
 
   const stablecoin: string = process.env.STABLECOIN
-    ? process.env.STABLECOIN.toLowerCase()
-    : "aurei";
-  if (!["phi", "aurei"].includes(stablecoin))
-    throw Error('STABLECOIN envvar must be set to "phi" or "aurei".');
+    ? process.env.STABLECOIN.toUpperCase()
+    : "AUR";
+  if (!["PHI", "AUR"].includes(stablecoin))
+    throw Error('STABLECOIN envvar must be set to "PHI" or "AUR".');
 
   if (process.env.NETWORK === "local") {
     console.info("Deploying in Local Mode");
