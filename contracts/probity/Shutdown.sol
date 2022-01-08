@@ -62,7 +62,7 @@ interface VaultLike {
     function assets(bytes32 assetId)
         external
         returns (
-            uint256 debtAccumulator,
+            uint256 debtAccummulator,
             uint256 equityAccumulator,
             uint256 price,
             uint256 normDebt,
@@ -282,11 +282,11 @@ contract Shutdown is Stateful, Eventful {
     // collect the appropriate amount of collateral, free up extra collateral
     // suppliers's collateral should
     function processUserDebt(bytes32 assetId, address user) external onlyIfFinalPriceSet(assetId) {
-        (, uint256 lockedColl, uint256 userDebt, , ) = vaultEngine.vaults(assetId, user);
-        (uint256 debtAccu, , , , , , ) = vaultEngine.assets(assetId);
+        (, uint256 activeAssetAmount, uint256 userDebt, , ) = vaultEngine.vaults(assetId, user);
+        (uint256 debtAccum, , , , , , ) = vaultEngine.assets(assetId);
 
-        uint256 debtCollAmount = (userDebt * debtAccu) / assets[assetId].finalPrice;
-        uint256 amountToGrab = min(lockedColl, debtCollAmount);
+        uint256 debtCollAmount = (userDebt * debtAccum) / assets[assetId].finalPrice;
+        uint256 amountToGrab = min(activeAssetAmount, debtCollAmount);
         uint256 gap = debtCollAmount - amountToGrab;
         assets[assetId].gap += gap;
         aurGap += gap * assets[assetId].finalPrice;
@@ -303,15 +303,15 @@ contract Shutdown is Stateful, Eventful {
     }
 
     function freeExcessCollateral(bytes32 assetId, address user) external onlyIfFinalPriceSet(assetId) {
-        (, uint256 lockedColl, uint256 userDebt, uint256 supplied, ) = vaultEngine.vaults(assetId, user);
+        (, uint256 activeAssetAmount, uint256 userDebt, uint256 supplied, ) = vaultEngine.vaults(assetId, user);
         require(userDebt == 0, "Shutdown/freeExcessCollateral: User needs to process debt first before calling this");
 
         // how do we make it so this can be reused
         uint256 hookedAmount = (supplied * finalAurUtilizationRatio);
         uint256 hookedCollAmount = hookedAmount / assets[assetId].finalPrice;
-        require(lockedColl > hookedCollAmount, "Shutdown/freeExcessCollateral: No collateral to free");
+        require(activeAssetAmount > hookedCollAmount, "Shutdown/freeExcessCollateral: No collateral to free");
 
-        uint256 amountToFree = lockedColl - hookedCollAmount;
+        uint256 amountToFree = activeAssetAmount - hookedCollAmount;
 
         vaultEngine.liquidateVault(assetId, user, user, address(this), -int256(amountToFree), 0, 0);
     }
@@ -349,13 +349,13 @@ contract Shutdown is Stateful, Eventful {
     function processUserEquity(bytes32 assetId, address user) external {
         require(supplierObligationRatio != 0, "Shutdown/processUserEquity:Supplier has no obligation");
 
-        (, uint256 lockedColl, , uint256 supplied, ) = vaultEngine.vaults(assetId, user);
+        (, uint256 activeAssetAmount, , uint256 supplied, ) = vaultEngine.vaults(assetId, user);
 
         (, uint256 equityAccumulator, , , , , ) = vaultEngine.assets(assetId);
         uint256 hookedSuppliedAmount = (supplied * equityAccumulator * finalAurUtilizationRatio) / WAD;
         uint256 suppObligatedAmount = ((hookedSuppliedAmount * supplierObligationRatio) / WAD) /
             assets[assetId].finalPrice;
-        uint256 amountToGrab = min(lockedColl, suppObligatedAmount);
+        uint256 amountToGrab = min(activeAssetAmount, suppObligatedAmount);
 
         if (amountToGrab > assets[assetId].gap) {
             amountToGrab = assets[assetId].gap;
@@ -391,11 +391,11 @@ contract Shutdown is Stateful, Eventful {
     function calculateRedeemRatio(bytes32 assetId) external {
         require(finalDebtBalance != 0, "shutdown/calculateRedeemRatio: must set final debt balance first");
 
-        (uint256 debtAccu, , , , , , ) = vaultEngine.assets(assetId);
+        (uint256 debtAccum, , , , , , ) = vaultEngine.assets(assetId);
 
         uint256 normalizedDebt = assets[assetId].normalizedDebt;
 
-        uint256 max = (normalizedDebt * debtAccu) / assets[assetId].finalPrice;
+        uint256 max = (normalizedDebt * debtAccum) / assets[assetId].finalPrice;
         assets[assetId].redeemRatio = ((max - assets[assetId].gap) * RAY) / (finalDebtBalance / RAY);
     }
 
