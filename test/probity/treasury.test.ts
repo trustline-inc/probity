@@ -167,10 +167,10 @@ describe("Treasury Unit Tests", function () {
       );
     });
 
-    it("tests that WithdrawTcn event is emitted properly", async () => {
+    it("tests that WithdrawPbt event is emitted properly", async () => {
       const parsedEvents = await parseEvents(
         treasury.withdrawPbt(AMOUNT_TO_WITHDRAW),
-        "WithdrawTcn",
+        "WithdrawPbt",
         treasury
       );
 

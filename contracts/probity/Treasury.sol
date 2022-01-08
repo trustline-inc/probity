@@ -47,8 +47,8 @@ contract Treasury is Stateful {
     event DepositStablecoin(address indexed user, uint256 amount);
     event WithdrawStablecoin(address indexed user, uint256 amount);
     event TransferStablecoin(address indexed from, address indexed to, uint256 amount);
-    event WithdrawTcn(address indexed user, uint256 amount);
-    event ExchangeTcn(address indexed user, uint256 amount);
+    event WithdrawPbt(address indexed user, uint256 amount);
+    event ExchangePbt(address indexed user, uint256 amount);
 
     /////////////////////////////////////////
     // Constructor
@@ -87,6 +87,6 @@ contract Treasury is Stateful {
     function withdrawPbt(uint256 amount) external {
         vaultEngine.reducePbt(msg.sender, amount * 1e27);
         pbt.mint(msg.sender, amount);
-        emit WithdrawTcn(msg.sender, amount);
+        emit WithdrawPbt(msg.sender, amount);
     }
 }
