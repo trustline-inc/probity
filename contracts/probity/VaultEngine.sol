@@ -54,7 +54,7 @@ contract VaultEngine is Stateful, Eventful {
     // Events
     /////////////////////////////////////////
 
-    event EquityModified(address indexed user, int256 collAmount, int256 equityAmount);
+    event EquityModified(address indexed user, int256 underlyingAmount, int256 equityAmount);
     event DebtModified(address indexed user, int256 collAmount, int256 debtAmount);
 
     /////////////////////////////////////////
