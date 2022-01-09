@@ -8,12 +8,13 @@ dotenv.config();
 
 if (!process.env.TOKEN)
   throw Error("Must sent the TOKEN environment variable.");
-if (!["FLR", "SGB"].includes(process.env.TOKEN.toUpperCase()))
+if (!["CFLR", "FLR", "SGB"].includes(process.env.TOKEN.toUpperCase()))
   throw Error("Invalid token type.");
 
 const token = process.env.TOKEN.toUpperCase();
 
-const COLLATERAL = {
+const ASSETS = {
+  CFLR: web3.utils.keccak256("CFLR"),
   FLR: web3.utils.keccak256("FLR"),
   SGB: web3.utils.keccak256("SGB"),
 };
@@ -75,11 +76,11 @@ const init = async () => {
     );
   await tx.wait();
 
-  // Initialize vault collateral type
-  console.log(`Initializing ${token} collateral`);
+  // Initialize vault asset for token
+  console.log(`Initializing ${token} asset`);
   tx = await vaultEngine
     .connect(owner)
-    .initAssetType(COLLATERAL[token], { gasLimit: 400000 });
+    .initAssetType(ASSETS[token], { gasLimit: 400000 });
   await tx.wait();
   console.log(`Vault: ${token} initialized`);
 
@@ -99,7 +100,7 @@ const init = async () => {
   const ceiling = 10000000;
   tx = await vaultEngine
     .connect(owner)
-    .updateCeiling(COLLATERAL[token], PRECISION_AUR.mul(ceiling), {
+    .updateCeiling(ASSETS[token], PRECISION_AUR.mul(ceiling), {
       gasLimit: 300000,
     });
   await tx.wait();
@@ -109,7 +110,7 @@ const init = async () => {
   const floor = 1;
   tx = await vaultEngine
     .connect(owner)
-    .updateFloor(COLLATERAL[token], PRECISION_COLL.mul(floor), {
+    .updateFloor(ASSETS[token], PRECISION_COLL.mul(floor), {
       gasLimit: 300000,
     });
   await tx.wait();
@@ -118,22 +119,22 @@ const init = async () => {
   // Initialize teller collateral type
   tx = await teller
     .connect(owner)
-    .initCollType(COLLATERAL[token], 0, { gasLimit: 300000 });
+    .initCollType(ASSETS[token], 0, { gasLimit: 300000 });
   await tx.wait();
   console.log(`Teller: ${token} initialized`);
 
   // Initialize liquidator collateral type
   tx = await liquidator
     .connect(owner)
-    .init(COLLATERAL[token], process.env.AUCTIONEER, { gasLimit: 300000 });
+    .init(ASSETS[token], process.env.AUCTIONEER, { gasLimit: 300000 });
   await tx.wait();
   console.log(`Liquidator: ${token} initialized`);
 
-  // Initialize price feed collateral type
+  // Initialize price feed asset type
   const liqRatio = PRECISION_COLL.mul(15).div(10);
   tx = await priceFeed
     .connect(owner)
-    .init(COLLATERAL[token], liqRatio, process.env.FTSO, {
+    .init(ASSETS[token], liqRatio, process.env.FTSO, {
       gasLimit: 300000,
     });
   await tx.wait();
@@ -143,10 +144,10 @@ const init = async () => {
       .toString()} liq. ratio`
   );
 
-  // Update collateral price
+  // Update asset price
   tx = await priceFeed
     .connect(owner)
-    .updateAdjustedPrice(COLLATERAL[token], { gasLimit: 300000 });
+    .updateAdjustedPrice(ASSETS[token], { gasLimit: 300000 });
   await tx.wait();
   console.log(`PriceFeed: ${token} price updated`);
 };

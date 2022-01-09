@@ -8,12 +8,14 @@ async function main() {
   const [owner]: SignerWithAddress[] = await ethers.getSigners();
 
   if (
-    !process.env.ERC20 ||
+    !process.env.VP_TOKEN ||
+    !process.env.FTSO_MANAGER ||
+    !process.env.FTSO_REWARD_MANAGER ||
     !process.env.VAULT_ENGINE ||
     !process.env.REGISTRY
   ) {
     console.error(
-      "Please provide ERC20, VAULT_ENGINE and REGISTRY contract addresses in .env"
+      "Please provide VP_TOKEN, FTSO_MANAGER, FTSO_REWARD_MANAGER, VAULT_ENGINE and REGISTRY contract addresses in .env"
     );
     process.exit(1);
   }
@@ -26,11 +28,13 @@ async function main() {
   const param = {
     registry,
     vaultEngine: process.env.VAULT_ENGINE,
-    erc20: process.env.ERC20,
+    vpToken: process.env.VP_TOKEN,
+    ftsoManager: process.env.FTSO_MANAGER,
+    ftsoRewardManager: process.env.FTSO_REWARD_MANAGER,
   };
 
   //@ts-ignore
-  let contracts = await probity.deployERC20Collateral(param);
+  let contracts = await probity.deployVPToken(param);
 
   console.log("Contracts deployed!");
 

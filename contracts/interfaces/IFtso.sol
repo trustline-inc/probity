@@ -3,7 +3,7 @@
 pragma solidity ^0.8.0;
 
 /**
- * @notice Manages the price of collateral assetTypes.
+ * @notice Manages the price of assets.
  */
 interface IFtso {
     // --- Events ---

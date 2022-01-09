@@ -1,6 +1,7 @@
 import "@nomiclabs/hardhat-ethers";
-import { deployLocal, Deployment, deployProd } from "../lib/deployer";
+import { deployDev, Deployment, deployProd } from "../lib/deployer";
 import * as fs from "fs";
+import * as hre from "hardhat";
 
 async function main() {
   let deployment: Deployment;
@@ -8,24 +9,24 @@ async function main() {
   idempotent = false;
 
   const stablecoin: string = process.env.STABLECOIN
-    ? process.env.STABLECOIN.toLowerCase()
-    : "aurei";
-  if (!["phi", "aurei"].includes(stablecoin))
-    throw Error('STABLECOIN envvar must be set to "phi" or "aurei".');
-
+    ? process.env.STABLECOIN.toUpperCase()
+    : "AUR";
+  if (!["PHI", "AUR"].includes(stablecoin))
+    throw Error('STABLECOIN envvar must be set to "PHI" or "AUR".');
+    
   if (process.env.IDEMPOTENT === "true") {
     console.info("deploying idempotently");
     idempotent = true;
   }
 
-  if (process.env.NETWORK === "local") {
-    console.info("Deploying in Local Mode");
-    deployment = await deployLocal(stablecoin, idempotent);
+  if (["local", "internal"].includes(hre.network.name)) {
+    console.info("Deploying in Dev Mode");
+    deployment = await deployDev(stablecoin, idempotent);
   } else {
     console.info("Deploying in Production Mode");
     deployment = await deployProd(stablecoin, idempotent);
     console.warn(
-      "This deployment of Probity in Production does not include ERC20Collateral, VPTokenCollateral and Auctioneer contracts. Please deploy them separately."
+      "This deployment of Probity in Production does not include ERC20Token, VPToken and Auctioneer contracts. Please deploy them separately."
     );
   }
 

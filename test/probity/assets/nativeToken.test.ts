@@ -1,19 +1,13 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import "@nomiclabs/hardhat-ethers";
 
-import {
-  VaultEngine,
-  Registry,
-  MockVPToken,
-  VPTokenCollateral,
-} from "../../../typechain";
+import { VaultEngine, Registry, NativeToken } from "../../../typechain";
 
 import { deployTest } from "../../../lib/deployer";
-import parseEvents from "../../utils/parseEvents";
 import { ethers } from "hardhat";
 import * as chai from "chai";
 import { PRECISION_COLL } from "../../utils/constants";
-
+import parseEvents from "../../utils/parseEvents";
 const expect = chai.expect;
 
 // Wallets
@@ -21,52 +15,45 @@ let owner: SignerWithAddress;
 let user: SignerWithAddress;
 
 // Contracts
-let vpTokenCollateral: VPTokenCollateral;
-let vpToken: MockVPToken;
+let nativeToken: NativeToken;
 let vaultEngine: VaultEngine;
 let registry: Registry;
 
-const AMOUNT_TO_MINT = PRECISION_COLL.mul(100);
+const AMOUNT_TO_DEPOSIT = PRECISION_COLL.mul(100);
 const AMOUNT_TO_WITHDRAW = PRECISION_COLL.mul(50);
 
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
-describe("VP Token Collateral Unit Test", function () {
+describe("Native Token Unit Test", function () {
   beforeEach(async function () {
     const { contracts, signers } = await deployTest();
 
     // Set contracts
     vaultEngine = contracts.vaultEngine;
     registry = contracts.registry;
-    vpToken = contracts.vpToken;
-    vpTokenCollateral = contracts.vpTokenCollateral;
+    nativeToken = contracts.nativeToken;
 
     owner = signers.owner;
     user = signers.alice;
   });
 
-  it("test DepositVPToken event is emitted properly", async () => {
-    await vpToken.mint(owner.address, AMOUNT_TO_MINT);
-    await vpToken.approve(vpTokenCollateral.address, AMOUNT_TO_MINT);
+  it("test DepositNativeCrypto event is emitted properly", async () => {
     let parsedEvents = await parseEvents(
-      vpTokenCollateral.deposit(AMOUNT_TO_MINT),
-      "DepositVPToken",
-      vpTokenCollateral
+      nativeToken.deposit({ value: AMOUNT_TO_DEPOSIT }),
+      "DepositNativeCrypto",
+      nativeToken
     );
-
     expect(parsedEvents[0].args[0]).to.equal(owner.address);
-    expect(parsedEvents[0].args[1]).to.equal(AMOUNT_TO_MINT);
+    expect(parsedEvents[0].args[1]).to.equal(AMOUNT_TO_DEPOSIT);
   });
 
-  it("test WithdrawVPToken event is emitted properly", async () => {
-    await vpToken.mint(owner.address, AMOUNT_TO_MINT);
-    await vpToken.approve(vpTokenCollateral.address, AMOUNT_TO_MINT);
-    await vpTokenCollateral.deposit(AMOUNT_TO_MINT);
+  it("test WithdrawNativeCrypto event is emitted properly", async () => {
+    await nativeToken.deposit({ value: AMOUNT_TO_DEPOSIT });
 
     let parsedEvents = await parseEvents(
-      vpTokenCollateral.withdraw(AMOUNT_TO_WITHDRAW),
-      "WithdrawVPToken",
-      vpTokenCollateral
+      nativeToken.withdraw(AMOUNT_TO_WITHDRAW),
+      "WithdrawNativeCrypto",
+      nativeToken
     );
     expect(parsedEvents[0].args[0]).to.equal(owner.address);
     expect(parsedEvents[0].args[1]).to.equal(AMOUNT_TO_WITHDRAW);

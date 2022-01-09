@@ -1,13 +1,11 @@
 pragma solidity ^0.8.0;
 
 interface FtsoLike {
-    function getCurrentPrice()
-        external
-        returns (uint256 _price, uint256 _timestamp);
+    function getCurrentPrice() external returns (uint256 _price, uint256 _timestamp);
 }
 
 contract MockPriceFeed {
-    struct Collateral {
+    struct Asset {
         uint256 liquidationRatio;
         FtsoLike ftso;
         uint256 price;
@@ -16,14 +14,14 @@ contract MockPriceFeed {
     uint256 private constant RAY = 1e27;
 
     mapping(bytes32 => bool) public states;
-    mapping(bytes32 => Collateral) public collateralTypes;
+    mapping(bytes32 => Asset) public assets;
 
-    function getPrice(bytes32 collId) public view returns (uint256 price) {
-        return collateralTypes[collId].price;
+    function getPrice(bytes32 assetId) public view returns (uint256 price) {
+        return assets[assetId].price;
     }
 
-    function setPrice(bytes32 collId, uint256 newPrice) external {
-        collateralTypes[collId].price = newPrice;
+    function setPrice(bytes32 assetId, uint256 newPrice) external {
+        assets[assetId].price = newPrice;
     }
 
     function setShutdownState() external {

@@ -4,15 +4,16 @@ import "@nomiclabs/hardhat-ethers";
 import {
   VaultEngine,
   Registry,
-  ERC20Collateral,
-  MockERC20Token,
+  MockVPToken,
+  VPToken,
 } from "../../../typechain";
 
 import { deployTest } from "../../../lib/deployer";
+import parseEvents from "../../utils/parseEvents";
 import { ethers } from "hardhat";
 import * as chai from "chai";
 import { PRECISION_COLL } from "../../utils/constants";
-import parseEvents from "../../utils/parseEvents";
+
 const expect = chai.expect;
 
 // Wallets
@@ -20,8 +21,8 @@ let owner: SignerWithAddress;
 let user: SignerWithAddress;
 
 // Contracts
-let erc20Collateral: ERC20Collateral;
-let erc20: MockERC20Token;
+let vpToken: VPToken;
+let mockVpToken: MockVPToken;
 let vaultEngine: VaultEngine;
 let registry: Registry;
 
@@ -30,42 +31,42 @@ const AMOUNT_TO_WITHDRAW = PRECISION_COLL.mul(50);
 
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
-describe("ERC20 Collateral Unit Test", function () {
+describe("VP Token  Unit Test", function () {
   beforeEach(async function () {
     const { contracts, signers } = await deployTest();
 
     // Set contracts
     vaultEngine = contracts.vaultEngine;
     registry = contracts.registry;
-    erc20 = contracts.erc20Token;
-    erc20Collateral = contracts.erc20Collateral;
+    vpToken = contracts.vpToken;
+    mockVpToken = contracts.mockVpToken;
 
     owner = signers.owner;
     user = signers.alice;
   });
 
-  it("test DepositToken event is emitted properly", async () => {
-    await erc20.mint(owner.address, AMOUNT_TO_MINT);
-    await erc20.approve(erc20Collateral.address, AMOUNT_TO_MINT);
-
+  it("test DepositVPToken event is emitted properly", async () => {
+    await mockVpToken.mint(owner.address, AMOUNT_TO_MINT);
+    await mockVpToken.approve(vpToken.address, AMOUNT_TO_MINT);
     let parsedEvents = await parseEvents(
-      erc20Collateral.deposit(AMOUNT_TO_MINT),
-      "DepositToken",
-      erc20Collateral
+      vpToken.deposit(AMOUNT_TO_MINT),
+      "DepositVPToken",
+      vpToken
     );
+
     expect(parsedEvents[0].args[0]).to.equal(owner.address);
     expect(parsedEvents[0].args[1]).to.equal(AMOUNT_TO_MINT);
   });
 
-  it("test WithdrawToken event is emitted properly", async () => {
-    await erc20.mint(owner.address, AMOUNT_TO_MINT);
-    await erc20.approve(erc20Collateral.address, AMOUNT_TO_MINT);
-    await erc20Collateral.deposit(AMOUNT_TO_MINT);
+  it("test WithdrawVPToken event is emitted properly", async () => {
+    await mockVpToken.mint(owner.address, AMOUNT_TO_MINT);
+    await mockVpToken.approve(vpToken.address, AMOUNT_TO_MINT);
+    await vpToken.deposit(AMOUNT_TO_MINT);
 
     let parsedEvents = await parseEvents(
-      erc20Collateral.withdraw(AMOUNT_TO_WITHDRAW),
-      "WithdrawToken",
-      erc20Collateral
+      vpToken.withdraw(AMOUNT_TO_WITHDRAW),
+      "WithdrawVPToken",
+      vpToken
     );
     expect(parsedEvents[0].args[0]).to.equal(owner.address);
     expect(parsedEvents[0].args[1]).to.equal(AMOUNT_TO_WITHDRAW);

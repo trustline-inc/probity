@@ -6,7 +6,7 @@ import {
   Aurei,
   PbtToken,
   Treasury,
-  NativeCollateral,
+  NativeToken,
   MockVaultEngine,
 } from "../../typechain";
 
@@ -33,7 +33,7 @@ let pbt: PbtToken;
 let vaultEngine: MockVaultEngine;
 let treasury: Treasury;
 let registry: Registry;
-let flrCollateral: NativeCollateral;
+let flrCollateral: NativeToken;
 
 const AMOUNT_TO_MINT = PRECISION_COLL.mul(100);
 const AMOUNT_TO_WITHDRAW = PRECISION_COLL.mul(50);
@@ -47,7 +47,7 @@ describe("Treasury Unit Tests", function () {
     registry = contracts.registry;
     aurei = contracts.aurei;
     pbt = contracts.pbtToken;
-    flrCollateral = contracts.nativeCollateral;
+    flrCollateral = contracts.nativeToken;
 
     owner = signers.owner;
     user = signers.alice;
@@ -167,10 +167,10 @@ describe("Treasury Unit Tests", function () {
       );
     });
 
-    it("tests that WithdrawTcn event is emitted properly", async () => {
+    it("tests that WithdrawPbt event is emitted properly", async () => {
       const parsedEvents = await parseEvents(
         treasury.withdrawPbt(AMOUNT_TO_WITHDRAW),
-        "WithdrawTcn",
+        "WithdrawPbt",
         treasury
       );
 

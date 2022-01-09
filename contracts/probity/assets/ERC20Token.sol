@@ -22,7 +22,7 @@ interface TokenLike {
     ) external returns (bool);
 }
 
-contract ERC20Collateral is Stateful {
+contract ERC20Token is Stateful {
     /////////////////////////////////////////
     // State Variables
     /////////////////////////////////////////
@@ -54,13 +54,13 @@ contract ERC20Collateral is Stateful {
     // External Functions
     /////////////////////////////////////////
     function deposit(uint256 amount) external onlyWhen("paused", false) {
-        require(token.transferFrom(msg.sender, address(this), amount), "ERC20Collateral/deposit: transfer failed");
+        require(token.transferFrom(msg.sender, address(this), amount), "ERC20Token/deposit: transfer failed");
         vaultEngine.modifyStandbyAsset(assetId, msg.sender, int256(amount));
         emit DepositToken(msg.sender, amount, address(token));
     }
 
     function withdraw(uint256 amount) external onlyWhen("paused", false) {
-        require(token.transfer(msg.sender, amount), "ERC20Collateral/withdraw: transfer failed");
+        require(token.transfer(msg.sender, amount), "ERC20Token/withdraw: transfer failed");
         vaultEngine.modifyStandbyAsset(assetId, msg.sender, -int256(amount));
         emit WithdrawToken(msg.sender, amount, address(token));
     }

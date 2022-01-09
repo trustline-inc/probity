@@ -6,9 +6,9 @@ import * as hre from "hardhat";
 
 import {
   Aurei,
-  ERC20Collateral,
+  ERC20Token,
   VaultEngine,
-  NativeCollateral,
+  NativeToken,
   Teller,
   Treasury,
   MockFtso,
@@ -34,8 +34,8 @@ let gov: SignerWithAddress;
 let aurei: Aurei;
 let vaultEngine: VaultEngine;
 let registry: Registry;
-let flrColl: NativeCollateral;
-let fxrpColl: ERC20Collateral;
+let flrColl: NativeToken;
+let fxrpColl: ERC20Token;
 let teller: Teller;
 let treasury: Treasury;
 let ftso: MockFtso;
@@ -67,12 +67,12 @@ ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
 describe("Probity happy flow", function () {
   beforeEach(async function () {
-    const { contracts, signers } = await deployTest("aurei");
+    const { contracts, signers } = await deployTest("AUR");
 
     // Set contracts
     vaultEngine = contracts.vaultEngine;
-    flrColl = contracts.nativeCollateral;
-    fxrpColl = contracts.erc20Collateral;
+    flrColl = contracts.nativeToken;
+    fxrpColl = contracts.erc20Token;
     aurei = contracts.aurei;
     teller = contracts.teller;
     treasury = contracts.treasury;
@@ -82,7 +82,7 @@ describe("Probity happy flow", function () {
     liquidator = contracts.liquidator;
     reserve = contracts.reservePool;
     registry = contracts.registry;
-    erc20 = contracts.erc20Token;
+    erc20 = contracts.mockErc20Token;
 
     owner = signers.owner;
     user = signers.alice;
@@ -352,7 +352,7 @@ describe("Probity happy flow", function () {
 
     await priceFeed.updateAdjustedPrice(flrAssetId);
 
-    let collTypeAfter = await vaultEngine.assetTypes(flrAssetId);
+    let collTypeAfter = await vaultEngine.assets(flrAssetId);
     let expectedPrice = PRECISION_PRICE.div(3).mul(2);
     // as long as the expectedPrice is within a buffer, call it success
     expect(collTypeAfter[2].sub(expectedPrice).toNumber() <= 10).to.equal(true);
@@ -539,14 +539,14 @@ describe("Probity happy flow", function () {
 
     await liquidator.reduceAuctionDebt(PRECISION_AUR.mul(201));
     await reserve.connect(gov).updateDebtThreshold(PRECISION_AUR.mul(200));
-    await reserve.startIouSale();
+    await reserve.startSale();
 
     const reserveUser = reserve.connect(user);
     await ethers.provider.send("evm_increaseTime", [21601]);
     await ethers.provider.send("evm_mine", []);
-    await reserveUser.buyIou(PRECISION_AUR.mul(100));
+    await reserveUser.purchaseVouchers(PRECISION_AUR.mul(100));
 
-    let userIOU = await reserve.ious(user.address);
+    let userIOU = await reserve.vouchers(user.address);
     expect(userIOU > PRECISION_AUR.mul(100)).to.equal(true);
   });
 });

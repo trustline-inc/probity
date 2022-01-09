@@ -8,17 +8,17 @@ contract MockReservePool {
 
     LastShutdownRedemptionCall public lastRedemptionCall;
     mapping(bytes32 => bool) public states;
-    mapping(address => uint256) public ious;
-    uint256 public totalIous;
+    mapping(address => uint256) public vouchers;
+    uint256 public totalVouchers;
     uint256 public lastReduceAuctionDebtAmount;
     uint256 public lastAddAuctionDebtAmount;
 
-    function setIous(address user, uint256 amount) external {
-        ious[user] = amount;
+    function setVouchers(address user, uint256 amount) external {
+        vouchers[user] = amount;
     }
 
-    function setTotalIous(uint256 newTotal) external {
-        totalIous = newTotal;
+    function setTotalVouchers(uint256 newTotal) external {
+        totalVouchers = newTotal;
     }
 
     function shutdownRedemption(address user, uint256 amount) external {

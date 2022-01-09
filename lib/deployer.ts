@@ -17,8 +17,8 @@ import {
   Registry,
   PbtToken,
   VaultEngine,
-  NativeCollateral,
-  ERC20Collateral,
+  NativeToken,
+  ERC20Token,
   Teller,
   Treasury,
   PriceFeed,
@@ -27,7 +27,7 @@ import {
   Liquidator,
   ReservePool,
   MockERC20Token,
-  VPTokenCollateral,
+  VPToken,
   LowAPR,
   HighAPR,
   Shutdown,
@@ -48,9 +48,9 @@ import {
   LowAPR__factory,
   HighAPR__factory,
   VaultEngine__factory,
-  VPTokenCollateral__factory,
-  ERC20Collateral__factory,
-  NativeCollateral__factory,
+  VPToken__factory,
+  ERC20Token__factory,
+  NativeToken__factory,
   Teller__factory,
   Treasury__factory,
   PriceFeed__factory,
@@ -80,7 +80,8 @@ import {
 const NETWORK_NATIVE_TOKENS = {
   local: process.env.NATIVE_TOKEN_LOCAL || "FLR",
   hardhat: "FLR", // tests always use FLR and AUR
-  coston: process.env.NATIVE_TOKEN_COSTON || "FLR",
+  internal: process.env.NATIVE_TOKEN_INTERNAL || "FLR",
+  coston: process.env.NATIVE_TOKEN_COSTON || "CFLR",
   songbird: "SGB",
   flare: "FLR",
 };
@@ -98,8 +99,8 @@ interface ContractDict {
   pbtToken: PbtToken;
   vaultEngine: VaultEngine;
   vaultEngineSB: VaultEngineSB;
-  nativeCollateral: NativeCollateral;
-  erc20Collateral: ERC20Collateral;
+  nativeToken: NativeToken;
+  erc20Token: ERC20Token;
   ftsoManager: MockFtsoManager;
   ftsoRewardManager: MockFtsoRewardManager;
   teller: Teller;
@@ -109,10 +110,10 @@ interface ContractDict {
   linearDecrease: LinearDecrease;
   liquidator: Liquidator;
   reservePool: ReservePool;
-  erc20Token: MockERC20Token;
+  mockErc20Token: MockERC20Token;
   shutdown: Shutdown;
-  vpToken: MockVPToken;
-  vpTokenCollateral: VPTokenCollateral;
+  mockVpToken: MockVPToken;
+  vpToken: VPToken;
   lowApr: LowAPR;
   highApr: HighAPR;
   mockVaultEngine: MockVaultEngine;
@@ -164,8 +165,8 @@ const contracts: ContractDict = {
   pbtToken: null,
   vaultEngine: null,
   vaultEngineSB: null,
-  nativeCollateral: null,
-  erc20Collateral: null,
+  nativeToken: null,
+  erc20Token: null,
   ftsoManager: null,
   ftsoRewardManager: null,
   teller: null,
@@ -175,9 +176,9 @@ const contracts: ContractDict = {
   linearDecrease: null,
   liquidator: null,
   reservePool: null,
-  erc20Token: null,
+  mockErc20Token: null,
   vpToken: null,
-  vpTokenCollateral: null,
+  mockVpToken: null,
   shutdown: null,
   lowApr: null,
   highApr: null,
@@ -444,12 +445,12 @@ const deployVaultEngineSB = async (param?: { registry?: string }) => {
   return contracts;
 };
 
-const deployVPTokenCollateral = async (param?: {
+const deployVPToken = async (param?: {
   registry?: Registry;
-  collateralId?: string;
+  assetId?: string;
   ftsoManager?: string;
   ftsoRewardManager?: string;
-  vpToken?: string;
+  mockVpToken?: string;
   vaultEngine?: string;
 }) => {
   if (contracts.vpTokenCollateral !== null) {
@@ -461,10 +462,8 @@ const deployVPTokenCollateral = async (param?: {
 
   const registry =
     param && param.registry ? param.registry : contracts.registry;
-  const collateralId =
-    param && param.collateralId
-      ? param.collateralId
-      : web3.utils.keccak256("VPToken");
+  const assetId =
+    param && param.assetId ? param.assetId : web3.utils.keccak256("VPToken");
   const ftsoManager =
     param && param.ftsoManager
       ? param.ftsoManager
@@ -473,55 +472,54 @@ const deployVPTokenCollateral = async (param?: {
     param && param.ftsoRewardManager
       ? param.ftsoRewardManager
       : contracts.ftsoRewardManager.address;
-  const vpToken =
-    param && param.vpToken ? param.vpToken : contracts.vpToken.address;
+  const mockVpToken =
+    param && param.mockVpToken
+      ? param.mockVpToken
+      : contracts.mockVpToken.address;
   const vaultEngine =
     param && param.vaultEngine
       ? param.vaultEngine
-      : process.env.STABLECOIN?.toLowerCase() === "phi"
+      : process.env.STABLECOIN?.toUpperCase() === "PHI"
       ? contracts.vaultEngineSB.address
       : contracts.vaultEngine.address;
 
   const signers = await getSigners();
 
-  const vpTokenCollateralFactory = (await ethers.getContractFactory(
-    "VPTokenCollateral",
+  const vpTokenFactory = (await ethers.getContractFactory(
+    "VPToken",
     signers.owner
-  )) as VPTokenCollateral__factory;
-  contracts.vpTokenCollateral = await vpTokenCollateralFactory.deploy(
+  )) as VPToken__factory;
+  contracts.vpToken = await vpTokenFactory.deploy(
     registry.address,
-    collateralId,
+    assetId,
     ftsoManager,
     ftsoRewardManager,
-    vpToken,
+    mockVpToken,
     vaultEngine
   );
-  await contracts.vpTokenCollateral.deployed();
+  await contracts.vpToken.deployed();
   if (process.env.NODE_ENV !== "test") {
-    console.info("vpTokenCollateral deployed ✓");
+    console.info("vpToken deployed ✓");
     console.info({
       registry: registry.address,
-      collateralId,
+      assetId,
       ftsoManager,
       ftsoRewardManager,
-      vpToken,
+      mockVpToken,
       vaultEngine,
     });
   }
 
-  await registry.setupAddress(
-    bytes32("collateral"),
-    contracts.vpTokenCollateral.address
-  );
+  await registry.setupAddress(bytes32("collateral"), contracts.vpToken.address);
 
   await checkDeploymentDelay();
   return contracts;
 };
 
-const deployERC20Collateral = async (param?: {
+const deployERC20Token = async (param?: {
   registry?: Registry;
-  collateralId?: string;
-  erc20?: string;
+  assetId?: string;
+  mockErc20Token?: string;
   vaultEngine?: string;
 }) => {
   if (contracts.erc20Collateral !== null) {
@@ -533,54 +531,54 @@ const deployERC20Collateral = async (param?: {
 
   const registry =
     param && param.registry ? param.registry : contracts.registry;
-  const collateralId =
-    param && param.collateralId
-      ? param.collateralId
-      : web3.utils.keccak256("FXRP");
-  const erc20Token =
-    param && param.erc20 ? param.erc20 : contracts.erc20Token.address;
+  const assetId =
+    param && param.assetId ? param.assetId : web3.utils.keccak256("FXRP");
+  const mockErc20Token =
+    param && param.mockErc20Token
+      ? param.mockErc20Token
+      : contracts.mockErc20Token.address;
   const vaultEngine =
     param && param.vaultEngine
       ? param.vaultEngine
-      : process.env.STABLECOIN?.toLowerCase() === "phi"
+      : process.env.STABLECOIN?.toUpperCase() === "PHI"
       ? contracts.vaultEngineSB.address
       : contracts.vaultEngine.address;
 
   const signers = await getSigners();
 
-  const erc20CollateralFactory = (await ethers.getContractFactory(
-    "ERC20Collateral",
+  const erc20TokenFactory = (await ethers.getContractFactory(
+    "ERC20Token",
     signers.owner
-  )) as ERC20Collateral__factory;
-  contracts.erc20Collateral = await erc20CollateralFactory.deploy(
+  )) as ERC20Token__factory;
+  contracts.erc20Token = await erc20TokenFactory.deploy(
     registry.address,
-    collateralId,
-    erc20Token,
+    assetId,
+    mockErc20Token,
     vaultEngine
   );
-  await contracts.erc20Collateral.deployed();
+  await contracts.erc20Token.deployed();
   if (process.env.NODE_ENV !== "test") {
-    console.info("erc20Collateral deployed ✓");
+    console.info("erc20Token deployed ✓");
     console.info({
       registry: registry.address,
-      collateralId,
-      erc20Token,
+      assetId,
+      mockErc20Token,
       vaultEngine,
     });
   }
 
   await registry.setupAddress(
     bytes32("collateral"),
-    contracts.erc20Collateral.address
+    contracts.erc20Token.address
   );
 
   await checkDeploymentDelay();
   return contracts;
 };
 
-const deployNativeCollateral = async (param?: {
+const deployNativeToken = async (param?: {
   registry?: string;
-  collateralId?: string;
+  assetId?: string;
   vaultEngine?: string;
 }) => {
   if (contracts.nativeCollateral !== null) {
@@ -592,42 +590,42 @@ const deployNativeCollateral = async (param?: {
 
   const registry =
     param && param.registry ? param.registry : contracts.registry.address;
-  const collateralId =
-    param && param.collateralId
-      ? param.collateralId
+  const assetId =
+    param && param.assetId
+      ? param.assetId
       : web3.utils.keccak256(NETWORK_NATIVE_TOKEN);
   const vaultEngine =
     param && param.vaultEngine
       ? param.vaultEngine
-      : process.env.STABLECOIN?.toLowerCase() === "phi"
+      : process.env.STABLECOIN?.toUpperCase() === "PHI"
       ? contracts.vaultEngineSB.address
       : contracts.vaultEngine.address;
 
   const signers = await getSigners();
 
-  const nativeCollateralFactory = (await ethers.getContractFactory(
-    "NativeCollateral",
+  const nativeTokenFactory = (await ethers.getContractFactory(
+    "NativeToken",
     signers.owner
-  )) as NativeCollateral__factory;
-  contracts.nativeCollateral = await nativeCollateralFactory.deploy(
+  )) as NativeToken__factory;
+  contracts.nativeToken = await nativeTokenFactory.deploy(
     registry,
-    collateralId,
+    assetId,
     vaultEngine
   );
-  await contracts.nativeCollateral.deployed();
+  await contracts.nativeToken.deployed();
   if (process.env.NODE_ENV !== "test") {
-    console.info("nativeCollateral deployed ✓");
+    console.info("nativeToken deployed ✓");
     console.info(`with native Token ${NETWORK_NATIVE_TOKEN}`);
     console.info({
       registry,
-      collateralId,
+      assetId,
       vaultEngine,
     });
   }
 
   await contracts.registry.setupAddress(
     bytes32("collateral"),
-    contracts.nativeCollateral.address
+    contracts.nativeToken.address
   );
 
   await checkDeploymentDelay();
@@ -653,7 +651,7 @@ const deployShutdown = async (param?: {
   const vaultEngine =
     param && param.vaultEngine
       ? param.vaultEngine
-      : process.env.STABLECOIN?.toLowerCase() === "phi"
+      : process.env.STABLECOIN?.toUpperCase() === "PHI"
       ? contracts.vaultEngineSB.address
       : contracts.vaultEngine.address;
   const priceFeed =
@@ -725,7 +723,7 @@ const deployTeller = async (param?: {
   const vaultEngine =
     param && param.vaultEngine
       ? param.vaultEngine
-      : process.env.STABLECOIN?.toLowerCase() === "phi"
+      : process.env.STABLECOIN?.toUpperCase() === "PHI"
       ? contracts.vaultEngineSB.address
       : contracts.vaultEngine.address;
   const lowApr =
@@ -787,7 +785,7 @@ const deployTreasury = async (param?: {
   const vaultEngine =
     param && param.vaultEngine
       ? param.vaultEngine
-      : process.env.STABLECOIN?.toLowerCase() === "phi"
+      : process.env.STABLECOIN?.toUpperCase() === "PHI"
       ? contracts.vaultEngineSB.address
       : contracts.vaultEngine.address;
   const stablecoin =
@@ -841,7 +839,7 @@ const deployPriceFeed = async (param?: {
   const vaultEngine =
     param && param.vaultEngine
       ? param.vaultEngine
-      : process.env.STABLECOIN?.toLowerCase() === "phi"
+      : process.env.STABLECOIN?.toUpperCase() === "PHI"
       ? contracts.vaultEngineSB.address
       : contracts.vaultEngine.address;
 
@@ -884,7 +882,7 @@ const deployAuctioneer = async (param?: {
   const vaultEngine =
     param && param.vaultEngine
       ? param.vaultEngine
-      : process.env.STABLECOIN?.toLowerCase() === "phi"
+      : process.env.STABLECOIN?.toUpperCase() === "PHI"
       ? contracts.vaultEngineSB.address
       : contracts.vaultEngine.address;
   const linearDecrease =
@@ -967,7 +965,7 @@ const deployReservePool = async (param?: {
   const vaultEngine =
     param && param.vaultEngine
       ? param.vaultEngine
-      : process.env.STABLECOIN?.toLowerCase() === "phi"
+      : process.env.STABLECOIN?.toUpperCase() === "PHI"
       ? contracts.vaultEngineSB.address
       : contracts.vaultEngine.address;
 
@@ -1012,7 +1010,7 @@ const deployLiquidator = async (param?: {
   const vaultEngine =
     param && param.vaultEngine
       ? param.vaultEngine
-      : process.env.STABLECOIN?.toLowerCase() === "phi"
+      : process.env.STABLECOIN?.toUpperCase() === "PHI"
       ? contracts.vaultEngineSB.address
       : contracts.vaultEngine.address;
   const reservePool =
@@ -1057,12 +1055,12 @@ const deployMockERC20 = async () => {
   }
 
   const signers = await getSigners();
-  const erc20TokenFactory = (await ethers.getContractFactory(
+  const mockErc20TokenFactory = (await ethers.getContractFactory(
     "MockERC20Token",
     signers.owner
   )) as MockERC20Token__factory;
-  contracts.erc20Token = await erc20TokenFactory.deploy();
-  await contracts.erc20Token.deployed();
+  contracts.mockErc20Token = await mockErc20TokenFactory.deploy();
+  await contracts.mockErc20Token.deployed();
   return contracts;
 };
 
@@ -1073,13 +1071,13 @@ const deployMockVPToken = async () => {
   }
 
   const signers = await getSigners();
-  const vpTokenFactory = (await ethers.getContractFactory(
+  const mockVpTokenFactory = (await ethers.getContractFactory(
     "MockVPToken",
     signers.owner
   )) as MockVPToken__factory;
-  contracts.vpToken = await vpTokenFactory.deploy();
-  await contracts.vpToken.deployed();
-  if (process.env.NODE_ENV !== "test") console.info("vpToken deployed ✓");
+  contracts.mockVpToken = await mockVpTokenFactory.deploy();
+  await contracts.mockVpToken.deployed();
+  if (process.env.NODE_ENV !== "test") console.info("mockVpToken deployed ✓");
   await checkDeploymentDelay();
   return contracts;
 };
@@ -1112,11 +1110,11 @@ const deployMockPriceCalc = async () => {
   }
 
   const signers = await getSigners();
-  const mockPriceCaclFactory = (await ethers.getContractFactory(
+  const mockPriceCalcFactory = (await ethers.getContractFactory(
     "MockPriceCalc",
     signers.owner
   )) as MockPriceCalc__factory;
-  contracts.mockPriceCalc = await mockPriceCaclFactory.deploy();
+  contracts.mockPriceCalc = await mockPriceCalcFactory.deploy();
   await contracts.mockPriceCalc.deployed();
   if (process.env.NODE_ENV !== "test") console.info("mockPriceCalc deployed ✓");
   await checkDeploymentDelay();
@@ -1313,27 +1311,27 @@ const deployMocks = async () => {
 
 const deployProbity = async (stablecoin?: string, idempotent = false) => {
   const signers = await getSigners();
-  if (stablecoin && !["aurei", "phi"].includes(stablecoin))
-    throw Error('Token must be either "aurei" or "phi".');
-  stablecoin = stablecoin === undefined ? "aurei" : stablecoin;
+  if (stablecoin && !["AUR", "PHI"].includes(stablecoin))
+    throw Error('Token must be either "AUR" or "PHI".');
+  stablecoin = stablecoin === undefined ? "AUR" : stablecoin;
   let contracts =
-    stablecoin === "aurei" ? await deployAurei() : await deployPhi();
+    stablecoin === "AUR" ? await deployAurei() : await deployPhi();
   await deployPbt();
   await deployApr();
   contracts =
-    stablecoin === "aurei"
+    stablecoin === "AUR"
       ? await deployVaultEngine()
       : await deployVaultEngineSB();
-  await deployNativeCollateral();
+  await deployNativeToken();
   await deployReservePool();
   await deployTeller();
   await deployPriceCalc();
   await deployPriceFeed();
   await deployTreasury({
     stablecoin:
-      typeof contracts[stablecoin.toLowerCase()] === "string"
-        ? contracts[stablecoin.toLowerCase()]
-        : contracts[stablecoin.toLowerCase()].address,
+      stablecoin.toUpperCase() === "PHI"
+        ? contracts.phi.address
+        : contracts.aurei.address,
   });
   await deployLiquidator();
   await deployShutdown();
@@ -1344,7 +1342,6 @@ const deployProbity = async (stablecoin?: string, idempotent = false) => {
 ////
 // Deployments by environment
 ////
-
 function checkDeploymentDelay() {
   if (process.env.DEPLOYMENT_DELAY === null) return;
   const delayTime = parseInt(process.env.DEPLOYMENT_DELAY);
@@ -1352,7 +1349,7 @@ function checkDeploymentDelay() {
   return new Promise((resolve) => setTimeout(resolve, delayTime));
 }
 
-const deployLocal = async (stablecoin?: string, idempotent = false) => {
+const deployDev = async (stablecoin?: string, idempotent = false) => {
   await parseExistingContracts();
   const signers = await getSigners();
   try {
@@ -1360,13 +1357,12 @@ const deployLocal = async (stablecoin?: string, idempotent = false) => {
     await deployMocks();
     await deployProbity(stablecoin, idempotent);
     await deployAuctioneer();
-    await deployERC20Collateral();
-    await deployVPTokenCollateral();
+    await deployERC20Token();
+    await deployVPToken();
   } catch (err) {
     console.error("Error occurred while deploying", err);
     return { contracts, signers };
   }
-  return { contracts, signers };
 };
 
 const deployTest = async (stablecoin?: string) => {
@@ -1376,8 +1372,8 @@ const deployTest = async (stablecoin?: string) => {
   await deployProbity(stablecoin);
   await deployVaultEngineSB();
   await deployAuctioneer();
-  await deployERC20Collateral();
-  await deployVPTokenCollateral();
+  await deployERC20Token();
+  await deployVPToken();
   await deployMockVaultEngine();
   await deployMockPriceCalc();
   return { contracts, signers };
@@ -1396,9 +1392,9 @@ const probity = {
   deployPbt,
   deployApr,
   deployVaultEngine,
-  deployNativeCollateral,
-  deployERC20Collateral,
-  deployVPTokenCollateral,
+  deployNativeToken,
+  deployERC20Token,
+  deployVPToken,
   deployTeller,
   deployPriceCalc,
   deployPriceFeed,
@@ -1419,4 +1415,4 @@ const mock = {
   deployMockPriceFeed,
 };
 
-export { deployLocal, deployProd, deployTest, probity, mock };
+export { deployDev, deployProd, deployTest, probity, mock };

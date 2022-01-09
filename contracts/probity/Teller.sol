@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import "../dependencies/Stateful.sol";
 
 interface VaultEngineLike {
-    function assetTypes(bytes32) external returns (uint256 debtAccumulator, uint256 equityAccumulator);
+    function assets(bytes32) external returns (uint256 debtAccumulator, uint256 equityAccumulator);
 
     function totalDebt() external returns (uint256);
 
@@ -104,7 +104,7 @@ contract Teller is Stateful {
         require(collateralTypes[assetId].lastUpdated != 0, "Teller/updateAccumulator: Collateral type not initialized");
 
         Collateral memory coll = collateralTypes[assetId];
-        (uint256 debtAccumulator, uint256 equityAccumulator) = vaultEngine.assetTypes(assetId);
+        (uint256 debtAccumulator, uint256 equityAccumulator) = vaultEngine.assets(assetId);
         uint256 totalDebt = vaultEngine.totalDebt();
         uint256 totalEquity = vaultEngine.totalEquity();
 
