@@ -118,7 +118,7 @@ const init = async () => {
   // Initialize teller collateral type
   tx = await teller
     .connect(owner)
-    .initAssetType(COLLATERAL[token], 0, { gasLimit: 300000 });
+    .initCollType(COLLATERAL[token], 0, { gasLimit: 300000 });
   await tx.wait();
   console.log(`Teller: ${token} initialized`);
 

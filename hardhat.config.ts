@@ -12,6 +12,7 @@ const config: HardhatUserConfig = {
     coston: {
       url: "https://coston-api.flare.network/ext/bc/C/rpc",
       accounts: [
+        "fe71f9a709f31ac88a6cd2aea74bfd66e5b99169d1650cbe10fec163786c8671",
         "9f05cbe65ef2defab75440cb91ca1de405233a9f6c3d16bc1a5433edc28f20b4",
       ],
       chainId: 16,

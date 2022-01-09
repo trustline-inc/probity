@@ -1,7 +1,9 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-web3";
-import { ethers, network, web3 } from "hardhat";
+import { artifacts, ethers, network, web3 } from "hardhat";
+import * as dotenv from "dotenv";
+dotenv.config();
 
 export type Deployment = {
   contracts: ContractDict;
@@ -121,6 +123,39 @@ interface ContractDict {
   mockPriceCalc: MockPriceCalc;
 }
 
+const artifactNameMap = {
+  aurei: "Aurei",
+  phi: "Phi",
+  ftso: "MockFtso",
+  registry: "Registry",
+  pbtToken: "PbtToken",
+  vaultEngine: "VaultEngine",
+  vaultEngineSB: "VaultEngineSB",
+  nativeCollateral: "NativeCollateral",
+  erc20Collateral: "ERC20Collateral",
+  ftsoManager: "MockFtsoManager",
+  ftsoRewardManager: "MockFtsoRewardManager",
+  teller: "Teller",
+  treasury: "Treasury",
+  priceFeed: "PriceFeed",
+  auctioneer: "Auctioneer",
+  linearDecrease: "LinearDecrease",
+  liquidator: "Liquidator",
+  reservePool: "ReservePool",
+  erc20Token: "MockERC20Token",
+  vpToken: "MockVPToken",
+  vpTokenCollateral: "VPTokenCollateral",
+  shutdown: "Shutdown",
+  lowApr: "LowAPR",
+  highApr: "HighAPR",
+  mockVaultEngine: "MockVaultEngine",
+  mockPriceFeed: "MockPriceFeed",
+  mockAuctioneer: "MockAuctioneer",
+  mockLiquidator: "MockLiquidator",
+  mockReserve: "MockReservePool",
+  mockPriceCalc: "MockPriceCalc",
+};
+
 const contracts: ContractDict = {
   aurei: null,
   phi: null,
@@ -195,7 +230,33 @@ const getSigners = async () => {
 
 const bytes32 = (string) => ethers.utils.formatBytes32String(string);
 
+const parseExistingContracts = async () => {
+  const signers = await getSigners();
+
+  for (let [contractName, contract] of Object.entries(contracts)) {
+    const contractDisplayName = contractName
+      .split(/(?=[A-Z])/)
+      .join("_")
+      .toUpperCase();
+
+    if (!!process.env[contractDisplayName]) {
+      contracts[contractName] = new ethers.Contract(
+        process.env[contractDisplayName],
+        (await artifacts.readArtifact(artifactNameMap[contractName])).abi,
+        signers.owner
+      );
+    }
+  }
+
+  // for each contracts if file read has an address for it, set it else move on
+};
+
 const deployRegistry = async (param?: { govAddress?: string }) => {
+  if (contracts.registry !== null) {
+    console.info("registry contract has already been deployed, Skipping");
+    return;
+  }
+
   const signers = await getSigners();
   const govAddress =
     param && param.govAddress ? param.govAddress : signers.owner.address;
@@ -212,10 +273,16 @@ const deployRegistry = async (param?: { govAddress?: string }) => {
       params: { govAddress },
     });
   }
+  await checkDeploymentDelay();
   return contracts;
 };
 
 const deployAurei = async (param?: { registry?: string }) => {
+  if (contracts.aurei !== null) {
+    console.info("aurei contract has already been deployed, Skipping");
+    return contracts;
+  }
+
   const registry =
     param && param.registry ? param.registry : contracts.registry.address;
   const signers = await getSigners();
@@ -236,10 +303,16 @@ const deployAurei = async (param?: { registry?: string }) => {
     bytes32("aur"),
     contracts.aurei.address
   );
+  await checkDeploymentDelay();
   return contracts;
 };
 
 const deployPhi = async (param?: { registry?: string }) => {
+  if (contracts.phi !== null) {
+    console.info("phi contract has already been deployed, Skipping");
+    return contracts;
+  }
+
   const registry =
     param && param.registry ? param.registry : contracts.registry.address;
   const signers = await getSigners();
@@ -254,10 +327,16 @@ const deployPhi = async (param?: { registry?: string }) => {
     console.info({ registry });
   }
   await contracts.registry.setupAddress(bytes32("phi"), contracts.phi.address);
+  await checkDeploymentDelay();
   return contracts;
 };
 
 const deployPbt = async (param?: { registry?: string }) => {
+  if (contracts.pbtToken !== null) {
+    console.info("pbt contract has already been deployed, Skipping");
+    return contracts;
+  }
+
   const registry =
     param && param.registry ? param.registry : contracts.registry.address;
   const signers = await getSigners();
@@ -275,10 +354,16 @@ const deployPbt = async (param?: { registry?: string }) => {
     bytes32("pbt"),
     contracts.pbtToken.address
   );
+  await checkDeploymentDelay();
   return contracts;
 };
 
 const deployApr = async () => {
+  if (contracts.lowApr !== null && contracts.highApr !== null) {
+    console.info("apr contract has already been deployed, Skipping");
+    return contracts;
+  }
+
   const signers = await getSigners();
   const lowAprFactory = (await ethers.getContractFactory(
     "LowAPR",
@@ -301,10 +386,16 @@ const deployApr = async () => {
     bytes32("highApr"),
     contracts.highApr.address
   );
+  await checkDeploymentDelay();
   return contracts;
 };
 
 const deployVaultEngine = async (param?: { registry?: string }) => {
+  if (contracts.vaultEngine !== null) {
+    console.info("vaultEngine contract has already been deployed, Skipping");
+    return contracts;
+  }
+
   const registry =
     param && param.registry ? param.registry : contracts.registry.address;
   const signers = await getSigners();
@@ -322,10 +413,16 @@ const deployVaultEngine = async (param?: { registry?: string }) => {
     bytes32("vaultEngine"),
     contracts.vaultEngine.address
   );
+  await checkDeploymentDelay();
   return contracts;
 };
 
 const deployVaultEngineSB = async (param?: { registry?: string }) => {
+  if (contracts.vaultEngineSB !== null) {
+    console.info("vaultEngineSB contract has already been deployed, Skipping");
+    return contracts;
+  }
+
   const registry =
     param && param.registry ? param.registry : contracts.registry.address;
   const signers = await getSigners();
@@ -343,6 +440,7 @@ const deployVaultEngineSB = async (param?: { registry?: string }) => {
     bytes32("vaultEngine"),
     contracts.vaultEngineSB.address
   );
+  await checkDeploymentDelay();
   return contracts;
 };
 
@@ -354,6 +452,13 @@ const deployVPTokenCollateral = async (param?: {
   vpToken?: string;
   vaultEngine?: string;
 }) => {
+  if (contracts.vpTokenCollateral !== null) {
+    console.info(
+      "vpTokenCollateral contract has already been deployed, Skipping"
+    );
+    return contracts;
+  }
+
   const registry =
     param && param.registry ? param.registry : contracts.registry;
   const collateralId =
@@ -409,6 +514,7 @@ const deployVPTokenCollateral = async (param?: {
     contracts.vpTokenCollateral.address
   );
 
+  await checkDeploymentDelay();
   return contracts;
 };
 
@@ -418,6 +524,13 @@ const deployERC20Collateral = async (param?: {
   erc20?: string;
   vaultEngine?: string;
 }) => {
+  if (contracts.erc20Collateral !== null) {
+    console.info(
+      "erc20Collateral contract has already been deployed, Skipping"
+    );
+    return contracts;
+  }
+
   const registry =
     param && param.registry ? param.registry : contracts.registry;
   const collateralId =
@@ -461,6 +574,7 @@ const deployERC20Collateral = async (param?: {
     contracts.erc20Collateral.address
   );
 
+  await checkDeploymentDelay();
   return contracts;
 };
 
@@ -469,6 +583,13 @@ const deployNativeCollateral = async (param?: {
   collateralId?: string;
   vaultEngine?: string;
 }) => {
+  if (contracts.nativeCollateral !== null) {
+    console.info(
+      "nativeCollateral contract has already been deployed, Skipping"
+    );
+    return contracts;
+  }
+
   const registry =
     param && param.registry ? param.registry : contracts.registry.address;
   const collateralId =
@@ -509,6 +630,7 @@ const deployNativeCollateral = async (param?: {
     contracts.nativeCollateral.address
   );
 
+  await checkDeploymentDelay();
   return contracts;
 };
 
@@ -521,6 +643,11 @@ const deployShutdown = async (param?: {
   treasury?: string;
   liquidator?: string;
 }) => {
+  if (contracts.shutdown !== null) {
+    console.info("shutdown contract has already been deployed, Skipping");
+    return contracts;
+  }
+
   const registry =
     param && param.registry ? param.registry : contracts.registry.address;
   const vaultEngine =
@@ -577,6 +704,7 @@ const deployShutdown = async (param?: {
     contracts.shutdown.address
   );
 
+  await checkDeploymentDelay();
   return contracts;
 };
 
@@ -587,6 +715,11 @@ const deployTeller = async (param?: {
   highApr?: string;
   reservePool?: string;
 }) => {
+  if (contracts.teller !== null) {
+    console.info("teller contract has already been deployed, Skipping");
+    return contracts;
+  }
+
   const registry =
     param && param.registry ? param.registry : contracts.registry.address;
   const vaultEngine =
@@ -634,6 +767,7 @@ const deployTeller = async (param?: {
     contracts.teller.address
   );
 
+  await checkDeploymentDelay();
   return contracts;
 };
 
@@ -643,6 +777,11 @@ const deployTreasury = async (param?: {
   pbtToken?: string;
   vaultEngine?: string;
 }) => {
+  if (contracts.treasury !== null) {
+    console.info("treasury contract has already been deployed, Skipping");
+    return contracts;
+  }
+
   const registry =
     param && param.registry ? param.registry : contracts.registry.address;
   const vaultEngine =
@@ -684,6 +823,7 @@ const deployTreasury = async (param?: {
     contracts.treasury.address
   );
 
+  await checkDeploymentDelay();
   return contracts;
 };
 
@@ -691,6 +831,11 @@ const deployPriceFeed = async (param?: {
   registry?: string;
   vaultEngine?: string;
 }) => {
+  if (contracts.priceFeed !== null) {
+    console.info("priceFeed contract has already been deployed, Skipping");
+    return contracts;
+  }
+
   const registry =
     param && param.registry ? param.registry : contracts.registry.address;
   const vaultEngine =
@@ -718,6 +863,7 @@ const deployPriceFeed = async (param?: {
     contracts.priceFeed.address
   );
 
+  await checkDeploymentDelay();
   return contracts;
 };
 
@@ -728,6 +874,11 @@ const deployAuctioneer = async (param?: {
   ftso?: string;
   liquidator?: string;
 }) => {
+  if (contracts.auctioneer !== null) {
+    console.info("auctioneer contract has already been deployed, Skipping");
+    return contracts;
+  }
+
   const registry =
     param && param.registry ? param.registry : contracts.registry;
   const vaultEngine =
@@ -774,10 +925,16 @@ const deployAuctioneer = async (param?: {
     contracts.auctioneer.address
   );
 
+  await checkDeploymentDelay();
   return contracts;
 };
 
 const deployPriceCalc = async () => {
+  if (contracts.linearDecrease !== null) {
+    console.info("linearDecrease contract has already been deployed, Skipping");
+    return contracts;
+  }
+
   const signers = await getSigners();
   const linearDecreaseFactory = (await ethers.getContractFactory(
     "LinearDecrease",
@@ -791,6 +948,8 @@ const deployPriceCalc = async () => {
     bytes32("priceCalc"),
     contracts.linearDecrease.address
   );
+
+  await checkDeploymentDelay();
   return contracts;
 };
 
@@ -798,6 +957,11 @@ const deployReservePool = async (param?: {
   registry?: string;
   vaultEngine?: string;
 }) => {
+  if (contracts.reservePool !== null) {
+    console.info("reservePool contract has already been deployed, Skipping");
+    return contracts;
+  }
+
   const registry =
     param && param.registry ? param.registry : contracts.registry.address;
   const vaultEngine =
@@ -829,6 +993,7 @@ const deployReservePool = async (param?: {
     contracts.reservePool.address
   );
 
+  await checkDeploymentDelay();
   return contracts;
 };
 
@@ -837,6 +1002,11 @@ const deployLiquidator = async (param?: {
   vaultEngine?: string;
   reservePool?: string;
 }) => {
+  if (contracts.liquidator !== null) {
+    console.info("liquidator contract has already been deployed, Skipping");
+    return contracts;
+  }
+
   const registry =
     param && param.registry ? param.registry : contracts.registry.address;
   const vaultEngine =
@@ -874,10 +1044,18 @@ const deployLiquidator = async (param?: {
     contracts.liquidator.address
   );
 
+  await checkDeploymentDelay();
   return contracts;
 };
 
 const deployMockERC20 = async () => {
+  if (contracts.erc20Token !== null) {
+    console.info(
+      "Mock erc20Token contract has already been deployed, Skipping"
+    );
+    return contracts;
+  }
+
   const signers = await getSigners();
   const erc20TokenFactory = (await ethers.getContractFactory(
     "MockERC20Token",
@@ -889,6 +1067,11 @@ const deployMockERC20 = async () => {
 };
 
 const deployMockVPToken = async () => {
+  if (contracts.vpToken !== null) {
+    console.info("Mock vpToken contract has already been deployed, Skipping");
+    return;
+  }
+
   const signers = await getSigners();
   const vpTokenFactory = (await ethers.getContractFactory(
     "MockVPToken",
@@ -897,10 +1080,18 @@ const deployMockVPToken = async () => {
   contracts.vpToken = await vpTokenFactory.deploy();
   await contracts.vpToken.deployed();
   if (process.env.NODE_ENV !== "test") console.info("vpToken deployed ✓");
+  await checkDeploymentDelay();
   return contracts;
 };
 
 const deployMockVaultEngine = async () => {
+  if (contracts.mockVaultEngine !== null) {
+    console.info(
+      "mockVaultEngine contract has already been deployed, Skipping"
+    );
+    return contracts;
+  }
+
   const signers = await getSigners();
   const mockVaultEngineFactory = (await ethers.getContractFactory(
     "MockVaultEngine",
@@ -910,10 +1101,16 @@ const deployMockVaultEngine = async () => {
   await contracts.mockVaultEngine.deployed();
   if (process.env.NODE_ENV !== "test")
     console.info("mockVaultEngine deployed ✓");
+  await checkDeploymentDelay();
   return contracts;
 };
 
 const deployMockPriceCalc = async () => {
+  if (contracts.mockPriceCalc !== null) {
+    console.info("mockPriceCalc contract has already been deployed, Skipping");
+    return contracts;
+  }
+
   const signers = await getSigners();
   const mockPriceCaclFactory = (await ethers.getContractFactory(
     "MockPriceCalc",
@@ -922,10 +1119,16 @@ const deployMockPriceCalc = async () => {
   contracts.mockPriceCalc = await mockPriceCaclFactory.deploy();
   await contracts.mockPriceCalc.deployed();
   if (process.env.NODE_ENV !== "test") console.info("mockPriceCalc deployed ✓");
+  await checkDeploymentDelay();
   return contracts;
 };
 
 const deployMockFtso = async () => {
+  if (contracts.ftso !== null) {
+    console.info("Mock ftso contract has already been deployed, Skipping");
+    return;
+  }
+
   const signers = await getSigners();
   const ftsoFactory = (await ethers.getContractFactory(
     "MockFtso",
@@ -938,10 +1141,18 @@ const deployMockFtso = async () => {
     bytes32("ftso"),
     contracts.ftso.address
   );
+  await checkDeploymentDelay();
   return contracts;
 };
 
 const deployMockFtsoManager = async () => {
+  if (contracts.ftsoManager !== null) {
+    console.info(
+      "Mock ftsoManager contract has already been deployed, Skipping"
+    );
+    return contracts;
+  }
+
   const signers = await getSigners();
   const ftsoManagerFactory = (await ethers.getContractFactory(
     "MockFtsoManager",
@@ -954,10 +1165,18 @@ const deployMockFtsoManager = async () => {
     bytes32("ftsoManager"),
     contracts.ftsoManager.address
   );
+  await checkDeploymentDelay();
   return contracts;
 };
 
 const deployMockFtsoRewardManager = async () => {
+  if (contracts.ftsoRewardManager !== null) {
+    console.info(
+      "Mock ftsoRewardManager contract has already been deployed, Skipping"
+    );
+    return contracts;
+  }
+
   const signers = await getSigners();
 
   const ftsoRewardManager = (await ethers.getContractFactory(
@@ -972,11 +1191,16 @@ const deployMockFtsoRewardManager = async () => {
     bytes32("ftsoRewardManager"),
     contracts.ftsoRewardManager.address
   );
-
+  await checkDeploymentDelay();
   return contracts;
 };
 
 const deployMockPriceFeed = async () => {
+  if (contracts.mockPriceFeed !== null) {
+    console.info("Mock PriceFeed contract has already been deployed, Skipping");
+    return contracts;
+  }
+
   // Set signers
   const signers = await getSigners();
 
@@ -992,11 +1216,16 @@ const deployMockPriceFeed = async () => {
     bytes32("priceFeed"),
     contracts.mockPriceFeed.address
   );
-
+  await checkDeploymentDelay();
   return contracts;
 };
 
 const deployMockLiquidator = async () => {
+  if (contracts.mockLiquidator !== null) {
+    console.info("mockLiquidator contract has already been deployed, Skipping");
+    return contracts;
+  }
+
   // Set signers
   const signers = await getSigners();
 
@@ -1012,11 +1241,16 @@ const deployMockLiquidator = async () => {
     bytes32("liquidator"),
     contracts.mockLiquidator.address
   );
-
+  await checkDeploymentDelay();
   return contracts;
 };
 
 const deployMockAuctioneer = async () => {
+  if (contracts.mockAuctioneer !== null) {
+    console.info("mockAuctioneer contract has already been deployed, Skipping");
+    return contracts;
+  }
+
   // Set signers
   const signers = await getSigners();
 
@@ -1033,11 +1267,16 @@ const deployMockAuctioneer = async () => {
     bytes32("auctioneer"),
     contracts.mockAuctioneer.address
   );
-
+  await checkDeploymentDelay();
   return contracts;
 };
 
 const deployMockReservePool = async () => {
+  if (contracts.mockReserve !== null) {
+    console.info("mockReserve contract has already been deployed, Skipping");
+    return contracts;
+  }
+
   // Set signers
   const signers = await getSigners();
 
@@ -1053,35 +1292,26 @@ const deployMockReservePool = async () => {
     bytes32("reservePool"),
     contracts.mockReserve.address
   );
-
+  await checkDeploymentDelay();
   return contracts;
 };
 
 const deployMocks = async () => {
   const signers = await getSigners();
   await deployMockERC20();
-  await sleep(15000);
   await deployMockVPToken();
-  await sleep(15000);
   await deployMockFtso();
-  await sleep(15000);
   await deployMockFtsoManager();
-  await sleep(15000);
   await deployMockFtsoRewardManager();
-  await sleep(15000);
   await deployMockPriceFeed();
-  await sleep(15000);
   await deployMockReservePool();
-  await sleep(15000);
   await deployMockAuctioneer();
-  await sleep(15000);
   await deployMockLiquidator();
-  await sleep(15000);
 
   return { contracts, signers };
 };
 
-const deployProbity = async (stablecoin?: string) => {
+const deployProbity = async (stablecoin?: string, idempotent = false) => {
   const signers = await getSigners();
   if (stablecoin && !["aurei", "phi"].includes(stablecoin))
     throw Error('Token must be either "aurei" or "phi".');
@@ -1089,31 +1319,24 @@ const deployProbity = async (stablecoin?: string) => {
   let contracts =
     stablecoin === "aurei" ? await deployAurei() : await deployPhi();
   await deployPbt();
-  await sleep(15000);
   await deployApr();
-  await sleep(15000);
   contracts =
     stablecoin === "aurei"
       ? await deployVaultEngine()
       : await deployVaultEngineSB();
   await deployNativeCollateral();
-  await sleep(15000);
   await deployReservePool();
-  await sleep(15000);
   await deployTeller();
-  await sleep(15000);
   await deployPriceCalc();
-  await sleep(15000);
   await deployPriceFeed();
-  await sleep(15000);
   await deployTreasury({
-    stablecoin: contracts[stablecoin.toLowerCase()].address,
+    stablecoin:
+      typeof contracts[stablecoin.toLowerCase()] === "string"
+        ? contracts[stablecoin.toLowerCase()]
+        : contracts[stablecoin.toLowerCase()].address,
   });
-  await sleep(15000);
   await deployLiquidator();
-  await sleep(15000);
   await deployShutdown();
-  await sleep(15000);
 
   return { contracts, signers };
 };
@@ -1122,25 +1345,27 @@ const deployProbity = async (stablecoin?: string) => {
 // Deployments by environment
 ////
 
-function sleep(ms: number) {
-  console.log(`sleeping for ${ms} ms`);
-  return new Promise((resolve) => setTimeout(resolve, ms));
+function checkDeploymentDelay() {
+  if (process.env.DEPLOYMENT_DELAY === null) return;
+  const delayTime = parseInt(process.env.DEPLOYMENT_DELAY);
+  console.log(`sleeping for ${delayTime} ms`);
+  return new Promise((resolve) => setTimeout(resolve, delayTime));
 }
 
 const deployLocal = async (stablecoin?: string, idempotent = false) => {
+  await parseExistingContracts();
   const signers = await getSigners();
-  await deployRegistry();
-  await sleep(15000);
-  await deployMocks();
-  await sleep(15000);
-  await deployProbity(stablecoin);
-  await sleep(15000);
-  await deployAuctioneer();
-  await sleep(15000);
-  await deployERC20Collateral();
-  await sleep(15000);
-  await deployVPTokenCollateral();
-  await sleep(15000);
+  try {
+    await deployRegistry();
+    await deployMocks();
+    await deployProbity(stablecoin, idempotent);
+    await deployAuctioneer();
+    await deployERC20Collateral();
+    await deployVPTokenCollateral();
+  } catch (err) {
+    console.error("Error occurred while deploying", err);
+    return { contracts, signers };
+  }
   return { contracts, signers };
 };
 
@@ -1158,10 +1383,10 @@ const deployTest = async (stablecoin?: string) => {
   return { contracts, signers };
 };
 
-const deployProd = async (stablecoin?: string) => {
+const deployProd = async (stablecoin?: string, idempotent = false) => {
   const signers = await getSigners();
   await deployRegistry();
-  await deployProbity(stablecoin);
+  await deployProbity(stablecoin, idempotent);
   return { contracts, signers };
 };
 

@@ -27,7 +27,7 @@
     "deployERC20Collateral:local": "npx hardhat --network local run ./scripts/deployERC20Collateral.ts",
     "deployVpTokenCollateral:local": "npx hardhat --network local run ./scripts/deployVpTokenCollateral.ts",
     "deploy:local": "export NETWORK=local && npx hardhat --network local run ./scripts/deploy.ts",
-    "deploy:coston": "export STABLECOIN=phi && export NATIVE_TOKEN_COSTON=SGB && export NETWORK=local && npx hardhat --network coston run ./scripts/deploy.ts",
+    "deploy:coston": "export DEPLOYMENT_DELAY=20000 && export STABLECOIN=phi && export NATIVE_TOKEN_COSTON=SGB && export IDEMPOTENT=true && export NETWORK=local && npx hardhat --network coston run ./scripts/deploy.ts",
     "deploy:hardhat": "npx hardhat --network localhost run ./scripts/deploy.ts",
     "test": "NODE_ENV=test npx hardhat test --network hardhat",
     "test:happy": "NODE_ENV=test npx hardhat test test/happyFlow.test.ts --network hardhat",

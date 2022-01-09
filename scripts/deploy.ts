@@ -20,10 +20,10 @@ async function main() {
 
   if (process.env.NETWORK === "local") {
     console.info("Deploying in Local Mode");
-    deployment = await deployLocal(stablecoin);
+    deployment = await deployLocal(stablecoin, idempotent);
   } else {
     console.info("Deploying in Production Mode");
-    deployment = await deployProd(stablecoin);
+    deployment = await deployProd(stablecoin, idempotent);
     console.warn(
       "This deployment of Probity in Production does not include ERC20Collateral, VPTokenCollateral and Auctioneer contracts. Please deploy them separately."
     );
@@ -42,11 +42,16 @@ async function main() {
       .split(/(?=[A-Z])/)
       .join("_")
       .toUpperCase();
+    let contractAddress =
+      typeof contracts[contractName] === "string"
+        ? contracts[contractName]
+        : contracts[contractName].address;
     addresses.push({
       Contract: contractDisplayName,
-      Address: contracts[contractName].address,
+      Address: contractAddress,
     });
-    fileOutput += `${contractDisplayName}=${contracts[contractName].address}\n`;
+
+    fileOutput += `${contractDisplayName}=${contractAddress}\n`;
   }
 
   console.table(addresses);
