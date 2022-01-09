@@ -453,10 +453,8 @@ const deployVPToken = async (param?: {
   mockVpToken?: string;
   vaultEngine?: string;
 }) => {
-  if (contracts.vpTokenCollateral !== null) {
-    console.info(
-      "vpTokenCollateral contract has already been deployed, Skipping"
-    );
+  if (contracts.vpToken !== null) {
+    console.info("vpToken contract has already been deployed, Skipping");
     return contracts;
   }
 
@@ -522,10 +520,8 @@ const deployERC20Token = async (param?: {
   mockErc20Token?: string;
   vaultEngine?: string;
 }) => {
-  if (contracts.erc20Collateral !== null) {
-    console.info(
-      "erc20Collateral contract has already been deployed, Skipping"
-    );
+  if (contracts.erc20Token !== null) {
+    console.info("erc20CToken contract has already been deployed, Skipping");
     return contracts;
   }
 
@@ -581,10 +577,8 @@ const deployNativeToken = async (param?: {
   assetId?: string;
   vaultEngine?: string;
 }) => {
-  if (contracts.nativeCollateral !== null) {
-    console.info(
-      "nativeCollateral contract has already been deployed, Skipping"
-    );
+  if (contracts.nativeToken !== null) {
+    console.info("nativeToken contract has already been deployed, Skipping");
     return contracts;
   }
 
