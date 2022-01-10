@@ -31,9 +31,9 @@
     "deployVpToken:local": "npx hardhat --network local run ./scripts/deployVpToken.ts",
     "deploy:local": "npx hardhat --network local run ./scripts/deploy.ts",
     "deploy:internal": "STABLECOIN=AUR NATIVE_TOKEN_COSTON=FLR npx hardhat --network internal run ./scripts/deploy.ts",
-    "deploy:coston": "STABLECOIN=AUR NATIVE_TOKEN_COSTON=CFLR npx hardhat --network coston run ./scripts/deploy.ts",
+    "deploy:coston": "IDEMPOTENT=true DEPLOYMENT_DELAY=20000 STABLECOIN=AUR NATIVE_TOKEN_COSTON=CFLR npx hardhat --network coston run ./scripts/deploy.ts",
     "deploy:hardhat": "npx hardhat --network localhost run ./scripts/deploy.ts",
-    "test": "NODE_ENV=test npx hardhat test --network hardhat",
+    "test": "IDEMPOTENT=false NODE_ENV=test npx hardhat test --network hardhat",
     "test:happy": "NODE_ENV=test npx hardhat test test/happyFlow.test.ts --network hardhat",
     "coverage": "npm run build && npx hardhat coverage --temp artifacts --network hardhat --solcoverjs ./.solcover.js"
   },

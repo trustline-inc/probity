@@ -5,6 +5,8 @@ import * as hre from "hardhat";
 
 async function main() {
   let deployment: Deployment;
+  let idempotent: boolean;
+  idempotent = false;
 
   const stablecoin: string = process.env.STABLECOIN
     ? process.env.STABLECOIN.toUpperCase()
@@ -12,12 +14,17 @@ async function main() {
   if (!["PHI", "AUR"].includes(stablecoin))
     throw Error('STABLECOIN envvar must be set to "PHI" or "AUR".');
 
+  if (process.env.IDEMPOTENT === "true") {
+    console.info("deploying idempotently");
+    idempotent = true;
+  }
+
   if (["local", "internal"].includes(hre.network.name)) {
     console.info("Deploying in Dev Mode");
-    deployment = await deployDev(stablecoin);
+    deployment = await deployDev(stablecoin, idempotent);
   } else {
     console.info("Deploying in Production Mode");
-    deployment = await deployProd(stablecoin);
+    deployment = await deployProd(stablecoin, idempotent);
     console.warn(
       "This deployment of Probity in Production does not include ERC20Token, VPToken and Auctioneer contracts. Please deploy them separately."
     );
@@ -36,11 +43,16 @@ async function main() {
       .split(/(?=[A-Z])/)
       .join("_")
       .toUpperCase();
+    let contractAddress =
+      typeof contracts[contractName] === "string"
+        ? contracts[contractName]
+        : contracts[contractName].address;
     addresses.push({
       Contract: contractDisplayName,
-      Address: contracts[contractName].address,
+      Address: contractAddress,
     });
-    fileOutput += `${contractDisplayName}=${contracts[contractName].address}\n`;
+
+    fileOutput += `${contractDisplayName}=${contractAddress}\n`;
   }
 
   console.table(addresses);
