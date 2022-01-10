@@ -17,6 +17,8 @@ import {
   Registry,
   PbtToken,
   VaultEngine,
+  VaultEngineSB,
+  VaultManager,
   NativeToken,
   ERC20Token,
   Teller,
@@ -70,8 +72,8 @@ import {
   MockPriceFeed__factory,
   MockPriceCalc__factory,
   MockReservePool__factory,
-  VaultEngineSB,
   VaultEngineSB__factory,
+  VaultManager__factory,
 } from "../typechain";
 
 /**
@@ -99,6 +101,7 @@ interface ContractDict {
   pbtToken: PbtToken;
   vaultEngine: VaultEngine;
   vaultEngineSB: VaultEngineSB;
+  vaultManager: VaultManager;
   nativeToken: NativeToken;
   erc20Token: ERC20Token;
   ftsoManager: MockFtsoManager;
@@ -132,8 +135,9 @@ const artifactNameMap = {
   pbtToken: "PbtToken",
   vaultEngine: "VaultEngine",
   vaultEngineSB: "VaultEngineSB",
-  nativeCollateral: "NativeCollateral",
-  erc20Collateral: "ERC20Collateral",
+  vaultManager: "vaultManager",
+  nativeToken: "NativeToken",
+  erc20Token: "ERC20Token",
   ftsoManager: "MockFtsoManager",
   ftsoRewardManager: "MockFtsoRewardManager",
   teller: "Teller",
@@ -143,9 +147,9 @@ const artifactNameMap = {
   linearDecrease: "LinearDecrease",
   liquidator: "Liquidator",
   reservePool: "ReservePool",
-  erc20Token: "MockERC20Token",
-  vpToken: "MockVPToken",
-  vpTokenCollateral: "VPTokenCollateral",
+  mockErc20Token: "MockERC20Token",
+  mockVpToken: "MockVPToken",
+  vpToken: "VPToken",
   shutdown: "Shutdown",
   lowApr: "LowAPR",
   highApr: "HighAPR",
@@ -165,6 +169,7 @@ const contracts: ContractDict = {
   pbtToken: null,
   vaultEngine: null,
   vaultEngineSB: null,
+  vaultManager: null,
   nativeToken: null,
   erc20Token: null,
   ftsoManager: null,
@@ -231,6 +236,10 @@ const getSigners = async () => {
 
 const bytes32 = (string) => ethers.utils.formatBytes32String(string);
 
+/**
+ * @function parseExistingContracts
+ * Uses the dotenv file to read addresses of existing contracts
+ */
 const parseExistingContracts = async () => {
   const signers = await getSigners();
 
@@ -254,7 +263,7 @@ const parseExistingContracts = async () => {
 
 const deployRegistry = async (param?: { govAddress?: string }) => {
   if (contracts.registry !== null && process.env.NODE_ENV !== "test") {
-    console.info("registry contract has already been deployed, Skipping");
+    console.info("registry contract has already been deployed, skipping");
     return;
   }
 
@@ -280,7 +289,7 @@ const deployRegistry = async (param?: { govAddress?: string }) => {
 
 const deployAurei = async (param?: { registry?: string }) => {
   if (contracts.aurei !== null && process.env.NODE_ENV !== "test") {
-    console.info("aurei contract has already been deployed, Skipping");
+    console.info("aurei contract has already been deployed, skipping");
     return contracts;
   }
 
@@ -310,7 +319,7 @@ const deployAurei = async (param?: { registry?: string }) => {
 
 const deployPhi = async (param?: { registry?: string }) => {
   if (contracts.phi !== null && process.env.NODE_ENV !== "test") {
-    console.info("phi contract has already been deployed, Skipping");
+    console.info("phi contract has already been deployed, skipping");
     return contracts;
   }
 
@@ -334,7 +343,7 @@ const deployPhi = async (param?: { registry?: string }) => {
 
 const deployPbt = async (param?: { registry?: string }) => {
   if (contracts.pbtToken !== null && process.env.NODE_ENV !== "test") {
-    console.info("pbt contract has already been deployed, Skipping");
+    console.info("pbt contract has already been deployed, skipping");
     return contracts;
   }
 
@@ -365,7 +374,7 @@ const deployApr = async () => {
     contracts.highApr !== null &&
     process.env.NODE_ENV !== "test"
   ) {
-    console.info("apr contract has already been deployed, Skipping");
+    console.info("apr contract has already been deployed, skipping");
     return contracts;
   }
 
@@ -397,7 +406,7 @@ const deployApr = async () => {
 
 const deployVaultEngine = async (param?: { registry?: string }) => {
   if (contracts.vaultEngine !== null && process.env.NODE_ENV !== "test") {
-    console.info("vaultEngine contract has already been deployed, Skipping");
+    console.info("vaultEngine contract has already been deployed, skipping");
     return contracts;
   }
 
@@ -424,7 +433,7 @@ const deployVaultEngine = async (param?: { registry?: string }) => {
 
 const deployVaultEngineSB = async (param?: { registry?: string }) => {
   if (contracts.vaultEngineSB !== null && process.env.NODE_ENV !== "test") {
-    console.info("vaultEngineSB contract has already been deployed, Skipping");
+    console.info("vaultEngineSB contract has already been deployed, skipping");
     return contracts;
   }
 
@@ -458,7 +467,7 @@ const deployVPToken = async (param?: {
   vaultEngine?: string;
 }) => {
   if (contracts.vpToken !== null && process.env.NODE_ENV !== "test") {
-    console.info("vpToken contract has already been deployed, Skipping");
+    console.info("vpToken contract has already been deployed, skipping");
     return contracts;
   }
 
@@ -525,7 +534,7 @@ const deployERC20Token = async (param?: {
   vaultEngine?: string;
 }) => {
   if (contracts.erc20Token !== null && process.env.NODE_ENV !== "test") {
-    console.info("erc20CToken contract has already been deployed, Skipping");
+    console.info("erc20CToken contract has already been deployed, skipping");
     return contracts;
   }
 
@@ -582,7 +591,7 @@ const deployNativeToken = async (param?: {
   vaultEngine?: string;
 }) => {
   if (contracts.nativeToken !== null && process.env.NODE_ENV !== "test") {
-    console.info("nativeToken contract has already been deployed, Skipping");
+    console.info("nativeToken contract has already been deployed, skipping");
     return contracts;
   }
 
@@ -640,7 +649,7 @@ const deployShutdown = async (param?: {
   liquidator?: string;
 }) => {
   if (contracts.shutdown !== null && process.env.NODE_ENV !== "test") {
-    console.info("shutdown contract has already been deployed, Skipping");
+    console.info("shutdown contract has already been deployed, skipping");
     return contracts;
   }
 
@@ -704,6 +713,58 @@ const deployShutdown = async (param?: {
   return contracts;
 };
 
+const deployVaultManager = async (param?: {
+  registry?: string;
+  treasury?: string;
+  vaultEngine?: string;
+}) => {
+  if (contracts.vaultManager !== null && process.env.NODE_ENV !== "test") {
+    console.info("vaultManager contract has already been deployed, skipping");
+    return contracts;
+  }
+
+  const registry =
+    param && param.registry ? param.registry : contracts.registry.address;
+  const treasury =
+    param && param.treasury ? param.treasury : contracts.treasury.address;
+  const vaultEngine =
+    param && param.vaultEngine
+      ? param.vaultEngine
+      : process.env.STABLECOIN?.toUpperCase() === "PHI"
+      ? contracts.vaultEngineSB.address
+      : contracts.vaultEngine.address;
+
+  // Set signers
+  const signers = await getSigners();
+
+  const vaultManagerFactory = (await ethers.getContractFactory(
+    "VaultManager",
+    signers.owner
+  )) as VaultManager__factory;
+  contracts.vaultManager = await vaultManagerFactory.deploy(
+    registry,
+    treasury,
+    vaultEngine
+  );
+  await contracts.vaultManager.deployed();
+  if (process.env.NODE_ENV !== "test") {
+    console.info("vaultManager deployed ✓");
+    console.info({
+      registry,
+      treasury,
+      vaultEngine,
+    });
+  }
+
+  await contracts.registry.setupAddress(
+    bytes32("vaultManager"),
+    contracts.vaultManager.address
+  );
+
+  await checkDeploymentDelay();
+  return contracts;
+};
+
 const deployTeller = async (param?: {
   registry?: string;
   vaultEngine?: string;
@@ -712,7 +773,7 @@ const deployTeller = async (param?: {
   reservePool?: string;
 }) => {
   if (contracts.teller !== null && process.env.NODE_ENV !== "test") {
-    console.info("teller contract has already been deployed, Skipping");
+    console.info("teller contract has already been deployed, skipping");
     return contracts;
   }
 
@@ -774,7 +835,7 @@ const deployTreasury = async (param?: {
   vaultEngine?: string;
 }) => {
   if (contracts.treasury !== null && process.env.NODE_ENV !== "test") {
-    console.info("treasury contract has already been deployed, Skipping");
+    console.info("treasury contract has already been deployed, skipping");
     return contracts;
   }
 
@@ -828,7 +889,7 @@ const deployPriceFeed = async (param?: {
   vaultEngine?: string;
 }) => {
   if (contracts.priceFeed !== null && process.env.NODE_ENV !== "test") {
-    console.info("priceFeed contract has already been deployed, Skipping");
+    console.info("priceFeed contract has already been deployed, skipping");
     return contracts;
   }
 
@@ -871,7 +932,7 @@ const deployAuctioneer = async (param?: {
   liquidator?: string;
 }) => {
   if (contracts.auctioneer !== null && process.env.NODE_ENV !== "test") {
-    console.info("auctioneer contract has already been deployed, Skipping");
+    console.info("auctioneer contract has already been deployed, skipping");
     return contracts;
   }
 
@@ -927,7 +988,7 @@ const deployAuctioneer = async (param?: {
 
 const deployPriceCalc = async () => {
   if (contracts.linearDecrease !== null && process.env.NODE_ENV !== "test") {
-    console.info("linearDecrease contract has already been deployed, Skipping");
+    console.info("linearDecrease contract has already been deployed, skipping");
     return contracts;
   }
 
@@ -954,7 +1015,7 @@ const deployReservePool = async (param?: {
   vaultEngine?: string;
 }) => {
   if (contracts.reservePool !== null && process.env.NODE_ENV !== "test") {
-    console.info("reservePool contract has already been deployed, Skipping");
+    console.info("reservePool contract has already been deployed, skipping");
     return contracts;
   }
 
@@ -999,7 +1060,7 @@ const deployLiquidator = async (param?: {
   reservePool?: string;
 }) => {
   if (contracts.liquidator !== null && process.env.NODE_ENV !== "test") {
-    console.info("liquidator contract has already been deployed, Skipping");
+    console.info("liquidator contract has already been deployed, skipping");
     return contracts;
   }
 
@@ -1044,11 +1105,9 @@ const deployLiquidator = async (param?: {
   return contracts;
 };
 
-const deployMockERC20 = async () => {
+const deployMockErc20Token = async () => {
   if (contracts.erc20Token !== null && process.env.NODE_ENV !== "test") {
-    console.info(
-      "Mock erc20Token contract has already been deployed, Skipping"
-    );
+    console.info("mockErc20Token contract has already been deployed, skipping");
     return contracts;
   }
 
@@ -1063,8 +1122,8 @@ const deployMockERC20 = async () => {
 };
 
 const deployMockVPToken = async () => {
-  if (contracts.vpToken !== null && process.env.NODE_ENV !== "test") {
-    console.info("Mock vpToken contract has already been deployed, Skipping");
+  if (contracts.mockVpToken !== null && process.env.NODE_ENV !== "test") {
+    console.info("mockVpToken contract has already been deployed, skipping");
     return;
   }
 
@@ -1083,7 +1142,7 @@ const deployMockVPToken = async () => {
 const deployMockVaultEngine = async () => {
   if (contracts.mockVaultEngine !== null && process.env.NODE_ENV !== "test") {
     console.info(
-      "mockVaultEngine contract has already been deployed, Skipping"
+      "mockVaultEngine contract has already been deployed, skipping"
     );
     return contracts;
   }
@@ -1103,7 +1162,7 @@ const deployMockVaultEngine = async () => {
 
 const deployMockPriceCalc = async () => {
   if (contracts.mockPriceCalc !== null && process.env.NODE_ENV !== "test") {
-    console.info("mockPriceCalc contract has already been deployed, Skipping");
+    console.info("mockPriceCalc contract has already been deployed, skipping");
     return contracts;
   }
 
@@ -1121,7 +1180,7 @@ const deployMockPriceCalc = async () => {
 
 const deployMockFtso = async () => {
   if (contracts.ftso !== null && process.env.NODE_ENV !== "test") {
-    console.info("Mock ftso contract has already been deployed, Skipping");
+    console.info("Mock ftso contract has already been deployed, skipping");
     return;
   }
 
@@ -1144,7 +1203,7 @@ const deployMockFtso = async () => {
 const deployMockFtsoManager = async () => {
   if (contracts.ftsoManager !== null && process.env.NODE_ENV !== "test") {
     console.info(
-      "Mock ftsoManager contract has already been deployed, Skipping"
+      "Mock ftsoManager contract has already been deployed, skipping"
     );
     return contracts;
   }
@@ -1168,7 +1227,7 @@ const deployMockFtsoManager = async () => {
 const deployMockFtsoRewardManager = async () => {
   if (contracts.ftsoRewardManager !== null && process.env.NODE_ENV !== "test") {
     console.info(
-      "Mock ftsoRewardManager contract has already been deployed, Skipping"
+      "Mock ftsoRewardManager contract has already been deployed, skipping"
     );
     return contracts;
   }
@@ -1193,7 +1252,7 @@ const deployMockFtsoRewardManager = async () => {
 
 const deployMockPriceFeed = async () => {
   if (contracts.mockPriceFeed !== null && process.env.NODE_ENV !== "test") {
-    console.info("Mock PriceFeed contract has already been deployed, Skipping");
+    console.info("Mock PriceFeed contract has already been deployed, skipping");
     return contracts;
   }
 
@@ -1218,7 +1277,7 @@ const deployMockPriceFeed = async () => {
 
 const deployMockLiquidator = async () => {
   if (contracts.mockLiquidator !== null && process.env.NODE_ENV !== "test") {
-    console.info("mockLiquidator contract has already been deployed, Skipping");
+    console.info("mockLiquidator contract has already been deployed, skipping");
     return contracts;
   }
 
@@ -1243,7 +1302,7 @@ const deployMockLiquidator = async () => {
 
 const deployMockAuctioneer = async () => {
   if (contracts.mockAuctioneer !== null && process.env.NODE_ENV !== "test") {
-    console.info("mockAuctioneer contract has already been deployed, Skipping");
+    console.info("mockAuctioneer contract has already been deployed, skipping");
     return contracts;
   }
 
@@ -1269,7 +1328,7 @@ const deployMockAuctioneer = async () => {
 
 const deployMockReservePool = async () => {
   if (contracts.mockReserve !== null && process.env.NODE_ENV !== "test") {
-    console.info("mockReserve contract has already been deployed, Skipping");
+    console.info("mockReserve contract has already been deployed, skipping");
     return contracts;
   }
 
@@ -1294,7 +1353,7 @@ const deployMockReservePool = async () => {
 
 const deployMocks = async () => {
   const signers = await getSigners();
-  await deployMockERC20();
+  await deployMockErc20Token();
   await deployMockVPToken();
   await deployMockFtso();
   await deployMockFtsoManager();
@@ -1307,7 +1366,7 @@ const deployMocks = async () => {
   return { contracts, signers };
 };
 
-const deployProbity = async (stablecoin?: string, idempotent = false) => {
+const deployProbity = async (stablecoin?: string) => {
   const signers = await getSigners();
   if (stablecoin && !["AUR", "PHI"].includes(stablecoin))
     throw Error('Token must be either "AUR" or "PHI".');
@@ -1333,6 +1392,7 @@ const deployProbity = async (stablecoin?: string, idempotent = false) => {
   });
   await deployLiquidator();
   await deployShutdown();
+  await deployVaultManager();
 
   return { contracts, signers };
 };
@@ -1347,19 +1407,19 @@ function checkDeploymentDelay() {
   return new Promise((resolve) => setTimeout(resolve, delayTime));
 }
 
-const deployDev = async (stablecoin?: string, idempotent = false) => {
+const deployDev = async (stablecoin?: string) => {
   await parseExistingContracts();
   const signers = await getSigners();
   try {
     await deployRegistry();
     await deployMocks();
-    await deployProbity(stablecoin, idempotent);
+    await deployProbity(stablecoin);
     await deployAuctioneer();
     await deployERC20Token();
     await deployVPToken();
+    return { contracts, signers };
   } catch (err) {
     console.error("Error occurred while deploying", err);
-    return { contracts, signers };
   }
 };
 
@@ -1377,10 +1437,10 @@ const deployTest = async (stablecoin?: string) => {
   return { contracts, signers };
 };
 
-const deployProd = async (stablecoin?: string, idempotent = false) => {
+const deployProd = async (stablecoin?: string) => {
   const signers = await getSigners();
   await deployRegistry();
-  await deployProbity(stablecoin, idempotent);
+  await deployProbity(stablecoin);
   return { contracts, signers };
 };
 
@@ -1401,10 +1461,11 @@ const probity = {
   deployReservePool,
   deployLiquidator,
   deployShutdown,
+  deployVaultManager,
 };
 
 const mock = {
-  deployMockERC20,
+  deployMockErc20Token,
   deployMockVPToken,
   deployMockFtso,
   deployMockFtsoManager,
