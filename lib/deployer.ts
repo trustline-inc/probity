@@ -253,7 +253,7 @@ const parseExistingContracts = async () => {
 };
 
 const deployRegistry = async (param?: { govAddress?: string }) => {
-  if (contracts.registry !== null) {
+  if (contracts.registry !== null && process.env.NODE_ENV !== "test") {
     console.info("registry contract has already been deployed, Skipping");
     return;
   }
@@ -279,7 +279,7 @@ const deployRegistry = async (param?: { govAddress?: string }) => {
 };
 
 const deployAurei = async (param?: { registry?: string }) => {
-  if (contracts.aurei !== null) {
+  if (contracts.aurei !== null && process.env.NODE_ENV !== "test") {
     console.info("aurei contract has already been deployed, Skipping");
     return contracts;
   }
@@ -309,7 +309,7 @@ const deployAurei = async (param?: { registry?: string }) => {
 };
 
 const deployPhi = async (param?: { registry?: string }) => {
-  if (contracts.phi !== null) {
+  if (contracts.phi !== null && process.env.NODE_ENV !== "test") {
     console.info("phi contract has already been deployed, Skipping");
     return contracts;
   }
@@ -333,7 +333,7 @@ const deployPhi = async (param?: { registry?: string }) => {
 };
 
 const deployPbt = async (param?: { registry?: string }) => {
-  if (contracts.pbtToken !== null) {
+  if (contracts.pbtToken !== null && process.env.NODE_ENV !== "test") {
     console.info("pbt contract has already been deployed, Skipping");
     return contracts;
   }
@@ -360,7 +360,11 @@ const deployPbt = async (param?: { registry?: string }) => {
 };
 
 const deployApr = async () => {
-  if (contracts.lowApr !== null && contracts.highApr !== null) {
+  if (
+    contracts.lowApr !== null &&
+    contracts.highApr !== null &&
+    process.env.NODE_ENV !== "test"
+  ) {
     console.info("apr contract has already been deployed, Skipping");
     return contracts;
   }
@@ -392,7 +396,7 @@ const deployApr = async () => {
 };
 
 const deployVaultEngine = async (param?: { registry?: string }) => {
-  if (contracts.vaultEngine !== null) {
+  if (contracts.vaultEngine !== null && process.env.NODE_ENV !== "test") {
     console.info("vaultEngine contract has already been deployed, Skipping");
     return contracts;
   }
@@ -419,7 +423,7 @@ const deployVaultEngine = async (param?: { registry?: string }) => {
 };
 
 const deployVaultEngineSB = async (param?: { registry?: string }) => {
-  if (contracts.vaultEngineSB !== null) {
+  if (contracts.vaultEngineSB !== null && process.env.NODE_ENV !== "test") {
     console.info("vaultEngineSB contract has already been deployed, Skipping");
     return contracts;
   }
@@ -453,7 +457,7 @@ const deployVPToken = async (param?: {
   mockVpToken?: string;
   vaultEngine?: string;
 }) => {
-  if (contracts.vpToken !== null) {
+  if (contracts.vpToken !== null && process.env.NODE_ENV !== "test") {
     console.info("vpToken contract has already been deployed, Skipping");
     return contracts;
   }
@@ -520,7 +524,7 @@ const deployERC20Token = async (param?: {
   mockErc20Token?: string;
   vaultEngine?: string;
 }) => {
-  if (contracts.erc20Token !== null) {
+  if (contracts.erc20Token !== null && process.env.NODE_ENV !== "test") {
     console.info("erc20CToken contract has already been deployed, Skipping");
     return contracts;
   }
@@ -577,7 +581,7 @@ const deployNativeToken = async (param?: {
   assetId?: string;
   vaultEngine?: string;
 }) => {
-  if (contracts.nativeToken !== null) {
+  if (contracts.nativeToken !== null && process.env.NODE_ENV !== "test") {
     console.info("nativeToken contract has already been deployed, Skipping");
     return contracts;
   }
@@ -635,7 +639,7 @@ const deployShutdown = async (param?: {
   treasury?: string;
   liquidator?: string;
 }) => {
-  if (contracts.shutdown !== null) {
+  if (contracts.shutdown !== null && process.env.NODE_ENV !== "test") {
     console.info("shutdown contract has already been deployed, Skipping");
     return contracts;
   }
@@ -707,7 +711,7 @@ const deployTeller = async (param?: {
   highApr?: string;
   reservePool?: string;
 }) => {
-  if (contracts.teller !== null) {
+  if (contracts.teller !== null && process.env.NODE_ENV !== "test") {
     console.info("teller contract has already been deployed, Skipping");
     return contracts;
   }
@@ -769,7 +773,7 @@ const deployTreasury = async (param?: {
   pbtToken?: string;
   vaultEngine?: string;
 }) => {
-  if (contracts.treasury !== null) {
+  if (contracts.treasury !== null && process.env.NODE_ENV !== "test") {
     console.info("treasury contract has already been deployed, Skipping");
     return contracts;
   }
@@ -823,7 +827,7 @@ const deployPriceFeed = async (param?: {
   registry?: string;
   vaultEngine?: string;
 }) => {
-  if (contracts.priceFeed !== null) {
+  if (contracts.priceFeed !== null && process.env.NODE_ENV !== "test") {
     console.info("priceFeed contract has already been deployed, Skipping");
     return contracts;
   }
@@ -866,7 +870,7 @@ const deployAuctioneer = async (param?: {
   ftso?: string;
   liquidator?: string;
 }) => {
-  if (contracts.auctioneer !== null) {
+  if (contracts.auctioneer !== null && process.env.NODE_ENV !== "test") {
     console.info("auctioneer contract has already been deployed, Skipping");
     return contracts;
   }
@@ -922,7 +926,7 @@ const deployAuctioneer = async (param?: {
 };
 
 const deployPriceCalc = async () => {
-  if (contracts.linearDecrease !== null) {
+  if (contracts.linearDecrease !== null && process.env.NODE_ENV !== "test") {
     console.info("linearDecrease contract has already been deployed, Skipping");
     return contracts;
   }
@@ -949,7 +953,7 @@ const deployReservePool = async (param?: {
   registry?: string;
   vaultEngine?: string;
 }) => {
-  if (contracts.reservePool !== null) {
+  if (contracts.reservePool !== null && process.env.NODE_ENV !== "test") {
     console.info("reservePool contract has already been deployed, Skipping");
     return contracts;
   }
@@ -994,7 +998,7 @@ const deployLiquidator = async (param?: {
   vaultEngine?: string;
   reservePool?: string;
 }) => {
-  if (contracts.liquidator !== null) {
+  if (contracts.liquidator !== null && process.env.NODE_ENV !== "test") {
     console.info("liquidator contract has already been deployed, Skipping");
     return contracts;
   }
@@ -1041,7 +1045,7 @@ const deployLiquidator = async (param?: {
 };
 
 const deployMockERC20 = async () => {
-  if (contracts.erc20Token !== null) {
+  if (contracts.erc20Token !== null && process.env.NODE_ENV !== "test") {
     console.info(
       "Mock erc20Token contract has already been deployed, Skipping"
     );
@@ -1059,7 +1063,7 @@ const deployMockERC20 = async () => {
 };
 
 const deployMockVPToken = async () => {
-  if (contracts.vpToken !== null) {
+  if (contracts.vpToken !== null && process.env.NODE_ENV !== "test") {
     console.info("Mock vpToken contract has already been deployed, Skipping");
     return;
   }
@@ -1077,7 +1081,7 @@ const deployMockVPToken = async () => {
 };
 
 const deployMockVaultEngine = async () => {
-  if (contracts.mockVaultEngine !== null) {
+  if (contracts.mockVaultEngine !== null && process.env.NODE_ENV !== "test") {
     console.info(
       "mockVaultEngine contract has already been deployed, Skipping"
     );
@@ -1098,7 +1102,7 @@ const deployMockVaultEngine = async () => {
 };
 
 const deployMockPriceCalc = async () => {
-  if (contracts.mockPriceCalc !== null) {
+  if (contracts.mockPriceCalc !== null && process.env.NODE_ENV !== "test") {
     console.info("mockPriceCalc contract has already been deployed, Skipping");
     return contracts;
   }
@@ -1116,7 +1120,7 @@ const deployMockPriceCalc = async () => {
 };
 
 const deployMockFtso = async () => {
-  if (contracts.ftso !== null) {
+  if (contracts.ftso !== null && process.env.NODE_ENV !== "test") {
     console.info("Mock ftso contract has already been deployed, Skipping");
     return;
   }
@@ -1138,7 +1142,7 @@ const deployMockFtso = async () => {
 };
 
 const deployMockFtsoManager = async () => {
-  if (contracts.ftsoManager !== null) {
+  if (contracts.ftsoManager !== null && process.env.NODE_ENV !== "test") {
     console.info(
       "Mock ftsoManager contract has already been deployed, Skipping"
     );
@@ -1162,7 +1166,7 @@ const deployMockFtsoManager = async () => {
 };
 
 const deployMockFtsoRewardManager = async () => {
-  if (contracts.ftsoRewardManager !== null) {
+  if (contracts.ftsoRewardManager !== null && process.env.NODE_ENV !== "test") {
     console.info(
       "Mock ftsoRewardManager contract has already been deployed, Skipping"
     );
@@ -1188,7 +1192,7 @@ const deployMockFtsoRewardManager = async () => {
 };
 
 const deployMockPriceFeed = async () => {
-  if (contracts.mockPriceFeed !== null) {
+  if (contracts.mockPriceFeed !== null && process.env.NODE_ENV !== "test") {
     console.info("Mock PriceFeed contract has already been deployed, Skipping");
     return contracts;
   }
@@ -1213,7 +1217,7 @@ const deployMockPriceFeed = async () => {
 };
 
 const deployMockLiquidator = async () => {
-  if (contracts.mockLiquidator !== null) {
+  if (contracts.mockLiquidator !== null && process.env.NODE_ENV !== "test") {
     console.info("mockLiquidator contract has already been deployed, Skipping");
     return contracts;
   }
@@ -1238,7 +1242,7 @@ const deployMockLiquidator = async () => {
 };
 
 const deployMockAuctioneer = async () => {
-  if (contracts.mockAuctioneer !== null) {
+  if (contracts.mockAuctioneer !== null && process.env.NODE_ENV !== "test") {
     console.info("mockAuctioneer contract has already been deployed, Skipping");
     return contracts;
   }
@@ -1264,7 +1268,7 @@ const deployMockAuctioneer = async () => {
 };
 
 const deployMockReservePool = async () => {
-  if (contracts.mockReserve !== null) {
+  if (contracts.mockReserve !== null && process.env.NODE_ENV !== "test") {
     console.info("mockReserve contract has already been deployed, Skipping");
     return contracts;
   }
@@ -1337,7 +1341,7 @@ const deployProbity = async (stablecoin?: string, idempotent = false) => {
 // Deployments by environment
 ////
 function checkDeploymentDelay() {
-  if (process.env.DEPLOYMENT_DELAY === null) return;
+  if (process.env.DEPLOYMENT_DELAY === undefined) return;
   const delayTime = parseInt(process.env.DEPLOYMENT_DELAY);
   console.log(`sleeping for ${delayTime} ms`);
   return new Promise((resolve) => setTimeout(resolve, delayTime));

@@ -13,7 +13,7 @@ async function main() {
     : "AUR";
   if (!["PHI", "AUR"].includes(stablecoin))
     throw Error('STABLECOIN envvar must be set to "PHI" or "AUR".');
-    
+
   if (process.env.IDEMPOTENT === "true") {
     console.info("deploying idempotently");
     idempotent = true;
