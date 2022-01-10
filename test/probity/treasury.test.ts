@@ -71,7 +71,7 @@ describe("Treasury Unit Tests", function () {
 
     it("tests that deposit calls vaultEngine.addStablecoin function", async () => {
       const aurBalanceBefore = await vaultEngine.stablecoin(owner.address);
-      await treasury.deposit(AMOUNT_TO_MINT);
+      await treasury.depositStablecoin(AMOUNT_TO_MINT);
       const aurBalanceAfter = await vaultEngine.stablecoin(owner.address);
       expect(aurBalanceAfter.sub(aurBalanceBefore)).to.equal(
         AMOUNT_TO_MINT.mul(PRECISION_PRICE)
@@ -80,14 +80,14 @@ describe("Treasury Unit Tests", function () {
 
     it("tests that aurei is burned from user's balance", async () => {
       const aurBalanceBefore = await aurei.balanceOf(owner.address);
-      await treasury.deposit(AMOUNT_TO_MINT);
+      await treasury.depositStablecoin(AMOUNT_TO_MINT);
       const aurBalanceAfter = await aurei.balanceOf(owner.address);
       expect(aurBalanceBefore.sub(aurBalanceAfter)).to.equal(AMOUNT_TO_MINT);
     });
 
     it("tests that DepositStablecoin event is emitted properly", async () => {
       const parsedEvents = await parseEvents(
-        treasury.deposit(AMOUNT_TO_MINT),
+        treasury.depositStablecoin(AMOUNT_TO_MINT),
         "DepositStablecoin",
         treasury
       );
@@ -100,7 +100,7 @@ describe("Treasury Unit Tests", function () {
   describe("withdrawStablecoin Unit Tests", function () {
     beforeEach(async function () {
       await aurei.mint(owner.address, AMOUNT_TO_MINT);
-      await treasury.deposit(AMOUNT_TO_MINT);
+      await treasury.depositStablecoin(AMOUNT_TO_MINT);
     });
 
     it("tests that withdrawStablecoin calls vaultEngine.removeStablecoin function", async () => {

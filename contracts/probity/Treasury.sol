@@ -67,7 +67,7 @@ contract Treasury is Stateful {
     /////////////////////////////////////////
     // External Functions
     /////////////////////////////////////////
-    function deposit(uint256 amount) external {
+    function depositStablecoin(uint256 amount) external {
         vaultEngine.addStablecoin(msg.sender, amount * 1e27);
         stablecoin.burn(msg.sender, amount);
         emit DepositStablecoin(msg.sender, amount);
