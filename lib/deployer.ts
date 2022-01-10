@@ -1421,6 +1421,8 @@ const deployDev = async (stablecoin?: string) => {
   } catch (err) {
     console.error("Error occurred while deploying", err);
   }
+
+  return { contracts, signers };
 };
 
 const deployTest = async (stablecoin?: string) => {
