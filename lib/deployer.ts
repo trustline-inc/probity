@@ -1417,10 +1417,12 @@ const deployDev = async (stablecoin?: string) => {
     await deployAuctioneer();
     await deployERC20Token();
     await deployVPToken();
-    return { contracts, signers };
   } catch (err) {
     console.error("Error occurred while deploying", err);
+    return { contracts, signers };
   }
+
+  return { contracts, signers };
 };
 
 const deployTest = async (stablecoin?: string) => {
