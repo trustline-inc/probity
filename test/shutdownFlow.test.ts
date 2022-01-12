@@ -298,7 +298,7 @@ describe("Shutdown Flow Test", function () {
     // totalDebt should be $291000
     expect(await vaultEngine.totalDebt()).to.equal(RAD.mul(291000));
 
-    // drop prices flr : : $0.60 , fxrp: $1.23
+    // drop prices flr : $0.60, fxrp: $1.23
     await ftsoFlr.setCurrentPrice(RAY.mul(60).div(100));
     await priceFeed.updateAdjustedPrice(flrAssetId);
     await ftsoFxrp.setCurrentPrice(RAY.mul(123).div(100));
@@ -383,7 +383,7 @@ describe("Shutdown Flow Test", function () {
     await shutdown.initiateShutdown();
     expect(await shutdown.initiated()).to.equal(true);
 
-    // drop prices flr : : $0.42 , fxrp: $1.03
+    // drop prices flr: $0.42, fxrp: $1.03
     await ftsoFlr.setCurrentPrice(RAY.mul(42).div(100));
     await ftsoFxrp.setCurrentPrice(RAY.mul(103).div(100));
 
@@ -416,7 +416,7 @@ describe("Shutdown Flow Test", function () {
     EXPECTED_FLR_GAP = "0";
     expect((await shutdown.assets(flrAssetId)).gap).to.equal(EXPECTED_FLR_GAP);
 
-    // owed $4500 AUR , value of coll:  69000 flr * $0.42 per collateral = $2898, Aur Gap should be 1602 and coll.gap should be 3814.28571429
+    // owed $4500 AUR, value of coll:  69000 flr * $0.42 per collateral = $2898, Aur Gap should be 1602 and coll.gap should be 3814.28571429
     await shutdown.processUserDebt(flrAssetId, user4.address);
 
     EXPECTED_FLR_GAP = "3814285714285714285714";
@@ -544,7 +544,7 @@ describe("Shutdown Flow Test", function () {
     // set up scenario for insolvent system
 
     // current collateral ratio : 150%
-    // starting price flr : $4.30 , fxrp : $6.23
+    // starting price flr : $4.30, fxrp : $6.23
     await ftsoFlr.setCurrentPrice(RAY.mul(43).div(10));
     await priceFeed.updateAdjustedPrice(flrAssetId);
     await ftsoFxrp.setCurrentPrice(RAY.mul(623).div(100));
@@ -684,7 +684,7 @@ describe("Shutdown Flow Test", function () {
     await expectBalancesToMatch(user5, balances.user5);
 
     // new collateral ratio : 175%
-    // drop prices flr : : $3.60 , fxrp: $4.48
+    // drop prices flr: $3.60, fxrp: $4.48
     await priceFeed.updateLiquidationRatio(flrAssetId, WAD.mul(175).div(100));
     await priceFeed.updateLiquidationRatio(fxrpAssetId, WAD.mul(175).div(100));
     await ftsoFlr.setCurrentPrice(RAY.mul(360).div(100));
@@ -733,7 +733,7 @@ describe("Shutdown Flow Test", function () {
     await shutdown.initiateShutdown();
     expect(await shutdown.initiated()).to.equal(true);
 
-    // drop prices flr : : $2.23 , fxrp: $2.20
+    // drop prices flr: $2.23, fxrp: $2.20
     await ftsoFlr.setCurrentPrice(RAY.mul(223).div(100));
     await ftsoFxrp.setCurrentPrice(RAY.mul(220).div(100));
 
