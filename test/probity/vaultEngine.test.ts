@@ -59,8 +59,8 @@ describe("Vault Engine Unit Tests", function () {
     assetManager = signers.don;
 
     await registry.setupAddress(bytes32("gov"), gov.address);
-    await registry.setupAddress(bytes32("whiteListed"), user.address);
-    await registry.setupAddress(bytes32("whiteListed"), owner.address);
+    await registry.setupAddress(bytes32("whitelisted"), user.address);
+    await registry.setupAddress(bytes32("whitelisted"), owner.address);
   });
 
   describe("modifyEquity Unit Tests", function () {
@@ -87,7 +87,7 @@ describe("Vault Engine Unit Tests", function () {
         .modifyStandbyAsset(flrAssetId, owner.address, UNDERLYING_AMOUNT);
     });
 
-    it("only whitelisted user can call modifyEquity", async () => {
+    it("only allows whitelisted users to call modifyEquity", async () => {
       await registry
         .connect(gov)
         .setupAddress(bytes32("notWhitelisted"), owner.address);
@@ -98,12 +98,12 @@ describe("Vault Engine Unit Tests", function () {
           UNDERLYING_AMOUNT,
           EQUITY_AMOUNT
         ),
-        "AccessControl/onlyByWhiteListed: Only Whitelisted user can call this"
+        "AccessControl/onlyByWhiteListed: Access forbidden"
       );
 
       await registry
         .connect(gov)
-        .setupAddress(bytes32("whiteListed"), owner.address);
+        .setupAddress(bytes32("whitelisted"), owner.address);
 
       await vaultEngine.modifyEquity(
         flrAssetId,
@@ -113,12 +113,12 @@ describe("Vault Engine Unit Tests", function () {
       );
     });
 
-    it("fail if vault value is below the minimum(floor)", async () => {
+    it("fails if asset amount falls below the minimum (floor)", async () => {
       const FLOOR_AMOUNT = RAD.mul(1000);
       const EQUITY_AMOUNT_UNDER_FLOOR = FLOOR_AMOUNT.sub(1);
       await registry
         .connect(gov)
-        .setupAddress(bytes32("whiteListed"), owner.address);
+        .setupAddress(bytes32("whitelisted"), owner.address);
 
       await vaultEngine.connect(gov).updateFloor(flrAssetId, RAD.mul(1000));
 
@@ -140,7 +140,7 @@ describe("Vault Engine Unit Tests", function () {
       );
     });
 
-    it("tests new user is added to userList", async () => {
+    it("adds new users to the user list", async () => {
       const before = await vaultEngine.getUserList();
       expect(before.length).to.equal(0);
 
@@ -156,7 +156,7 @@ describe("Vault Engine Unit Tests", function () {
       expect(after[0]).to.equal(owner.address);
     });
 
-    it("tests existing user is NOT added to userList", async () => {
+    it("doesn't add existing users to the user list", async () => {
       await vaultEngine.modifyEquity(
         flrAssetId,
         treasury.address,
@@ -231,12 +231,12 @@ describe("Vault Engine Unit Tests", function () {
           COLL_AMOUNT_DEBT,
           DEBT_AMOUNT
         ),
-        "AccessControl/onlyByWhiteListed: Only Whitelisted user can call this"
+        "AccessControl/onlyByWhiteListed: Access forbidden"
       );
 
       await registry
         .connect(gov)
-        .setupAddress(bytes32("whiteListed"), owner.address);
+        .setupAddress(bytes32("whitelisted"), owner.address);
 
       await vaultEngine.modifyDebt(
         flrAssetId,
@@ -252,7 +252,7 @@ describe("Vault Engine Unit Tests", function () {
 
       await registry
         .connect(gov)
-        .setupAddress(bytes32("whiteListed"), owner.address);
+        .setupAddress(bytes32("whitelisted"), owner.address);
 
       await vaultEngine.connect(gov).updateFloor(flrAssetId, FLOOR_AMOUNT);
 

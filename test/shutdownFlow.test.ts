@@ -182,14 +182,14 @@ describe("Shutdown Flow Test", function () {
       debt: WAD.mul(0),
     };
 
-    await registry.setupAddress(bytes32("whiteListed"), user1.address);
-    await registry.setupAddress(bytes32("whiteListed"), user2.address);
-    await registry.setupAddress(bytes32("whiteListed"), user3.address);
-    await registry.setupAddress(bytes32("whiteListed"), user4.address);
-    await registry.setupAddress(bytes32("whiteListed"), user5.address);
-    await registry.setupAddress(bytes32("whiteListed"), user6.address);
+    await registry.setupAddress(bytes32("whitelisted"), user1.address);
+    await registry.setupAddress(bytes32("whitelisted"), user2.address);
+    await registry.setupAddress(bytes32("whitelisted"), user3.address);
+    await registry.setupAddress(bytes32("whitelisted"), user4.address);
+    await registry.setupAddress(bytes32("whitelisted"), user5.address);
+    await registry.setupAddress(bytes32("whitelisted"), user6.address);
 
-    // await registry.setupAddress(bytes32("whiteListed"), owner.address)
+    // await registry.setupAddress(bytes32("whitelisted"), owner.address)
   });
 
   it("test happy flow where system is solvent", async () => {

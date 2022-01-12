@@ -68,7 +68,7 @@ const init = async () => {
   let tx = await registry
     .connect(owner)
     .setupAddress(
-      ethers.utils.formatBytes32String("whiteListed"),
+      ethers.utils.formatBytes32String("whitelisted"),
       trustlineAddress,
       {
         gasLimit: 300000,

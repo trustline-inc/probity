@@ -19,17 +19,14 @@ contract AccessControl {
 
     modifier onlyByProbity() {
         require(
-            registry.checkValidity(msg.sender) && !registry.checkValidity("whiteListed", msg.sender),
+            registry.checkValidity(msg.sender) && !registry.checkValidity("whitelisted", msg.sender),
             "AccessControl/onlyByProbity: Caller must be from Probity system contract"
         );
         _;
     }
 
     modifier onlyByWhiteListed() {
-        require(
-            registry.checkValidity("whiteListed", msg.sender),
-            "AccessControl/onlyByWhiteListed: Only Whitelisted user can call this"
-        );
+        require(registry.checkValidity("whitelisted", msg.sender), "AccessControl/onlyByWhiteListed: Access forbidden");
         _;
     }
 

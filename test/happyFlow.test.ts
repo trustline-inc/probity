@@ -89,8 +89,8 @@ describe("Probity happy flow", function () {
     gov = signers.charlie;
 
     await registry.setupAddress(bytes32("gov"), gov.address);
-    await registry.setupAddress(bytes32("whiteListed"), user.address);
-    await registry.setupAddress(bytes32("whiteListed"), owner.address);
+    await registry.setupAddress(bytes32("whitelisted"), user.address);
+    await registry.setupAddress(bytes32("whitelisted"), owner.address);
   });
 
   it("test deposit and withdrawal of collateral", async () => {
