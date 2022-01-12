@@ -359,16 +359,16 @@ describe("Vault Engine Unit Tests", function () {
       await registry.connect(gov).setupAddress(bytes32("teller"), user.address);
     });
 
-    it("tests that only teller can call updateAccumulators", async () => {
-      const debtToRaise = BigNumber.from("251035088626883475473007");
-      const capToRaise = BigNumber.from("125509667994754929166541");
+    it("only allows teller to call updateAccumulators", async () => {
+      const debtRateIncrease = BigNumber.from("251035088626883475473007");
+      const equityRateIncrease = BigNumber.from("125509667994754929166541");
 
       await assertRevert(
         vaultEngine.updateAccumulators(
           flrAssetId,
           reservePool.address,
-          debtToRaise,
-          capToRaise,
+          debtRateIncrease,
+          equityRateIncrease,
           BigNumber.from(0)
         ),
         "AccessControl/OnlyBy: Caller does not have permission"
@@ -378,31 +378,31 @@ describe("Vault Engine Unit Tests", function () {
         .updateAccumulators(
           flrAssetId,
           reservePool.address,
-          debtToRaise,
-          capToRaise,
+          debtRateIncrease,
+          equityRateIncrease,
           BigNumber.from(0)
         );
     });
 
     it("tests the debt and equity accumulators are properly updated", async () => {
       const assetBefore = await vaultEngine.assets(flrAssetId);
-      const debtToRaise = BigNumber.from("251035088626883475473007");
-      const capToRaise = BigNumber.from("125509667994754929166541");
+      const debtRateIncrease = BigNumber.from("251035088626883475473007");
+      const equityRateIncrease = BigNumber.from("125509667994754929166541");
       await vaultEngine
         .connect(user)
         .updateAccumulators(
           flrAssetId,
           reservePool.address,
-          debtToRaise,
-          capToRaise,
+          debtRateIncrease,
+          equityRateIncrease,
           BigNumber.from(0)
         );
 
       const assetAfter = await vaultEngine.assets(flrAssetId);
-      expect(assetBefore.debtAccumulator.add(debtToRaise)).to.equal(
+      expect(assetBefore.debtAccumulator.add(debtRateIncrease)).to.equal(
         assetAfter.debtAccumulator
       );
-      expect(assetBefore.equityAccumulator.add(capToRaise)).to.equal(
+      expect(assetBefore.equityAccumulator.add(equityRateIncrease)).to.equal(
         assetAfter.equityAccumulator
       );
     });
@@ -411,15 +411,15 @@ describe("Vault Engine Unit Tests", function () {
       const totalDebtBefore = await vaultEngine.totalDebt();
       const totalEquityBefore = await vaultEngine.totalEquity();
 
-      const debtToRaise = BigNumber.from("251035088626883475473007");
-      const capToRaise = BigNumber.from("125509667994754929166541");
+      const debtRateIncrease = BigNumber.from("251035088626883475473007");
+      const equityRateIncrease = BigNumber.from("125509667994754929166541");
       await vaultEngine
         .connect(user)
         .updateAccumulators(
           flrAssetId,
           reservePool.address,
-          debtToRaise,
-          capToRaise,
+          debtRateIncrease,
+          equityRateIncrease,
           BigNumber.from(0)
         );
 
@@ -431,37 +431,37 @@ describe("Vault Engine Unit Tests", function () {
     });
 
     it("fails if new equity + protocolFee is higher than new debt", async () => {
-      const debtToRaise = BigNumber.from("251035088626883475473007");
-      let capToRaise = debtToRaise.add(1);
+      const debtRateIncrease = BigNumber.from("251035088626883475473007");
+      let equityRateIncrease = debtRateIncrease.add(1);
       await assertRevert(
         vaultEngine
           .connect(user)
           .updateAccumulators(
             flrAssetId,
             reservePool.address,
-            debtToRaise,
-            capToRaise,
+            debtRateIncrease,
+            equityRateIncrease,
             BigNumber.from(0)
           ),
         "VaultEngine/UpdateAccumulator: New equity created is larger than new debt"
       );
 
-      capToRaise = BigNumber.from("125509667994754929166541");
+      equityRateIncrease = BigNumber.from("125509667994754929166541");
       await vaultEngine
         .connect(user)
         .updateAccumulators(
           flrAssetId,
           reservePool.address,
-          debtToRaise,
-          capToRaise,
+          debtRateIncrease,
+          equityRateIncrease,
           BigNumber.from(0)
         );
     });
 
     it("tests the correct amount AUR is added to the reservePool", async () => {
-      const debtToRaise = BigNumber.from("251035088626883475473007");
+      const debtRateIncrease = BigNumber.from("251035088626883475473007");
       const protocolFee = BigNumber.from("21035088626883475473007");
-      const capToRaise = debtToRaise.div(2).sub(protocolFee);
+      const equityRateIncrease = debtRateIncrease.div(2).sub(protocolFee);
 
       const EXPECTED_AUR = protocolFee.mul(EQUITY_AMOUNT.div(RAY));
 
@@ -473,8 +473,8 @@ describe("Vault Engine Unit Tests", function () {
         .updateAccumulators(
           flrAssetId,
           reservePool.address,
-          debtToRaise,
-          capToRaise,
+          debtRateIncrease,
+          equityRateIncrease,
           protocolFee
         );
 
