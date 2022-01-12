@@ -384,7 +384,7 @@ describe("Vault Engine Unit Tests", function () {
         );
     });
 
-    it("tests the debt and equity accumulators are properly updated", async () => {
+    it("updates the debt and equity accumulators", async () => {
       const assetBefore = await vaultEngine.assets(flrAssetId);
       const debtRateIncrease = BigNumber.from("251035088626883475473007");
       const equityRateIncrease = BigNumber.from("125509667994754929166541");
@@ -407,7 +407,7 @@ describe("Vault Engine Unit Tests", function () {
       );
     });
 
-    it("tests that totalDebt and totalEquity are added properly", async () => {
+    it("updates total debt and total equity", async () => {
       const totalDebtBefore = await vaultEngine.totalDebt();
       const totalEquityBefore = await vaultEngine.totalEquity();
 
@@ -430,7 +430,7 @@ describe("Vault Engine Unit Tests", function () {
       expect(totalEquityAfter.sub(totalEquityBefore).gte(0)).to.equal(true);
     });
 
-    it("fails if new equity + protocolFee is higher than new debt", async () => {
+    it("fails if the equity increase (+ protocol fee) is larger than the debt increase", async () => {
       const debtRateIncrease = BigNumber.from("251035088626883475473007");
       let equityRateIncrease = debtRateIncrease.add(1);
       await assertRevert(
@@ -443,7 +443,7 @@ describe("Vault Engine Unit Tests", function () {
             equityRateIncrease,
             BigNumber.from(0)
           ),
-        "VaultEngine/UpdateAccumulator: New equity created is larger than new debt"
+        "VaultEngine/UpdateAccumulator: The equity rate increase is larger than the debt rate increase"
       );
 
       equityRateIncrease = BigNumber.from("125509667994754929166541");
@@ -458,14 +458,14 @@ describe("Vault Engine Unit Tests", function () {
         );
     });
 
-    it("tests the correct amount AUR is added to the reservePool", async () => {
+    it("adds the correct amount of stablecoins to the reserve pool", async () => {
       const debtRateIncrease = BigNumber.from("251035088626883475473007");
       const protocolFee = BigNumber.from("21035088626883475473007");
       const equityRateIncrease = debtRateIncrease.div(2).sub(protocolFee);
 
-      const EXPECTED_AUR = protocolFee.mul(EQUITY_AMOUNT.div(RAY));
+      const EXPECTED_AMOUNT = protocolFee.mul(EQUITY_AMOUNT.div(RAY));
 
-      const reserveAurBefore = await vaultEngine.stablecoin(
+      const reserveStablesBefore = await vaultEngine.stablecoin(
         reservePool.address
       );
       await vaultEngine
@@ -478,8 +478,12 @@ describe("Vault Engine Unit Tests", function () {
           protocolFee
         );
 
-      const reserveAurAfter = await vaultEngine.stablecoin(reservePool.address);
-      expect(reserveAurAfter.sub(reserveAurBefore)).to.equal(EXPECTED_AUR);
+      const reserveStablesAfter = await vaultEngine.stablecoin(
+        reservePool.address
+      );
+      expect(reserveStablesAfter.sub(reserveStablesBefore)).to.equal(
+        EXPECTED_AMOUNT
+      );
     });
   });
 });
