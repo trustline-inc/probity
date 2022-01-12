@@ -135,7 +135,7 @@ const artifactNameMap = {
   pbtToken: "PbtToken",
   vaultEngine: "VaultEngine",
   vaultEngineSB: "VaultEngineSB",
-  vaultManager: "vaultManager",
+  vaultManager: "VaultManager",
   nativeToken: "NativeToken",
   erc20Token: "ERC20Token",
   ftsoManager: "MockFtsoManager",
