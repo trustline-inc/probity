@@ -9,17 +9,13 @@ import { Contract } from "ethers";
 (async () => {
   let [owner] = await ethers.getSigners();
   const TellerABI = await artifacts.readArtifact("Teller");
-  const teller = new Contract(
-    "0x486C1aD9dBEb33706F77eE44FcD00a6102bFd7d0",
-    TellerABI.abi,
-    owner
-  );
+  const teller = new Contract(process.env.TELLER, TellerABI.abi, owner);
 
   setInterval(async () => {
     console.log("Updating rates...");
 
     try {
-      const tx = await teller.updateAccumulator(web3.utils.keccak256("FLR"), {
+      const tx = await teller.updateAccumulator(web3.utils.keccak256("SGB"), {
         gasLimit: 300000,
       });
       console.log(tx);
