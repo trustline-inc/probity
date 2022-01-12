@@ -51,12 +51,12 @@ const RAD = ethers.BigNumber.from(
   "1000000000000000000000000000000000000000000000"
 );
 
-const COLL_AMOUNT = WAD.mul(1000);
-const EQUITY_COLL_AMOUNT = WAD.mul(400);
-const EQUITY_COLL_TO_DECREASE = WAD.mul(-400);
+const ASSET_AMOUNT = WAD.mul(1000);
+const UNDERLYING_AMOUNT = WAD.mul(400);
+const UNDERLYING_AMOUNT_TO_DECREASE = WAD.mul(-400);
 const EQUITY_AMOUNT_TO_DECREASE = RAD.mul(-200);
 const EQUITY_AMOUNT = RAD.mul(200);
-const LOAN_COLL_AMOUNT = WAD.mul(200);
+const COLL_AMOUNT = WAD.mul(200);
 const LOAN_AMOUNT = RAD.mul(100);
 const LOAN_REPAY_COLL_AMOUNT = WAD.mul(-200);
 const LOAN_REPAY_AMOUNT = RAD.mul(-100);
@@ -94,18 +94,20 @@ describe("Probity happy flow", function () {
   });
 
   it("test deposit and withdrawal of collateral", async () => {
-    const WITHDRAW_AMOUNT = COLL_AMOUNT.div(3);
+    const WITHDRAW_AMOUNT = ASSET_AMOUNT.div(3);
 
     // Deposit FLR collateral
     let flrBalBefore = await ethers.provider.getBalance(owner.address);
     let vaultFlrBalBefore = await vaultEngine.vaults(flrAssetId, owner.address);
 
-    await flrColl.deposit({ value: COLL_AMOUNT });
+    await flrColl.deposit({ value: ASSET_AMOUNT });
 
     let flrBalAfter = await ethers.provider.getBalance(owner.address);
     let vaultFlrBalAfter = await vaultEngine.vaults(flrAssetId, owner.address);
-    expect(flrBalBefore.sub(flrBalAfter) >= COLL_AMOUNT).to.equal(true);
-    expect(vaultFlrBalAfter[0].sub(vaultFlrBalBefore[0])).to.equal(COLL_AMOUNT);
+    expect(flrBalBefore.sub(flrBalAfter) >= ASSET_AMOUNT).to.equal(true);
+    expect(vaultFlrBalAfter[0].sub(vaultFlrBalBefore[0])).to.equal(
+      ASSET_AMOUNT
+    );
 
     // Withdraw FLR collateral
     flrBalBefore = await ethers.provider.getBalance(owner.address);
@@ -121,8 +123,8 @@ describe("Probity happy flow", function () {
     );
 
     // Deposit FXRP collateral
-    await erc20.mint(owner.address, COLL_AMOUNT);
-    await erc20.approve(fxrpColl.address, COLL_AMOUNT);
+    await erc20.mint(owner.address, ASSET_AMOUNT);
+    await erc20.approve(fxrpColl.address, ASSET_AMOUNT);
 
     let fxrpBalBefore = await erc20.balanceOf(owner.address);
     let vaultFxrpBalBefore = await vaultEngine.vaults(
@@ -130,14 +132,14 @@ describe("Probity happy flow", function () {
       owner.address
     );
 
-    await fxrpColl.deposit(COLL_AMOUNT);
+    await fxrpColl.deposit(ASSET_AMOUNT);
 
     let vaultFxrpBalAfter = await vaultEngine.vaults(fxrpCollId, owner.address);
     let fxrpBalAfter = await erc20.balanceOf(owner.address);
 
-    expect(fxrpBalBefore.sub(fxrpBalAfter)).to.equal(COLL_AMOUNT);
+    expect(fxrpBalBefore.sub(fxrpBalAfter)).to.equal(ASSET_AMOUNT);
     expect(vaultFxrpBalAfter[0].sub(vaultFxrpBalBefore[0])).to.equal(
-      COLL_AMOUNT
+      ASSET_AMOUNT
     );
 
     // Withdraw FXRP collateral
@@ -157,7 +159,7 @@ describe("Probity happy flow", function () {
 
   it("test modifyEquity, modifyDebt and aur withdrawal", async () => {
     // Deposit FLR collateral
-    await flrColl.deposit({ value: COLL_AMOUNT });
+    await flrColl.deposit({ value: ASSET_AMOUNT });
 
     // Initialize the FLR collateral type
     await vaultEngine.connect(gov).initAssetType(flrAssetId);
@@ -174,13 +176,13 @@ describe("Probity happy flow", function () {
     await vaultEngine.modifyEquity(
       flrAssetId,
       treasury.address,
-      EQUITY_COLL_AMOUNT,
+      UNDERLYING_AMOUNT,
       EQUITY_AMOUNT
     );
 
     let userVaultAfter = await vaultEngine.vaults(flrAssetId, owner.address);
     expect(userVaultBefore[0].sub(userVaultAfter[0])).to.equal(
-      EQUITY_COLL_AMOUNT
+      UNDERLYING_AMOUNT
     );
     expect(userVaultAfter[3].sub(userVaultBefore[3])).to.equal(
       EQUITY_AMOUNT.div(RAY)
@@ -193,16 +195,14 @@ describe("Probity happy flow", function () {
     await vaultEngine.modifyDebt(
       flrAssetId,
       treasury.address,
-      LOAN_COLL_AMOUNT,
+      COLL_AMOUNT,
       LOAN_AMOUNT
     );
 
     let aurAfter = await vaultEngine.stablecoin(owner.address);
     expect(aurAfter.sub(aurBefore)).to.equal(LOAN_AMOUNT);
     userVaultAfter = await vaultEngine.vaults(flrAssetId, owner.address);
-    expect(userVaultBefore[0].sub(userVaultAfter[0])).to.equal(
-      LOAN_COLL_AMOUNT
-    );
+    expect(userVaultBefore[0].sub(userVaultAfter[0])).to.equal(COLL_AMOUNT);
     expect(userVaultAfter[2].sub(userVaultBefore[2])).to.equal(
       LOAN_AMOUNT.div(RAY)
     );
@@ -219,7 +219,7 @@ describe("Probity happy flow", function () {
 
   it("test reducing modifyDebt", async () => {
     // Deposit FLR collateral
-    await flrColl.deposit({ value: COLL_AMOUNT });
+    await flrColl.deposit({ value: ASSET_AMOUNT });
 
     // Initialize the FLR collateral type
     await vaultEngine.connect(gov).initAssetType(flrAssetId);
@@ -234,7 +234,7 @@ describe("Probity happy flow", function () {
     await vaultEngine.modifyEquity(
       flrAssetId,
       treasury.address,
-      EQUITY_COLL_AMOUNT,
+      UNDERLYING_AMOUNT,
       EQUITY_AMOUNT
     );
 
@@ -245,16 +245,14 @@ describe("Probity happy flow", function () {
     await vaultEngine.modifyDebt(
       flrAssetId,
       treasury.address,
-      LOAN_COLL_AMOUNT,
+      COLL_AMOUNT,
       LOAN_AMOUNT
     );
 
     let aurAfter = await vaultEngine.stablecoin(owner.address);
     expect(aurAfter.sub(aurBefore)).to.equal(LOAN_AMOUNT);
     let userVaultAfter = await vaultEngine.vaults(flrAssetId, owner.address);
-    expect(userVaultBefore[0].sub(userVaultAfter[0])).to.equal(
-      LOAN_COLL_AMOUNT
-    );
+    expect(userVaultBefore[0].sub(userVaultAfter[0])).to.equal(COLL_AMOUNT);
     expect(userVaultAfter[2].sub(userVaultBefore[2])).to.equal(
       LOAN_AMOUNT.div(RAY)
     );
@@ -283,7 +281,7 @@ describe("Probity happy flow", function () {
 
   it("test that modifyEquity can be reduced", async () => {
     // Deposit FLR collateral
-    await flrColl.deposit({ value: COLL_AMOUNT });
+    await flrColl.deposit({ value: ASSET_AMOUNT });
 
     // Initialize the FLR collateral type
     await vaultEngine.connect(gov).initAssetType(flrAssetId);
@@ -300,13 +298,13 @@ describe("Probity happy flow", function () {
     await vaultEngine.modifyEquity(
       flrAssetId,
       treasury.address,
-      EQUITY_COLL_AMOUNT,
+      UNDERLYING_AMOUNT,
       EQUITY_AMOUNT
     );
 
     let userVaultAfter = await vaultEngine.vaults(flrAssetId, owner.address);
     expect(userVaultBefore[0].sub(userVaultAfter[0])).to.equal(
-      EQUITY_COLL_AMOUNT
+      UNDERLYING_AMOUNT
     );
     expect(userVaultAfter[3].sub(userVaultBefore[3])).to.equal(
       EQUITY_AMOUNT.div(RAY)
@@ -316,7 +314,7 @@ describe("Probity happy flow", function () {
     await vaultEngine.modifyEquity(
       flrAssetId,
       treasury.address,
-      EQUITY_COLL_TO_DECREASE,
+      UNDERLYING_AMOUNT_TO_DECREASE,
       EQUITY_AMOUNT_TO_DECREASE
     );
 
@@ -325,7 +323,7 @@ describe("Probity happy flow", function () {
       owner.address
     );
     expect(userVaultAfter[0].sub(userVaultAfterDecrease[0])).to.equal(
-      EQUITY_COLL_TO_DECREASE
+      UNDERLYING_AMOUNT_TO_DECREASE
     );
     expect(userVaultAfterDecrease[3].sub(userVaultAfter[3])).to.equal(
       EQUITY_AMOUNT_TO_DECREASE.div(RAY)
@@ -333,7 +331,7 @@ describe("Probity happy flow", function () {
   });
 
   it("test priceFeed update", async () => {
-    await flrColl.deposit({ value: COLL_AMOUNT });
+    await flrColl.deposit({ value: ASSET_AMOUNT });
 
     await vaultEngine.connect(gov).initAssetType(flrAssetId);
     await vaultEngine.connect(gov).updateCeiling(flrAssetId, RAD.mul(10000000));
@@ -351,7 +349,7 @@ describe("Probity happy flow", function () {
   });
 
   it("test liquidation start", async () => {
-    await flrColl.deposit({ value: COLL_AMOUNT });
+    await flrColl.deposit({ value: ASSET_AMOUNT });
 
     await vaultEngine.connect(gov).initAssetType(flrAssetId);
     await vaultEngine.connect(gov).updateCeiling(flrAssetId, RAD.mul(10000000));
@@ -363,13 +361,13 @@ describe("Probity happy flow", function () {
     await vaultEngine.modifyEquity(
       flrAssetId,
       treasury.address,
-      EQUITY_COLL_AMOUNT,
+      UNDERLYING_AMOUNT,
       EQUITY_AMOUNT
     );
     await vaultEngine.modifyDebt(
       flrAssetId,
       treasury.address,
-      LOAN_COLL_AMOUNT,
+      COLL_AMOUNT,
       LOAN_AMOUNT
     );
 
@@ -386,12 +384,12 @@ describe("Probity happy flow", function () {
       EQUITY_AMOUNT.add(LOAN_AMOUNT)
     );
     expect(userVaultBefore[1].sub(userVaultAfter[1])).to.equal(
-      EQUITY_COLL_AMOUNT.add(LOAN_COLL_AMOUNT)
+      UNDERLYING_AMOUNT.add(COLL_AMOUNT)
     );
   });
 
   it("test auction process", async () => {
-    await flrColl.deposit({ value: COLL_AMOUNT });
+    await flrColl.deposit({ value: ASSET_AMOUNT });
 
     await vaultEngine.connect(gov).initAssetType(flrAssetId);
     await vaultEngine.connect(gov).updateCeiling(flrAssetId, RAD.mul(10000000));
@@ -403,13 +401,13 @@ describe("Probity happy flow", function () {
     await vaultEngine.modifyEquity(
       flrAssetId,
       treasury.address,
-      EQUITY_COLL_AMOUNT,
+      UNDERLYING_AMOUNT,
       EQUITY_AMOUNT
     );
     await vaultEngine.modifyDebt(
       flrAssetId,
       treasury.address,
-      LOAN_COLL_AMOUNT,
+      COLL_AMOUNT,
       LOAN_AMOUNT
     );
 
@@ -463,7 +461,7 @@ describe("Probity happy flow", function () {
   });
 
   it("test reserve pool settlement + IOU sale", async () => {
-    await flrColl.deposit({ value: COLL_AMOUNT });
+    await flrColl.deposit({ value: ASSET_AMOUNT });
 
     await vaultEngine.connect(gov).initAssetType(flrAssetId);
     await vaultEngine.connect(gov).updateCeiling(flrAssetId, RAD.mul(10000000));
@@ -475,13 +473,13 @@ describe("Probity happy flow", function () {
     await vaultEngine.modifyEquity(
       flrAssetId,
       treasury.address,
-      EQUITY_COLL_AMOUNT,
+      UNDERLYING_AMOUNT,
       EQUITY_AMOUNT
     );
     await vaultEngine.modifyDebt(
       flrAssetId,
       treasury.address,
-      LOAN_COLL_AMOUNT,
+      COLL_AMOUNT,
       LOAN_AMOUNT
     );
 

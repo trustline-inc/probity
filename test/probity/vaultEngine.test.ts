@@ -182,7 +182,7 @@ describe("Vault Engine Unit Tests", function () {
 
   describe("modifyDebt Unit Tests", function () {
     const UNDERLYING_AMOUNT = WAD.mul(10000);
-    const COLL_AMOUNT = WAD.mul(10000);
+    const ASSET_AMOUNT = WAD.mul(10000);
     const EQUITY_AMOUNT = RAD.mul(2000);
     const DEBT_AMOUNT = RAD.mul(1000);
 
@@ -204,11 +204,11 @@ describe("Vault Engine Unit Tests", function () {
 
       await vaultEngine
         .connect(assetManager)
-        .modifyStandbyAsset(flrAssetId, owner.address, COLL_AMOUNT);
+        .modifyStandbyAsset(flrAssetId, owner.address, ASSET_AMOUNT);
 
       await vaultEngine
         .connect(assetManager)
-        .modifyStandbyAsset(flrAssetId, user.address, COLL_AMOUNT);
+        .modifyStandbyAsset(flrAssetId, user.address, ASSET_AMOUNT);
 
       await vaultEngine
         .connect(user)
@@ -228,7 +228,7 @@ describe("Vault Engine Unit Tests", function () {
         vaultEngine.modifyDebt(
           flrAssetId,
           treasury.address,
-          COLL_AMOUNT,
+          ASSET_AMOUNT,
           DEBT_AMOUNT
         ),
         "AccessControl/onlyByWhiteListed: Access forbidden"
@@ -241,7 +241,7 @@ describe("Vault Engine Unit Tests", function () {
       await vaultEngine.modifyDebt(
         flrAssetId,
         treasury.address,
-        COLL_AMOUNT,
+        ASSET_AMOUNT,
         DEBT_AMOUNT
       );
     });
@@ -260,7 +260,7 @@ describe("Vault Engine Unit Tests", function () {
         vaultEngine.modifyDebt(
           flrAssetId,
           treasury.address,
-          COLL_AMOUNT,
+          ASSET_AMOUNT,
           DEBT_AMOUNT_UNDER_FLOOR
         ),
         "Vault/modifyDebt: Debt smaller than floor"
@@ -269,7 +269,7 @@ describe("Vault Engine Unit Tests", function () {
       await vaultEngine.modifyDebt(
         flrAssetId,
         treasury.address,
-        COLL_AMOUNT,
+        ASSET_AMOUNT,
         DEBT_AMOUNT
       );
     });
@@ -281,7 +281,7 @@ describe("Vault Engine Unit Tests", function () {
       await vaultEngine.modifyDebt(
         flrAssetId,
         treasury.address,
-        COLL_AMOUNT,
+        ASSET_AMOUNT,
         DEBT_AMOUNT
       );
 
@@ -294,7 +294,7 @@ describe("Vault Engine Unit Tests", function () {
       await vaultEngine.modifyDebt(
         flrAssetId,
         treasury.address,
-        COLL_AMOUNT.div(2),
+        ASSET_AMOUNT.div(2),
         DEBT_AMOUNT.div(2)
       );
 
@@ -304,7 +304,7 @@ describe("Vault Engine Unit Tests", function () {
       await vaultEngine.modifyDebt(
         flrAssetId,
         treasury.address,
-        COLL_AMOUNT.div(2),
+        ASSET_AMOUNT.div(2),
         DEBT_AMOUNT.div(2)
       );
 
@@ -316,7 +316,7 @@ describe("Vault Engine Unit Tests", function () {
 
   describe("updateAccumulator Unit Tests", function () {
     const UNDERLYING_AMOUNT = WAD.mul(10000);
-    const COLL_AMOUNT = WAD.mul(10000);
+    const ASSET_AMOUNT = WAD.mul(10000);
     const EQUITY_AMOUNT = RAD.mul(2000);
     const DEBT_AMOUNT = RAD.mul(1000);
 
@@ -337,7 +337,7 @@ describe("Vault Engine Unit Tests", function () {
         .modifyStandbyAsset(
           flrAssetId,
           owner.address,
-          COLL_AMOUNT.add(UNDERLYING_AMOUNT)
+          ASSET_AMOUNT.add(UNDERLYING_AMOUNT)
         );
       await vaultEngine
         .connect(gov)
@@ -352,7 +352,7 @@ describe("Vault Engine Unit Tests", function () {
       await vaultEngine.modifyDebt(
         flrAssetId,
         treasury.address,
-        COLL_AMOUNT,
+        ASSET_AMOUNT,
         DEBT_AMOUNT
       );
 
