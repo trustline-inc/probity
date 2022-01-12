@@ -68,25 +68,25 @@ contract Treasury is Stateful {
     // External Functions
     /////////////////////////////////////////
     function depositStablecoin(uint256 amount) external {
-        vaultEngine.addStablecoin(msg.sender, amount * 1e27);
-        stablecoin.burn(msg.sender, amount);
+        vaultEngine.addStablecoin(msg.sender, amount);
+        stablecoin.burn(msg.sender, amount / 1e27);
         emit DepositStablecoin(msg.sender, amount);
     }
 
     function withdrawStablecoin(uint256 amount) external {
-        vaultEngine.removeStablecoin(msg.sender, amount * 1e27);
-        stablecoin.mint(msg.sender, amount);
+        vaultEngine.removeStablecoin(msg.sender, amount);
+        stablecoin.mint(msg.sender, amount / 1e27);
         emit WithdrawStablecoin(msg.sender, amount);
     }
 
     function transferStablecoin(address recipient, uint256 amount) external {
-        vaultEngine.moveStablecoin(msg.sender, recipient, amount * 1e27);
+        vaultEngine.moveStablecoin(msg.sender, recipient, amount);
         emit TransferStablecoin(msg.sender, recipient, amount);
     }
 
     function withdrawPbt(uint256 amount) external {
-        vaultEngine.reducePbt(msg.sender, amount * 1e27);
-        pbt.mint(msg.sender, amount);
+        vaultEngine.reducePbt(msg.sender, amount);
+        pbt.mint(msg.sender, amount / 1e27);
         emit WithdrawPbt(msg.sender, amount);
     }
 }

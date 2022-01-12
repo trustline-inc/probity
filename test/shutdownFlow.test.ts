@@ -384,7 +384,7 @@ describe("Shutdown Flow Test", function () {
     // put system reserve (enough to cover all the debt have have extra left over) and have IOU holder
     await treasury
       .connect(user2)
-      .transferStablecoin(reserve.address, PRECISION_COLL.mul(7000));
+      .transferStablecoin(reserve.address, PRECISION_AUR.mul(7000));
 
     reserveBalances.reserve = reserveBalances.reserve.add(
       PRECISION_AUR.mul(7000)
@@ -397,7 +397,7 @@ describe("Shutdown Flow Test", function () {
 
     await treasury
       .connect(user3)
-      .transferStablecoin(reserve.address, PRECISION_COLL.mul(140000));
+      .transferStablecoin(reserve.address, PRECISION_AUR.mul(140000));
 
     reserveBalances.reserve = reserveBalances.reserve.add(
       PRECISION_AUR.mul(140000)
@@ -795,7 +795,7 @@ describe("Shutdown Flow Test", function () {
     // put system reserve to fill up some gap but not entirely
     await treasury
       .connect(user2)
-      .transferStablecoin(reserve.address, PRECISION_COLL.mul(7000));
+      .transferStablecoin(reserve.address, PRECISION_AUR.mul(7000));
 
     reserveBalances.reserve = reserveBalances.reserve.add(
       PRECISION_AUR.mul(7000)
@@ -808,7 +808,7 @@ describe("Shutdown Flow Test", function () {
 
     await treasury
       .connect(user4)
-      .transferStablecoin(reserve.address, PRECISION_COLL.mul(140000));
+      .transferStablecoin(reserve.address, PRECISION_AUR.mul(140000));
 
     reserveBalances.reserve = reserveBalances.reserve.add(
       PRECISION_AUR.mul(140000)
