@@ -39,7 +39,7 @@ describe("PBT Token Unit Test", function () {
   it("test mint can only be called by vault contract", async () => {
     await assertRevert(
       pbt.mint(user.address, AMOUNT_TO_MINT),
-      "AccessControl/OnlyBy: Caller does not have permission"
+      "AccessControl/onlyBy: Caller does not have permission"
     );
 
     // add owner to registry as 'treasury' then check if owner can now mint
@@ -83,7 +83,7 @@ describe("PBT Token Unit Test", function () {
 
     await assertRevert(
       pbt.connect(user).burn(user.address, AMOUNT_TO_BURN),
-      "AccessControl/OnlyBy: Caller does not have permission"
+      "AccessControl/onlyBy: Caller does not have permission"
     );
 
     const balanceBefore = await pbt.balanceOf(user.address);

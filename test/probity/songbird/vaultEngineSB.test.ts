@@ -377,7 +377,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
           capToRaise,
           BigNumber.from(0)
         ),
-        "AccessControl/OnlyBy: Caller does not have permission"
+        "AccessControl/onlyBy: Caller does not have permission"
       );
       await vaultEngine
         .connect(user)
@@ -449,7 +449,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
             capToRaise,
             BigNumber.from(0)
           ),
-        "VaultEngine/UpdateAccumulator: New equity created is larger than new debt"
+        "VaultEngine/updateAccumulators: New equity created is larger than new debt"
       );
 
       capToRaise = BigNumber.from("125509667994754929166541");

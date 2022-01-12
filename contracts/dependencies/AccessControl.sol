@@ -13,7 +13,7 @@ contract AccessControl {
     // Modifiers
     ///////////////////////////////////
     modifier onlyBy(bytes32 name) {
-        require(registry.checkValidity(name, msg.sender), "AccessControl/OnlyBy: Caller does not have permission");
+        require(registry.checkValidity(name, msg.sender), "AccessControl/onlyBy: Caller does not have permission");
         _;
     }
 

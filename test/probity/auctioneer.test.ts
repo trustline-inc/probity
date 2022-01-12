@@ -101,7 +101,7 @@ describe("Auctioneer Unit Tests", function () {
           COLL_OWNER,
           BENEFICIARY
         ),
-        "AccessControl/OnlyBy: Caller does not have permission"
+        "AccessControl/onlyBy: Caller does not have permission"
       );
 
       await registry.setupAddress(bytes32("liquidator"), user1.address);

@@ -371,7 +371,7 @@ describe("Vault Engine Unit Tests", function () {
           equityRateIncrease,
           BigNumber.from(0)
         ),
-        "AccessControl/OnlyBy: Caller does not have permission"
+        "AccessControl/onlyBy: Caller does not have permission"
       );
       await vaultEngine
         .connect(user)
@@ -443,7 +443,7 @@ describe("Vault Engine Unit Tests", function () {
             equityRateIncrease,
             BigNumber.from(0)
           ),
-        "VaultEngine/UpdateAccumulator: The equity rate increase is larger than the debt rate increase"
+        "VaultEngine/updateAccumulators: The equity rate increase is larger than the debt rate increase"
       );
 
       equityRateIncrease = BigNumber.from("125509667994754929166541");
