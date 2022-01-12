@@ -36,7 +36,7 @@ let teller: Teller;
 let priceFeed: PriceFeed;
 let treasury: Treasury;
 
-let flrCollId = bytes32("FLR");
+let flrAssetId = bytes32("FLR");
 
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
@@ -72,17 +72,19 @@ describe("Vault Engine Songbird Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.connect(gov).initAssetType(flrCollId);
+      await vaultEngine.connect(gov).initAssetType(flrAssetId);
       await vaultEngine
         .connect(gov)
-        .updateCeiling(flrCollId, RAD.mul(10000000));
+        .updateCeiling(flrAssetId, RAD.mul(10000000));
       await registry
         .connect(gov)
         .setupAddress(bytes32("assetManager"), coll.address);
-      await vaultEngine.connect(gov).updateAdjustedPrice(flrCollId, RAY.mul(1));
+      await vaultEngine
+        .connect(gov)
+        .updateAdjustedPrice(flrAssetId, RAY.mul(1));
       await vaultEngine
         .connect(coll)
-        .modifyStandbyAsset(flrCollId, owner.address, COLL_AMOUNT_EQUITY);
+        .modifyStandbyAsset(flrAssetId, owner.address, COLL_AMOUNT_EQUITY);
       await vaultEngine
         .connect(gov)
         .updateIndividualVaultLimit(RAD.mul(1000000));
@@ -93,7 +95,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
       expect(before.length).to.equal(0);
 
       await vaultEngine.modifyEquity(
-        flrCollId,
+        flrAssetId,
         treasury.address,
         COLL_AMOUNT_EQUITY,
         EQUITY_AMOUNT
@@ -106,7 +108,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
 
     it("tests existing user is NOT added to userList", async () => {
       await vaultEngine.modifyEquity(
-        flrCollId,
+        flrAssetId,
         treasury.address,
         COLL_AMOUNT_EQUITY.div(2),
         EQUITY_AMOUNT.div(2)
@@ -116,7 +118,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
       expect(before.length).to.equal(1);
 
       await vaultEngine.modifyEquity(
-        flrCollId,
+        flrAssetId,
         treasury.address,
         COLL_AMOUNT_EQUITY.div(2),
         EQUITY_AMOUNT.div(2)
@@ -139,30 +141,32 @@ describe("Vault Engine Songbird Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.connect(gov).initAssetType(flrCollId);
+      await vaultEngine.connect(gov).initAssetType(flrAssetId);
       await vaultEngine
         .connect(gov)
-        .updateCeiling(flrCollId, RAD.mul(10000000));
+        .updateCeiling(flrAssetId, RAD.mul(10000000));
       await registry
         .connect(gov)
         .setupAddress(bytes32("assetManager"), coll.address);
-      await vaultEngine.connect(gov).updateAdjustedPrice(flrCollId, RAY.mul(1));
+      await vaultEngine
+        .connect(gov)
+        .updateAdjustedPrice(flrAssetId, RAY.mul(1));
       await vaultEngine
         .connect(gov)
         .updateIndividualVaultLimit(RAD.mul(1000000));
 
       await vaultEngine
         .connect(coll)
-        .modifyStandbyAsset(flrCollId, owner.address, COLL_AMOUNT_DEBT);
+        .modifyStandbyAsset(flrAssetId, owner.address, COLL_AMOUNT_DEBT);
 
       await vaultEngine
         .connect(coll)
-        .modifyStandbyAsset(flrCollId, user.address, COLL_AMOUNT_DEBT);
+        .modifyStandbyAsset(flrAssetId, user.address, COLL_AMOUNT_DEBT);
 
       await vaultEngine
         .connect(user)
         .modifyEquity(
-          flrCollId,
+          flrAssetId,
           treasury.address,
           COLL_AMOUNT_EQUITY,
           EQUITY_AMOUNT
@@ -174,7 +178,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
       expect(before.length).to.equal(1);
 
       await vaultEngine.modifyDebt(
-        flrCollId,
+        flrAssetId,
         treasury.address,
         COLL_AMOUNT_DEBT,
         DEBT_AMOUNT
@@ -187,7 +191,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
 
     it("tests existing user is NOT added to userList", async () => {
       await vaultEngine.modifyDebt(
-        flrCollId,
+        flrAssetId,
         treasury.address,
         COLL_AMOUNT_DEBT.div(2),
         DEBT_AMOUNT.div(2)
@@ -197,7 +201,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
       expect(before.length).to.equal(2);
 
       await vaultEngine.modifyDebt(
-        flrCollId,
+        flrAssetId,
         treasury.address,
         COLL_AMOUNT_DEBT.div(2),
         DEBT_AMOUNT.div(2)
@@ -215,10 +219,10 @@ describe("Vault Engine Songbird Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.connect(gov).initAssetType(flrCollId);
+      await vaultEngine.connect(gov).initAssetType(flrAssetId);
       await vaultEngine
         .connect(gov)
-        .updateCeiling(flrCollId, RAD.mul(10000000));
+        .updateCeiling(flrAssetId, RAD.mul(10000000));
       await registry
         .connect(gov)
         .setupAddress(bytes32("assetManager"), coll.address);
@@ -244,15 +248,17 @@ describe("Vault Engine Songbird Unit Tests", function () {
       await vaultEngine
         .connect(coll)
         .modifyStandbyAsset(
-          flrCollId,
+          flrAssetId,
           owner.address,
           COLL_AMOUNT_DEBT.add(COLL_AMOUNT_EQUITY)
         );
-      await vaultEngine.connect(gov).updateAdjustedPrice(flrCollId, RAY.mul(1));
+      await vaultEngine
+        .connect(gov)
+        .updateAdjustedPrice(flrAssetId, RAY.mul(1));
 
       await assertRevert(
         vaultEngine.modifyEquity(
-          flrCollId,
+          flrAssetId,
           treasury.address,
           COLL_AMOUNT_EQUITY,
           EQUITY_AMOUNT
@@ -265,7 +271,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
         .updateIndividualVaultLimit(NEW_INDIVIDUAL_VAULT_LIMTI);
 
       await vaultEngine.modifyEquity(
-        flrCollId,
+        flrAssetId,
         treasury.address,
         COLL_AMOUNT_EQUITY,
         EQUITY_AMOUNT
@@ -281,16 +287,18 @@ describe("Vault Engine Songbird Unit Tests", function () {
       await vaultEngine
         .connect(coll)
         .modifyStandbyAsset(
-          flrCollId,
+          flrAssetId,
           owner.address,
           COLL_AMOUNT_DEBT.add(COLL_AMOUNT_EQUITY)
         );
-      await vaultEngine.connect(gov).updateAdjustedPrice(flrCollId, RAY.mul(1));
+      await vaultEngine
+        .connect(gov)
+        .updateAdjustedPrice(flrAssetId, RAY.mul(1));
 
       await vaultEngine.connect(gov).updateIndividualVaultLimit(RAD.mul(500));
 
       await vaultEngine.modifyEquity(
-        flrCollId,
+        flrAssetId,
         treasury.address,
         COLL_AMOUNT_EQUITY,
         DEBT_AMOUNT
@@ -298,7 +306,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
 
       await assertRevert(
         vaultEngine.modifyDebt(
-          flrCollId,
+          flrAssetId,
           treasury.address,
           COLL_AMOUNT_EQUITY,
           DEBT_AMOUNT
@@ -311,7 +319,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
         .updateIndividualVaultLimit(NEW_INDIVIDUAL_VAULT_LIMIT);
 
       await vaultEngine.modifyDebt(
-        flrCollId,
+        flrAssetId,
         treasury.address,
         COLL_AMOUNT_EQUITY,
         DEBT_AMOUNT
@@ -330,10 +338,10 @@ describe("Vault Engine Songbird Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.connect(gov).initAssetType(flrCollId);
+      await vaultEngine.connect(gov).initAssetType(flrAssetId);
       await vaultEngine
         .connect(gov)
-        .updateCeiling(flrCollId, RAD.mul(10000000));
+        .updateCeiling(flrAssetId, RAD.mul(10000000));
       await registry
         .connect(gov)
         .setupAddress(bytes32("assetManager"), coll.address);
@@ -343,20 +351,22 @@ describe("Vault Engine Songbird Unit Tests", function () {
       await vaultEngine
         .connect(coll)
         .modifyStandbyAsset(
-          flrCollId,
+          flrAssetId,
           owner.address,
           COLL_AMOUNT_DEBT.add(COLL_AMOUNT_EQUITY)
         );
-      await vaultEngine.connect(gov).updateAdjustedPrice(flrCollId, RAY.mul(1));
+      await vaultEngine
+        .connect(gov)
+        .updateAdjustedPrice(flrAssetId, RAY.mul(1));
 
       await vaultEngine.modifyEquity(
-        flrCollId,
+        flrAssetId,
         treasury.address,
         COLL_AMOUNT_EQUITY,
         EQUITY_AMOUNT
       );
       await vaultEngine.modifyDebt(
-        flrCollId,
+        flrAssetId,
         treasury.address,
         COLL_AMOUNT_DEBT,
         DEBT_AMOUNT
@@ -371,7 +381,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
 
       await assertRevert(
         vaultEngine.updateAccumulators(
-          flrCollId,
+          flrAssetId,
           reservePool.address,
           debtToRaise,
           capToRaise,
@@ -382,7 +392,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
       await vaultEngine
         .connect(user)
         .updateAccumulators(
-          flrCollId,
+          flrAssetId,
           reservePool.address,
           debtToRaise,
           capToRaise,
@@ -391,20 +401,20 @@ describe("Vault Engine Songbird Unit Tests", function () {
     });
 
     it("tests the debt and equity accumulators are properly updated", async () => {
-      const collBefore = await vaultEngine.assets(flrCollId);
+      const collBefore = await vaultEngine.assets(flrAssetId);
       const debtToRaise = BigNumber.from("251035088626883475473007");
       const capToRaise = BigNumber.from("125509667994754929166541");
       await vaultEngine
         .connect(user)
         .updateAccumulators(
-          flrCollId,
+          flrAssetId,
           reservePool.address,
           debtToRaise,
           capToRaise,
           BigNumber.from(0)
         );
 
-      const collAfter = await vaultEngine.assets(flrCollId);
+      const collAfter = await vaultEngine.assets(flrAssetId);
       expect(collBefore.debtAccumulator.add(debtToRaise)).to.equal(
         collAfter.debtAccumulator
       );
@@ -422,7 +432,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
       await vaultEngine
         .connect(user)
         .updateAccumulators(
-          flrCollId,
+          flrAssetId,
           reservePool.address,
           debtToRaise,
           capToRaise,
@@ -443,7 +453,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
         vaultEngine
           .connect(user)
           .updateAccumulators(
-            flrCollId,
+            flrAssetId,
             reservePool.address,
             debtToRaise,
             capToRaise,
@@ -456,7 +466,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
       await vaultEngine
         .connect(user)
         .updateAccumulators(
-          flrCollId,
+          flrAssetId,
           reservePool.address,
           debtToRaise,
           capToRaise,
@@ -477,7 +487,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
       await vaultEngine
         .connect(user)
         .updateAccumulators(
-          flrCollId,
+          flrAssetId,
           reservePool.address,
           debtToRaise,
           capToRaise,
