@@ -458,7 +458,7 @@ describe("Vault Engine Unit Tests", function () {
         );
     });
 
-    it("adds the correct amount of stablecoins to the reserve pool", async () => {
+    it("adds the protocol fee to the reserve pool", async () => {
       const debtRateIncrease = BigNumber.from("251035088626883475473007");
       const protocolFee = BigNumber.from("21035088626883475473007");
       const equityRateIncrease = debtRateIncrease.div(2).sub(protocolFee);
