@@ -10,7 +10,7 @@ contract MockLiquidator {
     /////////////////////////////////////////
     // State Variables
     /////////////////////////////////////////
-    uint256 private constant PRECISION_PRICE = 10**27;
+    uint256 private constant RAY = 10**27;
 
     mapping(bytes32 => Collateral) public collateralTypes;
     mapping(bytes32 => bool) public states;

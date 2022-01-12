@@ -6,12 +6,7 @@ import { MockVaultEngine, Registry, Teller } from "../../typechain";
 import { deployTest, probity, mock } from "../../lib/deployer";
 import { ethers } from "hardhat";
 import * as chai from "chai";
-import {
-  bytes32,
-  PRECISION_AUR,
-  PRECISION_COLL,
-  PRECISION_PRICE,
-} from "../utils/constants";
+import { bytes32, RAD, WAD, RAY } from "../utils/constants";
 import assertRevert from "../utils/assertRevert";
 import increaseTime from "../utils/increaseTime";
 import { rmul, rpow, wdiv } from "../utils/math";
@@ -28,8 +23,8 @@ let registry: Registry;
 let reservePoolAddress: string;
 
 let flrCollId = bytes32("FLR");
-let EQUITY_TO_SET = PRECISION_AUR.mul(2000);
-let DEBT_TO_SET = PRECISION_AUR.mul(1000);
+let EQUITY_TO_SET = RAD.mul(2000);
+let DEBT_TO_SET = RAD.mul(1000);
 
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
@@ -79,7 +74,7 @@ describe("Teller Unit Tests", function () {
     });
 
     it("tests that values are properly set", async () => {
-      const PROTOCOL_FEE_TO_SET = PRECISION_COLL.div(10);
+      const PROTOCOL_FEE_TO_SET = WAD.div(10);
       const collBefore = await teller.collateralTypes(flrCollId);
       expect(collBefore.protocolFee).to.equal(0);
       await teller.setProtocolFee(flrCollId, PROTOCOL_FEE_TO_SET);
@@ -88,7 +83,7 @@ describe("Teller Unit Tests", function () {
     });
 
     it("can only be called by gov address", async () => {
-      const PROTOCOL_FEE_TO_SET = PRECISION_COLL.div(10);
+      const PROTOCOL_FEE_TO_SET = WAD.div(10);
       await assertRevert(
         teller
           .connect(user)
@@ -163,36 +158,36 @@ describe("Teller Unit Tests", function () {
     });
 
     it("tests that APR is set properly", async () => {
-      await vaultEngine.setTotalDebt(PRECISION_AUR.mul(25));
-      await vaultEngine.setTotalEquity(PRECISION_AUR.mul(100));
+      await vaultEngine.setTotalDebt(RAD.mul(25));
+      await vaultEngine.setTotalEquity(RAD.mul(100));
 
       await teller.updateAccumulator(flrCollId);
       let apr = await teller.apr();
       expect(apr).to.equal("1015000000000000000000000000");
 
-      await vaultEngine.setTotalDebt(PRECISION_AUR.mul(50));
-      await vaultEngine.setTotalEquity(PRECISION_AUR.mul(100));
+      await vaultEngine.setTotalDebt(RAD.mul(50));
+      await vaultEngine.setTotalEquity(RAD.mul(100));
 
       await teller.updateAccumulator(flrCollId);
       apr = await teller.apr();
       expect(apr).to.equal("1020000000000000000000000000");
 
-      await vaultEngine.setTotalDebt(PRECISION_AUR.mul(75));
-      await vaultEngine.setTotalEquity(PRECISION_AUR.mul(100));
+      await vaultEngine.setTotalDebt(RAD.mul(75));
+      await vaultEngine.setTotalEquity(RAD.mul(100));
 
       await teller.updateAccumulator(flrCollId);
       apr = await teller.apr();
       expect(apr).to.equal("1040000000000000000000000000");
 
-      await vaultEngine.setTotalDebt(PRECISION_AUR.mul(90));
-      await vaultEngine.setTotalEquity(PRECISION_AUR.mul(100));
+      await vaultEngine.setTotalDebt(RAD.mul(90));
+      await vaultEngine.setTotalEquity(RAD.mul(100));
 
       await teller.updateAccumulator(flrCollId);
       apr = await teller.apr();
       expect(apr).to.equal("1100000000000000000000000000");
 
-      await vaultEngine.setTotalDebt(PRECISION_AUR.mul(95));
-      await vaultEngine.setTotalEquity(PRECISION_AUR.mul(100));
+      await vaultEngine.setTotalDebt(RAD.mul(95));
+      await vaultEngine.setTotalEquity(RAD.mul(100));
 
       await teller.updateAccumulator(flrCollId);
       apr = await teller.apr();
@@ -200,29 +195,29 @@ describe("Teller Unit Tests", function () {
     });
 
     it("tests that APR won't go over MAX_APR", async () => {
-      await vaultEngine.setTotalDebt(PRECISION_AUR.mul(990));
-      await vaultEngine.setTotalEquity(PRECISION_AUR.mul(1000));
+      await vaultEngine.setTotalDebt(RAD.mul(990));
+      await vaultEngine.setTotalEquity(RAD.mul(1000));
 
       await teller.updateAccumulator(flrCollId);
       let apr = await teller.apr();
       expect(apr).to.equal("2000000000000000000000000000");
 
-      await vaultEngine.setTotalDebt(PRECISION_AUR.mul(995));
-      await vaultEngine.setTotalEquity(PRECISION_AUR.mul(1000));
+      await vaultEngine.setTotalDebt(RAD.mul(995));
+      await vaultEngine.setTotalEquity(RAD.mul(1000));
 
       await teller.updateAccumulator(flrCollId);
       apr = await teller.apr();
       expect(apr).to.equal("2000000000000000000000000000");
 
-      await vaultEngine.setTotalDebt(PRECISION_AUR.mul(1000));
-      await vaultEngine.setTotalEquity(PRECISION_AUR.mul(1000));
+      await vaultEngine.setTotalDebt(RAD.mul(1000));
+      await vaultEngine.setTotalEquity(RAD.mul(1000));
 
       await teller.updateAccumulator(flrCollId);
       apr = await teller.apr();
       expect(apr).to.equal("2000000000000000000000000000");
 
-      await vaultEngine.setTotalDebt(PRECISION_AUR.mul(1100));
-      await vaultEngine.setTotalEquity(PRECISION_AUR.mul(1000));
+      await vaultEngine.setTotalDebt(RAD.mul(1100));
+      await vaultEngine.setTotalEquity(RAD.mul(1000));
 
       await teller.updateAccumulator(flrCollId);
       apr = await teller.apr();
@@ -230,7 +225,7 @@ describe("Teller Unit Tests", function () {
     });
 
     it("tests that debtAccumulator is calculated properly", async () => {
-      const DEFAULT_DEBT_ACCUMULATOR = PRECISION_PRICE;
+      const DEFAULT_DEBT_ACCUMULATOR = RAY;
       let TIME_TO_INCREASE = 400000;
 
       await teller.updateAccumulator(flrCollId);
@@ -273,7 +268,7 @@ describe("Teller Unit Tests", function () {
     });
 
     it("tests that suppAccumulator is calculated properly", async () => {
-      const DEFAULT_SUPP_ACCUMULATOR = PRECISION_PRICE;
+      const DEFAULT_SUPP_ACCUMULATOR = RAY;
       let TIME_TO_INCREASE = 400000;
 
       await teller.updateAccumulator(flrCollId);
@@ -289,12 +284,9 @@ describe("Teller Unit Tests", function () {
       let mpr = await teller.mpr();
       let utilitization = (await teller.collateralTypes(flrCollId))
         .lastUtilization;
-      let multipledByUtilization = rmul(
-        mpr.sub(PRECISION_PRICE),
-        utilitization.mul(1e9)
-      );
+      let multipledByUtilization = rmul(mpr.sub(RAY), utilitization.mul(1e9));
       let exponentiated = rpow(
-        multipledByUtilization.add(PRECISION_PRICE),
+        multipledByUtilization.add(RAY),
         lastUpdatedAfter.sub(lastUpdatedBefore)
       );
 
@@ -315,12 +307,9 @@ describe("Teller Unit Tests", function () {
 
       lastUpdatedAfter = (await teller.collateralTypes(flrCollId))[0];
       utilitization = (await teller.collateralTypes(flrCollId)).lastUtilization;
-      multipledByUtilization = rmul(
-        mpr.sub(PRECISION_PRICE),
-        utilitization.mul(1e9)
-      );
+      multipledByUtilization = rmul(mpr.sub(RAY), utilitization.mul(1e9));
       exponentiated = rpow(
-        multipledByUtilization.add(PRECISION_PRICE),
+        multipledByUtilization.add(RAY),
         lastUpdatedAfter.sub(lastUpdatedBefore)
       );
 
@@ -331,9 +320,9 @@ describe("Teller Unit Tests", function () {
     });
 
     it("tests that protocolFeeRate is calculated properly", async () => {
-      const PROTOCOL_FEE_TO_SET = PRECISION_COLL.div(10);
+      const PROTOCOL_FEE_TO_SET = WAD.div(10);
       await teller.setProtocolFee(flrCollId, PROTOCOL_FEE_TO_SET);
-      const DEFAULT_SUPP_ACCUMULATOR = PRECISION_PRICE;
+      const DEFAULT_SUPP_ACCUMULATOR = RAY;
       let TIME_TO_INCREASE = 400000;
       await teller.updateAccumulator(flrCollId);
 
@@ -350,12 +339,9 @@ describe("Teller Unit Tests", function () {
       let mpr = await teller.mpr();
       let utilitization = (await teller.collateralTypes(flrCollId))
         .lastUtilization;
-      let multipledByUtilization = rmul(
-        mpr.sub(PRECISION_PRICE),
-        utilitization.mul(1e9)
-      );
+      let multipledByUtilization = rmul(mpr.sub(RAY), utilitization.mul(1e9));
       let exponentiated = rpow(
-        multipledByUtilization.add(PRECISION_PRICE),
+        multipledByUtilization.add(RAY),
         lastUpdatedAfter.sub(lastUpdatedBefore)
       );
       let EXPECTED_SUPP_ACCUMULATOR = rmul(exponentiated, vaultColl[1]);
@@ -363,9 +349,7 @@ describe("Teller Unit Tests", function () {
         captialAccumulatorBefore
       );
       let EXPECTED_PROTOCOL_FEE_RATE =
-        EXPECTED_SUPP_ACCUMULATOR_RATE.mul(PROTOCOL_FEE_TO_SET).div(
-          PRECISION_COLL
-        );
+        EXPECTED_SUPP_ACCUMULATOR_RATE.mul(PROTOCOL_FEE_TO_SET).div(WAD);
       EXPECTED_SUPP_ACCUMULATOR_RATE = EXPECTED_SUPP_ACCUMULATOR_RATE.sub(
         EXPECTED_PROTOCOL_FEE_RATE
       );

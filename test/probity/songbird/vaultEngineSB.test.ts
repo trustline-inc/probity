@@ -15,12 +15,7 @@ import {
 import { deployTest } from "../../../lib/deployer";
 import { ethers } from "hardhat";
 import * as chai from "chai";
-import {
-  bytes32,
-  PRECISION_AUR,
-  PRECISION_COLL,
-  PRECISION_PRICE,
-} from "../../utils/constants";
+import { bytes32, RAD, WAD, RAY } from "../../utils/constants";
 import { BigNumber } from "ethers";
 import assertRevert from "../../utils/assertRevert";
 const expect = chai.expect;
@@ -69,8 +64,8 @@ describe("Vault Engine Songbird Unit Tests", function () {
   });
 
   describe("modifyEquity Unit Tests", function () {
-    const COLL_AMOUNT_EQUITY = PRECISION_COLL.mul(10000);
-    const EQUITY_AMOUNT = PRECISION_COLL.mul(2000);
+    const COLL_AMOUNT_EQUITY = WAD.mul(10000);
+    const EQUITY_AMOUNT = WAD.mul(2000);
 
     beforeEach(async function () {
       await owner.sendTransaction({
@@ -80,19 +75,17 @@ describe("Vault Engine Songbird Unit Tests", function () {
       await vaultEngine.connect(gov).initAssetType(flrCollId);
       await vaultEngine
         .connect(gov)
-        .updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
+        .updateCeiling(flrCollId, RAD.mul(10000000));
       await registry
         .connect(gov)
         .setupAddress(bytes32("assetManager"), coll.address);
-      await vaultEngine
-        .connect(gov)
-        .updateAdjustedPrice(flrCollId, PRECISION_PRICE.mul(1));
+      await vaultEngine.connect(gov).updateAdjustedPrice(flrCollId, RAY.mul(1));
       await vaultEngine
         .connect(coll)
         .modifyStandbyAsset(flrCollId, owner.address, COLL_AMOUNT_EQUITY);
       await vaultEngine
         .connect(gov)
-        .updateIndividualVaultLimit(PRECISION_AUR.mul(1000000));
+        .updateIndividualVaultLimit(RAD.mul(1000000));
     });
 
     it("tests new user is added to userList", async () => {
@@ -136,10 +129,10 @@ describe("Vault Engine Songbird Unit Tests", function () {
   });
 
   describe("modifyDebt Unit Tests", function () {
-    const COLL_AMOUNT_EQUITY = PRECISION_COLL.mul(10000);
-    const COLL_AMOUNT_DEBT = PRECISION_COLL.mul(10000);
-    const EQUITY_AMOUNT = PRECISION_COLL.mul(2000);
-    const DEBT_AMOUNT = PRECISION_COLL.mul(1000);
+    const COLL_AMOUNT_EQUITY = WAD.mul(10000);
+    const COLL_AMOUNT_DEBT = WAD.mul(10000);
+    const EQUITY_AMOUNT = WAD.mul(2000);
+    const DEBT_AMOUNT = WAD.mul(1000);
 
     beforeEach(async function () {
       await owner.sendTransaction({
@@ -149,16 +142,14 @@ describe("Vault Engine Songbird Unit Tests", function () {
       await vaultEngine.connect(gov).initAssetType(flrCollId);
       await vaultEngine
         .connect(gov)
-        .updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
+        .updateCeiling(flrCollId, RAD.mul(10000000));
       await registry
         .connect(gov)
         .setupAddress(bytes32("assetManager"), coll.address);
+      await vaultEngine.connect(gov).updateAdjustedPrice(flrCollId, RAY.mul(1));
       await vaultEngine
         .connect(gov)
-        .updateAdjustedPrice(flrCollId, PRECISION_PRICE.mul(1));
-      await vaultEngine
-        .connect(gov)
-        .updateIndividualVaultLimit(PRECISION_AUR.mul(1000000));
+        .updateIndividualVaultLimit(RAD.mul(1000000));
 
       await vaultEngine
         .connect(coll)
@@ -227,14 +218,14 @@ describe("Vault Engine Songbird Unit Tests", function () {
       await vaultEngine.connect(gov).initAssetType(flrCollId);
       await vaultEngine
         .connect(gov)
-        .updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
+        .updateCeiling(flrCollId, RAD.mul(10000000));
       await registry
         .connect(gov)
         .setupAddress(bytes32("assetManager"), coll.address);
     });
 
     it("updateIndividualVaultLimit works properly", async () => {
-      const NEW_INDIVIDUAL_VAULT_LIMTI = PRECISION_AUR.mul(500);
+      const NEW_INDIVIDUAL_VAULT_LIMTI = RAD.mul(500);
       expect(await vaultEngine.connect(gov).individualVaultLimit()).to.equal(0);
       await vaultEngine
         .connect(gov)
@@ -245,10 +236,10 @@ describe("Vault Engine Songbird Unit Tests", function () {
     });
 
     it("modifyDebt uses individualVaultLimit", async () => {
-      const COLL_AMOUNT_EQUITY = PRECISION_COLL.mul(10000);
-      const COLL_AMOUNT_DEBT = PRECISION_COLL.mul(10000);
-      const EQUITY_AMOUNT = PRECISION_AUR.mul(500);
-      const NEW_INDIVIDUAL_VAULT_LIMTI = PRECISION_AUR.mul(500);
+      const COLL_AMOUNT_EQUITY = WAD.mul(10000);
+      const COLL_AMOUNT_DEBT = WAD.mul(10000);
+      const EQUITY_AMOUNT = RAD.mul(500);
+      const NEW_INDIVIDUAL_VAULT_LIMTI = RAD.mul(500);
 
       await vaultEngine
         .connect(coll)
@@ -257,9 +248,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
           owner.address,
           COLL_AMOUNT_DEBT.add(COLL_AMOUNT_EQUITY)
         );
-      await vaultEngine
-        .connect(gov)
-        .updateAdjustedPrice(flrCollId, PRECISION_PRICE.mul(1));
+      await vaultEngine.connect(gov).updateAdjustedPrice(flrCollId, RAY.mul(1));
 
       await assertRevert(
         vaultEngine.modifyEquity(
@@ -284,10 +273,10 @@ describe("Vault Engine Songbird Unit Tests", function () {
     });
 
     it("modifyDebt uses individualVaultLimit", async () => {
-      const COLL_AMOUNT_EQUITY = PRECISION_COLL.mul(10000);
-      const COLL_AMOUNT_DEBT = PRECISION_COLL.mul(10000);
-      const DEBT_AMOUNT = PRECISION_AUR.mul(500);
-      const NEW_INDIVIDUAL_VAULT_LIMIT = PRECISION_AUR.mul(1000);
+      const COLL_AMOUNT_EQUITY = WAD.mul(10000);
+      const COLL_AMOUNT_DEBT = WAD.mul(10000);
+      const DEBT_AMOUNT = RAD.mul(500);
+      const NEW_INDIVIDUAL_VAULT_LIMIT = RAD.mul(1000);
 
       await vaultEngine
         .connect(coll)
@@ -296,13 +285,9 @@ describe("Vault Engine Songbird Unit Tests", function () {
           owner.address,
           COLL_AMOUNT_DEBT.add(COLL_AMOUNT_EQUITY)
         );
-      await vaultEngine
-        .connect(gov)
-        .updateAdjustedPrice(flrCollId, PRECISION_PRICE.mul(1));
+      await vaultEngine.connect(gov).updateAdjustedPrice(flrCollId, RAY.mul(1));
 
-      await vaultEngine
-        .connect(gov)
-        .updateIndividualVaultLimit(PRECISION_AUR.mul(500));
+      await vaultEngine.connect(gov).updateIndividualVaultLimit(RAD.mul(500));
 
       await vaultEngine.modifyEquity(
         flrCollId,
@@ -335,10 +320,10 @@ describe("Vault Engine Songbird Unit Tests", function () {
   });
 
   describe("updateAccumulator Unit Tests", function () {
-    const COLL_AMOUNT_EQUITY = PRECISION_COLL.mul(10000);
-    const COLL_AMOUNT_DEBT = PRECISION_COLL.mul(10000);
-    const EQUITY_AMOUNT = PRECISION_AUR.mul(2000);
-    const DEBT_AMOUNT = PRECISION_AUR.mul(1000);
+    const COLL_AMOUNT_EQUITY = WAD.mul(10000);
+    const COLL_AMOUNT_DEBT = WAD.mul(10000);
+    const EQUITY_AMOUNT = RAD.mul(2000);
+    const DEBT_AMOUNT = RAD.mul(1000);
 
     beforeEach(async function () {
       await owner.sendTransaction({
@@ -348,13 +333,13 @@ describe("Vault Engine Songbird Unit Tests", function () {
       await vaultEngine.connect(gov).initAssetType(flrCollId);
       await vaultEngine
         .connect(gov)
-        .updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
+        .updateCeiling(flrCollId, RAD.mul(10000000));
       await registry
         .connect(gov)
         .setupAddress(bytes32("assetManager"), coll.address);
       await vaultEngine
         .connect(gov)
-        .updateIndividualVaultLimit(PRECISION_AUR.mul(1000000));
+        .updateIndividualVaultLimit(RAD.mul(1000000));
       await vaultEngine
         .connect(coll)
         .modifyStandbyAsset(
@@ -362,9 +347,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
           owner.address,
           COLL_AMOUNT_DEBT.add(COLL_AMOUNT_EQUITY)
         );
-      await vaultEngine
-        .connect(gov)
-        .updateAdjustedPrice(flrCollId, PRECISION_PRICE.mul(1));
+      await vaultEngine.connect(gov).updateAdjustedPrice(flrCollId, RAY.mul(1));
 
       await vaultEngine.modifyEquity(
         flrCollId,
@@ -486,7 +469,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
       const protocolFee = BigNumber.from("21035088626883475473007");
       const capToRaise = debtToRaise.div(2).sub(protocolFee);
 
-      const EXPECTED_AUR = protocolFee.mul(EQUITY_AMOUNT.div(PRECISION_PRICE));
+      const EXPECTED_AUR = protocolFee.mul(EQUITY_AMOUNT.div(RAY));
 
       const reserveAurBefore = await vaultEngine.stablecoin(
         reservePool.address

@@ -19,13 +19,7 @@ import {
 import { deployTest, probity } from "../../lib/deployer";
 import { ethers } from "hardhat";
 import * as chai from "chai";
-import {
-  ADDRESS_ZERO,
-  bytes32,
-  PRECISION_AUR,
-  PRECISION_COLL,
-  PRECISION_PRICE,
-} from "../utils/constants";
+import { ADDRESS_ZERO, bytes32, RAD, WAD, RAY } from "../utils/constants";
 import { BigNumber } from "ethers";
 import assertRevert from "../utils/assertRevert";
 const expect = chai.expect;
@@ -69,8 +63,8 @@ describe("Liquidator Unit Tests", function () {
   describe("init Unit Tests", function () {
     it("tests that collateral type is properly initialized", async () => {
       const EXPECTED_AUCTIONEER_ADDRESS = user.address;
-      const EXPECTED_DEBT_PENALTY_FEE = PRECISION_COLL.mul(117).div(100);
-      const EXPECTED_SUPP_PENALTY_FEE = PRECISION_COLL.mul(105).div(100);
+      const EXPECTED_DEBT_PENALTY_FEE = WAD.mul(117).div(100);
+      const EXPECTED_SUPP_PENALTY_FEE = WAD.mul(105).div(100);
 
       const before = await liquidator.collateralTypes(flrCollId);
       expect(before.auctioneer).to.equal(ADDRESS_ZERO);
@@ -87,15 +81,15 @@ describe("Liquidator Unit Tests", function () {
   });
 
   describe("updatePenalties Unit Tests", function () {
-    const DEFAULT_DEBT_PENALTY_FEE = PRECISION_COLL.mul(117).div(100);
-    const DEFAULT_SUPP_PENALTY_FEE = PRECISION_COLL.mul(105).div(100);
+    const DEFAULT_DEBT_PENALTY_FEE = WAD.mul(117).div(100);
+    const DEFAULT_SUPP_PENALTY_FEE = WAD.mul(105).div(100);
     beforeEach(async function () {
       await liquidator.init(flrCollId, auctioneer.address);
     });
 
     it("tests that penaltyFees are updated correctly", async () => {
-      const NEW_DEBT_PENALTY_FEE = PRECISION_PRICE.mul(123).div(100);
-      const NEW_SUPP_PENALTY_FEE = PRECISION_PRICE.mul(107).div(100);
+      const NEW_DEBT_PENALTY_FEE = RAY.mul(123).div(100);
+      const NEW_SUPP_PENALTY_FEE = RAY.mul(107).div(100);
       const before = await liquidator.collateralTypes(flrCollId);
       expect(before.debtPenaltyFee).to.equal(DEFAULT_DEBT_PENALTY_FEE);
       expect(before.equityPenaltyFee).to.equal(DEFAULT_SUPP_PENALTY_FEE);
@@ -136,7 +130,7 @@ describe("Liquidator Unit Tests", function () {
     });
 
     it("tests that reservePool's reduceAuctionDebt is called with correct parameters", async () => {
-      const REDUCE_AUCTION_DEBT_AMOUNT = PRECISION_AUR.mul(2837);
+      const REDUCE_AUCTION_DEBT_AMOUNT = RAD.mul(2837);
 
       const before = await reservePool.lastReduceAuctionDebtAmount();
       expect(before).to.equal(0);
@@ -147,12 +141,12 @@ describe("Liquidator Unit Tests", function () {
   });
 
   describe("liquidateVault Unit Tests", function () {
-    const VAULT_LOCKED_COLL = PRECISION_COLL.mul(999);
-    const VAULT_DEBT = PRECISION_COLL.mul(500);
-    const VAULT_EQUITY = PRECISION_COLL.mul(500);
-    const DEBT_ACCUMULATOR = PRECISION_PRICE;
-    const EQUITY_ACCUMULATOR = PRECISION_PRICE;
-    const PRICE = PRECISION_PRICE;
+    const VAULT_LOCKED_COLL = WAD.mul(999);
+    const VAULT_DEBT = WAD.mul(500);
+    const VAULT_EQUITY = WAD.mul(500);
+    const DEBT_ACCUMULATOR = RAY;
+    const EQUITY_ACCUMULATOR = RAY;
+    const PRICE = RAY;
 
     beforeEach(async function () {
       await liquidator.init(flrCollId, auctioneer.address);
@@ -161,7 +155,7 @@ describe("Liquidator Unit Tests", function () {
         PRICE,
         VAULT_DEBT,
         VAULT_EQUITY,
-        PRECISION_AUR.mul(1000000),
+        RAD.mul(1000000),
         0
       );
       await vaultEngine.updateAccumulators(
@@ -208,7 +202,7 @@ describe("Liquidator Unit Tests", function () {
         flrCollId,
         user.address,
         0,
-        VAULT_LOCKED_COLL.add(PRECISION_COLL.mul(2)),
+        VAULT_LOCKED_COLL.add(WAD.mul(2)),
         VAULT_DEBT,
         VAULT_EQUITY,
         0
@@ -245,9 +239,9 @@ describe("Liquidator Unit Tests", function () {
     });
 
     it("test that vaultEngine's liquidateVault is called with correct parameters", async () => {
-      const EXPECTD_COLL_AMOUNT = PRECISION_COLL.mul(0).sub(VAULT_LOCKED_COLL);
-      const EXPECTED_DEBT_AMOUNT = PRECISION_COLL.mul(0).sub(VAULT_DEBT);
-      const EXPECTED_EQUITY_AMOUNT = PRECISION_COLL.mul(0).sub(VAULT_EQUITY);
+      const EXPECTD_COLL_AMOUNT = WAD.mul(0).sub(VAULT_LOCKED_COLL);
+      const EXPECTED_DEBT_AMOUNT = WAD.mul(0).sub(VAULT_DEBT);
+      const EXPECTED_EQUITY_AMOUNT = WAD.mul(0).sub(VAULT_EQUITY);
 
       const before = await vaultEngine.lastLiquidateVaultCall();
       expect(before.collId).to.equal(bytes32(""));

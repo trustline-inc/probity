@@ -13,12 +13,7 @@ import {
 import { deployTest, probity } from "../../lib/deployer";
 import { ethers } from "hardhat";
 import * as chai from "chai";
-import {
-  bytes32,
-  PRECISION_COLL,
-  PRECISION_PRICE,
-  PRECISION_AUR,
-} from "../utils/constants";
+import { bytes32, WAD, RAY, RAD } from "../utils/constants";
 import parseEvents from "../utils/parseEvents";
 import assertRevert from "../utils/assertRevert";
 const expect = chai.expect;
@@ -35,8 +30,8 @@ let treasury: Treasury;
 let registry: Registry;
 let flrCollateral: NativeToken;
 
-const AMOUNT_TO_MINT = PRECISION_COLL.mul(100);
-const AMOUNT_TO_WITHDRAW = PRECISION_COLL.mul(50);
+const AMOUNT_TO_MINT = WAD.mul(100);
+const AMOUNT_TO_WITHDRAW = WAD.mul(50);
 
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
@@ -74,7 +69,7 @@ describe("Treasury Unit Tests", function () {
       await treasury.depositStablecoin(AMOUNT_TO_MINT);
       const aurBalanceAfter = await vaultEngine.stablecoin(owner.address);
       expect(aurBalanceAfter.sub(aurBalanceBefore)).to.equal(
-        AMOUNT_TO_MINT.mul(PRECISION_PRICE)
+        AMOUNT_TO_MINT.mul(RAY)
       );
     });
 
@@ -107,9 +102,9 @@ describe("Treasury Unit Tests", function () {
       const aurBalanceBefore = await vaultEngine.stablecoin(owner.address);
       await treasury.withdrawStablecoin(AMOUNT_TO_WITHDRAW);
       const aurBalanceAfter = await vaultEngine.stablecoin(owner.address);
-      expect(
-        aurBalanceBefore.sub(aurBalanceAfter).div(PRECISION_PRICE)
-      ).to.equal(AMOUNT_TO_WITHDRAW);
+      expect(aurBalanceBefore.sub(aurBalanceAfter).div(RAY)).to.equal(
+        AMOUNT_TO_WITHDRAW
+      );
     });
 
     it("fails when user doesn't have enough aur to be withdrawn", async () => {
@@ -143,19 +138,16 @@ describe("Treasury Unit Tests", function () {
 
   describe("withdrawPbt Unit Tests", function () {
     beforeEach(async function () {
-      await vaultEngine.addPbt(
-        owner.address,
-        AMOUNT_TO_MINT.mul(PRECISION_PRICE)
-      );
+      await vaultEngine.addPbt(owner.address, AMOUNT_TO_MINT.mul(RAY));
     });
 
     it("tests that withdrawPbt call vaultEngine.reducePbt function", async () => {
       const tcnBalanceBefore = await vaultEngine.pbt(owner.address);
       await treasury.withdrawPbt(AMOUNT_TO_WITHDRAW);
       const tcnBalanceAfter = await vaultEngine.pbt(owner.address);
-      expect(
-        tcnBalanceBefore.sub(tcnBalanceAfter).div(PRECISION_PRICE)
-      ).to.equal(AMOUNT_TO_WITHDRAW);
+      expect(tcnBalanceBefore.sub(tcnBalanceAfter).div(RAY)).to.equal(
+        AMOUNT_TO_WITHDRAW
+      );
     });
 
     it("tests that pbt is minted for user's balance", async () => {

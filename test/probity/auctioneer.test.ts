@@ -22,13 +22,7 @@ import {
 import { deployTest, probity } from "../../lib/deployer";
 import { ethers } from "hardhat";
 import * as chai from "chai";
-import {
-  ADDRESS_ZERO,
-  bytes32,
-  PRECISION_AUR,
-  PRECISION_COLL,
-  PRECISION_PRICE,
-} from "../utils/constants";
+import { ADDRESS_ZERO, bytes32, RAD, WAD, RAY } from "../utils/constants";
 import { BigNumber } from "ethers";
 import assertRevert from "../utils/assertRevert";
 import { sign } from "crypto";
@@ -57,9 +51,9 @@ let flrCollId = bytes32("FLR");
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
 describe("Auctioneer Unit Tests", function () {
-  const LOT_SIZE = PRECISION_COLL.mul(1000);
-  const DEBT_SIZE = PRECISION_AUR.mul(4827);
-  const DEFUALT_PRICE_BUFFER = PRECISION_COLL.mul(120).div(100);
+  const LOT_SIZE = WAD.mul(1000);
+  const DEBT_SIZE = RAD.mul(4827);
+  const DEFUALT_PRICE_BUFFER = WAD.mul(120).div(100);
   const HEAD = "0x0000000000000000000000000000000000000001";
   beforeEach(async function () {
     let { contracts, signers } = await deployTest();
@@ -91,7 +85,7 @@ describe("Auctioneer Unit Tests", function () {
       bytes32("liquidator"),
       liquidatorCaller.address
     );
-    await priceCalc.setPrice(PRECISION_PRICE.mul(12).div(10));
+    await priceCalc.setPrice(RAY.mul(12).div(10));
   });
 
   describe("startAuction Unit Test", function () {
@@ -196,54 +190,40 @@ describe("Auctioneer Unit Tests", function () {
         0,
         0
       );
-      await vaultEngine.addStablecoin(
-        owner.address,
-        PRECISION_AUR.mul(1000000)
-      );
-      await vaultEngine.addStablecoin(
-        user1.address,
-        PRECISION_AUR.mul(1000000)
-      );
-      await vaultEngine.addStablecoin(
-        user2.address,
-        PRECISION_AUR.mul(1000000)
-      );
-      await vaultEngine.addStablecoin(
-        user3.address,
-        PRECISION_AUR.mul(1000000)
-      );
+      await vaultEngine.addStablecoin(owner.address, RAD.mul(1000000));
+      await vaultEngine.addStablecoin(user1.address, RAD.mul(1000000));
+      await vaultEngine.addStablecoin(user2.address, RAD.mul(1000000));
+      await vaultEngine.addStablecoin(user3.address, RAD.mul(1000000));
     });
 
     it("fails if auction is over", async () => {
-      await auctioneer.placeBid(0, PRECISION_PRICE, LOT_SIZE.div(10));
-      await auctioneer.buyItNow(0, PRECISION_PRICE.mul(2), LOT_SIZE);
+      await auctioneer.placeBid(0, RAY, LOT_SIZE.div(10));
+      await auctioneer.buyItNow(0, RAY.mul(2), LOT_SIZE);
 
       await assertRevert(
-        auctioneer
-          .connect(user1)
-          .placeBid(0, PRECISION_PRICE, LOT_SIZE.div(10)),
+        auctioneer.connect(user1).placeBid(0, RAY, LOT_SIZE.div(10)),
         "Auctioneer/placeBid: Auction is over"
       );
     });
 
     it("fails if user already placed a bid", async () => {
-      await auctioneer.placeBid(0, PRECISION_PRICE, LOT_SIZE.div(10));
+      await auctioneer.placeBid(0, RAY, LOT_SIZE.div(10));
 
       await assertRevert(
-        auctioneer.placeBid(0, PRECISION_PRICE, LOT_SIZE.div(10)),
+        auctioneer.placeBid(0, RAY, LOT_SIZE.div(10)),
         "Auctioneer/placeBid: this user has already placed a bid"
       );
     });
 
     it("tests that proper values are updated", async () => {
       const EXPECTED_BID_LOT_SIZE = LOT_SIZE.div(10);
-      const EXPECTED_BID_PRICE = PRECISION_PRICE;
+      const EXPECTED_BID_PRICE = RAY;
 
       const auctionBefore = await auctioneer.bids(0, owner.address);
       expect(auctionBefore.lot).to.equal(0);
       expect(auctionBefore.price).to.equal(0);
 
-      await auctioneer.placeBid(0, PRECISION_PRICE, LOT_SIZE.div(10));
+      await auctioneer.placeBid(0, RAY, LOT_SIZE.div(10));
 
       const auctionAfter = await auctioneer.bids(0, owner.address);
       expect(auctionAfter.lot).to.equal(EXPECTED_BID_LOT_SIZE);
@@ -252,12 +232,11 @@ describe("Auctioneer Unit Tests", function () {
 
     it("tests that proper amount of aurei is transferred from bidder's vault", async () => {
       const BID_LOT_SIZE = LOT_SIZE.div(10);
-      const EXEPCTED_AUREI_AMOUNT_TRANSFERRED =
-        PRECISION_PRICE.mul(BID_LOT_SIZE);
+      const EXEPCTED_AUREI_AMOUNT_TRANSFERRED = RAY.mul(BID_LOT_SIZE);
 
       const before = await vaultEngine.stablecoin(owner.address);
 
-      await auctioneer.placeBid(0, PRECISION_PRICE, BID_LOT_SIZE);
+      await auctioneer.placeBid(0, RAY, BID_LOT_SIZE);
 
       const after = await vaultEngine.stablecoin(owner.address);
       expect(before.sub(after)).to.equal(EXEPCTED_AUREI_AMOUNT_TRANSFERRED);
@@ -268,28 +247,22 @@ describe("Auctioneer Unit Tests", function () {
       const before = await auctioneer.nextHighestBidder(0, HEAD);
       expect(before).to.equal(ADDRESS_ZERO);
 
-      await auctioneer
-        .connect(user1)
-        .placeBid(0, PRECISION_PRICE.div(5), BID_LOT_SIZE);
+      await auctioneer.connect(user1).placeBid(0, RAY.div(5), BID_LOT_SIZE);
 
       let after = await auctioneer.nextHighestBidder(0, HEAD);
       expect(after).to.equal(user1.address);
 
-      await auctioneer
-        .connect(user2)
-        .placeBid(0, PRECISION_PRICE.div(2), BID_LOT_SIZE);
+      await auctioneer.connect(user2).placeBid(0, RAY.div(2), BID_LOT_SIZE);
       after = await auctioneer.nextHighestBidder(0, HEAD);
       expect(after).to.equal(user2.address);
       after = await auctioneer.nextHighestBidder(0, user1.address);
       expect(after).to.equal(ADDRESS_ZERO);
 
-      await auctioneer.placeBid(0, PRECISION_PRICE.div(3), BID_LOT_SIZE);
+      await auctioneer.placeBid(0, RAY.div(3), BID_LOT_SIZE);
       after = await auctioneer.nextHighestBidder(0, user2.address);
       expect(after).to.equal(owner.address);
 
-      await auctioneer
-        .connect(user3)
-        .placeBid(0, PRECISION_PRICE.div(10), BID_LOT_SIZE);
+      await auctioneer.connect(user3).placeBid(0, RAY.div(10), BID_LOT_SIZE);
 
       after = await auctioneer.nextHighestBidder(0, user1.address);
       expect(after).to.equal(user3.address);
@@ -302,12 +275,12 @@ describe("Auctioneer Unit Tests", function () {
 
       await auctioneer
         .connect(user1)
-        .placeBid(0, PRECISION_PRICE.div(10), LOT_SIZE.mul(4).div(10));
+        .placeBid(0, RAY.div(10), LOT_SIZE.mul(4).div(10));
       await auctioneer
         .connect(user2)
-        .placeBid(0, PRECISION_PRICE.div(5), LOT_SIZE.mul(4).div(10));
+        .placeBid(0, RAY.div(5), LOT_SIZE.mul(4).div(10));
 
-      let EXPECTED_BID_PRICE = PRECISION_PRICE.div(10);
+      let EXPECTED_BID_PRICE = RAY.div(10);
       let EXPECTED_LOT_SIZE = LOT_SIZE.mul(4).div(10);
       let bidBefore = await auctioneer.bids(AUCTION_ID, user1.address);
       expect(bidBefore.price).to.equal(EXPECTED_BID_PRICE);
@@ -315,14 +288,14 @@ describe("Auctioneer Unit Tests", function () {
 
       await auctioneer
         .connect(user3)
-        .placeBid(0, PRECISION_PRICE.div(6), LOT_SIZE.mul(5).div(10));
+        .placeBid(0, RAY.div(6), LOT_SIZE.mul(5).div(10));
 
       EXPECTED_LOT_SIZE = LOT_SIZE.div(10);
       let bidAfter = await auctioneer.bids(AUCTION_ID, user1.address);
       expect(bidBefore.price).to.equal(EXPECTED_BID_PRICE);
       expect(bidAfter.lot).to.equal(EXPECTED_LOT_SIZE);
 
-      await auctioneer.placeBid(0, PRECISION_PRICE.div(2), LOT_SIZE);
+      await auctioneer.placeBid(0, RAY.div(2), LOT_SIZE);
       let user1Bid = await auctioneer.bids(AUCTION_ID, user1.address);
       expect(user1Bid.price).to.equal(0);
       expect(user1Bid.lot).to.equal(0);
@@ -336,12 +309,10 @@ describe("Auctioneer Unit Tests", function () {
 
     it("tests that bid is adjusted to if bidAbleAmount < bidLot * bidPrice", async () => {
       const AUCTION_ID = 0;
-      const EXPECTED_BID_PRICE = PRECISION_PRICE.div(5);
+      const EXPECTED_BID_PRICE = RAY.div(5);
       const EXPECTED_BID_LOT = LOT_SIZE.div(10);
 
-      await auctioneer
-        .connect(user1)
-        .placeBid(0, PRECISION_PRICE, LOT_SIZE.mul(9).div(10));
+      await auctioneer.connect(user1).placeBid(0, RAY, LOT_SIZE.mul(9).div(10));
 
       await auctioneer
         .connect(user2)
@@ -355,7 +326,7 @@ describe("Auctioneer Unit Tests", function () {
 
   describe("buyItNow Unit Test", function () {
     beforeEach(async function () {
-      await priceCalc.setPrice(PRECISION_PRICE.mul(12).div(10));
+      await priceCalc.setPrice(RAY.mul(12).div(10));
       await auctioneer
         .connect(liquidatorCaller)
         .startAuction(
@@ -375,51 +346,35 @@ describe("Auctioneer Unit Tests", function () {
         0,
         0
       );
-      await vaultEngine.addStablecoin(
-        owner.address,
-        PRECISION_AUR.mul(1000000)
-      );
-      await vaultEngine.addStablecoin(
-        user1.address,
-        PRECISION_AUR.mul(1000000)
-      );
-      await vaultEngine.addStablecoin(
-        user2.address,
-        PRECISION_AUR.mul(1000000)
-      );
-      await vaultEngine.addStablecoin(
-        user3.address,
-        PRECISION_AUR.mul(1000000)
-      );
+      await vaultEngine.addStablecoin(owner.address, RAD.mul(1000000));
+      await vaultEngine.addStablecoin(user1.address, RAD.mul(1000000));
+      await vaultEngine.addStablecoin(user2.address, RAD.mul(1000000));
+      await vaultEngine.addStablecoin(user3.address, RAD.mul(1000000));
     });
 
     it("fails if auction is over", async () => {
-      await auctioneer.buyItNow(0, PRECISION_PRICE.mul(2), LOT_SIZE);
+      await auctioneer.buyItNow(0, RAY.mul(2), LOT_SIZE);
 
       await assertRevert(
-        auctioneer.connect(user1).buyItNow(0, PRECISION_PRICE.mul(2), LOT_SIZE),
+        auctioneer.connect(user1).buyItNow(0, RAY.mul(2), LOT_SIZE),
         "Auctioneer/buyItNow: Auction is over"
       );
     });
 
     it("fails if current price is higher than max buyItNow price", async () => {
       await assertRevert(
-        auctioneer
-          .connect(user1)
-          .buyItNow(0, PRECISION_PRICE, LOT_SIZE.div(10)),
+        auctioneer.connect(user1).buyItNow(0, RAY, LOT_SIZE.div(10)),
         "Auctioneer/buyItNow: current price is higher than max price"
       );
 
-      await auctioneer.buyItNow(0, PRECISION_PRICE.mul(12).div(10), LOT_SIZE);
+      await auctioneer.buyItNow(0, RAY.mul(12).div(10), LOT_SIZE);
     });
 
     it("fails if currentPrice is 0", async () => {
       await priceCalc.setPrice(0);
 
       await assertRevert(
-        auctioneer
-          .connect(user1)
-          .buyItNow(0, PRECISION_PRICE, LOT_SIZE.div(10)),
+        auctioneer.connect(user1).buyItNow(0, RAY, LOT_SIZE.div(10)),
         "Auctioneer/buyItNow: Current Price is now 0"
       );
     });
@@ -427,30 +382,24 @@ describe("Auctioneer Unit Tests", function () {
     it("fails if buyItNow is no longer available because of existing bids", async () => {
       await auctioneer
         .connect(user1)
-        .placeBid(0, PRECISION_PRICE.mul(12).div(10), LOT_SIZE);
-      await priceCalc.setPrice(PRECISION_PRICE.mul(5).div(10));
+        .placeBid(0, RAY.mul(12).div(10), LOT_SIZE);
+      await priceCalc.setPrice(RAY.mul(5).div(10));
 
       await assertRevert(
-        auctioneer
-          .connect(user1)
-          .buyItNow(0, PRECISION_PRICE.mul(5), LOT_SIZE.div(10)),
+        auctioneer.connect(user1).buyItNow(0, RAY.mul(5), LOT_SIZE.div(10)),
         "Auctioneer/buyItNow: Price has reach a point where BuyItNow is no longer available"
       );
     });
 
     it("tests that correct amount of Aurei is retrieved from user", async () => {
       const BID_LOT_SIZE = LOT_SIZE.div(10);
-      const EXEPCTED_AUREI_AMOUNT_TRANSFERRED = PRECISION_PRICE.mul(12)
+      const EXEPCTED_AUREI_AMOUNT_TRANSFERRED = RAY.mul(12)
         .div(10)
         .mul(BID_LOT_SIZE);
 
       const before = await vaultEngine.stablecoin(owner.address);
 
-      await auctioneer.buyItNow(
-        0,
-        PRECISION_PRICE.mul(12).div(10),
-        BID_LOT_SIZE
-      );
+      await auctioneer.buyItNow(0, RAY.mul(12).div(10), BID_LOT_SIZE);
 
       const after = await vaultEngine.stablecoin(owner.address);
       expect(before.sub(after)).to.equal(EXEPCTED_AUREI_AMOUNT_TRANSFERRED);
@@ -461,11 +410,7 @@ describe("Auctioneer Unit Tests", function () {
 
       const before = await vaultEngine.vaults(flrCollId, owner.address);
 
-      await auctioneer.buyItNow(
-        0,
-        PRECISION_PRICE.mul(12).div(10),
-        EXPECTED_LOT_SIZE
-      );
+      await auctioneer.buyItNow(0, RAY.mul(12).div(10), EXPECTED_LOT_SIZE);
 
       const after = await vaultEngine.vaults(flrCollId, owner.address);
       expect(before.standbyAssetAmount.add(after.standbyAssetAmount)).to.equal(
@@ -480,12 +425,12 @@ describe("Auctioneer Unit Tests", function () {
 
       await auctioneer
         .connect(user1)
-        .placeBid(0, PRECISION_PRICE.div(10), LOT_SIZE.mul(4).div(10));
+        .placeBid(0, RAY.div(10), LOT_SIZE.mul(4).div(10));
       await auctioneer
         .connect(user2)
-        .placeBid(0, PRECISION_PRICE.div(5), LOT_SIZE.mul(4).div(10));
+        .placeBid(0, RAY.div(5), LOT_SIZE.mul(4).div(10));
 
-      await auctioneer.buyItNow(0, PRECISION_PRICE.mul(12).div(10), LOT_SIZE);
+      await auctioneer.buyItNow(0, RAY.mul(12).div(10), LOT_SIZE);
       let user1Bid = await auctioneer.bids(AUCTION_ID, user1.address);
       expect(user1Bid.price).to.equal(0);
       expect(user1Bid.lot).to.equal(0);
@@ -499,7 +444,7 @@ describe("Auctioneer Unit Tests", function () {
 
     it("tests that values are updated correctly", async () => {
       const BUY_LOT_SIZE = LOT_SIZE.mul(99).div(100);
-      const BUY_VALUE = PRECISION_PRICE.mul(12).div(10).mul(BUY_LOT_SIZE);
+      const BUY_VALUE = RAY.mul(12).div(10).mul(BUY_LOT_SIZE);
 
       const before = await auctioneer.auctions(0);
       expect(before.debt).to.equal(DEBT_SIZE);
@@ -507,7 +452,7 @@ describe("Auctioneer Unit Tests", function () {
 
       await auctioneer.buyItNow(
         0,
-        PRECISION_PRICE.mul(12).div(10),
+        RAY.mul(12).div(10),
         LOT_SIZE.mul(99).div(100)
       );
 
@@ -538,22 +483,10 @@ describe("Auctioneer Unit Tests", function () {
         0,
         0
       );
-      await vaultEngine.addStablecoin(
-        owner.address,
-        PRECISION_AUR.mul(1000000)
-      );
-      await vaultEngine.addStablecoin(
-        user1.address,
-        PRECISION_AUR.mul(1000000)
-      );
-      await vaultEngine.addStablecoin(
-        user2.address,
-        PRECISION_AUR.mul(1000000)
-      );
-      await vaultEngine.addStablecoin(
-        user3.address,
-        PRECISION_AUR.mul(1000000)
-      );
+      await vaultEngine.addStablecoin(owner.address, RAD.mul(1000000));
+      await vaultEngine.addStablecoin(user1.address, RAD.mul(1000000));
+      await vaultEngine.addStablecoin(user2.address, RAD.mul(1000000));
+      await vaultEngine.addStablecoin(user3.address, RAD.mul(1000000));
     });
 
     it("fails if caller has no bid", async () => {
@@ -562,18 +495,14 @@ describe("Auctioneer Unit Tests", function () {
         "Auctioneer/finalizeSale: The caller has no active bids"
       );
 
-      await auctioneer.placeBid(
-        0,
-        PRECISION_PRICE.mul(12).div(10),
-        LOT_SIZE.div(10)
-      );
-      await priceCalc.setPrice(PRECISION_PRICE);
+      await auctioneer.placeBid(0, RAY.mul(12).div(10), LOT_SIZE.div(10));
+      await priceCalc.setPrice(RAY);
 
       await auctioneer.finalizeSale(0);
     });
 
     it("fails if current price has not passed the bid price", async () => {
-      await auctioneer.placeBid(0, PRECISION_PRICE, LOT_SIZE.div(10));
+      await auctioneer.placeBid(0, RAY, LOT_SIZE.div(10));
 
       await assertRevert(
         auctioneer.finalizeSale(0),
@@ -584,9 +513,9 @@ describe("Auctioneer Unit Tests", function () {
     it("tests that correct amount of collateral is sent to user", async () => {
       const EXPECTED_LOT_SIZE = LOT_SIZE.div(10);
 
-      await auctioneer.placeBid(0, PRECISION_PRICE, EXPECTED_LOT_SIZE);
+      await auctioneer.placeBid(0, RAY, EXPECTED_LOT_SIZE);
 
-      await priceCalc.setPrice(PRECISION_PRICE.mul(9).div(10));
+      await priceCalc.setPrice(RAY.mul(9).div(10));
       const before = await vaultEngine.vaults(flrCollId, owner.address);
 
       await auctioneer.finalizeSale(0);
@@ -599,14 +528,10 @@ describe("Auctioneer Unit Tests", function () {
 
     it("tests that it values are updated correctly", async () => {
       const BUY_LOT_SIZE = LOT_SIZE.mul(99).div(100);
-      const BUY_VALUE = PRECISION_PRICE.mul(12).div(10).mul(BUY_LOT_SIZE);
+      const BUY_VALUE = RAY.mul(12).div(10).mul(BUY_LOT_SIZE);
 
-      await auctioneer.placeBid(
-        0,
-        PRECISION_PRICE.mul(12).div(10),
-        BUY_LOT_SIZE
-      );
-      await priceCalc.setPrice(PRECISION_PRICE.mul(7).div(10));
+      await auctioneer.placeBid(0, RAY.mul(12).div(10), BUY_LOT_SIZE);
+      await priceCalc.setPrice(RAY.mul(7).div(10));
 
       const before = await auctioneer.auctions(0);
       expect(before.debt).to.equal(DEBT_SIZE);
@@ -622,15 +547,15 @@ describe("Auctioneer Unit Tests", function () {
     it("tests that bid index is removed correctly", async () => {
       await auctioneer
         .connect(user1)
-        .placeBid(0, PRECISION_PRICE.div(10), LOT_SIZE.mul(4).div(10));
+        .placeBid(0, RAY.div(10), LOT_SIZE.mul(4).div(10));
       await auctioneer
         .connect(user2)
-        .placeBid(0, PRECISION_PRICE.div(5), LOT_SIZE.mul(4).div(10));
+        .placeBid(0, RAY.div(5), LOT_SIZE.mul(4).div(10));
       await auctioneer
         .connect(user3)
-        .placeBid(0, PRECISION_PRICE.div(4), LOT_SIZE.mul(3).div(10));
+        .placeBid(0, RAY.div(4), LOT_SIZE.mul(3).div(10));
 
-      await priceCalc.setPrice(PRECISION_PRICE.div(11));
+      await priceCalc.setPrice(RAY.div(11));
 
       const before = await auctioneer.nextHighestBidder(0, user2.address);
       expect(before).to.equal(user1.address);
@@ -644,8 +569,8 @@ describe("Auctioneer Unit Tests", function () {
     it("tests that Sale Event is emitted correctly", async () => {
       const COLL_OWNER = owner.address;
       const EXPECTED_LOT_SIZE = LOT_SIZE.div(10);
-      await auctioneer.placeBid(0, PRECISION_PRICE, EXPECTED_LOT_SIZE);
-      await priceCalc.setPrice(PRECISION_PRICE.mul(7).div(10));
+      await auctioneer.placeBid(0, RAY, EXPECTED_LOT_SIZE);
+      await priceCalc.setPrice(RAY.mul(7).div(10));
 
       const parsedEvents = await parseEvents(
         auctioneer.finalizeSale(0),
@@ -656,7 +581,7 @@ describe("Auctioneer Unit Tests", function () {
       expect(parsedEvents[0].args.collId).to.equal(flrCollId);
       expect(parsedEvents[0].args.auctionId).to.equal(0);
       expect(parsedEvents[0].args.user).to.equal(COLL_OWNER);
-      expect(parsedEvents[0].args.price).to.equal(PRECISION_PRICE);
+      expect(parsedEvents[0].args.price).to.equal(RAY);
       expect(parsedEvents[0].args.lotSize).to.equal(EXPECTED_LOT_SIZE);
     });
   });
@@ -681,7 +606,7 @@ describe("Auctioneer Unit Tests", function () {
       await auctioneer.calculatePrice(0);
 
       const startingPriceAfter = await priceCalc.lastStartingPrice();
-      expect(startingPriceAfter).to.equal(PRECISION_PRICE.mul(12).div(10));
+      expect(startingPriceAfter).to.equal(RAY.mul(12).div(10));
       const startingTime = (await auctioneer.auctions(0)).startTime;
       const timeElapsedAfter = await priceCalc.lastTimeElapsed();
       const EXPECTED_TIME_ELAPSED = BigNumber.from(
@@ -694,7 +619,7 @@ describe("Auctioneer Unit Tests", function () {
   });
 
   describe("cancelAuction Unit Test", function () {
-    const DEBT_ON_AUCTION = PRECISION_AUR.mul(100000000);
+    const DEBT_ON_AUCTION = RAD.mul(100000000);
     beforeEach(async function () {
       await auctioneer
         .connect(liquidatorCaller)
@@ -719,22 +644,10 @@ describe("Auctioneer Unit Tests", function () {
         0,
         0
       );
-      await vaultEngine.addStablecoin(
-        owner.address,
-        PRECISION_AUR.mul(1000000)
-      );
-      await vaultEngine.addStablecoin(
-        user1.address,
-        PRECISION_AUR.mul(1000000)
-      );
-      await vaultEngine.addStablecoin(
-        user2.address,
-        PRECISION_AUR.mul(1000000)
-      );
-      await vaultEngine.addStablecoin(
-        user3.address,
-        PRECISION_AUR.mul(1000000)
-      );
+      await vaultEngine.addStablecoin(owner.address, RAD.mul(1000000));
+      await vaultEngine.addStablecoin(user1.address, RAD.mul(1000000));
+      await vaultEngine.addStablecoin(user2.address, RAD.mul(1000000));
+      await vaultEngine.addStablecoin(user3.address, RAD.mul(1000000));
     });
 
     it("tests that only Probity can call the function", async () => {
@@ -774,13 +687,13 @@ describe("Auctioneer Unit Tests", function () {
     it("tests that all the bids are cancelled", async () => {
       await auctioneer
         .connect(user1)
-        .placeBid(0, PRECISION_PRICE.div(10), LOT_SIZE.mul(4).div(10));
+        .placeBid(0, RAY.div(10), LOT_SIZE.mul(4).div(10));
       await auctioneer
         .connect(user2)
-        .placeBid(0, PRECISION_PRICE.div(5), LOT_SIZE.mul(4).div(10));
+        .placeBid(0, RAY.div(5), LOT_SIZE.mul(4).div(10));
       await auctioneer
         .connect(user3)
-        .placeBid(0, PRECISION_PRICE.div(6), LOT_SIZE.mul(5).div(10));
+        .placeBid(0, RAY.div(6), LOT_SIZE.mul(5).div(10));
 
       await auctioneer
         .connect(liquidatorCaller)

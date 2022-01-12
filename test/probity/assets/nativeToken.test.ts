@@ -6,7 +6,7 @@ import { VaultEngine, Registry, NativeToken } from "../../../typechain";
 import { deployTest } from "../../../lib/deployer";
 import { ethers } from "hardhat";
 import * as chai from "chai";
-import { PRECISION_COLL } from "../../utils/constants";
+import { WAD } from "../../utils/constants";
 import parseEvents from "../../utils/parseEvents";
 const expect = chai.expect;
 
@@ -19,8 +19,8 @@ let nativeToken: NativeToken;
 let vaultEngine: VaultEngine;
 let registry: Registry;
 
-const AMOUNT_TO_DEPOSIT = PRECISION_COLL.mul(100);
-const AMOUNT_TO_WITHDRAW = PRECISION_COLL.mul(50);
+const AMOUNT_TO_DEPOSIT = WAD.mul(100);
+const AMOUNT_TO_WITHDRAW = WAD.mul(50);
 
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 

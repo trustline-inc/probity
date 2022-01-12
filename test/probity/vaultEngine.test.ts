@@ -15,12 +15,7 @@ import {
 import { deployTest } from "../../lib/deployer";
 import { ethers } from "hardhat";
 import * as chai from "chai";
-import {
-  bytes32,
-  PRECISION_AUR,
-  PRECISION_COLL,
-  PRECISION_PRICE,
-} from "../utils/constants";
+import { bytes32, RAD, WAD, RAY } from "../utils/constants";
 import { BigNumber } from "ethers";
 import assertRevert from "../utils/assertRevert";
 const expect = chai.expect;
@@ -69,8 +64,8 @@ describe("Vault Engine Unit Tests", function () {
   });
 
   describe("modifyEquity Unit Tests", function () {
-    const COLL_AMOUNT_EQUITY = PRECISION_COLL.mul(10000);
-    const EQUITY_AMOUNT = PRECISION_AUR.mul(2000);
+    const UNDERLYING_AMOUNT = WAD.mul(10000);
+    const EQUITY_AMOUNT = RAD.mul(2000);
 
     beforeEach(async function () {
       await owner.sendTransaction({
@@ -80,16 +75,16 @@ describe("Vault Engine Unit Tests", function () {
       await vaultEngine.connect(gov).initAssetType(flrAssetId);
       await vaultEngine
         .connect(gov)
-        .updateCeiling(flrAssetId, PRECISION_AUR.mul(10000000));
+        .updateCeiling(flrAssetId, RAD.mul(10000000));
       await registry
         .connect(gov)
         .setupAddress(bytes32("assetManager"), assetManager.address);
       await vaultEngine
         .connect(gov)
-        .updateAdjustedPrice(flrAssetId, PRECISION_PRICE.mul(1));
+        .updateAdjustedPrice(flrAssetId, RAY.mul(1));
       await vaultEngine
         .connect(assetManager)
-        .modifyStandbyAsset(flrAssetId, owner.address, COLL_AMOUNT_EQUITY);
+        .modifyStandbyAsset(flrAssetId, owner.address, UNDERLYING_AMOUNT);
     });
 
     it("only whitelisted user can call modifyEquity", async () => {
@@ -100,7 +95,7 @@ describe("Vault Engine Unit Tests", function () {
         vaultEngine.modifyEquity(
           flrAssetId,
           treasury.address,
-          COLL_AMOUNT_EQUITY,
+          UNDERLYING_AMOUNT,
           EQUITY_AMOUNT
         ),
         "AccessControl/onlyByWhiteListed: Only Whitelisted user can call this"
@@ -113,27 +108,25 @@ describe("Vault Engine Unit Tests", function () {
       await vaultEngine.modifyEquity(
         flrAssetId,
         treasury.address,
-        COLL_AMOUNT_EQUITY,
+        UNDERLYING_AMOUNT,
         EQUITY_AMOUNT
       );
     });
 
     it("fail if vault value is below the minimum(floor)", async () => {
-      const FLOOR_AMOUNT = PRECISION_AUR.mul(1000);
+      const FLOOR_AMOUNT = RAD.mul(1000);
       const EQUITY_AMOUNT_UNDER_FLOOR = FLOOR_AMOUNT.sub(1);
       await registry
         .connect(gov)
         .setupAddress(bytes32("whiteListed"), owner.address);
 
-      await vaultEngine
-        .connect(gov)
-        .updateFloor(flrAssetId, PRECISION_AUR.mul(1000));
+      await vaultEngine.connect(gov).updateFloor(flrAssetId, RAD.mul(1000));
 
       await assertRevert(
         vaultEngine.modifyEquity(
           flrAssetId,
           treasury.address,
-          COLL_AMOUNT_EQUITY,
+          UNDERLYING_AMOUNT,
           EQUITY_AMOUNT_UNDER_FLOOR
         ),
         "Vault/modifyEquity: Equity smaller than floor"
@@ -142,7 +135,7 @@ describe("Vault Engine Unit Tests", function () {
       await vaultEngine.modifyEquity(
         flrAssetId,
         treasury.address,
-        COLL_AMOUNT_EQUITY,
+        UNDERLYING_AMOUNT,
         EQUITY_AMOUNT
       );
     });
@@ -154,7 +147,7 @@ describe("Vault Engine Unit Tests", function () {
       await vaultEngine.modifyEquity(
         flrAssetId,
         treasury.address,
-        COLL_AMOUNT_EQUITY,
+        UNDERLYING_AMOUNT,
         EQUITY_AMOUNT
       );
 
@@ -167,7 +160,7 @@ describe("Vault Engine Unit Tests", function () {
       await vaultEngine.modifyEquity(
         flrAssetId,
         treasury.address,
-        COLL_AMOUNT_EQUITY.div(2),
+        UNDERLYING_AMOUNT.div(2),
         EQUITY_AMOUNT.div(2)
       );
 
@@ -177,7 +170,7 @@ describe("Vault Engine Unit Tests", function () {
       await vaultEngine.modifyEquity(
         flrAssetId,
         treasury.address,
-        COLL_AMOUNT_EQUITY.div(2),
+        UNDERLYING_AMOUNT.div(2),
         EQUITY_AMOUNT.div(2)
       );
 
@@ -188,10 +181,10 @@ describe("Vault Engine Unit Tests", function () {
   });
 
   describe("modifyDebt Unit Tests", function () {
-    const COLL_AMOUNT_EQUITY = PRECISION_COLL.mul(10000);
-    const COLL_AMOUNT_DEBT = PRECISION_COLL.mul(10000);
-    const EQUITY_AMOUNT = PRECISION_AUR.mul(2000);
-    const DEBT_AMOUNT = PRECISION_AUR.mul(1000);
+    const UNDERLYING_AMOUNT = WAD.mul(10000);
+    const COLL_AMOUNT_DEBT = WAD.mul(10000);
+    const EQUITY_AMOUNT = RAD.mul(2000);
+    const DEBT_AMOUNT = RAD.mul(1000);
 
     beforeEach(async function () {
       await owner.sendTransaction({
@@ -201,13 +194,13 @@ describe("Vault Engine Unit Tests", function () {
       await vaultEngine.connect(gov).initAssetType(flrAssetId);
       await vaultEngine
         .connect(gov)
-        .updateCeiling(flrAssetId, PRECISION_AUR.mul(10000000));
+        .updateCeiling(flrAssetId, RAD.mul(10000000));
       await registry
         .connect(gov)
         .setupAddress(bytes32("assetManager"), assetManager.address);
       await vaultEngine
         .connect(gov)
-        .updateAdjustedPrice(flrAssetId, PRECISION_PRICE.mul(1));
+        .updateAdjustedPrice(flrAssetId, RAY.mul(1));
 
       await vaultEngine
         .connect(assetManager)
@@ -222,7 +215,7 @@ describe("Vault Engine Unit Tests", function () {
         .modifyEquity(
           flrAssetId,
           treasury.address,
-          COLL_AMOUNT_EQUITY,
+          UNDERLYING_AMOUNT,
           EQUITY_AMOUNT
         );
     });
@@ -254,7 +247,7 @@ describe("Vault Engine Unit Tests", function () {
     });
 
     it("fails if vault value is below the minimum(floor)", async () => {
-      const FLOOR_AMOUNT = PRECISION_AUR.mul(800);
+      const FLOOR_AMOUNT = RAD.mul(800);
       const DEBT_AMOUNT_UNDER_FLOOR = FLOOR_AMOUNT.sub(1);
 
       await registry
@@ -322,10 +315,10 @@ describe("Vault Engine Unit Tests", function () {
   });
 
   describe("updateAccumulator Unit Tests", function () {
-    const COLL_AMOUNT_EQUITY = PRECISION_COLL.mul(10000);
-    const COLL_AMOUNT_DEBT = PRECISION_COLL.mul(10000);
-    const EQUITY_AMOUNT = PRECISION_AUR.mul(2000);
-    const DEBT_AMOUNT = PRECISION_AUR.mul(1000);
+    const UNDERLYING_AMOUNT = WAD.mul(10000);
+    const COLL_AMOUNT_DEBT = WAD.mul(10000);
+    const EQUITY_AMOUNT = RAD.mul(2000);
+    const DEBT_AMOUNT = RAD.mul(1000);
 
     beforeEach(async function () {
       await owner.sendTransaction({
@@ -335,7 +328,7 @@ describe("Vault Engine Unit Tests", function () {
       await vaultEngine.connect(gov).initAssetType(flrAssetId);
       await vaultEngine
         .connect(gov)
-        .updateCeiling(flrAssetId, PRECISION_AUR.mul(10000000));
+        .updateCeiling(flrAssetId, RAD.mul(10000000));
       await registry
         .connect(gov)
         .setupAddress(bytes32("assetManager"), assetManager.address);
@@ -344,16 +337,16 @@ describe("Vault Engine Unit Tests", function () {
         .modifyStandbyAsset(
           flrAssetId,
           owner.address,
-          COLL_AMOUNT_DEBT.add(COLL_AMOUNT_EQUITY)
+          COLL_AMOUNT_DEBT.add(UNDERLYING_AMOUNT)
         );
       await vaultEngine
         .connect(gov)
-        .updateAdjustedPrice(flrAssetId, PRECISION_PRICE.mul(1));
+        .updateAdjustedPrice(flrAssetId, RAY.mul(1));
 
       await vaultEngine.modifyEquity(
         flrAssetId,
         treasury.address,
-        COLL_AMOUNT_EQUITY,
+        UNDERLYING_AMOUNT,
         EQUITY_AMOUNT
       );
       await vaultEngine.modifyDebt(
@@ -470,7 +463,7 @@ describe("Vault Engine Unit Tests", function () {
       const protocolFee = BigNumber.from("21035088626883475473007");
       const capToRaise = debtToRaise.div(2).sub(protocolFee);
 
-      const EXPECTED_AUR = protocolFee.mul(EQUITY_AMOUNT.div(PRECISION_PRICE));
+      const EXPECTED_AUR = protocolFee.mul(EQUITY_AMOUNT.div(RAY));
 
       const reserveAurBefore = await vaultEngine.stablecoin(
         reservePool.address

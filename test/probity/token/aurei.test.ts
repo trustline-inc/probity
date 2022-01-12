@@ -7,7 +7,7 @@ import { deployTest } from "../../../lib/deployer";
 import { ethers } from "hardhat";
 import * as chai from "chai";
 import assertRevert from "../../utils/assertRevert";
-import { PRECISION_COLL, bytes32 } from "../../utils/constants";
+import { WAD, bytes32 } from "../../utils/constants";
 const expect = chai.expect;
 
 // Wallets
@@ -19,8 +19,8 @@ let aurei: Aurei;
 let vaultEngine: VaultEngine;
 let registry: Registry;
 
-const AMOUNT_TO_MINT = PRECISION_COLL.mul(1000);
-const AMOUNT_TO_BURN = PRECISION_COLL.mul(230);
+const AMOUNT_TO_MINT = WAD.mul(1000);
+const AMOUNT_TO_BURN = WAD.mul(230);
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
 describe("Aurei Token Unit Test", function () {

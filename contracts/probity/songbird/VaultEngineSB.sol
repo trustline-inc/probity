@@ -37,7 +37,7 @@ contract VaultEngineSB is Stateful, Eventful {
     /////////////////////////////////////////
     // Data Variables
     /////////////////////////////////////////
-    uint256 private constant PRECISION_PRICE = 10**27;
+    uint256 private constant RAY = 10**27;
 
     uint256 public totalDebt;
     uint256 public totalEquity;
@@ -222,7 +222,7 @@ contract VaultEngineSB is Stateful, Eventful {
 
         require(totalEquity <= assets[assetId].ceiling, "Vault/modifyEquity: Equity ceiling reached");
         require(
-            vault.equity == 0 || (vault.equity * PRECISION_PRICE) > assets[assetId].floor,
+            vault.equity == 0 || (vault.equity * RAY) > assets[assetId].floor,
             "Vault/modifyEquity: Equity floor reached"
         );
 
@@ -273,7 +273,7 @@ contract VaultEngineSB is Stateful, Eventful {
 
         require(totalDebt <= assets[assetId].ceiling, "Vault/modifyDebt: Debt ceiling reached");
         require(
-            vault.debt == 0 || (vault.debt * PRECISION_PRICE) > assets[assetId].floor,
+            vault.debt == 0 || (vault.debt * RAY) > assets[assetId].floor,
             "Vault/modifyDebt: Debt smaller than floor"
         );
         certify(assetId, vault);
@@ -314,7 +314,7 @@ contract VaultEngineSB is Stateful, Eventful {
         vault.equity = add(vault.equity, equityAmount);
         coll.normDebt = add(coll.normDebt, debtAmount);
         coll.normEquity = add(coll.normEquity, equityAmount);
-        int256 aurToRaise = mul(coll.debtAccumulator, debtAmount) + mul(PRECISION_PRICE, equityAmount);
+        int256 aurToRaise = mul(coll.debtAccumulator, debtAmount) + mul(RAY, equityAmount);
 
         vaults[assetId][auctioneer].standbyAssetAmount = sub(
             vaults[assetId][auctioneer].standbyAssetAmount,
@@ -351,8 +351,8 @@ contract VaultEngineSB is Stateful, Eventful {
      * @param assetId The asset ID
      */
     function initAssetType(bytes32 assetId) external onlyBy("gov") {
-        assets[assetId].debtAccumulator = PRECISION_PRICE;
-        assets[assetId].equityAccumulator = PRECISION_PRICE;
+        assets[assetId].debtAccumulator = RAY;
+        assets[assetId].equityAccumulator = RAY;
     }
 
     /**
@@ -390,7 +390,7 @@ contract VaultEngineSB is Stateful, Eventful {
      */
     function checkVaultUnderLimit(bytes32 assetId, Vault memory vault) internal view {
         require(
-            (vault.debt * assets[assetId].debtAccumulator) + (vault.equity * PRECISION_PRICE) <= individualVaultLimit,
+            (vault.debt * assets[assetId].debtAccumulator) + (vault.equity * RAY) <= individualVaultLimit,
             "Vault is over the individual vault limit"
         );
     }
@@ -451,7 +451,7 @@ contract VaultEngineSB is Stateful, Eventful {
      */
     function certify(bytes32 assetId, Vault memory vault) internal view {
         require(
-            (vault.debt * assets[assetId].debtAccumulator) + (vault.equity * PRECISION_PRICE) <=
+            (vault.debt * assets[assetId].debtAccumulator) + (vault.equity * RAY) <=
                 vault.activeAssetAmount * assets[assetId].adjustedPrice,
             "Vault/certify: Not enough asset"
         );
