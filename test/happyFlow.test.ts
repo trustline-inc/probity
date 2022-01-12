@@ -160,11 +160,11 @@ describe("Probity happy flow", function () {
     );
   });
 
-  it("test modifyEquity, modifyDebt and aur withdrawal", async () => {
-    // Deposit FLR collateral
+  it("increases equity & debt and allows stablecoin withdrawal", async () => {
+    // Deposit native token (FLR)
     await flrWallet.deposit({ value: ASSET_AMOUNT });
 
-    // Initialize the FLR collateral type
+    // Initialize the FLR asset
     await vaultEngine.connect(gov).initAssetType(flrAssetId);
     await vaultEngine.connect(gov).updateCeiling(flrAssetId, RAD.mul(10000000));
     await teller.connect(gov).initCollType(flrAssetId, 0);
@@ -175,7 +175,7 @@ describe("Probity happy flow", function () {
 
     let userVaultBefore = await vaultEngine.vaults(flrAssetId, owner.address);
 
-    // Create Aurei
+    // Create stablecoin
     await vaultEngine.modifyEquity(
       flrAssetId,
       treasury.address,
@@ -210,8 +210,7 @@ describe("Probity happy flow", function () {
       LOAN_AMOUNT.div(RAY)
     );
 
-    // test aur withdrawal
-
+    // Stablecoin withdrawal
     let ownerBalanceBefore = await aurei.balanceOf(owner.address);
     await treasury.withdrawStablecoin(aurAfter.div(RAY));
     let ownerBalanceAfter = await aurei.balanceOf(owner.address);
@@ -220,11 +219,11 @@ describe("Probity happy flow", function () {
     );
   });
 
-  it("test reducing modifyDebt", async () => {
-    // Deposit FLR collateral
+  it("allows debt repayment", async () => {
+    // Deposit native token (FLR)
     await flrWallet.deposit({ value: ASSET_AMOUNT });
 
-    // Initialize the FLR collateral type
+    // Initialize the FLR asset
     await vaultEngine.connect(gov).initAssetType(flrAssetId);
     await vaultEngine.connect(gov).updateCeiling(flrAssetId, RAD.mul(10000000));
     await teller.connect(gov).initCollType(flrAssetId, 0);
@@ -233,7 +232,7 @@ describe("Probity happy flow", function () {
       .init(flrAssetId, WAD.mul(15).div(10), ftso.address);
     await priceFeed.updateAdjustedPrice(flrAssetId);
 
-    // Create Aurei
+    // Create stablecoin
     await vaultEngine.modifyEquity(
       flrAssetId,
       treasury.address,
@@ -263,7 +262,7 @@ describe("Probity happy flow", function () {
     userVaultBefore = await vaultEngine.vaults(flrAssetId, owner.address);
     aurBefore = await vaultEngine.stablecoin(owner.address);
 
-    // repay loan
+    // Repay loan
     await vaultEngine.modifyDebt(
       flrAssetId,
       treasury.address,
@@ -282,11 +281,11 @@ describe("Probity happy flow", function () {
     );
   });
 
-  it("test that modifyEquity can be reduced", async () => {
-    // Deposit FLR collateral
+  it("allows underlying asset redemption", async () => {
+    // Deposit native token (FLR)
     await flrWallet.deposit({ value: ASSET_AMOUNT });
 
-    // Initialize the FLR collateral type
+    // Initialize the FLR asset
     await vaultEngine.connect(gov).initAssetType(flrAssetId);
     await vaultEngine.connect(gov).updateCeiling(flrAssetId, RAD.mul(10000000));
     await teller.connect(gov).initCollType(flrAssetId, 0);
@@ -297,7 +296,7 @@ describe("Probity happy flow", function () {
 
     let userVaultBefore = await vaultEngine.vaults(flrAssetId, owner.address);
 
-    // Create Aurei
+    // Create stablecoin
     await vaultEngine.modifyEquity(
       flrAssetId,
       treasury.address,
@@ -313,7 +312,7 @@ describe("Probity happy flow", function () {
       EQUITY_AMOUNT.div(RAY)
     );
 
-    // test that you can remove the equity
+    // Redeem underlying assets
     await vaultEngine.modifyEquity(
       flrAssetId,
       treasury.address,
@@ -333,7 +332,7 @@ describe("Probity happy flow", function () {
     );
   });
 
-  it("test priceFeed update", async () => {
+  it("updates the price feed", async () => {
     await flrWallet.deposit({ value: ASSET_AMOUNT });
 
     await vaultEngine.connect(gov).initAssetType(flrAssetId);
