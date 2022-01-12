@@ -113,7 +113,7 @@ describe("Vault Engine Unit Tests", function () {
       );
     });
 
-    it("fails if asset amount falls below the minimum (floor)", async () => {
+    it("fails if equity amount falls below the minimum (floor)", async () => {
       const FLOOR_AMOUNT = RAD.mul(1000);
       const EQUITY_AMOUNT_UNDER_FLOOR = FLOOR_AMOUNT.sub(1);
       await registry
@@ -140,7 +140,7 @@ describe("Vault Engine Unit Tests", function () {
       );
     });
 
-    it("adds new users to the user list", async () => {
+    it("adds a new user to the user list", async () => {
       const before = await vaultEngine.getUserList();
       expect(before.length).to.equal(0);
 
@@ -220,7 +220,7 @@ describe("Vault Engine Unit Tests", function () {
         );
     });
 
-    it("only whitelisted user can call modifyDebt", async () => {
+    it("only allows whitelisted users to call modifyDebt", async () => {
       await registry
         .connect(gov)
         .setupAddress(bytes32("notWhitelisted"), owner.address);
@@ -246,7 +246,7 @@ describe("Vault Engine Unit Tests", function () {
       );
     });
 
-    it("fails if vault value is below the minimum(floor)", async () => {
+    it("fails if the debt amount is below the minimum (floor)", async () => {
       const FLOOR_AMOUNT = RAD.mul(800);
       const DEBT_AMOUNT_UNDER_FLOOR = FLOOR_AMOUNT.sub(1);
 
@@ -274,7 +274,7 @@ describe("Vault Engine Unit Tests", function () {
       );
     });
 
-    it("tests new user is added to userList", async () => {
+    it("adds a new user to the user list", async () => {
       const before = await vaultEngine.getUserList();
       expect(before.length).to.equal(1);
 
@@ -290,7 +290,7 @@ describe("Vault Engine Unit Tests", function () {
       expect(after[1]).to.equal(owner.address);
     });
 
-    it("tests existing user is NOT added to userList", async () => {
+    it("doesn't add existing users to the user list", async () => {
       await vaultEngine.modifyDebt(
         flrAssetId,
         treasury.address,
