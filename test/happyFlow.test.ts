@@ -344,13 +344,13 @@ describe("Probity happy flow", function () {
 
     await priceFeed.updateAdjustedPrice(flrAssetId);
 
-    let collTypeAfter = await vaultEngine.assets(flrAssetId);
+    let assetAfter = await vaultEngine.assets(flrAssetId);
     let expectedPrice = RAY.div(3).mul(2);
-    // as long as the expectedPrice is within a buffer, call it success
-    expect(collTypeAfter[2].sub(expectedPrice).toNumber() <= 10).to.equal(true);
+    // As long as the expectedPrice is within a buffer, call it success
+    expect(assetAfter[2].sub(expectedPrice).toNumber() <= 10).to.equal(true);
   });
 
-  it("test liquidation start", async () => {
+  it("liquidates unhealthy vaults", async () => {
     await flrWallet.deposit({ value: ASSET_AMOUNT });
 
     await vaultEngine.connect(gov).initAssetType(flrAssetId);
@@ -390,7 +390,7 @@ describe("Probity happy flow", function () {
     );
   });
 
-  it("test auction process", async () => {
+  it("creates an auction and allows a user to buy the collateral", async () => {
     await flrWallet.deposit({ value: ASSET_AMOUNT });
 
     await vaultEngine.connect(gov).initAssetType(flrAssetId);
@@ -462,7 +462,7 @@ describe("Probity happy flow", function () {
     ).to.equal(true);
   });
 
-  it("test reserve pool settlement + IOU sale", async () => {
+  it("runs an IOU sale", async () => {
     await flrWallet.deposit({ value: ASSET_AMOUNT });
 
     await vaultEngine.connect(gov).initAssetType(flrAssetId);
