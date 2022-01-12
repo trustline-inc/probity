@@ -449,7 +449,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
             capToRaise,
             BigNumber.from(0)
           ),
-        "VaultEngine/updateAccumulators: New equity created is larger than new debt"
+        "VaultEngine/updateAccumulators: The equity rate increase is larger than the debt rate increase"
       );
 
       capToRaise = BigNumber.from("125509667994754929166541");
