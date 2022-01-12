@@ -29,7 +29,7 @@ const expect = chai.expect;
 let owner: SignerWithAddress;
 let user: SignerWithAddress;
 let gov: SignerWithAddress;
-let coll: SignerWithAddress;
+let assetManager: SignerWithAddress;
 
 // Contracts
 let vaultEngine: VaultEngine;
@@ -41,7 +41,7 @@ let teller: Teller;
 let priceFeed: PriceFeed;
 let treasury: Treasury;
 
-let flrCollId = bytes32("FLR");
+let flrAssetId = bytes32("FLR");
 
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
@@ -61,7 +61,7 @@ describe("Vault Engine Unit Tests", function () {
     owner = signers.owner;
     user = signers.alice;
     gov = signers.charlie;
-    coll = signers.don;
+    assetManager = signers.don;
 
     await registry.setupAddress(bytes32("gov"), gov.address);
     await registry.setupAddress(bytes32("whiteListed"), user.address);
@@ -77,19 +77,19 @@ describe("Vault Engine Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.connect(gov).initAssetType(flrCollId);
+      await vaultEngine.connect(gov).initAssetType(flrAssetId);
       await vaultEngine
         .connect(gov)
-        .updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
+        .updateCeiling(flrAssetId, PRECISION_AUR.mul(10000000));
       await registry
         .connect(gov)
-        .setupAddress(bytes32("collateral"), coll.address);
+        .setupAddress(bytes32("assetManager"), assetManager.address);
       await vaultEngine
         .connect(gov)
-        .updateAdjustedPrice(flrCollId, PRECISION_PRICE.mul(1));
+        .updateAdjustedPrice(flrAssetId, PRECISION_PRICE.mul(1));
       await vaultEngine
-        .connect(coll)
-        .modifyStandbyAsset(flrCollId, owner.address, COLL_AMOUNT_EQUITY);
+        .connect(assetManager)
+        .modifyStandbyAsset(flrAssetId, owner.address, COLL_AMOUNT_EQUITY);
     });
 
     it("only whitelisted user can call modifyEquity", async () => {
@@ -98,7 +98,7 @@ describe("Vault Engine Unit Tests", function () {
         .setupAddress(bytes32("notWhitelisted"), owner.address);
       await assertRevert(
         vaultEngine.modifyEquity(
-          flrCollId,
+          flrAssetId,
           treasury.address,
           COLL_AMOUNT_EQUITY,
           EQUITY_AMOUNT
@@ -111,7 +111,7 @@ describe("Vault Engine Unit Tests", function () {
         .setupAddress(bytes32("whiteListed"), owner.address);
 
       await vaultEngine.modifyEquity(
-        flrCollId,
+        flrAssetId,
         treasury.address,
         COLL_AMOUNT_EQUITY,
         EQUITY_AMOUNT
@@ -127,11 +127,11 @@ describe("Vault Engine Unit Tests", function () {
 
       await vaultEngine
         .connect(gov)
-        .updateFloor(flrCollId, PRECISION_AUR.mul(1000));
+        .updateFloor(flrAssetId, PRECISION_AUR.mul(1000));
 
       await assertRevert(
         vaultEngine.modifyEquity(
-          flrCollId,
+          flrAssetId,
           treasury.address,
           COLL_AMOUNT_EQUITY,
           EQUITY_AMOUNT_UNDER_FLOOR
@@ -140,7 +140,7 @@ describe("Vault Engine Unit Tests", function () {
       );
 
       await vaultEngine.modifyEquity(
-        flrCollId,
+        flrAssetId,
         treasury.address,
         COLL_AMOUNT_EQUITY,
         EQUITY_AMOUNT
@@ -152,7 +152,7 @@ describe("Vault Engine Unit Tests", function () {
       expect(before.length).to.equal(0);
 
       await vaultEngine.modifyEquity(
-        flrCollId,
+        flrAssetId,
         treasury.address,
         COLL_AMOUNT_EQUITY,
         EQUITY_AMOUNT
@@ -165,7 +165,7 @@ describe("Vault Engine Unit Tests", function () {
 
     it("tests existing user is NOT added to userList", async () => {
       await vaultEngine.modifyEquity(
-        flrCollId,
+        flrAssetId,
         treasury.address,
         COLL_AMOUNT_EQUITY.div(2),
         EQUITY_AMOUNT.div(2)
@@ -175,7 +175,7 @@ describe("Vault Engine Unit Tests", function () {
       expect(before.length).to.equal(1);
 
       await vaultEngine.modifyEquity(
-        flrCollId,
+        flrAssetId,
         treasury.address,
         COLL_AMOUNT_EQUITY.div(2),
         EQUITY_AMOUNT.div(2)
@@ -198,29 +198,29 @@ describe("Vault Engine Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.connect(gov).initAssetType(flrCollId);
+      await vaultEngine.connect(gov).initAssetType(flrAssetId);
       await vaultEngine
         .connect(gov)
-        .updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
+        .updateCeiling(flrAssetId, PRECISION_AUR.mul(10000000));
       await registry
         .connect(gov)
-        .setupAddress(bytes32("collateral"), coll.address);
+        .setupAddress(bytes32("assetManager"), assetManager.address);
       await vaultEngine
         .connect(gov)
-        .updateAdjustedPrice(flrCollId, PRECISION_PRICE.mul(1));
+        .updateAdjustedPrice(flrAssetId, PRECISION_PRICE.mul(1));
 
       await vaultEngine
-        .connect(coll)
-        .modifyStandbyAsset(flrCollId, owner.address, COLL_AMOUNT_DEBT);
+        .connect(assetManager)
+        .modifyStandbyAsset(flrAssetId, owner.address, COLL_AMOUNT_DEBT);
 
       await vaultEngine
-        .connect(coll)
-        .modifyStandbyAsset(flrCollId, user.address, COLL_AMOUNT_DEBT);
+        .connect(assetManager)
+        .modifyStandbyAsset(flrAssetId, user.address, COLL_AMOUNT_DEBT);
 
       await vaultEngine
         .connect(user)
         .modifyEquity(
-          flrCollId,
+          flrAssetId,
           treasury.address,
           COLL_AMOUNT_EQUITY,
           EQUITY_AMOUNT
@@ -233,7 +233,7 @@ describe("Vault Engine Unit Tests", function () {
         .setupAddress(bytes32("notWhitelisted"), owner.address);
       await assertRevert(
         vaultEngine.modifyDebt(
-          flrCollId,
+          flrAssetId,
           treasury.address,
           COLL_AMOUNT_DEBT,
           DEBT_AMOUNT
@@ -246,7 +246,7 @@ describe("Vault Engine Unit Tests", function () {
         .setupAddress(bytes32("whiteListed"), owner.address);
 
       await vaultEngine.modifyDebt(
-        flrCollId,
+        flrAssetId,
         treasury.address,
         COLL_AMOUNT_DEBT,
         DEBT_AMOUNT
@@ -261,20 +261,20 @@ describe("Vault Engine Unit Tests", function () {
         .connect(gov)
         .setupAddress(bytes32("whiteListed"), owner.address);
 
-      await vaultEngine.connect(gov).updateFloor(flrCollId, FLOOR_AMOUNT);
+      await vaultEngine.connect(gov).updateFloor(flrAssetId, FLOOR_AMOUNT);
 
       await assertRevert(
         vaultEngine.modifyDebt(
-          flrCollId,
+          flrAssetId,
           treasury.address,
           COLL_AMOUNT_DEBT,
           DEBT_AMOUNT_UNDER_FLOOR
         ),
-        "Vault/modifyDebt: Debt Smaller than floor"
+        "Vault/modifyDebt: Debt smaller than floor"
       );
 
       await vaultEngine.modifyDebt(
-        flrCollId,
+        flrAssetId,
         treasury.address,
         COLL_AMOUNT_DEBT,
         DEBT_AMOUNT
@@ -286,7 +286,7 @@ describe("Vault Engine Unit Tests", function () {
       expect(before.length).to.equal(1);
 
       await vaultEngine.modifyDebt(
-        flrCollId,
+        flrAssetId,
         treasury.address,
         COLL_AMOUNT_DEBT,
         DEBT_AMOUNT
@@ -299,7 +299,7 @@ describe("Vault Engine Unit Tests", function () {
 
     it("tests existing user is NOT added to userList", async () => {
       await vaultEngine.modifyDebt(
-        flrCollId,
+        flrAssetId,
         treasury.address,
         COLL_AMOUNT_DEBT.div(2),
         DEBT_AMOUNT.div(2)
@@ -309,7 +309,7 @@ describe("Vault Engine Unit Tests", function () {
       expect(before.length).to.equal(2);
 
       await vaultEngine.modifyDebt(
-        flrCollId,
+        flrAssetId,
         treasury.address,
         COLL_AMOUNT_DEBT.div(2),
         DEBT_AMOUNT.div(2)
@@ -332,32 +332,32 @@ describe("Vault Engine Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.connect(gov).initAssetType(flrCollId);
+      await vaultEngine.connect(gov).initAssetType(flrAssetId);
       await vaultEngine
         .connect(gov)
-        .updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
+        .updateCeiling(flrAssetId, PRECISION_AUR.mul(10000000));
       await registry
         .connect(gov)
-        .setupAddress(bytes32("collateral"), coll.address);
+        .setupAddress(bytes32("assetManager"), assetManager.address);
       await vaultEngine
-        .connect(coll)
+        .connect(assetManager)
         .modifyStandbyAsset(
-          flrCollId,
+          flrAssetId,
           owner.address,
           COLL_AMOUNT_DEBT.add(COLL_AMOUNT_EQUITY)
         );
       await vaultEngine
         .connect(gov)
-        .updateAdjustedPrice(flrCollId, PRECISION_PRICE.mul(1));
+        .updateAdjustedPrice(flrAssetId, PRECISION_PRICE.mul(1));
 
       await vaultEngine.modifyEquity(
-        flrCollId,
+        flrAssetId,
         treasury.address,
         COLL_AMOUNT_EQUITY,
         EQUITY_AMOUNT
       );
       await vaultEngine.modifyDebt(
-        flrCollId,
+        flrAssetId,
         treasury.address,
         COLL_AMOUNT_DEBT,
         DEBT_AMOUNT
@@ -372,7 +372,7 @@ describe("Vault Engine Unit Tests", function () {
 
       await assertRevert(
         vaultEngine.updateAccumulators(
-          flrCollId,
+          flrAssetId,
           reservePool.address,
           debtToRaise,
           capToRaise,
@@ -383,7 +383,7 @@ describe("Vault Engine Unit Tests", function () {
       await vaultEngine
         .connect(user)
         .updateAccumulators(
-          flrCollId,
+          flrAssetId,
           reservePool.address,
           debtToRaise,
           capToRaise,
@@ -392,25 +392,25 @@ describe("Vault Engine Unit Tests", function () {
     });
 
     it("tests the debt and equity accumulators are properly updated", async () => {
-      const collBefore = await vaultEngine.assets(flrCollId);
+      const assetBefore = await vaultEngine.assets(flrAssetId);
       const debtToRaise = BigNumber.from("251035088626883475473007");
       const capToRaise = BigNumber.from("125509667994754929166541");
       await vaultEngine
         .connect(user)
         .updateAccumulators(
-          flrCollId,
+          flrAssetId,
           reservePool.address,
           debtToRaise,
           capToRaise,
           BigNumber.from(0)
         );
 
-      const collAfter = await vaultEngine.assets(flrCollId);
-      expect(collBefore.debtAccumulator.add(debtToRaise)).to.equal(
-        collAfter.debtAccumulator
+      const assetAfter = await vaultEngine.assets(flrAssetId);
+      expect(assetBefore.debtAccumulator.add(debtToRaise)).to.equal(
+        assetAfter.debtAccumulator
       );
-      expect(collBefore.equityAccumulator.add(capToRaise)).to.equal(
-        collAfter.equityAccumulator
+      expect(assetBefore.equityAccumulator.add(capToRaise)).to.equal(
+        assetAfter.equityAccumulator
       );
     });
 
@@ -423,7 +423,7 @@ describe("Vault Engine Unit Tests", function () {
       await vaultEngine
         .connect(user)
         .updateAccumulators(
-          flrCollId,
+          flrAssetId,
           reservePool.address,
           debtToRaise,
           capToRaise,
@@ -444,20 +444,20 @@ describe("Vault Engine Unit Tests", function () {
         vaultEngine
           .connect(user)
           .updateAccumulators(
-            flrCollId,
+            flrAssetId,
             reservePool.address,
             debtToRaise,
             capToRaise,
             BigNumber.from(0)
           ),
-        "VaultEngine/UpdateAccumulator: new equity created is higher than new debt"
+        "VaultEngine/UpdateAccumulator: New equity created is larger than new debt"
       );
 
       capToRaise = BigNumber.from("125509667994754929166541");
       await vaultEngine
         .connect(user)
         .updateAccumulators(
-          flrCollId,
+          flrAssetId,
           reservePool.address,
           debtToRaise,
           capToRaise,
@@ -478,7 +478,7 @@ describe("Vault Engine Unit Tests", function () {
       await vaultEngine
         .connect(user)
         .updateAccumulators(
-          flrCollId,
+          flrAssetId,
           reservePool.address,
           debtToRaise,
           capToRaise,

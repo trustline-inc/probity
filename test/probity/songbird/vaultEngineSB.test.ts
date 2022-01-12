@@ -83,7 +83,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
         .updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
       await registry
         .connect(gov)
-        .setupAddress(bytes32("collateral"), coll.address);
+        .setupAddress(bytes32("assetManager"), coll.address);
       await vaultEngine
         .connect(gov)
         .updateAdjustedPrice(flrCollId, PRECISION_PRICE.mul(1));
@@ -152,7 +152,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
         .updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
       await registry
         .connect(gov)
-        .setupAddress(bytes32("collateral"), coll.address);
+        .setupAddress(bytes32("assetManager"), coll.address);
       await vaultEngine
         .connect(gov)
         .updateAdjustedPrice(flrCollId, PRECISION_PRICE.mul(1));
@@ -230,7 +230,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
         .updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
       await registry
         .connect(gov)
-        .setupAddress(bytes32("collateral"), coll.address);
+        .setupAddress(bytes32("assetManager"), coll.address);
     });
 
     it("updateIndividualVaultLimit works properly", async () => {
@@ -351,7 +351,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
         .updateCeiling(flrCollId, PRECISION_AUR.mul(10000000));
       await registry
         .connect(gov)
-        .setupAddress(bytes32("collateral"), coll.address);
+        .setupAddress(bytes32("assetManager"), coll.address);
       await vaultEngine
         .connect(gov)
         .updateIndividualVaultLimit(PRECISION_AUR.mul(1000000));
@@ -466,7 +466,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
             capToRaise,
             BigNumber.from(0)
           ),
-        "VaultEngine/UpdateAccumulator: new equity created is higher than new debt"
+        "VaultEngine/UpdateAccumulator: New equity created is larger than new debt"
       );
 
       capToRaise = BigNumber.from("125509667994754929166541");

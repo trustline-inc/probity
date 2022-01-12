@@ -269,7 +269,7 @@ contract VaultEngine is Stateful, Eventful {
         require(totalDebt <= assets[assetId].ceiling, "Vault/modifyDebt: Debt ceiling reached");
         require(
             vault.debt == 0 || (vault.debt * PRECISION_PRICE) > assets[assetId].floor,
-            "Vault/modifyDebt: Debt Smaller than floor"
+            "Vault/modifyDebt: Debt smaller than floor"
         );
         certify(assetId, vault);
 
@@ -399,7 +399,7 @@ contract VaultEngine is Stateful, Eventful {
         uint256 protocolFeeToCollect = asset.normEquity * protocolFeeRates;
         require(
             newEquity + protocolFeeToCollect <= newDebt,
-            "VaultEngine/UpdateAccumulator: new equity created is higher than new debt"
+            "VaultEngine/UpdateAccumulator: New equity created is larger than new debt"
         );
         stablecoin[reservePool] += protocolFeeToCollect;
     }

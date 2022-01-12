@@ -425,7 +425,7 @@ contract VaultEngineSB is Stateful, Eventful {
 
         require(
             newEquity + protocolFeeToCollect <= newDebt,
-            "VaultEngine/UpdateAccumulator: new equity created is higher than new debt"
+            "VaultEngine/UpdateAccumulator: New equity created is larger than new debt"
         );
         stablecoin[reservePool] += protocolFeeToCollect;
     }
