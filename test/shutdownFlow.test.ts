@@ -298,7 +298,7 @@ describe("Shutdown Flow Test", function () {
     // totalDebt should be $291000
     expect(await vaultEngine.totalDebt()).to.equal(RAD.mul(291000));
 
-    // drop prices flr : $0.60, fxrp: $1.23
+    // drop prices flr: $0.60, fxrp: $1.23
     await ftsoFlr.setCurrentPrice(RAY.mul(60).div(100));
     await priceFeed.updateAdjustedPrice(flrAssetId);
     await ftsoFxrp.setCurrentPrice(RAY.mul(123).div(100));
@@ -543,8 +543,8 @@ describe("Shutdown Flow Test", function () {
   it("test happy flow where system is insolvent", async () => {
     // set up scenario for insolvent system
 
-    // current collateral ratio : 150%
-    // starting price flr : $4.30, fxrp : $6.23
+    // current collateral ratio: 150%
+    // starting price flr: $4.30, fxrp: $6.23
     await ftsoFlr.setCurrentPrice(RAY.mul(43).div(10));
     await priceFeed.updateAdjustedPrice(flrAssetId);
     await ftsoFxrp.setCurrentPrice(RAY.mul(623).div(100));
@@ -683,7 +683,7 @@ describe("Shutdown Flow Test", function () {
     balances.user5.stablecoin = RAD.mul(1200000 + 1500);
     await expectBalancesToMatch(user5, balances.user5);
 
-    // new collateral ratio : 175%
+    // new collateral ratio: 175%
     // drop prices flr: $3.60, fxrp: $4.48
     await priceFeed.updateLiquidationRatio(flrAssetId, WAD.mul(175).div(100));
     await priceFeed.updateLiquidationRatio(fxrpAssetId, WAD.mul(175).div(100));
