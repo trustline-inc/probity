@@ -632,7 +632,7 @@ describe("Shutdown Unit Tests", function () {
       await shutdown.processUserDebt(flrAssetId, user.address);
 
       let unbackedDebt = await shutdown.unbackedDebt();
-      let suppObligation = await shutdown.supplierObligationRatio();
+      let suppObligation = await shutdown.investorObligationRatio();
       expect(unbackedDebt).to.equal(EXPECTED_AUR_GAP);
       expect(suppObligation).to.equal(0);
       await vaultEngine.setTotalDebt(TOTAL_DEBT_TO_SET);
@@ -645,7 +645,7 @@ describe("Shutdown Unit Tests", function () {
 
       await shutdown.calculateInvestorObligation();
       unbackedDebt = await shutdown.unbackedDebt();
-      suppObligation = await shutdown.supplierObligationRatio();
+      suppObligation = await shutdown.investorObligationRatio();
       // unbackedDebt should be erased
       expect(unbackedDebt).to.equal(0);
       expect(suppObligation).to.equal(0);
@@ -666,10 +666,10 @@ describe("Shutdown Unit Tests", function () {
       await shutdown.writeOffFromReserves();
       await shutdown.setFinalDebtBalance();
 
-      let suppObligation = await shutdown.supplierObligationRatio();
+      let suppObligation = await shutdown.investorObligationRatio();
       expect(suppObligation).to.equal(0);
       await shutdown.calculateInvestorObligation();
-      suppObligation = await shutdown.supplierObligationRatio();
+      suppObligation = await shutdown.investorObligationRatio();
       expect(suppObligation).to.equal(EXPECTED_SUPP_OBLIGATION);
     });
 
@@ -690,10 +690,10 @@ describe("Shutdown Unit Tests", function () {
       await shutdown.writeOffFromReserves();
       await shutdown.setFinalDebtBalance();
 
-      let suppObligation = await shutdown.supplierObligationRatio();
+      let suppObligation = await shutdown.investorObligationRatio();
       expect(suppObligation).to.equal(0);
       await shutdown.calculateInvestorObligation();
-      suppObligation = await shutdown.supplierObligationRatio();
+      suppObligation = await shutdown.investorObligationRatio();
       expect(suppObligation).to.equal(EXPECTED_SUPP_OBLIGATION);
     });
 
@@ -762,7 +762,7 @@ describe("Shutdown Unit Tests", function () {
       await shutdown.setFinalDebtBalance();
     });
 
-    it("fails if supplierObligationRatio is zero", async () => {
+    it("fails if investorObligationRatio is zero", async () => {
       await assertRevert(
         shutdown.processUserEquity(flrAssetId, owner.address),
         "Shutdown/processUserEquity:Supplier has no obligation"
@@ -773,7 +773,7 @@ describe("Shutdown Unit Tests", function () {
 
     it("tests that correct amount of collateral is grabbed from supplier", async () => {
       await shutdown.calculateInvestorObligation();
-      const obligationRatio = await shutdown.supplierObligationRatio();
+      const obligationRatio = await shutdown.investorObligationRatio();
       const finalAurUtilizationRatio =
         await shutdown.finalAurUtilizationRatio();
 

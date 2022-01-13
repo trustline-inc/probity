@@ -514,7 +514,7 @@ describe("Shutdown Flow Test", function () {
 
     const EXPECTED_SUPPLIER_OBLIGATION_RATIO = 0;
 
-    expect(await shutdown.supplierObligationRatio()).to.equal(
+    expect(await shutdown.investorObligationRatio()).to.equal(
       EXPECTED_SUPPLIER_OBLIGATION_RATIO
     );
 
@@ -916,7 +916,7 @@ describe("Shutdown Flow Test", function () {
 
     const EXPECTED_SUPPLIER_OBLIGATION_RATIO = WAD.mul("382390449").div(1e10);
     expect(
-      (await shutdown.supplierObligationRatio())
+      (await shutdown.investorObligationRatio())
         .sub(EXPECTED_SUPPLIER_OBLIGATION_RATIO)
         .abs()
         .lte(WAD.div(100))
