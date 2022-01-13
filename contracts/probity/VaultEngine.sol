@@ -37,7 +37,7 @@ contract VaultEngine is Stateful, Eventful {
     /////////////////////////////////////////
     // Data Variables
     /////////////////////////////////////////
-    uint256 private constant PRECISION_PRICE = 10**27;
+    uint256 private constant RAY = 10**27;
 
     uint256 public totalDebt;
     uint256 public totalEquity;
@@ -219,7 +219,7 @@ contract VaultEngine is Stateful, Eventful {
 
         require(totalEquity <= assets[assetId].ceiling, "Vault/modifyEquity: Supply ceiling reached");
         require(
-            vault.equity == 0 || (vault.equity * PRECISION_PRICE) > assets[assetId].floor,
+            vault.equity == 0 || (vault.equity * RAY) > assets[assetId].floor,
             "Vault/modifyEquity: Equity smaller than floor"
         );
         certify(assetId, vault);
@@ -268,8 +268,8 @@ contract VaultEngine is Stateful, Eventful {
 
         require(totalDebt <= assets[assetId].ceiling, "Vault/modifyDebt: Debt ceiling reached");
         require(
-            vault.debt == 0 || (vault.debt * PRECISION_PRICE) > assets[assetId].floor,
-            "Vault/modifyDebt: Debt Smaller than floor"
+            vault.debt == 0 || (vault.debt * RAY) > assets[assetId].floor,
+            "Vault/modifyDebt: Debt smaller than floor"
         );
         certify(assetId, vault);
 
@@ -308,7 +308,7 @@ contract VaultEngine is Stateful, Eventful {
         vault.equity = add(vault.equity, equityAmount);
         asset.normDebt = add(asset.normDebt, debtAmount);
         asset.normEquity = add(asset.normEquity, equityAmount);
-        int256 aurToRaise = mul(asset.debtAccumulator, debtAmount) + mul(PRECISION_PRICE, equityAmount);
+        int256 aurToRaise = mul(asset.debtAccumulator, debtAmount) + mul(RAY, equityAmount);
 
         vaults[assetId][auctioneer].standbyAssetAmount = sub(
             vaults[assetId][auctioneer].standbyAssetAmount,
@@ -345,8 +345,8 @@ contract VaultEngine is Stateful, Eventful {
      * @param assetId The asset type ID
      */
     function initAssetType(bytes32 assetId) external onlyBy("gov") {
-        assets[assetId].debtAccumulator = PRECISION_PRICE;
-        assets[assetId].equityAccumulator = PRECISION_PRICE;
+        assets[assetId].debtAccumulator = RAY;
+        assets[assetId].equityAccumulator = RAY;
     }
 
     /**
@@ -399,7 +399,7 @@ contract VaultEngine is Stateful, Eventful {
         uint256 protocolFeeToCollect = asset.normEquity * protocolFeeRates;
         require(
             newEquity + protocolFeeToCollect <= newDebt,
-            "VaultEngine/UpdateAccumulator: new equity created is higher than new debt"
+            "VaultEngine/updateAccumulators: The equity rate increase is larger than the debt rate increase"
         );
         stablecoin[reservePool] += protocolFeeToCollect;
     }
@@ -425,7 +425,7 @@ contract VaultEngine is Stateful, Eventful {
      */
     function certify(bytes32 assetId, Vault memory vault) internal view {
         require(
-            (vault.debt * assets[assetId].debtAccumulator) + (vault.equity * PRECISION_PRICE) <=
+            (vault.debt * assets[assetId].debtAccumulator) + (vault.equity * RAY) <=
                 vault.activeAssetAmount * assets[assetId].adjustedPrice,
             "Vault/certify: Not enough underlying/collateral"
         );

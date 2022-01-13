@@ -1,19 +1,19 @@
-import { PRECISION_AUR, PRECISION_COLL, PRECISION_PRICE } from "./constants";
+import { RAD, WAD, RAY } from "./constants";
 
 function wdiv(x, y) {
-  return x.mul(PRECISION_COLL).add(y.div(2)).div(y);
+  return x.mul(WAD).add(y.div(2)).div(y);
 }
 
 function rdiv(x, y) {
-  return x.mul(PRECISION_PRICE).add(y.div(2)).div(y);
+  return x.mul(RAY).add(y.div(2)).div(y);
 }
 
 function rmul(x, y) {
-  return x.mul(y).add(PRECISION_PRICE.div(2)).div(PRECISION_PRICE);
+  return x.mul(y).add(RAY.div(2)).div(RAY);
 }
 
 function rpow(x, n) {
-  let z = n % 2 != 0 ? x : PRECISION_PRICE;
+  let z = n % 2 != 0 ? x : RAY;
 
   for (n /= 2; n != 0; n /= 2) {
     n = Math.floor(n);

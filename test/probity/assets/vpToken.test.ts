@@ -12,7 +12,7 @@ import { deployTest } from "../../../lib/deployer";
 import parseEvents from "../../utils/parseEvents";
 import { ethers } from "hardhat";
 import * as chai from "chai";
-import { PRECISION_COLL } from "../../utils/constants";
+import { WAD } from "../../utils/constants";
 
 const expect = chai.expect;
 
@@ -26,8 +26,8 @@ let mockVpToken: MockVPToken;
 let vaultEngine: VaultEngine;
 let registry: Registry;
 
-const AMOUNT_TO_MINT = PRECISION_COLL.mul(100);
-const AMOUNT_TO_WITHDRAW = PRECISION_COLL.mul(50);
+const AMOUNT_TO_MINT = WAD.mul(100);
+const AMOUNT_TO_WITHDRAW = WAD.mul(50);
 
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 

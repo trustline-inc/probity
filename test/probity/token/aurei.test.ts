@@ -7,7 +7,7 @@ import { deployTest } from "../../../lib/deployer";
 import { ethers } from "hardhat";
 import * as chai from "chai";
 import assertRevert from "../../utils/assertRevert";
-import { PRECISION_COLL, bytes32 } from "../../utils/constants";
+import { WAD, bytes32 } from "../../utils/constants";
 const expect = chai.expect;
 
 // Wallets
@@ -19,8 +19,8 @@ let aurei: Aurei;
 let vaultEngine: VaultEngine;
 let registry: Registry;
 
-const AMOUNT_TO_MINT = PRECISION_COLL.mul(1000);
-const AMOUNT_TO_BURN = PRECISION_COLL.mul(230);
+const AMOUNT_TO_MINT = WAD.mul(1000);
+const AMOUNT_TO_BURN = WAD.mul(230);
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
 describe("Aurei Token Unit Test", function () {
@@ -39,7 +39,7 @@ describe("Aurei Token Unit Test", function () {
   it("test mint can only be called by vault contract", async () => {
     await assertRevert(
       aurei.mint(user.address, AMOUNT_TO_MINT),
-      "AccessControl/OnlyBy: Caller does not have permission"
+      "AccessControl/onlyBy: Caller does not have permission"
     );
 
     // add owner to registry as 'treasury' then check if owner can now mint
@@ -61,7 +61,7 @@ describe("Aurei Token Unit Test", function () {
 
     await assertRevert(
       aurei.connect(user).burn(user.address, AMOUNT_TO_BURN),
-      "AccessControl/OnlyBy: Caller does not have permission"
+      "AccessControl/onlyBy: Caller does not have permission"
     );
 
     const balanceBefore = await aurei.balanceOf(user.address);

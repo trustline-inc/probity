@@ -6,18 +6,19 @@ import "../dependencies/Eventful.sol";
 import "./Treasury.sol";
 import "./priceFunction/LinearDecrease.sol";
 
-// Shutdown Module's main purpose is to pause probity functionality and
-// allow user to redeem AUR for the remaining
-// collateral in the system
-// Step 1. Pause all normal functionality
-// Step 2. Set Final price of all collateral
-// Step 3. free up collateral on Over Collateralized vaults,
-// allow users to withdraw free Collateral (this is only available after final price has been set)
-// Step 4. Allow Auctions to finish (is this gonna take too long?)
-// Step 5. Calculate net +/- in reserve vs system debt
-// Step 6. Calculate the net deficit in UnderCollateralized vaults
-// (both debt side and supply side) (can we do this earlier?)
-// Step 7. Calculate final Collateral per AUR = Collateral / Total AUR in Circulation
+/**
+ * The shutdown module's main purpose is to pause functionality and
+ * allow borrowers to redeem stablecoins for the remaining collateral
+ * and allows investors to redeem underlying assets.
+ *
+ * Step 1: Pause all normal functionality
+ * Step 2: Set final asset prices
+ * Step 3: Allow users to withdraw excess assets from healthy vaults
+ * Step 4: Allow auctions to finish (is this gonna take too long?)
+ * Step 5: Calculate net +/- in reserve vs. system debt
+ * Step 6: Calculate the net deficit in unhealthy vaults (can we do this earlier?)
+ * Step 7: Calculate final asset per AUR = amount of asset in vault / total AUR in circulation
+ */
 
 interface PriceFeedLike {
     function setShutdownState() external;
@@ -62,7 +63,7 @@ interface VaultLike {
     function assets(bytes32 assetId)
         external
         returns (
-            uint256 debtAccummulator,
+            uint256 debtAccumulator,
             uint256 equityAccumulator,
             uint256 price,
             uint256 normDebt,
@@ -132,7 +133,7 @@ contract Shutdown is Stateful, Eventful {
         uint256 finalPrice;
         uint256 normalizedDebt;
         uint256 gap;
-        uint256 redeemRatio;
+        uint256 redemptionRatio;
     }
 
     /////////////////////////////////////////
@@ -157,10 +158,9 @@ contract Shutdown is Stateful, Eventful {
     mapping(bytes32 => mapping(address => uint256)) public collRedeemed;
     mapping(address => uint256) public stablecoin;
     uint256 public finalAurUtilizationRatio;
-    uint256 public redeemRatio;
-    uint256 public aurGap; // value of under-collateralized vaults
-    uint256 public supplierObligationRatio;
-    uint256 public debt;
+    uint256 public redemptionRatio;
+    uint256 public unbackedDebt;
+    uint256 public investorObligationRatio;
     uint256 public finalDebtBalance;
     uint256 public finalTotalReserve;
 
@@ -215,6 +215,11 @@ contract Shutdown is Stateful, Eventful {
     // External Functions
     /////////////////////////////////////////
 
+    /**
+     * @notice TODO
+     * @param which TODO
+     * @param newAddress TODO
+     */
     function switchAddress(bytes32 which, address newAddress) external onlyWhenNotInShutdown onlyBy("gov") {
         if (which == "PriceFeed") {
             priceFeed = PriceFeedLike(newAddress);
@@ -233,6 +238,11 @@ contract Shutdown is Stateful, Eventful {
         }
     }
 
+    /**
+     * @notice TODO
+     * @param which TODO
+     * @param newWaitPeriod TODO
+     */
     function changeWaitPeriod(bytes32 which, uint256 newWaitPeriod) external onlyBy("gov") {
         if (which == "auctionWaitPeriod") {
             auctionWaitPeriod = newWaitPeriod;
@@ -243,7 +253,10 @@ contract Shutdown is Stateful, Eventful {
         }
     }
 
-    // once a shutdown has been initiated, you can no longer cancel it.
+    /**
+     * @notice Initiates the system shutdown sequence
+     * @dev This action is irreversible.
+     */
     function initiateShutdown() external onlyWhenNotInShutdown onlyBy("gov") {
         initiated = true;
         initiatedAt = block.timestamp;
@@ -267,29 +280,31 @@ contract Shutdown is Stateful, Eventful {
         }
     }
 
-    // step 2: set final prices
+    /**
+     * @notice Sets the final price for the given asset
+     * @param assetId The ID of the asset to finalize the price of
+     */
     function setFinalPrice(bytes32 assetId) external onlyWhenInShutdown {
         uint256 price = priceFeed.getPrice(assetId);
         require(price != 0, "Shutdown/setFinalPrice: price retrieved is zero");
-
         (, , , assets[assetId].normalizedDebt, , , ) = vaultEngine.assets(assetId);
-
         assets[assetId].finalPrice = price;
     }
 
-    // process the vault:
-    // cancel all outstanding debt,
-    // collect the appropriate amount of collateral, free up extra collateral
-    // suppliers's collateral should
+    /**
+     * @notice Cancels outstanding debt, collects the appropriate amount of collateral, & frees excess collateral
+     * @param assetId The ID of the vault asset
+     * @param user The address of the vault user
+     */
     function processUserDebt(bytes32 assetId, address user) external onlyIfFinalPriceSet(assetId) {
-        (, uint256 activeAssetAmount, uint256 userDebt, , ) = vaultEngine.vaults(assetId, user);
-        (uint256 debtAccum, , , , , , ) = vaultEngine.assets(assetId);
+        (, uint256 activeAssetAmount, uint256 debt, , ) = vaultEngine.vaults(assetId, user);
+        (uint256 debtAccumulator, , , , , , ) = vaultEngine.assets(assetId);
 
-        uint256 debtCollAmount = (userDebt * debtAccum) / assets[assetId].finalPrice;
-        uint256 amountToGrab = min(activeAssetAmount, debtCollAmount);
-        uint256 gap = debtCollAmount - amountToGrab;
+        uint256 collateral = (debt * debtAccumulator) / assets[assetId].finalPrice;
+        uint256 amountToGrab = min(activeAssetAmount, collateral);
+        uint256 gap = collateral - amountToGrab;
         assets[assetId].gap += gap;
-        aurGap += gap * assets[assetId].finalPrice;
+        unbackedDebt += gap * assets[assetId].finalPrice;
 
         vaultEngine.liquidateVault(
             assetId,
@@ -297,17 +312,22 @@ contract Shutdown is Stateful, Eventful {
             address(this),
             address(this),
             -int256(amountToGrab),
-            -int256(userDebt),
+            -int256(debt),
             0
         );
     }
 
+    /**
+     * @notice TODO
+     * @param assetId The ID of the asset to free
+     * @param user The address of the user vault
+     */
     function freeExcessCollateral(bytes32 assetId, address user) external onlyIfFinalPriceSet(assetId) {
-        (, uint256 activeAssetAmount, uint256 userDebt, uint256 supplied, ) = vaultEngine.vaults(assetId, user);
-        require(userDebt == 0, "Shutdown/freeExcessCollateral: User needs to process debt first before calling this");
+        (, uint256 activeAssetAmount, uint256 debt, uint256 equity, ) = vaultEngine.vaults(assetId, user);
+        require(debt == 0, "Shutdown/freeExcessCollateral: User needs to process debt first before calling this");
 
         // how do we make it so this can be reused
-        uint256 hookedAmount = (supplied * finalAurUtilizationRatio);
+        uint256 hookedAmount = (equity * finalAurUtilizationRatio);
         uint256 hookedCollAmount = hookedAmount / assets[assetId].finalPrice;
         require(activeAssetAmount > hookedCollAmount, "Shutdown/freeExcessCollateral: No collateral to free");
 
@@ -316,17 +336,20 @@ contract Shutdown is Stateful, Eventful {
         vaultEngine.liquidateVault(assetId, user, user, address(this), -int256(amountToFree), 0, 0);
     }
 
-    function fillInAurGap() external onlyWhenInShutdown {
-        // use system reserve to fill in AurGap
+    /**
+     * @notice Uses the system reserve to write off bad debt
+     */
+    function writeOffFromReserves() external onlyWhenInShutdown {
         uint256 reserveBalance = vaultEngine.stablecoin(address(reservePool));
-
-        uint256 amountToMove = min(aurGap, reserveBalance);
+        uint256 amountToMove = min(unbackedDebt, reserveBalance);
         vaultEngine.moveStablecoin(address(reservePool), address(this), amountToMove);
-
-        aurGap -= amountToMove;
+        unbackedDebt -= amountToMove;
     }
 
-    function calculateSupplierObligation() external onlyWhenInShutdown {
+    /**
+     * @notice TODO
+     */
+    function calculateInvestorObligation() external onlyWhenInShutdown {
         // assumptions:
         //    - all under-collateralized vaults have been processed
         //    - all outstanding auctions are over
@@ -334,26 +357,30 @@ contract Shutdown is Stateful, Eventful {
         require(finalDebtBalance != 0, "shutdown/setFinalDebtBalance: finalDebtBalance must be set first");
 
         require(
-            aurGap == 0 || vaultEngine.stablecoin(address(reservePool)) == 0,
-            "shutdown/setFinalDebtBalance: system reserve or aurGap must be zero"
+            unbackedDebt == 0 || vaultEngine.stablecoin(address(reservePool)) == 0,
+            "shutdown/setFinalDebtBalance: system reserve or unbacked debt must be zero"
         );
 
-        supplierObligationRatio = wdiv(aurGap, finalDebtBalance);
+        investorObligationRatio = wdiv(unbackedDebt, finalDebtBalance);
 
-        if (supplierObligationRatio >= WAD) {
-            supplierObligationRatio = WAD;
+        if (investorObligationRatio >= WAD) {
+            investorObligationRatio = WAD;
         }
     }
 
-    // process supplier side to fill the aur Gap created by under collateralized vaults
+    /**
+     * @notice Process equity positions to write off unbacked debt
+     * @param assetId The ID of the asset to process
+     * @param user The address of the user vault to process
+     */
     function processUserEquity(bytes32 assetId, address user) external {
-        require(supplierObligationRatio != 0, "Shutdown/processUserEquity:Supplier has no obligation");
+        require(investorObligationRatio != 0, "Shutdown/processUserEquity: Investor has no obligation");
 
-        (, uint256 activeAssetAmount, , uint256 supplied, ) = vaultEngine.vaults(assetId, user);
+        (, uint256 activeAssetAmount, , uint256 equity, ) = vaultEngine.vaults(assetId, user);
 
         (, uint256 equityAccumulator, , , , , ) = vaultEngine.assets(assetId);
-        uint256 hookedSuppliedAmount = (supplied * equityAccumulator * finalAurUtilizationRatio) / WAD;
-        uint256 suppObligatedAmount = ((hookedSuppliedAmount * supplierObligationRatio) / WAD) /
+        uint256 hookedSuppliedAmount = (equity * equityAccumulator * finalAurUtilizationRatio) / WAD;
+        uint256 suppObligatedAmount = ((hookedSuppliedAmount * investorObligationRatio) / WAD) /
             assets[assetId].finalPrice;
         uint256 amountToGrab = min(activeAssetAmount, suppObligatedAmount);
 
@@ -361,7 +388,7 @@ contract Shutdown is Stateful, Eventful {
             amountToGrab = assets[assetId].gap;
         }
         assets[assetId].gap -= amountToGrab;
-        aurGap -= amountToGrab * assets[assetId].finalPrice;
+        unbackedDebt -= amountToGrab * assets[assetId].finalPrice;
 
         vaultEngine.liquidateVault(
             assetId,
@@ -370,43 +397,58 @@ contract Shutdown is Stateful, Eventful {
             address(this),
             -int256(amountToGrab),
             0,
-            -int256(supplied)
+            -int256(equity)
         );
     }
 
+    /**
+     * @notice TODO
+     */
     function setFinalDebtBalance() external onlyWhenInShutdown {
-        require(finalDebtBalance == 0, "shutdown/setFinalDebtBalance: finalDebtBalance has already been set");
+        require(finalDebtBalance == 0, "shutdown/setFinalDebtBalance: Balance already set");
         require(
             block.timestamp >= initiatedAt + auctionWaitPeriod,
-            "shutdown/setFinalDebtBalance: supplierWaitPeriod has not passed yet"
+            "shutdown/setFinalDebtBalance: Waiting for auctions to complete"
         );
         require(
             vaultEngine.unbackedDebt(address(reservePool)) == 0 || vaultEngine.stablecoin(address(reservePool)) == 0,
             "shutdown/setFinalDebtBalance: system reserve or debt must be zero"
-        ); // system debt or system reserve should be zero
+        );
 
         finalDebtBalance = vaultEngine.totalDebt();
     }
 
-    function calculateRedeemRatio(bytes32 assetId) external {
-        require(finalDebtBalance != 0, "shutdown/calculateRedeemRatio: must set final debt balance first");
+    /**
+     * @notice TODO
+     * @param assetId The ID of the asset to be redeemed
+     */
+    function calculateRedemptionRatio(bytes32 assetId) external {
+        require(finalDebtBalance != 0, "shutdown/calculateRedemptionRatio: must set final debt balance first");
 
-        (uint256 debtAccum, , , , , , ) = vaultEngine.assets(assetId);
+        (uint256 debtAccumulator, , , , , , ) = vaultEngine.assets(assetId);
 
         uint256 normalizedDebt = assets[assetId].normalizedDebt;
 
-        uint256 max = (normalizedDebt * debtAccum) / assets[assetId].finalPrice;
-        assets[assetId].redeemRatio = ((max - assets[assetId].gap) * RAY) / (finalDebtBalance / RAY);
+        uint256 max = (normalizedDebt * debtAccumulator) / assets[assetId].finalPrice;
+        assets[assetId].redemptionRatio = ((max - assets[assetId].gap) * RAY) / (finalDebtBalance / RAY);
     }
 
+    /**
+     * @notice TODO
+     * @param amount TODO
+     */
     function returnStablecoin(uint256 amount) external {
         vaultEngine.moveStablecoin(msg.sender, address(this), amount);
         stablecoin[msg.sender] += amount;
     }
 
+    /**
+     * @notice TODO
+     * @param assetId TODO
+     */
     function redeemCollateral(bytes32 assetId) external {
         // can withdraw collateral returnedStablecoin * collateralPerAUR for collateral type
-        uint256 redeemAmount = ((stablecoin[msg.sender] / 1e9) * assets[assetId].redeemRatio) /
+        uint256 redeemAmount = ((stablecoin[msg.sender] / 1e9) * assets[assetId].redemptionRatio) /
             WAD /
             RAY -
             collRedeemed[assetId][msg.sender];
@@ -415,11 +457,17 @@ contract Shutdown is Stateful, Eventful {
         vaultEngine.moveAsset(assetId, address(this), msg.sender, redeemAmount);
     }
 
+    /**
+     * @notice TODO
+     */
     function calculateIouRedemptionRatio() external {
         require(finalDebtBalance != 0, "");
         require(vaultEngine.stablecoin(address(reservePool)) != 0, "");
     }
 
+    /**
+     * @notice TODO
+     */
     function setFinalSystemReserve() external {
         require(finalDebtBalance != 0, "shutdown/redeemVouchers: finalDebtBalance must be set first");
 
@@ -429,6 +477,9 @@ contract Shutdown is Stateful, Eventful {
         finalTotalReserve = totalSystemReserve;
     }
 
+    /**
+     * @notice TODO
+     */
     function redeemVouchers() external {
         require(finalTotalReserve != 0, "shutdown/redeemVouchers: finalTotalReserve must be set first");
 

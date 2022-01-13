@@ -22,20 +22,12 @@ const ADDRESS_ZERO = "0x0000000000000000000000000000000000000000";
 const BYTES32_ZERO =
   "0x0000000000000000000000000000000000000000000000000000000000000000";
 
-const PRECISION_COLL = ethers.BigNumber.from("1000000000000000000");
-const PRECISION_PRICE = ethers.BigNumber.from("1000000000000000000000000000");
-const PRECISION_AUR = ethers.BigNumber.from(
+const WAD = ethers.BigNumber.from("1000000000000000000");
+const RAY = ethers.BigNumber.from("1000000000000000000000000000");
+const RAD = ethers.BigNumber.from(
   "1000000000000000000000000000000000000000000000"
 );
 
 const bytes32 = (string) => ethers.utils.formatBytes32String(string);
 
-export {
-  errorTypes,
-  ADDRESS_ZERO,
-  BYTES32_ZERO,
-  PRECISION_COLL,
-  PRECISION_AUR,
-  PRECISION_PRICE,
-  bytes32,
-};
+export { errorTypes, ADDRESS_ZERO, BYTES32_ZERO, WAD, RAD, RAY, bytes32 };

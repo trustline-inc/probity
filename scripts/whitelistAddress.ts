@@ -23,7 +23,7 @@ const init = async () => {
   );
 
   await registry.setupAddress(
-    ethers.utils.formatBytes32String("whiteListed"),
+    ethers.utils.formatBytes32String("whitelisted"),
     "0x6310B7E8bDFD25EFbeDfB17987Ba69D9191a45bD",
     { gasLimit: 300000 }
   );

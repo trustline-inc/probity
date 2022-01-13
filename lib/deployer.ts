@@ -521,7 +521,10 @@ const deployVPToken = async (param?: {
     });
   }
 
-  await registry.setupAddress(bytes32("collateral"), contracts.vpToken.address);
+  await registry.setupAddress(
+    bytes32("assetManager"),
+    contracts.vpToken.address
+  );
 
   await checkDeploymentDelay();
   return contracts;
@@ -577,7 +580,7 @@ const deployERC20Token = async (param?: {
   }
 
   await registry.setupAddress(
-    bytes32("collateral"),
+    bytes32("assetManager"),
     contracts.erc20Token.address
   );
 
@@ -631,7 +634,7 @@ const deployNativeToken = async (param?: {
   }
 
   await contracts.registry.setupAddress(
-    bytes32("collateral"),
+    bytes32("assetManager"),
     contracts.nativeToken.address
   );
 

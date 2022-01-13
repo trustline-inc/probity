@@ -70,8 +70,8 @@ contract Liquidator is Stateful, Eventful {
     /////////////////////////////////////////
     // State Variables
     /////////////////////////////////////////
-    uint256 private constant PRECISION_PRICE = 10**27;
-    uint256 private constant PRECISION_COLL = 10**18;
+    uint256 private constant RAY = 10**27;
+    uint256 private constant WAD = 10**18;
 
     VaultEngineLike public immutable vaultEngine;
     ReservePoolLike public immutable reserve;
@@ -140,12 +140,12 @@ contract Liquidator is Stateful, Eventful {
         require(lockedColl != 0 && debt + equity != 0, "Lidquidator: Nothing to liquidate");
 
         require(
-            lockedColl * adjustedPrice < debt * debtAccumulator + equity * PRECISION_PRICE,
+            lockedColl * adjustedPrice < debt * debtAccumulator + equity * RAY,
             "Liquidator: Vault collateral is still above required minimal ratio"
         );
 
         // transfer the debt to reservePool
-        reserve.addAuctionDebt(((debt + equity) * PRECISION_PRICE));
+        reserve.addAuctionDebt(((debt + equity) * RAY));
         vaultEngine.liquidateVault(
             collId,
             user,
@@ -157,9 +157,9 @@ contract Liquidator is Stateful, Eventful {
         );
 
         uint256 aurToRaise = (debt * debtAccumulator * collateralTypes[collId].debtPenaltyFee) /
-            PRECISION_COLL +
+            WAD +
             (equity * equityAccumulator * collateralTypes[collId].equityPenaltyFee) /
-            PRECISION_COLL;
+            WAD;
         // start the auction
         collateralTypes[collId].auctioneer.startAuction(collId, lockedColl, aurToRaise, user, address(reserve));
     }

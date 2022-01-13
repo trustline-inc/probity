@@ -25,9 +25,9 @@ import {
   ADDRESS_ZERO,
   bytes32,
   BYTES32_ZERO,
-  PRECISION_AUR,
-  PRECISION_COLL,
-  PRECISION_PRICE,
+  RAD,
+  WAD,
+  RAY,
 } from "../utils/constants";
 import assertRevert from "../utils/assertRevert";
 import increaseTime from "../utils/increaseTime";
@@ -50,7 +50,7 @@ let liquidator: MockLiquidator;
 let auctioneer: MockAuctioneer;
 let reservePool: MockReservePool;
 
-let flrCollId = bytes32("FLR");
+let flrAssetId = bytes32("FLR");
 
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
@@ -78,11 +78,11 @@ describe("Shutdown Unit Tests", function () {
 
     owner = signers.owner;
     user = signers.alice;
-    await liquidator.setCollateralType(flrCollId, auctioneer.address);
+    await liquidator.setCollateralType(flrAssetId, auctioneer.address);
   });
 
   describe("switchAddress Unit Tests", function () {
-    it("tests priceFeed address switch", async () => {
+    it("should switch the PriceFeed address", async () => {
       const NEW_ADDRESS = user.address;
 
       const before = await shutdown.priceFeed();
@@ -92,7 +92,7 @@ describe("Shutdown Unit Tests", function () {
       expect(after).to.equal(NEW_ADDRESS);
     });
 
-    it("tests vaultEngine address switch", async () => {
+    it("should switch the VaultEngine address", async () => {
       const NEW_ADDRESS = user.address;
 
       const before = await shutdown.vaultEngine();
@@ -102,7 +102,7 @@ describe("Shutdown Unit Tests", function () {
       expect(after).to.equal(NEW_ADDRESS);
     });
 
-    it("tests reservePool address switch", async () => {
+    it("should switch the ReservePool address", async () => {
       const NEW_ADDRESS = user.address;
 
       const before = await shutdown.reservePool();
@@ -112,7 +112,7 @@ describe("Shutdown Unit Tests", function () {
       expect(after).to.equal(NEW_ADDRESS);
     });
 
-    it("tests Teller address switch", async () => {
+    it("should switch the Teller address", async () => {
       const NEW_ADDRESS = user.address;
 
       const before = await shutdown.teller();
@@ -122,7 +122,7 @@ describe("Shutdown Unit Tests", function () {
       expect(after).to.equal(NEW_ADDRESS);
     });
 
-    it("tests Treasury address switch", async () => {
+    it("should switch the Treasury address", async () => {
       const NEW_ADDRESS = user.address;
 
       const before = await shutdown.treasury();
@@ -132,7 +132,7 @@ describe("Shutdown Unit Tests", function () {
       expect(after).to.equal(NEW_ADDRESS);
     });
 
-    it("tests Liquidator address switch", async () => {
+    it("should switch the Liquidator address", async () => {
       const NEW_ADDRESS = user.address;
 
       const before = await shutdown.liquidator();
@@ -142,7 +142,7 @@ describe("Shutdown Unit Tests", function () {
       expect(after).to.equal(NEW_ADDRESS);
     });
 
-    it("fail if which is unknown", async () => {
+    it("should fail if which is unknown", async () => {
       await assertRevert(
         shutdown.switchAddress(bytes32("unknown"), user.address),
         "shutdown/switchAddress: unknown which"
@@ -150,7 +150,7 @@ describe("Shutdown Unit Tests", function () {
       await shutdown.switchAddress(bytes32("VaultEngine"), user.address);
     });
 
-    it("fail if shutdown is set", async () => {
+    it("should fail if shutdown is set", async () => {
       await shutdown.switchAddress(bytes32("PriceFeed"), priceFeed.address);
       await shutdown.initiateShutdown();
       await assertRevert(
@@ -159,12 +159,12 @@ describe("Shutdown Unit Tests", function () {
       );
     });
 
-    it("fail if not from gov", async () => {
+    it("should fail if not from gov", async () => {
       await assertRevert(
         shutdown
           .connect(user)
           .switchAddress(bytes32("PriceFeed"), user.address),
-        "AccessControl/OnlyBy: Caller does not have permission"
+        "AccessControl/onlyBy: Caller does not have permission"
       );
       await registry.setupAddress(bytes32("gov"), user.address);
       await shutdown
@@ -222,7 +222,7 @@ describe("Shutdown Unit Tests", function () {
         shutdown
           .connect(user)
           .changeWaitPeriod(bytes32("auctionWaitPeriod"), NEW_WAIT_PERIOD),
-        "AccessControl/OnlyBy: Caller does not have permission"
+        "AccessControl/onlyBy: Caller does not have permission"
       );
       await registry.setupAddress(bytes32("gov"), user.address);
       await shutdown
@@ -263,8 +263,8 @@ describe("Shutdown Unit Tests", function () {
     });
 
     it("tests values are properly set", async () => {
-      const EQUITY_TO_SET = PRECISION_AUR.mul(1000);
-      const DEBT_TO_SET = PRECISION_AUR.mul(342);
+      const EQUITY_TO_SET = RAD.mul(1000);
+      const DEBT_TO_SET = RAD.mul(342);
       const EXPECTED_UTIL_RATIO = wdiv(DEBT_TO_SET, EQUITY_TO_SET);
 
       let initiated = await shutdown.initiated();
@@ -298,9 +298,9 @@ describe("Shutdown Unit Tests", function () {
     });
 
     it("tests utilRatio is max out at 100%", async () => {
-      const EQUITY_TO_SET = PRECISION_AUR.mul(1000);
-      const DEBT_TO_SET = PRECISION_AUR.mul(1100);
-      const EXPECTED_UTIL_RATIO = PRECISION_PRICE;
+      const EQUITY_TO_SET = RAD.mul(1000);
+      const DEBT_TO_SET = RAD.mul(1100);
+      const EXPECTED_UTIL_RATIO = RAY;
 
       let utilRatio = await shutdown.finalAurUtilizationRatio();
       expect(utilRatio).to.equal(0);
@@ -317,7 +317,7 @@ describe("Shutdown Unit Tests", function () {
     it("tests only 'gov' can call initiateShutdown", async () => {
       await assertRevert(
         shutdown.connect(user).initiateShutdown(),
-        "AccessControl/OnlyBy: Caller does not have permission"
+        "AccessControl/onlyBy: Caller does not have permission"
       );
       await registry.setupAddress(bytes32("gov"), user.address);
       await shutdown.connect(user).initiateShutdown();
@@ -334,59 +334,59 @@ describe("Shutdown Unit Tests", function () {
 
   describe("setFinalPrice Unit Tests", function () {
     it("tests that values are properly updated", async () => {
-      const PRICE_TO_SET = PRECISION_PRICE.mul(12).div(10);
-      await priceFeed.setPrice(flrCollId, PRICE_TO_SET);
+      const PRICE_TO_SET = RAY.mul(12).div(10);
+      await priceFeed.setPrice(flrAssetId, PRICE_TO_SET);
 
-      let coll = await shutdown.assets(flrCollId);
+      let coll = await shutdown.assets(flrAssetId);
       expect(coll.finalPrice).to.equal(0);
 
       await shutdown.initiateShutdown();
-      await shutdown.setFinalPrice(flrCollId);
+      await shutdown.setFinalPrice(flrAssetId);
 
-      coll = await shutdown.assets(flrCollId);
+      coll = await shutdown.assets(flrAssetId);
       expect(coll.finalPrice).to.equal(PRICE_TO_SET);
     });
 
     it("can only be called when in shutdown", async () => {
-      const PRICE_TO_SET = PRECISION_PRICE.mul(12).div(10);
-      await priceFeed.setPrice(flrCollId, PRICE_TO_SET);
+      const PRICE_TO_SET = RAY.mul(12).div(10);
+      await priceFeed.setPrice(flrAssetId, PRICE_TO_SET);
       await assertRevert(
-        shutdown.setFinalPrice(flrCollId),
+        shutdown.setFinalPrice(flrAssetId),
         "Shutdown/onlyWhenInShutdown: Shutdown has not been initiated"
       );
       await shutdown.initiateShutdown();
-      await shutdown.setFinalPrice(flrCollId);
+      await shutdown.setFinalPrice(flrAssetId);
     });
 
     it("fail if price is zero", async () => {
-      const PRICE_TO_SET = PRECISION_PRICE;
-      await priceFeed.setPrice(flrCollId, 0);
+      const PRICE_TO_SET = RAY;
+      await priceFeed.setPrice(flrAssetId, 0);
       await shutdown.initiateShutdown();
 
       await assertRevert(
-        shutdown.setFinalPrice(flrCollId),
+        shutdown.setFinalPrice(flrAssetId),
         "Shutdown/setFinalPrice: price retrieved is zero"
       );
-      await priceFeed.setPrice(flrCollId, PRICE_TO_SET);
-      await shutdown.setFinalPrice(flrCollId);
+      await priceFeed.setPrice(flrAssetId, PRICE_TO_SET);
+      await shutdown.setFinalPrice(flrAssetId);
     });
   });
 
   describe("processUserDebt Unit Tests", function () {
-    const PRICE_TO_SET = PRECISION_PRICE.mul(987).div(1000);
-    const COLL_TO_SET = PRECISION_COLL.mul(100);
-    const DEBT_TO_SET = PRECISION_COLL.mul(50);
+    const PRICE_TO_SET = RAY.mul(987).div(1000);
+    const COLL_TO_SET = WAD.mul(100);
+    const DEBT_TO_SET = WAD.mul(50);
     const UNDERCOLL_DEBT_TO_SET = COLL_TO_SET.mul(15).div(10);
 
     beforeEach(async function () {
       await shutdown.initiateShutdown();
-      await priceFeed.setPrice(flrCollId, PRICE_TO_SET);
+      await priceFeed.setPrice(flrAssetId, PRICE_TO_SET);
 
-      await vaultEngine.initAssetType(flrCollId);
+      await vaultEngine.initAssetType(flrAssetId);
 
       // overCollateralized
       await vaultEngine.updateVault(
-        flrCollId,
+        flrAssetId,
         user.address,
         0,
         COLL_TO_SET,
@@ -397,7 +397,7 @@ describe("Shutdown Unit Tests", function () {
 
       // underCollateralized
       await vaultEngine.updateVault(
-        flrCollId,
+        flrAssetId,
         owner.address,
         0,
         COLL_TO_SET,
@@ -408,39 +408,38 @@ describe("Shutdown Unit Tests", function () {
     });
 
     it("tests that values are properly updated", async () => {
-      const EXPECTED_GAP = UNDERCOLL_DEBT_TO_SET.mul(PRECISION_PRICE)
+      const EXPECTED_GAP = UNDERCOLL_DEBT_TO_SET.mul(RAY)
         .div(PRICE_TO_SET)
         .sub(COLL_TO_SET);
       const EXPECTED_AUR_GAP = EXPECTED_GAP.mul(PRICE_TO_SET);
-      await shutdown.setFinalPrice(flrCollId);
+      await shutdown.setFinalPrice(flrAssetId);
 
-      let coll = await shutdown.assets(flrCollId);
+      let coll = await shutdown.assets(flrAssetId);
       expect(coll.gap).to.equal(0);
-      let aurGap = await shutdown.aurGap();
-      expect(aurGap).to.equal(0);
+      let unbackedDebt = await shutdown.unbackedDebt();
+      expect(unbackedDebt).to.equal(0);
 
       // overcollateralized vaults
-      await shutdown.processUserDebt(flrCollId, user.address);
+      await shutdown.processUserDebt(flrAssetId, user.address);
 
-      coll = await shutdown.assets(flrCollId);
+      coll = await shutdown.assets(flrAssetId);
       expect(coll.gap).to.equal(0);
-      aurGap = await shutdown.aurGap();
-      expect(aurGap).to.equal(0);
+      unbackedDebt = await shutdown.unbackedDebt();
+      expect(unbackedDebt).to.equal(0);
 
       // undercollateralized vaults
-      await shutdown.processUserDebt(flrCollId, owner.address);
+      await shutdown.processUserDebt(flrAssetId, owner.address);
 
-      coll = await shutdown.assets(flrCollId);
+      coll = await shutdown.assets(flrAssetId);
       expect(coll.gap).to.equal(EXPECTED_GAP);
-      aurGap = await shutdown.aurGap();
-      expect(aurGap).to.equal(EXPECTED_AUR_GAP);
+      unbackedDebt = await shutdown.unbackedDebt();
+      expect(unbackedDebt).to.equal(EXPECTED_AUR_GAP);
     });
 
     it("tests that correct amount of user's collateral is transferred", async () => {
-      const EXPECTED_AMOUNT_TO_GRAB =
-        DEBT_TO_SET.mul(PRECISION_PRICE).div(PRICE_TO_SET);
+      const EXPECTED_AMOUNT_TO_GRAB = DEBT_TO_SET.mul(RAY).div(PRICE_TO_SET);
       const EXPECTED_USER_DEBT = DEBT_TO_SET;
-      await shutdown.setFinalPrice(flrCollId);
+      await shutdown.setFinalPrice(flrAssetId);
 
       let lastLiquidateVaultCall = await vaultEngine.lastLiquidateVaultCall();
       expect(lastLiquidateVaultCall.collId).to.equal(BYTES32_ZERO);
@@ -451,10 +450,10 @@ describe("Shutdown Unit Tests", function () {
       expect(lastLiquidateVaultCall.debtAmount).to.equal(0);
       expect(lastLiquidateVaultCall.equityAmount).to.equal(0);
 
-      await shutdown.processUserDebt(flrCollId, user.address);
+      await shutdown.processUserDebt(flrAssetId, user.address);
 
       lastLiquidateVaultCall = await vaultEngine.lastLiquidateVaultCall();
-      expect(lastLiquidateVaultCall.collId).to.equal(flrCollId);
+      expect(lastLiquidateVaultCall.collId).to.equal(flrAssetId);
       expect(lastLiquidateVaultCall.user).to.equal(user.address);
       expect(lastLiquidateVaultCall.auctioneer).to.equal(shutdown.address);
       expect(lastLiquidateVaultCall.reservePool).to.equal(shutdown.address);
@@ -469,28 +468,28 @@ describe("Shutdown Unit Tests", function () {
 
     it("fail if final price is not set", async () => {
       await assertRevert(
-        shutdown.processUserDebt(flrCollId, user.address),
+        shutdown.processUserDebt(flrAssetId, user.address),
         "Shutdown/onlyIfFinalPriceSet: Final Price has not been set for this assetId"
       );
-      await shutdown.setFinalPrice(flrCollId);
-      await shutdown.processUserDebt(flrCollId, user.address);
+      await shutdown.setFinalPrice(flrAssetId);
+      await shutdown.processUserDebt(flrAssetId, user.address);
     });
   });
 
   describe("freeExcessCollateral Unit Tests", function () {
-    const PRICE_TO_SET = PRECISION_PRICE.mul(1);
-    const COLL_TO_SET = PRECISION_COLL.mul(100);
-    const DEBT_TO_SET = PRECISION_COLL.mul(50);
+    const PRICE_TO_SET = RAY.mul(1);
+    const COLL_TO_SET = WAD.mul(100);
+    const DEBT_TO_SET = WAD.mul(50);
 
     beforeEach(async function () {
       await shutdown.initiateShutdown();
-      await priceFeed.setPrice(flrCollId, PRICE_TO_SET);
+      await priceFeed.setPrice(flrAssetId, PRICE_TO_SET);
 
-      await vaultEngine.initAssetType(flrCollId);
+      await vaultEngine.initAssetType(flrAssetId);
 
       // overCollateralized
       await vaultEngine.updateVault(
-        flrCollId,
+        flrAssetId,
         user.address,
         0,
         COLL_TO_SET,
@@ -500,7 +499,7 @@ describe("Shutdown Unit Tests", function () {
       );
 
       await vaultEngine.updateVault(
-        flrCollId,
+        flrAssetId,
         owner.address,
         0,
         COLL_TO_SET,
@@ -511,12 +510,12 @@ describe("Shutdown Unit Tests", function () {
     });
 
     it("tests that values are properly updated", async () => {
-      await shutdown.setFinalPrice(flrCollId);
+      await shutdown.setFinalPrice(flrAssetId);
 
-      await shutdown.freeExcessCollateral(flrCollId, owner.address);
+      await shutdown.freeExcessCollateral(flrAssetId, owner.address);
 
       let lastLiquidateVaultCall = await vaultEngine.lastLiquidateVaultCall();
-      expect(lastLiquidateVaultCall.collId).to.equal(flrCollId);
+      expect(lastLiquidateVaultCall.collId).to.equal(flrAssetId);
       expect(lastLiquidateVaultCall.user).to.equal(owner.address);
       expect(lastLiquidateVaultCall.auctioneer).to.equal(owner.address);
       expect(lastLiquidateVaultCall.reservePool).to.equal(shutdown.address);
@@ -531,21 +530,21 @@ describe("Shutdown Unit Tests", function () {
 
     it("fail if final price is not set", async () => {
       await assertRevert(
-        shutdown.freeExcessCollateral(flrCollId, owner.address),
+        shutdown.freeExcessCollateral(flrAssetId, owner.address),
         "Shutdown/onlyIfFinalPriceSet: Final Price has not been set for this assetId"
       );
-      await shutdown.setFinalPrice(flrCollId);
-      await shutdown.freeExcessCollateral(flrCollId, owner.address);
+      await shutdown.setFinalPrice(flrAssetId);
+      await shutdown.freeExcessCollateral(flrAssetId, owner.address);
     });
 
     it("fail if userDebt is NOT zero", async () => {
-      await shutdown.setFinalPrice(flrCollId);
+      await shutdown.setFinalPrice(flrAssetId);
       await assertRevert(
-        shutdown.freeExcessCollateral(flrCollId, user.address),
+        shutdown.freeExcessCollateral(flrAssetId, user.address),
         "Shutdown/freeExcessCollateral: User needs to process debt first before calling this"
       );
       await vaultEngine.updateVault(
-        flrCollId,
+        flrAssetId,
         user.address,
         0,
         COLL_TO_SET,
@@ -553,19 +552,19 @@ describe("Shutdown Unit Tests", function () {
         0,
         0
       );
-      await shutdown.freeExcessCollateral(flrCollId, user.address);
+      await shutdown.freeExcessCollateral(flrAssetId, user.address);
     });
 
     it("fail if no excess collateral to free", async () => {
-      await vaultEngine.updateVault(flrCollId, owner.address, 0, 0, 0, 0, 0);
+      await vaultEngine.updateVault(flrAssetId, owner.address, 0, 0, 0, 0, 0);
 
-      await shutdown.setFinalPrice(flrCollId);
+      await shutdown.setFinalPrice(flrAssetId);
       await assertRevert(
-        shutdown.freeExcessCollateral(flrCollId, owner.address),
+        shutdown.freeExcessCollateral(flrAssetId, owner.address),
         "Shutdown/freeExcessCollateral: No collateral to free"
       );
       await vaultEngine.updateVault(
-        flrCollId,
+        flrAssetId,
         owner.address,
         0,
         COLL_TO_SET,
@@ -573,28 +572,28 @@ describe("Shutdown Unit Tests", function () {
         0,
         0
       );
-      await shutdown.freeExcessCollateral(flrCollId, owner.address);
+      await shutdown.freeExcessCollateral(flrAssetId, owner.address);
     });
   });
 
-  describe("calculateSupplierObligation Unit Tests", function () {
-    const PRICE_TO_SET = PRECISION_PRICE.mul(1);
-    const COLL_TO_SET = PRECISION_COLL.mul(100);
-    const DEBT_TO_SET = PRECISION_COLL.mul(150);
-    const TOTAL_DEBT_TO_SET = PRECISION_AUR.mul(100);
-    const TOTAL_CAP_TO_SET = PRECISION_AUR.mul(150);
-    const SYSTEM_DEBT_TO_SET = PRECISION_AUR.mul(10);
-    const SYSTEM_RESERVE_TO_SET = PRECISION_AUR.mul(60);
+  describe("calculateInvestorObligation Unit Tests", function () {
+    const PRICE_TO_SET = RAY.mul(1);
+    const COLL_TO_SET = WAD.mul(100);
+    const DEBT_TO_SET = WAD.mul(150);
+    const TOTAL_DEBT_TO_SET = RAD.mul(100);
+    const TOTAL_CAP_TO_SET = RAD.mul(150);
+    const SYSTEM_DEBT_TO_SET = RAD.mul(10);
+    const SYSTEM_RESERVE_TO_SET = RAD.mul(60);
     const TIME_TO_FORWARD = 172800;
 
     beforeEach(async function () {
       await shutdown.initiateShutdown();
-      await priceFeed.setPrice(flrCollId, PRICE_TO_SET);
-      await vaultEngine.initAssetType(flrCollId);
-      await shutdown.setFinalPrice(flrCollId);
+      await priceFeed.setPrice(flrAssetId, PRICE_TO_SET);
+      await vaultEngine.initAssetType(flrAssetId);
+      await shutdown.setFinalPrice(flrAssetId);
 
       await vaultEngine.updateVault(
-        flrCollId,
+        flrAssetId,
         user.address,
         0,
         COLL_TO_SET,
@@ -603,7 +602,7 @@ describe("Shutdown Unit Tests", function () {
         0
       );
       await vaultEngine.updateVault(
-        flrCollId,
+        flrAssetId,
         owner.address,
         0,
         COLL_TO_SET,
@@ -625,119 +624,115 @@ describe("Shutdown Unit Tests", function () {
       await increaseTime(TIME_TO_FORWARD);
     });
 
-    it("tests that supplierObligation calculation is zero when the system surplus >= aurGap", async () => {
-      const TOTAL_DEBT_TO_SET = PRECISION_AUR.mul(100);
-      const TOTAL_CAP_TO_SET = PRECISION_AUR.mul(150);
-      const EXPECTED_AUR_GAP =
-        DEBT_TO_SET.sub(COLL_TO_SET).mul(PRECISION_PRICE);
+    it("tests that supplierObligation calculation is zero when the system surplus >= unbackedDebt", async () => {
+      const TOTAL_DEBT_TO_SET = RAD.mul(100);
+      const TOTAL_CAP_TO_SET = RAD.mul(150);
+      const EXPECTED_AUR_GAP = DEBT_TO_SET.sub(COLL_TO_SET).mul(RAY);
 
-      await shutdown.processUserDebt(flrCollId, user.address);
+      await shutdown.processUserDebt(flrAssetId, user.address);
 
-      let aurGap = await shutdown.aurGap();
-      let suppObligation = await shutdown.supplierObligationRatio();
-      expect(aurGap).to.equal(EXPECTED_AUR_GAP);
+      let unbackedDebt = await shutdown.unbackedDebt();
+      let suppObligation = await shutdown.investorObligationRatio();
+      expect(unbackedDebt).to.equal(EXPECTED_AUR_GAP);
       expect(suppObligation).to.equal(0);
       await vaultEngine.setTotalDebt(TOTAL_DEBT_TO_SET);
       await vaultEngine.setTotalEquity(TOTAL_CAP_TO_SET);
 
       await vaultEngine.setUnbackedDebt(reservePool.address, 0);
 
-      await shutdown.fillInAurGap();
+      await shutdown.writeOffFromReserves();
       await shutdown.setFinalDebtBalance();
 
-      await shutdown.calculateSupplierObligation();
-      aurGap = await shutdown.aurGap();
-      suppObligation = await shutdown.supplierObligationRatio();
-      // aurGap should be erased
-      expect(aurGap).to.equal(0);
+      await shutdown.calculateInvestorObligation();
+      unbackedDebt = await shutdown.unbackedDebt();
+      suppObligation = await shutdown.investorObligationRatio();
+      // unbackedDebt should be erased
+      expect(unbackedDebt).to.equal(0);
       expect(suppObligation).to.equal(0);
     });
 
-    it("tests that supplierObligation and aurGap calculation is correct", async () => {
-      const SYSTEM_RESERVE_TO_SET = PRECISION_AUR.mul(10);
-      const EXPECTED_SUPP_OBLIGATION = wdiv(
-        PRECISION_AUR.mul(40),
-        PRECISION_AUR.mul(100)
-      );
+    it("tests that supplierObligation and unbackedDebt calculation is correct", async () => {
+      const SYSTEM_RESERVE_TO_SET = RAD.mul(10);
+      const EXPECTED_SUPP_OBLIGATION = wdiv(RAD.mul(40), RAD.mul(100));
 
       await vaultEngine.setStablecoin(
         reservePool.address,
         SYSTEM_RESERVE_TO_SET
       );
-      await shutdown.processUserDebt(flrCollId, user.address);
+      await shutdown.processUserDebt(flrAssetId, user.address);
 
       await vaultEngine.setUnbackedDebt(reservePool.address, 0);
 
-      await shutdown.fillInAurGap();
+      await shutdown.writeOffFromReserves();
       await shutdown.setFinalDebtBalance();
 
-      let suppObligation = await shutdown.supplierObligationRatio();
+      let suppObligation = await shutdown.investorObligationRatio();
       expect(suppObligation).to.equal(0);
-      await shutdown.calculateSupplierObligation();
-      suppObligation = await shutdown.supplierObligationRatio();
+      await shutdown.calculateInvestorObligation();
+      suppObligation = await shutdown.investorObligationRatio();
       expect(suppObligation).to.equal(EXPECTED_SUPP_OBLIGATION);
     });
 
     it("tests that supplierObligation max out at 100%", async () => {
-      const SYSTEM_RESERVE_TO_SET = PRECISION_AUR.mul(10);
-      await vaultEngine.setTotalDebt(PRECISION_AUR.mul(30));
+      const SYSTEM_RESERVE_TO_SET = RAD.mul(10);
+      await vaultEngine.setTotalDebt(RAD.mul(30));
 
-      const EXPECTED_SUPP_OBLIGATION = PRECISION_COLL;
+      const EXPECTED_SUPP_OBLIGATION = WAD;
 
       await vaultEngine.setStablecoin(
         reservePool.address,
         SYSTEM_RESERVE_TO_SET
       );
-      await shutdown.processUserDebt(flrCollId, user.address);
+      await shutdown.processUserDebt(flrAssetId, user.address);
 
       await vaultEngine.setUnbackedDebt(reservePool.address, 0);
 
-      await shutdown.fillInAurGap();
+      await shutdown.writeOffFromReserves();
       await shutdown.setFinalDebtBalance();
 
-      let suppObligation = await shutdown.supplierObligationRatio();
+      let suppObligation = await shutdown.investorObligationRatio();
       expect(suppObligation).to.equal(0);
-      await shutdown.calculateSupplierObligation();
-      suppObligation = await shutdown.supplierObligationRatio();
+      await shutdown.calculateInvestorObligation();
+      suppObligation = await shutdown.investorObligationRatio();
       expect(suppObligation).to.equal(EXPECTED_SUPP_OBLIGATION);
     });
 
     it("fail if finalDebtBalance is not set", async () => {
       await assertRevert(
-        shutdown.calculateSupplierObligation(),
+        shutdown.calculateInvestorObligation(),
         "shutdown/setFinalDebtBalance: finalDebtBalance must be set first"
       );
 
       await vaultEngine.setUnbackedDebt(reservePool.address, 0);
 
-      await shutdown.fillInAurGap();
+      await shutdown.writeOffFromReserves();
       await shutdown.setFinalDebtBalance();
 
-      await shutdown.calculateSupplierObligation();
+      await shutdown.calculateInvestorObligation();
     });
   });
 
   describe("processUserEquity Unit Tests", function () {
-    const PRICE_TO_SET = PRECISION_PRICE.mul(1);
-    const COLL_TO_SET = PRECISION_COLL.mul(100);
-    const DEBT_TO_SET = PRECISION_COLL.mul(150);
-    const CAP_TO_SET = PRECISION_COLL.mul(50);
-    const TOTAL_DEBT_TO_SET = PRECISION_AUR.mul(100);
-    const TOTAL_CAP_TO_SET = PRECISION_AUR.mul(150);
-    const SYSTEM_DEBT_TO_SET = PRECISION_AUR.mul(50);
-    const SYSTEM_RESERVE_TO_SET = PRECISION_AUR.mul(60);
+    const PRICE_TO_SET = RAY.mul(1);
+    const COLL_TO_SET = WAD.mul(100);
+    const DEBT_TO_SET = WAD.mul(150);
+    const CAP_TO_SET = WAD.mul(50);
+    const TOTAL_DEBT_TO_SET = RAD.mul(100);
+    const TOTAL_CAP_TO_SET = RAD.mul(150);
+    const SYSTEM_DEBT_TO_SET = RAD.mul(50);
+    const SYSTEM_RESERVE_TO_SET = RAD.mul(60);
 
     beforeEach(async function () {
       await vaultEngine.setTotalDebt(TOTAL_DEBT_TO_SET);
       await vaultEngine.setTotalEquity(TOTAL_CAP_TO_SET);
 
       await shutdown.initiateShutdown();
-      await priceFeed.setPrice(flrCollId, PRICE_TO_SET);
-      await vaultEngine.initAssetType(flrCollId);
-      await shutdown.setFinalPrice(flrCollId);
+      await priceFeed.setPrice(flrAssetId, PRICE_TO_SET);
+      await vaultEngine.initAssetType(flrAssetId);
+      await shutdown.setFinalPrice(flrAssetId);
 
       await vaultEngine.updateVault(
-        flrCollId,
+        flrAssetId,
         user.address,
         0,
         COLL_TO_SET,
@@ -746,7 +741,7 @@ describe("Shutdown Unit Tests", function () {
         0
       );
       await vaultEngine.updateVault(
-        flrCollId,
+        flrAssetId,
         owner.address,
         0,
         COLL_TO_SET,
@@ -760,43 +755,43 @@ describe("Shutdown Unit Tests", function () {
         SYSTEM_DEBT_TO_SET
       );
       await vaultEngine.setStablecoin(reservePool.address, 0);
-      await shutdown.processUserDebt(flrCollId, user.address);
+      await shutdown.processUserDebt(flrAssetId, user.address);
       await increaseTime(172800);
       await vaultEngine.setUnbackedDebt(reservePool.address, 0);
 
       await shutdown.setFinalDebtBalance();
     });
 
-    it("fails if supplierObligationRatio is zero", async () => {
+    it("fails if investorObligationRatio is zero", async () => {
       await assertRevert(
-        shutdown.processUserEquity(flrCollId, owner.address),
-        "Shutdown/processUserEquity:Supplier has no obligation"
+        shutdown.processUserEquity(flrAssetId, owner.address),
+        "Shutdown/processUserEquity: Investor has no obligation"
       );
-      await shutdown.calculateSupplierObligation();
-      await shutdown.processUserEquity(flrCollId, owner.address);
+      await shutdown.calculateInvestorObligation();
+      await shutdown.processUserEquity(flrAssetId, owner.address);
     });
 
     it("tests that correct amount of collateral is grabbed from supplier", async () => {
-      await shutdown.calculateSupplierObligation();
-      const obligationRatio = await shutdown.supplierObligationRatio();
+      await shutdown.calculateInvestorObligation();
+      const obligationRatio = await shutdown.investorObligationRatio();
       const finalAurUtilizationRatio =
         await shutdown.finalAurUtilizationRatio();
 
-      const before = await vaultEngine.vaults(flrCollId, owner.address);
+      const before = await vaultEngine.vaults(flrAssetId, owner.address);
       expect(before.activeAssetAmount).to.equal(COLL_TO_SET);
       expect(before.equity).to.equal(CAP_TO_SET);
-      await shutdown.processUserEquity(flrCollId, owner.address);
+      await shutdown.processUserEquity(flrAssetId, owner.address);
 
       const EXPECTED_AMOUNT = before.equity
-        .mul(PRECISION_PRICE)
+        .mul(RAY)
         .mul(finalAurUtilizationRatio)
-        .div(PRECISION_COLL)
+        .div(WAD)
         .mul(obligationRatio)
-        .div(PRECISION_COLL)
+        .div(WAD)
         .div(PRICE_TO_SET);
 
       const lastLiqudateVaultCall = await vaultEngine.lastLiquidateVaultCall();
-      expect(lastLiqudateVaultCall.collId).to.equal(flrCollId);
+      expect(lastLiqudateVaultCall.collId).to.equal(flrAssetId);
       expect(lastLiqudateVaultCall.user).to.equal(owner.address);
       expect(lastLiqudateVaultCall.auctioneer).to.equal(shutdown.address);
       expect(lastLiqudateVaultCall.reservePool).to.equal(shutdown.address);
@@ -812,7 +807,7 @@ describe("Shutdown Unit Tests", function () {
   });
 
   describe("setFinalDebtBalance Unit Tests", function () {
-    const DEBT_BALANCE = PRECISION_AUR.mul(21747);
+    const DEBT_BALANCE = RAD.mul(21747);
 
     beforeEach(async function () {
       await vaultEngine.setTotalDebt(DEBT_BALANCE);
@@ -834,7 +829,7 @@ describe("Shutdown Unit Tests", function () {
     it("fails if supplierWaitPeriod has not passed", async () => {
       await assertRevert(
         shutdown.setFinalDebtBalance(),
-        "shutdown/setFinalDebtBalance: supplierWaitPeriod has not passed yet"
+        "shutdown/setFinalDebtBalance: Waiting for auctions to complete"
       );
       await increaseTime(172800 * 2);
       await shutdown.setFinalDebtBalance();
@@ -861,22 +856,22 @@ describe("Shutdown Unit Tests", function () {
 
       await assertRevert(
         shutdown.setFinalDebtBalance(),
-        "shutdown/setFinalDebtBalance: finalDebtBalance has already been set"
+        "shutdown/setFinalDebtBalance: Balance already set"
       );
     });
   });
 
-  describe("calculateRedeemRatio Unit Tests", function () {
-    const PRICE_TO_SET = PRECISION_PRICE.mul(1);
-    const COLL_TO_SET = PRECISION_COLL.mul(100);
-    const DEBT_TO_SET = PRECISION_COLL.mul(150);
-    const CAP_TO_SET = PRECISION_COLL.mul(50);
-    const TOTAL_DEBT_TO_SET = PRECISION_AUR.mul(150);
-    const TOTAL_CAP_TO_SET = PRECISION_AUR.mul(150);
+  describe("calculateRedemptionRatio Unit Tests", function () {
+    const PRICE_TO_SET = RAY.mul(1);
+    const COLL_TO_SET = WAD.mul(100);
+    const DEBT_TO_SET = WAD.mul(150);
+    const CAP_TO_SET = WAD.mul(50);
+    const TOTAL_DEBT_TO_SET = RAD.mul(150);
+    const TOTAL_CAP_TO_SET = RAD.mul(150);
 
     beforeEach(async function () {
       await vaultEngine.updateVault(
-        flrCollId,
+        flrAssetId,
         user.address,
         0,
         COLL_TO_SET,
@@ -885,7 +880,7 @@ describe("Shutdown Unit Tests", function () {
         0
       );
       await vaultEngine.updateVault(
-        flrCollId,
+        flrAssetId,
         owner.address,
         0,
         COLL_TO_SET,
@@ -897,7 +892,7 @@ describe("Shutdown Unit Tests", function () {
       await vaultEngine.setTotalDebt(TOTAL_DEBT_TO_SET);
       await vaultEngine.setTotalEquity(TOTAL_CAP_TO_SET);
       await vaultEngine.updateAsset(
-        flrCollId,
+        flrAssetId,
         0,
         DEBT_TO_SET,
         CAP_TO_SET,
@@ -906,48 +901,48 @@ describe("Shutdown Unit Tests", function () {
       );
 
       await shutdown.initiateShutdown();
-      await priceFeed.setPrice(flrCollId, PRICE_TO_SET);
-      await vaultEngine.initAssetType(flrCollId);
-      await shutdown.setFinalPrice(flrCollId);
+      await priceFeed.setPrice(flrAssetId, PRICE_TO_SET);
+      await vaultEngine.initAssetType(flrAssetId);
+      await shutdown.setFinalPrice(flrAssetId);
 
       await increaseTime(172800);
       await increaseTime(172800);
     });
 
-    it("tests that redeemRatio calculated correctly when gap is 0", async () => {
-      let expected = PRECISION_PRICE;
+    it("tests that redemptionRatio calculated correctly when gap is 0", async () => {
+      let expected = RAY;
 
       await shutdown.setFinalDebtBalance();
-      await shutdown.calculateRedeemRatio(flrCollId);
+      await shutdown.calculateRedemptionRatio(flrAssetId);
 
-      const collType = await shutdown.assets(flrCollId);
-      expect(collType.redeemRatio).to.equal(expected);
+      const collType = await shutdown.assets(flrAssetId);
+      expect(collType.redemptionRatio).to.equal(expected);
     });
 
-    it("tests that redeemRatio calculated correctly when gap is non zero", async () => {
+    it("tests that redemptionRatio calculated correctly when gap is non zero", async () => {
       await shutdown.setFinalDebtBalance();
-      await shutdown.processUserDebt(flrCollId, user.address);
-      let expected = PRECISION_PRICE.mul(2).div(3);
+      await shutdown.processUserDebt(flrAssetId, user.address);
+      let expected = RAY.mul(2).div(3);
 
-      await shutdown.calculateRedeemRatio(flrCollId);
+      await shutdown.calculateRedemptionRatio(flrAssetId);
 
-      const collType = await shutdown.assets(flrCollId);
-      expect(collType.redeemRatio).to.equal(expected);
+      const collType = await shutdown.assets(flrAssetId);
+      expect(collType.redemptionRatio).to.equal(expected);
     });
 
     it("fails if finalDebtBalance is not set", async () => {
       await assertRevert(
-        shutdown.calculateRedeemRatio(flrCollId),
-        "shutdown/calculateRedeemRatio: must set final debt balance first"
+        shutdown.calculateRedemptionRatio(flrAssetId),
+        "shutdown/calculateRedemptionRatio: must set final debt balance first"
       );
       await shutdown.setFinalDebtBalance();
 
-      await shutdown.calculateRedeemRatio(flrCollId);
+      await shutdown.calculateRedemptionRatio(flrAssetId);
     });
   });
 
   describe("returnStablecoin Unit Tests", function () {
-    const AUREI_AMOUNT_TO_SET = PRECISION_AUR.mul(2000);
+    const AUREI_AMOUNT_TO_SET = RAD.mul(2000);
     beforeEach(async function () {
       await vaultEngine.setStablecoin(owner.address, AUREI_AMOUNT_TO_SET);
     });
@@ -982,17 +977,17 @@ describe("Shutdown Unit Tests", function () {
   });
 
   describe("redeemCollateral Unit Tests", function () {
-    const PRICE_TO_SET = PRECISION_PRICE.mul(1);
-    const COLL_TO_SET = PRECISION_COLL.mul(100);
-    const DEBT_TO_SET = PRECISION_COLL.mul(150);
-    const CAP_TO_SET = PRECISION_COLL.mul(50);
-    const TOTAL_DEBT_TO_SET = PRECISION_AUR.mul(150);
-    const TOTAL_CAP_TO_SET = PRECISION_AUR.mul(150);
+    const PRICE_TO_SET = RAY.mul(1);
+    const COLL_TO_SET = WAD.mul(100);
+    const DEBT_TO_SET = WAD.mul(150);
+    const CAP_TO_SET = WAD.mul(50);
+    const TOTAL_DEBT_TO_SET = RAD.mul(150);
+    const TOTAL_CAP_TO_SET = RAD.mul(150);
     const AUREI_AMOUNT_TO_SET = TOTAL_DEBT_TO_SET;
 
     beforeEach(async function () {
       await vaultEngine.updateVault(
-        flrCollId,
+        flrAssetId,
         user.address,
         0,
         COLL_TO_SET,
@@ -1001,7 +996,7 @@ describe("Shutdown Unit Tests", function () {
         0
       );
       await vaultEngine.updateVault(
-        flrCollId,
+        flrAssetId,
         owner.address,
         0,
         COLL_TO_SET,
@@ -1013,7 +1008,7 @@ describe("Shutdown Unit Tests", function () {
       await vaultEngine.setTotalDebt(TOTAL_DEBT_TO_SET);
       await vaultEngine.setTotalEquity(TOTAL_CAP_TO_SET);
       await vaultEngine.updateAsset(
-        flrCollId,
+        flrAssetId,
         0,
         DEBT_TO_SET,
         CAP_TO_SET,
@@ -1022,18 +1017,18 @@ describe("Shutdown Unit Tests", function () {
       );
 
       await shutdown.initiateShutdown();
-      await priceFeed.setPrice(flrCollId, PRICE_TO_SET);
-      await vaultEngine.initAssetType(flrCollId);
-      await shutdown.setFinalPrice(flrCollId);
+      await priceFeed.setPrice(flrAssetId, PRICE_TO_SET);
+      await vaultEngine.initAssetType(flrAssetId);
+      await shutdown.setFinalPrice(flrAssetId);
 
       await increaseTime(172800);
       await increaseTime(172800);
       await shutdown.setFinalDebtBalance();
-      await shutdown.calculateRedeemRatio(flrCollId);
+      await shutdown.calculateRedemptionRatio(flrAssetId);
 
       await vaultEngine.setStablecoin(owner.address, AUREI_AMOUNT_TO_SET);
       await vaultEngine.updateVault(
-        flrCollId,
+        flrAssetId,
         shutdown.address,
         DEBT_TO_SET,
         0,
@@ -1046,37 +1041,37 @@ describe("Shutdown Unit Tests", function () {
     it("tests that values are properly updated", async () => {
       await shutdown.returnStablecoin(AUREI_AMOUNT_TO_SET);
 
-      const before = await shutdown.collRedeemed(flrCollId, owner.address);
-      await shutdown.redeemCollateral(flrCollId);
-      const after = await shutdown.collRedeemed(flrCollId, owner.address);
+      const before = await shutdown.collRedeemed(flrAssetId, owner.address);
+      await shutdown.redeemCollateral(flrAssetId);
+      const after = await shutdown.collRedeemed(flrAssetId, owner.address);
       expect(after.sub(before)).to.equal(DEBT_TO_SET);
     });
 
     it("tests that if more aurei is returned, more collateral can be withdrawn", async () => {
       await shutdown.returnStablecoin(AUREI_AMOUNT_TO_SET.mul(2).div(3));
 
-      let before = await shutdown.collRedeemed(flrCollId, owner.address);
+      let before = await shutdown.collRedeemed(flrAssetId, owner.address);
 
-      await shutdown.redeemCollateral(flrCollId);
+      await shutdown.redeemCollateral(flrAssetId);
 
-      let after = await shutdown.collRedeemed(flrCollId, owner.address);
+      let after = await shutdown.collRedeemed(flrAssetId, owner.address);
       expect(after.sub(before)).to.equal(DEBT_TO_SET.mul(2).div(3));
 
       await shutdown.returnStablecoin(AUREI_AMOUNT_TO_SET.div(3));
-      before = await shutdown.collRedeemed(flrCollId, owner.address);
+      before = await shutdown.collRedeemed(flrAssetId, owner.address);
 
-      await shutdown.redeemCollateral(flrCollId);
+      await shutdown.redeemCollateral(flrAssetId);
 
-      after = await shutdown.collRedeemed(flrCollId, owner.address);
+      after = await shutdown.collRedeemed(flrAssetId, owner.address);
       expect(after.sub(before)).to.equal(DEBT_TO_SET.div(3));
     });
 
     it("tests that correct Amount of collateral has been transferred", async () => {
       await shutdown.returnStablecoin(AUREI_AMOUNT_TO_SET);
 
-      const before = await vaultEngine.vaults(flrCollId, owner.address);
-      await shutdown.redeemCollateral(flrCollId);
-      const after = await vaultEngine.vaults(flrCollId, owner.address);
+      const before = await vaultEngine.vaults(flrAssetId, owner.address);
+      await shutdown.redeemCollateral(flrAssetId);
+      const after = await vaultEngine.vaults(flrAssetId, owner.address);
 
       expect(after.standbyAssetAmount.sub(before.standbyAssetAmount)).to.equal(
         DEBT_TO_SET
@@ -1085,7 +1080,7 @@ describe("Shutdown Unit Tests", function () {
   });
 
   describe("redeemVouchers Unit Tests", function () {
-    const TOTAL_DEBT_TO_SET = PRECISION_AUR.mul(150);
+    const TOTAL_DEBT_TO_SET = RAD.mul(150);
 
     beforeEach(async function () {
       await shutdown.initiateShutdown();
@@ -1094,15 +1089,12 @@ describe("Shutdown Unit Tests", function () {
       await increaseTime(172800 * 2);
       await increaseTime(172800);
       await shutdown.setFinalDebtBalance();
-      await reservePool.setTotalVouchers(PRECISION_AUR);
-      await vaultEngine.setStablecoin(
-        reservePool.address,
-        PRECISION_AUR.mul(1000)
-      );
+      await reservePool.setTotalVouchers(RAD);
+      await vaultEngine.setStablecoin(reservePool.address, RAD.mul(1000));
     });
 
     it("fails if finalTotalReserve is not set", async () => {
-      await reservePool.setVouchers(owner.address, PRECISION_AUR);
+      await reservePool.setVouchers(owner.address, RAD);
       await assertRevert(
         shutdown.redeemVouchers(),
         "shutdown/redeemVouchers: finalTotalReserve must be set first"
@@ -1119,27 +1111,27 @@ describe("Shutdown Unit Tests", function () {
         shutdown.redeemVouchers(),
         "shutdown/redeemVouchers: no vouchers to redeem"
       );
-      await reservePool.setVouchers(owner.address, PRECISION_AUR);
+      await reservePool.setVouchers(owner.address, RAD);
       await shutdown.redeemVouchers();
     });
 
     it("fails if total vouchers are zero", async () => {
       await shutdown.setFinalSystemReserve();
-      await reservePool.setVouchers(owner.address, PRECISION_AUR);
+      await reservePool.setVouchers(owner.address, RAD);
       await reservePool.setTotalVouchers(0);
 
       await assertRevert(
         shutdown.redeemVouchers(),
         "shutdown/redeemVouchers: no vouchers to redeem"
       );
-      await reservePool.setTotalVouchers(PRECISION_AUR);
+      await reservePool.setTotalVouchers(RAD);
       await shutdown.redeemVouchers();
     });
 
     it("tests that shutdownRedemption is called with correct parameter", async () => {
-      const TOTAL_IOU = PRECISION_AUR.mul(382);
-      const USER_IOU = PRECISION_AUR.mul(28);
-      const finalTotalReserve = PRECISION_AUR.mul(100);
+      const TOTAL_IOU = RAD.mul(382);
+      const USER_IOU = RAD.mul(28);
+      const finalTotalReserve = RAD.mul(100);
 
       await vaultEngine.setStablecoin(reservePool.address, finalTotalReserve);
       await shutdown.setFinalSystemReserve();

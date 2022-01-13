@@ -19,8 +19,8 @@ const ASSETS = {
   SGB: web3.utils.keccak256("SGB"),
 };
 
-const PRECISION_COLL = ethers.BigNumber.from("1000000000000000000");
-const PRECISION_AUR = ethers.BigNumber.from(
+const WAD = ethers.BigNumber.from("1000000000000000000");
+const RAD = ethers.BigNumber.from(
   "1000000000000000000000000000000000000000000000"
 );
 
@@ -68,7 +68,7 @@ const init = async () => {
   let tx = await registry
     .connect(owner)
     .setupAddress(
-      ethers.utils.formatBytes32String("whiteListed"),
+      ethers.utils.formatBytes32String("whitelisted"),
       trustlineAddress,
       {
         gasLimit: 300000,
@@ -89,7 +89,7 @@ const init = async () => {
     const limit = 1000;
     tx = await vaultEngine
       .connect(owner)
-      .updateIndividualVaultLimit(PRECISION_AUR.mul(limit), {
+      .updateIndividualVaultLimit(RAD.mul(limit), {
         gasLimit: 300000,
       });
     await tx.wait();
@@ -100,7 +100,7 @@ const init = async () => {
   const ceiling = 10000000;
   tx = await vaultEngine
     .connect(owner)
-    .updateCeiling(ASSETS[token], PRECISION_AUR.mul(ceiling), {
+    .updateCeiling(ASSETS[token], RAD.mul(ceiling), {
       gasLimit: 300000,
     });
   await tx.wait();
@@ -110,7 +110,7 @@ const init = async () => {
   const floor = 1;
   tx = await vaultEngine
     .connect(owner)
-    .updateFloor(ASSETS[token], PRECISION_COLL.mul(floor), {
+    .updateFloor(ASSETS[token], WAD.mul(floor), {
       gasLimit: 300000,
     });
   await tx.wait();
@@ -131,7 +131,7 @@ const init = async () => {
   console.log(`Liquidator: ${token} initialized`);
 
   // Initialize price feed asset type
-  const liqRatio = PRECISION_COLL.mul(15).div(10);
+  const liqRatio = WAD.mul(15).div(10);
   tx = await priceFeed
     .connect(owner)
     .init(ASSETS[token], liqRatio, process.env.FTSO, {
