@@ -21,7 +21,7 @@ contract VaultEngine is Stateful, Eventful {
         uint256 activeAssetAmount; // assets that are actively covering a position
         uint256 debt; // Vault's debt balance
         uint256 equity; // Vault's equity balance
-        uint256 lastEquityAccumulator; // Most recent value of the equity rate accumulator
+        uint256 initialEquity; // Tracks the amount of equity (less interest)
     }
 
     struct Asset {
@@ -178,9 +178,12 @@ contract VaultEngine is Stateful, Eventful {
     function collectInterest(bytes32 assetId) public {
         Vault memory vault = vaults[assetId][msg.sender];
         Asset memory asset = assets[assetId];
-        pbt[msg.sender] += vault.equity * (asset.equityAccumulator - vault.lastEquityAccumulator);
-        stablecoin[msg.sender] += vault.equity * (asset.equityAccumulator - vault.lastEquityAccumulator);
-        vaults[assetId][msg.sender].lastEquityAccumulator = asset.equityAccumulator;
+        uint256 interestAmount = vault.equity * asset.equityAccumulator - vault.initialEquity;
+        pbt[msg.sender] += interestAmount;
+        stablecoin[msg.sender] += interestAmount;
+
+        // @todo evaluate how loss of precision can impact here
+        vaults[assetId][msg.sender].equity -= interestAmount / asset.equityAccumulator;
     }
 
     /**
@@ -206,12 +209,12 @@ contract VaultEngine is Stateful, Eventful {
             userExists[msg.sender] = true;
         }
 
-        collectInterest(assetId);
         Vault storage vault = vaults[assetId][msg.sender];
         vault.standbyAssetAmount = sub(vault.standbyAssetAmount, underlyingAmount);
         vault.activeAssetAmount = add(vault.activeAssetAmount, underlyingAmount);
         int256 normalizedEquity = div(equityAmount, assets[assetId].equityAccumulator);
         vault.equity = add(vault.equity, normalizedEquity);
+        vault.initialEquity = add(vault.initialEquity, equityAmount);
 
         assets[assetId].normEquity = add(assets[assetId].normEquity, normalizedEquity);
 
