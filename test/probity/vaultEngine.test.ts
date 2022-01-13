@@ -384,7 +384,7 @@ describe("Vault Engine Unit Tests", function () {
         );
     });
 
-    it("test tat pbt is added properly", async () => {
+    it("test that pbt is added properly", async () => {
       const EXPECTED_VALUE = EQUITY_TO_RAISE.mul(EQUITY_AMOUNT).div(RAY);
 
       const before = await vaultEngine.pbt(owner.address);
