@@ -48,7 +48,6 @@ contract Treasury is Stateful {
     event WithdrawStablecoin(address indexed user, uint256 amount);
     event TransferStablecoin(address indexed from, address indexed to, uint256 amount);
     event WithdrawPbt(address indexed user, uint256 amount);
-    event ExchangePbt(address indexed user, uint256 amount);
 
     /////////////////////////////////////////
     // Constructor
