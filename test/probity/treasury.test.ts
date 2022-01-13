@@ -142,19 +142,19 @@ describe("Treasury Unit Tests", function () {
     });
 
     it("tests that withdrawPbt call vaultEngine.reducePbt function", async () => {
-      const tcnBalanceBefore = await vaultEngine.pbt(owner.address);
+      const pbtBalanceBefore = await vaultEngine.pbt(owner.address);
       await treasury.withdrawPbt(AMOUNT_TO_WITHDRAW);
-      const tcnBalanceAfter = await vaultEngine.pbt(owner.address);
-      expect(tcnBalanceBefore.sub(tcnBalanceAfter).div(RAY)).to.equal(
+      const pbtBalanceAfter = await vaultEngine.pbt(owner.address);
+      expect(pbtBalanceBefore.sub(pbtBalanceAfter).div(RAY)).to.equal(
         AMOUNT_TO_WITHDRAW
       );
     });
 
     it("tests that pbt is minted for user's balance", async () => {
-      const tcnBalanceBefore = await pbt.balanceOf(owner.address);
+      const pbtBalanceBefore = await pbt.balanceOf(owner.address);
       await treasury.withdrawPbt(AMOUNT_TO_WITHDRAW);
-      const tcnBalanceAfter = await pbt.balanceOf(owner.address);
-      expect(tcnBalanceAfter.sub(tcnBalanceBefore)).to.equal(
+      const pbtBalanceAfter = await pbt.balanceOf(owner.address);
+      expect(pbtBalanceAfter.sub(pbtBalanceBefore)).to.equal(
         AMOUNT_TO_WITHDRAW
       );
     });
