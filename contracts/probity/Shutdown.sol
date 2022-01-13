@@ -161,7 +161,6 @@ contract Shutdown is Stateful, Eventful {
     uint256 public redemptionRatio;
     uint256 public aurGap; // value of under-collateralized vaults
     uint256 public supplierObligationRatio;
-    uint256 public debt;
     uint256 public finalDebtBalance;
     uint256 public finalTotalReserve;
 
@@ -284,10 +283,10 @@ contract Shutdown is Stateful, Eventful {
      * @param user The address of the vault user
      */
     function processUserDebt(bytes32 assetId, address user) external onlyIfFinalPriceSet(assetId) {
-        (, uint256 activeAssetAmount, uint256 userDebt, , ) = vaultEngine.vaults(assetId, user);
+        (, uint256 activeAssetAmount, uint256 debt, , ) = vaultEngine.vaults(assetId, user);
         (uint256 debtAccumulator, , , , , , ) = vaultEngine.assets(assetId);
 
-        uint256 collateral = (userDebt * debtAccumulator) / assets[assetId].finalPrice;
+        uint256 collateral = (debt * debtAccumulator) / assets[assetId].finalPrice;
         uint256 amountToGrab = min(activeAssetAmount, collateral);
         uint256 gap = collateral - amountToGrab;
         assets[assetId].gap += gap;
@@ -299,17 +298,22 @@ contract Shutdown is Stateful, Eventful {
             address(this),
             address(this),
             -int256(amountToGrab),
-            -int256(userDebt),
+            -int256(debt),
             0
         );
     }
 
+    /**
+     * @notice TODO
+     * @param assetId The ID of the asset to free
+     * @param user The address of the user vault
+     */
     function freeExcessCollateral(bytes32 assetId, address user) external onlyIfFinalPriceSet(assetId) {
-        (, uint256 activeAssetAmount, uint256 userDebt, uint256 supplied, ) = vaultEngine.vaults(assetId, user);
-        require(userDebt == 0, "Shutdown/freeExcessCollateral: User needs to process debt first before calling this");
+        (, uint256 activeAssetAmount, uint256 debt, uint256 equity, ) = vaultEngine.vaults(assetId, user);
+        require(debt == 0, "Shutdown/freeExcessCollateral: User needs to process debt first before calling this");
 
         // how do we make it so this can be reused
-        uint256 hookedAmount = (supplied * finalAurUtilizationRatio);
+        uint256 hookedAmount = (equity * finalAurUtilizationRatio);
         uint256 hookedCollAmount = hookedAmount / assets[assetId].finalPrice;
         require(activeAssetAmount > hookedCollAmount, "Shutdown/freeExcessCollateral: No collateral to free");
 
@@ -354,10 +358,10 @@ contract Shutdown is Stateful, Eventful {
     function processUserEquity(bytes32 assetId, address user) external {
         require(supplierObligationRatio != 0, "Shutdown/processUserEquity:Supplier has no obligation");
 
-        (, uint256 activeAssetAmount, , uint256 supplied, ) = vaultEngine.vaults(assetId, user);
+        (, uint256 activeAssetAmount, , uint256 equity, ) = vaultEngine.vaults(assetId, user);
 
         (, uint256 equityAccumulator, , , , , ) = vaultEngine.assets(assetId);
-        uint256 hookedSuppliedAmount = (supplied * equityAccumulator * finalAurUtilizationRatio) / WAD;
+        uint256 hookedSuppliedAmount = (equity * equityAccumulator * finalAurUtilizationRatio) / WAD;
         uint256 suppObligatedAmount = ((hookedSuppliedAmount * supplierObligationRatio) / WAD) /
             assets[assetId].finalPrice;
         uint256 amountToGrab = min(activeAssetAmount, suppObligatedAmount);
@@ -375,7 +379,7 @@ contract Shutdown is Stateful, Eventful {
             address(this),
             -int256(amountToGrab),
             0,
-            -int256(supplied)
+            -int256(equity)
         );
     }
 
