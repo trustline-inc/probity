@@ -497,13 +497,13 @@ describe("Shutdown Flow Test", function () {
     // Increase time by 2 days
     await increaseTime(TWO_DAYS_IN_SECONDS);
 
-    // use the system reserve to settle system debt
+    // use the system reserve to pay off system debt
     await reserve.settle(RAD.mul(137_500));
     reserveBalances.reserve = reserveBalances.reserve.sub(RAD.mul(137_500));
     reserveBalances.debt = reserveBalances.debt.sub(RAD.mul(137_500));
     await checkReserveBalances(reserveBalances);
 
-    await shutdown.fillInAurGap();
+    await shutdown.writeOffFromReserves();
     reserveBalances.reserve = reserveBalances.reserve.sub(RAD.mul(137_500));
 
     // setFinalDebtBalance

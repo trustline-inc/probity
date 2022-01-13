@@ -640,7 +640,7 @@ describe("Shutdown Unit Tests", function () {
 
       await vaultEngine.setUnbackedDebt(reservePool.address, 0);
 
-      await shutdown.fillInAurGap();
+      await shutdown.writeOffFromReserves();
       await shutdown.setFinalDebtBalance();
 
       await shutdown.calculateSupplierObligation();
@@ -663,7 +663,7 @@ describe("Shutdown Unit Tests", function () {
 
       await vaultEngine.setUnbackedDebt(reservePool.address, 0);
 
-      await shutdown.fillInAurGap();
+      await shutdown.writeOffFromReserves();
       await shutdown.setFinalDebtBalance();
 
       let suppObligation = await shutdown.supplierObligationRatio();
@@ -687,7 +687,7 @@ describe("Shutdown Unit Tests", function () {
 
       await vaultEngine.setUnbackedDebt(reservePool.address, 0);
 
-      await shutdown.fillInAurGap();
+      await shutdown.writeOffFromReserves();
       await shutdown.setFinalDebtBalance();
 
       let suppObligation = await shutdown.supplierObligationRatio();
@@ -705,7 +705,7 @@ describe("Shutdown Unit Tests", function () {
 
       await vaultEngine.setUnbackedDebt(reservePool.address, 0);
 
-      await shutdown.fillInAurGap();
+      await shutdown.writeOffFromReserves();
       await shutdown.setFinalDebtBalance();
 
       await shutdown.calculateSupplierObligation();

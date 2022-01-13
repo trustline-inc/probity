@@ -318,13 +318,13 @@ contract Shutdown is Stateful, Eventful {
         vaultEngine.liquidateVault(assetId, user, user, address(this), -int256(amountToFree), 0, 0);
     }
 
-    function fillInAurGap() external onlyWhenInShutdown {
-        // use system reserve to fill in AurGap
+    /**
+     * @notice Uses the system reserve to write off bad debt
+     */
+    function writeOffFromReserves() external onlyWhenInShutdown {
         uint256 reserveBalance = vaultEngine.stablecoin(address(reservePool));
-
         uint256 amountToMove = min(aurGap, reserveBalance);
         vaultEngine.moveStablecoin(address(reservePool), address(this), amountToMove);
-
         aurGap -= amountToMove;
     }
 
