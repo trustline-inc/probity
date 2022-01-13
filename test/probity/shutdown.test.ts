@@ -765,7 +765,7 @@ describe("Shutdown Unit Tests", function () {
     it("fails if investorObligationRatio is zero", async () => {
       await assertRevert(
         shutdown.processUserEquity(flrAssetId, owner.address),
-        "Shutdown/processUserEquity:Supplier has no obligation"
+        "Shutdown/processUserEquity: Investor has no obligation"
       );
       await shutdown.calculateInvestorObligation();
       await shutdown.processUserEquity(flrAssetId, owner.address);
