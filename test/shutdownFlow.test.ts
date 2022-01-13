@@ -510,7 +510,7 @@ describe("Shutdown Flow Test", function () {
     await shutdown.setFinalDebtBalance();
     const EXPECTED_FINAL_DEBT_BALANCE = RAD.mul(154_500);
 
-    await shutdown.calculateSupplierObligation();
+    await shutdown.calculateInvestorObligation();
 
     const EXPECTED_SUPPLIER_OBLIGATION_RATIO = 0;
 
@@ -906,7 +906,7 @@ describe("Shutdown Flow Test", function () {
       EXPECTED_FINAL_DEBT_BALANCE
     );
 
-    await shutdown.calculateSupplierObligation();
+    await shutdown.calculateInvestorObligation();
 
     // total unbackedDebt 140930
     // total equity * final utilization Ratio = total equity in use

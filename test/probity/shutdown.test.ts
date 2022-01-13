@@ -576,7 +576,7 @@ describe("Shutdown Unit Tests", function () {
     });
   });
 
-  describe("calculateSupplierObligation Unit Tests", function () {
+  describe("calculateInvestorObligation Unit Tests", function () {
     const PRICE_TO_SET = RAY.mul(1);
     const COLL_TO_SET = WAD.mul(100);
     const DEBT_TO_SET = WAD.mul(150);
@@ -643,7 +643,7 @@ describe("Shutdown Unit Tests", function () {
       await shutdown.writeOffFromReserves();
       await shutdown.setFinalDebtBalance();
 
-      await shutdown.calculateSupplierObligation();
+      await shutdown.calculateInvestorObligation();
       unbackedDebt = await shutdown.unbackedDebt();
       suppObligation = await shutdown.supplierObligationRatio();
       // unbackedDebt should be erased
@@ -668,7 +668,7 @@ describe("Shutdown Unit Tests", function () {
 
       let suppObligation = await shutdown.supplierObligationRatio();
       expect(suppObligation).to.equal(0);
-      await shutdown.calculateSupplierObligation();
+      await shutdown.calculateInvestorObligation();
       suppObligation = await shutdown.supplierObligationRatio();
       expect(suppObligation).to.equal(EXPECTED_SUPP_OBLIGATION);
     });
@@ -692,14 +692,14 @@ describe("Shutdown Unit Tests", function () {
 
       let suppObligation = await shutdown.supplierObligationRatio();
       expect(suppObligation).to.equal(0);
-      await shutdown.calculateSupplierObligation();
+      await shutdown.calculateInvestorObligation();
       suppObligation = await shutdown.supplierObligationRatio();
       expect(suppObligation).to.equal(EXPECTED_SUPP_OBLIGATION);
     });
 
     it("fail if finalDebtBalance is not set", async () => {
       await assertRevert(
-        shutdown.calculateSupplierObligation(),
+        shutdown.calculateInvestorObligation(),
         "shutdown/setFinalDebtBalance: finalDebtBalance must be set first"
       );
 
@@ -708,7 +708,7 @@ describe("Shutdown Unit Tests", function () {
       await shutdown.writeOffFromReserves();
       await shutdown.setFinalDebtBalance();
 
-      await shutdown.calculateSupplierObligation();
+      await shutdown.calculateInvestorObligation();
     });
   });
 
@@ -767,12 +767,12 @@ describe("Shutdown Unit Tests", function () {
         shutdown.processUserEquity(flrAssetId, owner.address),
         "Shutdown/processUserEquity:Supplier has no obligation"
       );
-      await shutdown.calculateSupplierObligation();
+      await shutdown.calculateInvestorObligation();
       await shutdown.processUserEquity(flrAssetId, owner.address);
     });
 
     it("tests that correct amount of collateral is grabbed from supplier", async () => {
-      await shutdown.calculateSupplierObligation();
+      await shutdown.calculateInvestorObligation();
       const obligationRatio = await shutdown.supplierObligationRatio();
       const finalAurUtilizationRatio =
         await shutdown.finalAurUtilizationRatio();
