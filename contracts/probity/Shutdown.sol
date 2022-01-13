@@ -344,7 +344,7 @@ contract Shutdown is Stateful, Eventful {
 
         require(
             unbackedDebt == 0 || vaultEngine.stablecoin(address(reservePool)) == 0,
-            "shutdown/setFinalDebtBalance: system reserve or unbackedDebt must be zero"
+            "shutdown/setFinalDebtBalance: system reserve or unbacked debt must be zero"
         );
 
         investorObligationRatio = wdiv(unbackedDebt, finalDebtBalance);
