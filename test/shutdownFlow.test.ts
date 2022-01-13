@@ -218,7 +218,7 @@ describe("Shutdown Flow Test", function () {
     await ftsoFxrp.setCurrentPrice(RAY.mul(278).div(100));
     await priceFeed.updateAdjustedPrice(fxrpAssetId);
 
-    /*
+    /**
      * Set up 4 users with 3 unhealthy vaults
      */
 
@@ -333,7 +333,7 @@ describe("Shutdown Flow Test", function () {
     await ftsoFxrp.setCurrentPrice(RAY.mul(123).div(100));
     await priceFeed.updateAdjustedPrice(fxrpAssetId);
 
-    /*
+    /**
      * start 2 auctions, 1 of each collateral
      */
 
@@ -358,7 +358,7 @@ describe("Shutdown Flow Test", function () {
     };
     await expectBalancesToMatch(user2, balances.user2);
 
-    /*
+    /**
      * increase unbacked system debt and start IOU sale
      */
 
@@ -370,7 +370,7 @@ describe("Shutdown Flow Test", function () {
     );
     await checkReserveBalances(reserveBalances);
 
-    // Send reserve stablecoins to user 2 (@shine2lay - why?)
+    // Send all reserve stablecoins to user 2 (proxy for pool diminishment)
     await reserve.sendStablecoin(user2.address, DEBT_THRESHOLD.mul(12).div(10));
     reserveBalances.reserve = RAD.mul(0);
     await checkReserveBalances(reserveBalances);
@@ -403,7 +403,11 @@ describe("Shutdown Flow Test", function () {
     );
     await expectBalancesToMatch(user2, balances.user2);
 
-    // put system reserve (enough to cover all the debt have extra left over) and have IOU holder
+    /**
+     * Replenish system reserves (enough to cover all bad debt, with extra left over)
+     */
+
+    // User 2 (proxy for protocol replenishment) transfers 7000 AUR to the reserve pool
     await treasury
       .connect(user2)
       .transferStablecoin(reserve.address, WAD.mul(7000));
@@ -413,16 +417,21 @@ describe("Shutdown Flow Test", function () {
     balances.user2.stablecoin = balances.user2.stablecoin.sub(RAD.mul(7000));
     await expectBalancesToMatch(user2, balances.user2);
 
+    // User 3 transfers 140_000 AUR to the reserve pool
     await treasury
       .connect(user3)
-      .transferStablecoin(reserve.address, WAD.mul(140000));
+      .transferStablecoin(reserve.address, WAD.mul(140_000));
 
-    reserveBalances.reserve = reserveBalances.reserve.add(RAD.mul(140000));
+    reserveBalances.reserve = reserveBalances.reserve.add(RAD.mul(140_000));
     await checkReserveBalances(reserveBalances);
-    balances.user3.stablecoin = balances.user3.stablecoin.sub(RAD.mul(140000));
+    balances.user3.stablecoin = balances.user3.stablecoin.sub(RAD.mul(140_000));
     await expectBalancesToMatch(user3, balances.user3);
 
-    // initiate shutdown
+    /**
+     * Shutdown
+     */
+
+    // Initiate shutdown
     await shutdown.initiateShutdown();
     expect(await shutdown.initiated()).to.equal(true);
 
