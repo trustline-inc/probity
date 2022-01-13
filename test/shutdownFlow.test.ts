@@ -222,7 +222,7 @@ describe("Shutdown Flow Test", function () {
      * Set up 4 users with 3 unhealthy vaults
      */
 
-    let expectedTotalDebt: BigNumber = BigNumber.from(0);
+    let expectedTotalDebt: number;
 
     // User 1 activates 2300 FLR to MINT 1000 AUR
     await flrWallet
@@ -263,7 +263,7 @@ describe("Shutdown Flow Test", function () {
       activeAmount: WAD.mul(2300),
       debt: WAD.mul(1500),
     };
-    expectedTotalDebt = expectedTotalDebt.add(balances.user2.flr.debt);
+    expectedTotalDebt += 1500;
     // User 2 activates 150_000 FXRP to BORROW 135_000 AUR
     await vaultEngine
       .connect(user2)
@@ -277,6 +277,7 @@ describe("Shutdown Flow Test", function () {
       activeAmount: WAD.mul(150_000),
       debt: WAD.mul(135_000),
     };
+    expectedTotalDebt += 135_000;
     balances.user2.stablecoin = RAD.mul(135_000 + 1500);
     await expectBalancesToMatch(user2, balances.user2);
 
@@ -304,6 +305,7 @@ describe("Shutdown Flow Test", function () {
       debt: WAD.mul(150_000),
       equity: WAD.mul(150_000),
     };
+    expectedTotalDebt += 150_000;
     balances.user3.stablecoin = RAD.mul(150_000);
     await expectBalancesToMatch(user3, balances.user3);
 
@@ -318,26 +320,34 @@ describe("Shutdown Flow Test", function () {
       activeAmount: WAD.mul(6900),
       debt: WAD.mul(4500),
     };
+    expectedTotalDebt += 4500;
     balances.user4.stablecoin = RAD.mul(4500);
     await expectBalancesToMatch(user4, balances.user4);
 
-    // totalDebt should be 291_000
-    expect(await vaultEngine.totalDebt()).to.equal(RAD.mul(291_000));
+    // total debt should be $291,000
+    expect(await vaultEngine.totalDebt()).to.equal(RAD.mul(expectedTotalDebt));
 
-    // drop prices flr: $0.60, fxrp: $1.23
+    // drop prices (flr: $1.10 => $0.60), fxrp: ($2.78 => $1.23)
     await ftsoFlr.setCurrentPrice(RAY.mul(60).div(100));
     await priceFeed.updateAdjustedPrice(flrAssetId);
     await ftsoFxrp.setCurrentPrice(RAY.mul(123).div(100));
     await priceFeed.updateAdjustedPrice(fxrpAssetId);
-    // start 2 auction 1 of each collateral
+
+    /*
+     * start 2 auctions, 1 of each collateral
+     */
+
+    // Liquidate user 2 FLR vault
     await liquidator.liquidateVault(flrAssetId, user2.address);
     reserveBalances.debt = RAD.mul(1500);
     await checkReserveBalances(reserveBalances);
 
+    // Liquidate user 2 FXRP vault
     await liquidator.liquidateVault(fxrpAssetId, user2.address);
     reserveBalances.debt = reserveBalances.debt.add(RAD.mul(135000));
     await checkReserveBalances(reserveBalances);
 
+    // Update expected balances
     balances.user2.flr = {
       activeAmount: WAD.mul(0),
       debt: WAD.mul(0),
@@ -348,7 +358,11 @@ describe("Shutdown Flow Test", function () {
     };
     await expectBalancesToMatch(user2, balances.user2);
 
-    // increase system debt and do IOU sale to have some iou balances
+    /*
+     * increase unbacked system debt and start IOU sale
+     */
+
+    // Increase by 5000 * 1.2 = 6000
     await reserve.increaseSystemDebt(DEBT_THRESHOLD.mul(12).div(10));
     reserveBalances.reserve = DEBT_THRESHOLD.mul(12).div(10);
     reserveBalances.debt = reserveBalances.debt.add(
@@ -356,6 +370,7 @@ describe("Shutdown Flow Test", function () {
     );
     await checkReserveBalances(reserveBalances);
 
+    // Send reserve stablecoins to user 2 (@shine2lay - why?)
     await reserve.sendStablecoin(user2.address, DEBT_THRESHOLD.mul(12).div(10));
     reserveBalances.reserve = RAD.mul(0);
     await checkReserveBalances(reserveBalances);
@@ -365,6 +380,7 @@ describe("Shutdown Flow Test", function () {
     );
     await expectBalancesToMatch(user2, balances.user2);
 
+    // User 3 purchases 5000 * 0.75 = 3750 vouchers
     await reserve.startSale();
     await reserve.connect(user3).purchaseVouchers(DEBT_THRESHOLD.mul(3).div(4));
     reserveBalances.debt = reserveBalances.debt.sub(
@@ -377,6 +393,7 @@ describe("Shutdown Flow Test", function () {
     );
     await expectBalancesToMatch(user3, balances.user3);
 
+    // User 2 purchases 5000 * 0.25 = 1250 vouchers; all bad debt has been covered
     await reserve.connect(user2).purchaseVouchers(DEBT_THRESHOLD.div(4));
     reserveBalances.debt = reserveBalances.debt.sub(DEBT_THRESHOLD.div(4));
     await checkReserveBalances(reserveBalances);
@@ -386,7 +403,7 @@ describe("Shutdown Flow Test", function () {
     );
     await expectBalancesToMatch(user2, balances.user2);
 
-    // put system reserve (enough to cover all the debt have have extra left over) and have IOU holder
+    // put system reserve (enough to cover all the debt have extra left over) and have IOU holder
     await treasury
       .connect(user2)
       .transferStablecoin(reserve.address, WAD.mul(7000));
