@@ -215,6 +215,11 @@ contract Shutdown is Stateful, Eventful {
     // External Functions
     /////////////////////////////////////////
 
+    /**
+     * @notice TODO
+     * @param which TODO
+     * @param newAddress TODO
+     */
     function switchAddress(bytes32 which, address newAddress) external onlyWhenNotInShutdown onlyBy("gov") {
         if (which == "PriceFeed") {
             priceFeed = PriceFeedLike(newAddress);
@@ -233,6 +238,11 @@ contract Shutdown is Stateful, Eventful {
         }
     }
 
+    /**
+     * @notice TODO
+     * @param which TODO
+     * @param newWaitPeriod TODO
+     */
     function changeWaitPeriod(bytes32 which, uint256 newWaitPeriod) external onlyBy("gov") {
         if (which == "auctionWaitPeriod") {
             auctionWaitPeriod = newWaitPeriod;
@@ -243,7 +253,10 @@ contract Shutdown is Stateful, Eventful {
         }
     }
 
-    // once a shutdown has been initiated, you can no longer cancel it.
+    /**
+     * @notice Initiates the system shutdown sequence
+     * @dev This action is irreversible.
+     */
     function initiateShutdown() external onlyWhenNotInShutdown onlyBy("gov") {
         initiated = true;
         initiatedAt = block.timestamp;
@@ -267,13 +280,14 @@ contract Shutdown is Stateful, Eventful {
         }
     }
 
-    // step 2: set final prices
+    /**
+     * @notice Sets the final price for the given asset
+     * @param assetId The ID of the asset to finalize the price of
+     */
     function setFinalPrice(bytes32 assetId) external onlyWhenInShutdown {
         uint256 price = priceFeed.getPrice(assetId);
         require(price != 0, "Shutdown/setFinalPrice: price retrieved is zero");
-
         (, , , assets[assetId].normalizedDebt, , , ) = vaultEngine.assets(assetId);
-
         assets[assetId].finalPrice = price;
     }
 
