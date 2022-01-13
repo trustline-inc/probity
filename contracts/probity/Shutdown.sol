@@ -63,7 +63,7 @@ interface VaultLike {
     function assets(bytes32 assetId)
         external
         returns (
-            uint256 debtAccummulator,
+            uint256 debtAccumulator,
             uint256 equityAccumulator,
             uint256 price,
             uint256 normDebt,
@@ -285,9 +285,9 @@ contract Shutdown is Stateful, Eventful {
      */
     function processUserDebt(bytes32 assetId, address user) external onlyIfFinalPriceSet(assetId) {
         (, uint256 activeAssetAmount, uint256 userDebt, , ) = vaultEngine.vaults(assetId, user);
-        (uint256 debtAccummulator, , , , , , ) = vaultEngine.assets(assetId);
+        (uint256 debtAccumulator, , , , , , ) = vaultEngine.assets(assetId);
 
-        uint256 collateral = (userDebt * debtAccummulator) / assets[assetId].finalPrice;
+        uint256 collateral = (userDebt * debtAccumulator) / assets[assetId].finalPrice;
         uint256 amountToGrab = min(activeAssetAmount, collateral);
         uint256 gap = collateral - amountToGrab;
         assets[assetId].gap += gap;
@@ -396,11 +396,11 @@ contract Shutdown is Stateful, Eventful {
     function calculateRedemptionRatio(bytes32 assetId) external {
         require(finalDebtBalance != 0, "shutdown/calculateRedemptionRatio: must set final debt balance first");
 
-        (uint256 debtAccum, , , , , , ) = vaultEngine.assets(assetId);
+        (uint256 debtAccumulator, , , , , , ) = vaultEngine.assets(assetId);
 
         uint256 normalizedDebt = assets[assetId].normalizedDebt;
 
-        uint256 max = (normalizedDebt * debtAccum) / assets[assetId].finalPrice;
+        uint256 max = (normalizedDebt * debtAccumulator) / assets[assetId].finalPrice;
         assets[assetId].redemptionRatio = ((max - assets[assetId].gap) * RAY) / (finalDebtBalance / RAY);
     }
 
