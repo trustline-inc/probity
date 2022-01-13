@@ -479,7 +479,7 @@ describe("Shutdown Flow Test", function () {
 
     expect((await shutdown.assets(flrAssetId)).gap).to.equal(EXPECTED_FLR_GAP);
     expect(
-      (await shutdown.aurGap()).sub(EXPECTED_AUR_GAP).abs().lte(RAD)
+      (await shutdown.unbackedDebt()).sub(EXPECTED_AUR_GAP).abs().lte(RAD)
     ).to.equal(true);
 
     // Process debt for FXRP collateral
@@ -811,12 +811,15 @@ describe("Shutdown Flow Test", function () {
     await shutdown.processUserDebt(flrAssetId, user3.address);
 
     // user 3 have debt of $25000 and have 9000 flr coll @ 2.23 = $20070
-    // aurGap should be 25000 - 20070 = 4930
+    // unbackedDebt should be 25000 - 20070 = 4930
     // collGap should be 4930 / 2.23 = 2210.76233184
     EXPECTED_FLR_GAP = WAD.mul("221076233184").div(1e8);
     let EXPECTED_AUR_GAP = RAD.mul(4930);
     expect(
-      (await shutdown.aurGap()).sub(EXPECTED_AUR_GAP).abs().lte(RAD.div(100))
+      (await shutdown.unbackedDebt())
+        .sub(EXPECTED_AUR_GAP)
+        .abs()
+        .lte(RAD.div(100))
     ).to.equal(true);
     expect(
       (await shutdown.assets(flrAssetId)).gap
@@ -859,12 +862,15 @@ describe("Shutdown Flow Test", function () {
 
     await shutdown.processUserDebt(fxrpAssetId, user4.address);
     // user 4 have debt of $1500000, coll value: 620000 * 2.20 = 1364000
-    // aurGap should be 1500000 - 1364000 = 136000
+    // unbackedDebt should be 1500000 - 1364000 = 136000
     // collGap should be 136000 / 2.20 = 61818.1818182
     EXPECTED_FXRP_GAP = WAD.mul("618181818182").div(1e7);
     EXPECTED_AUR_GAP = EXPECTED_AUR_GAP.add(RAD.mul(136000));
     expect(
-      (await shutdown.aurGap()).sub(EXPECTED_AUR_GAP).abs().lte(RAD.div(100))
+      (await shutdown.unbackedDebt())
+        .sub(EXPECTED_AUR_GAP)
+        .abs()
+        .lte(RAD.div(100))
     ).to.equal(true);
     expect(
       (await shutdown.assets(fxrpAssetId)).gap
@@ -875,7 +881,10 @@ describe("Shutdown Flow Test", function () {
     await shutdown.processUserDebt(fxrpAssetId, user5.address);
 
     expect(
-      (await shutdown.aurGap()).sub(EXPECTED_AUR_GAP).abs().lte(RAD.div(100))
+      (await shutdown.unbackedDebt())
+        .sub(EXPECTED_AUR_GAP)
+        .abs()
+        .lte(RAD.div(100))
     ).to.equal(true);
     expect(
       (await shutdown.assets(fxrpAssetId)).gap
@@ -899,10 +908,10 @@ describe("Shutdown Flow Test", function () {
 
     await shutdown.calculateSupplierObligation();
 
-    // total aurGap 140930
+    // total unbackedDebt 140930
     // total equity * final utilization Ratio = total equity in use
     // $4506500 * 0.85043825585 = 3832500
-    // total aurGap / total equity in use = supplier obligation ratio
+    // total unbackedDebt / total equity in use = supplier obligation ratio
     // 140930 / 3685500 = 0.0382390449
 
     const EXPECTED_SUPPLIER_OBLIGATION_RATIO = WAD.mul("382390449").div(1e10);

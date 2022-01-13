@@ -159,7 +159,7 @@ contract Shutdown is Stateful, Eventful {
     mapping(address => uint256) public stablecoin;
     uint256 public finalAurUtilizationRatio;
     uint256 public redemptionRatio;
-    uint256 public aurGap; // value of under-collateralized vaults
+    uint256 public unbackedDebt;
     uint256 public supplierObligationRatio;
     uint256 public finalDebtBalance;
     uint256 public finalTotalReserve;
@@ -290,7 +290,7 @@ contract Shutdown is Stateful, Eventful {
         uint256 amountToGrab = min(activeAssetAmount, collateral);
         uint256 gap = collateral - amountToGrab;
         assets[assetId].gap += gap;
-        aurGap += gap * assets[assetId].finalPrice;
+        unbackedDebt += gap * assets[assetId].finalPrice;
 
         vaultEngine.liquidateVault(
             assetId,
@@ -327,9 +327,9 @@ contract Shutdown is Stateful, Eventful {
      */
     function writeOffFromReserves() external onlyWhenInShutdown {
         uint256 reserveBalance = vaultEngine.stablecoin(address(reservePool));
-        uint256 amountToMove = min(aurGap, reserveBalance);
+        uint256 amountToMove = min(unbackedDebt, reserveBalance);
         vaultEngine.moveStablecoin(address(reservePool), address(this), amountToMove);
-        aurGap -= amountToMove;
+        unbackedDebt -= amountToMove;
     }
 
     /**
@@ -343,11 +343,11 @@ contract Shutdown is Stateful, Eventful {
         require(finalDebtBalance != 0, "shutdown/setFinalDebtBalance: finalDebtBalance must be set first");
 
         require(
-            aurGap == 0 || vaultEngine.stablecoin(address(reservePool)) == 0,
-            "shutdown/setFinalDebtBalance: system reserve or aurGap must be zero"
+            unbackedDebt == 0 || vaultEngine.stablecoin(address(reservePool)) == 0,
+            "shutdown/setFinalDebtBalance: system reserve or unbackedDebt must be zero"
         );
 
-        supplierObligationRatio = wdiv(aurGap, finalDebtBalance);
+        supplierObligationRatio = wdiv(unbackedDebt, finalDebtBalance);
 
         if (supplierObligationRatio >= WAD) {
             supplierObligationRatio = WAD;
@@ -370,7 +370,7 @@ contract Shutdown is Stateful, Eventful {
             amountToGrab = assets[assetId].gap;
         }
         assets[assetId].gap -= amountToGrab;
-        aurGap -= amountToGrab * assets[assetId].finalPrice;
+        unbackedDebt -= amountToGrab * assets[assetId].finalPrice;
 
         vaultEngine.liquidateVault(
             assetId,

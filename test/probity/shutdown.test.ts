@@ -416,24 +416,24 @@ describe("Shutdown Unit Tests", function () {
 
       let coll = await shutdown.assets(flrAssetId);
       expect(coll.gap).to.equal(0);
-      let aurGap = await shutdown.aurGap();
-      expect(aurGap).to.equal(0);
+      let unbackedDebt = await shutdown.unbackedDebt();
+      expect(unbackedDebt).to.equal(0);
 
       // overcollateralized vaults
       await shutdown.processUserDebt(flrAssetId, user.address);
 
       coll = await shutdown.assets(flrAssetId);
       expect(coll.gap).to.equal(0);
-      aurGap = await shutdown.aurGap();
-      expect(aurGap).to.equal(0);
+      unbackedDebt = await shutdown.unbackedDebt();
+      expect(unbackedDebt).to.equal(0);
 
       // undercollateralized vaults
       await shutdown.processUserDebt(flrAssetId, owner.address);
 
       coll = await shutdown.assets(flrAssetId);
       expect(coll.gap).to.equal(EXPECTED_GAP);
-      aurGap = await shutdown.aurGap();
-      expect(aurGap).to.equal(EXPECTED_AUR_GAP);
+      unbackedDebt = await shutdown.unbackedDebt();
+      expect(unbackedDebt).to.equal(EXPECTED_AUR_GAP);
     });
 
     it("tests that correct amount of user's collateral is transferred", async () => {
@@ -624,16 +624,16 @@ describe("Shutdown Unit Tests", function () {
       await increaseTime(TIME_TO_FORWARD);
     });
 
-    it("tests that supplierObligation calculation is zero when the system surplus >= aurGap", async () => {
+    it("tests that supplierObligation calculation is zero when the system surplus >= unbackedDebt", async () => {
       const TOTAL_DEBT_TO_SET = RAD.mul(100);
       const TOTAL_CAP_TO_SET = RAD.mul(150);
       const EXPECTED_AUR_GAP = DEBT_TO_SET.sub(COLL_TO_SET).mul(RAY);
 
       await shutdown.processUserDebt(flrAssetId, user.address);
 
-      let aurGap = await shutdown.aurGap();
+      let unbackedDebt = await shutdown.unbackedDebt();
       let suppObligation = await shutdown.supplierObligationRatio();
-      expect(aurGap).to.equal(EXPECTED_AUR_GAP);
+      expect(unbackedDebt).to.equal(EXPECTED_AUR_GAP);
       expect(suppObligation).to.equal(0);
       await vaultEngine.setTotalDebt(TOTAL_DEBT_TO_SET);
       await vaultEngine.setTotalEquity(TOTAL_CAP_TO_SET);
@@ -644,14 +644,14 @@ describe("Shutdown Unit Tests", function () {
       await shutdown.setFinalDebtBalance();
 
       await shutdown.calculateSupplierObligation();
-      aurGap = await shutdown.aurGap();
+      unbackedDebt = await shutdown.unbackedDebt();
       suppObligation = await shutdown.supplierObligationRatio();
-      // aurGap should be erased
-      expect(aurGap).to.equal(0);
+      // unbackedDebt should be erased
+      expect(unbackedDebt).to.equal(0);
       expect(suppObligation).to.equal(0);
     });
 
-    it("tests that supplierObligation and aurGap calculation is correct", async () => {
+    it("tests that supplierObligation and unbackedDebt calculation is correct", async () => {
       const SYSTEM_RESERVE_TO_SET = RAD.mul(10);
       const EXPECTED_SUPP_OBLIGATION = wdiv(RAD.mul(40), RAD.mul(100));
 
