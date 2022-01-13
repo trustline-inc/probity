@@ -405,15 +405,15 @@ contract Shutdown is Stateful, Eventful {
      * @notice TODO
      */
     function setFinalDebtBalance() external onlyWhenInShutdown {
-        require(finalDebtBalance == 0, "shutdown/setFinalDebtBalance: finalDebtBalance has already been set");
+        require(finalDebtBalance == 0, "shutdown/setFinalDebtBalance: Balance already set");
         require(
             block.timestamp >= initiatedAt + auctionWaitPeriod,
-            "shutdown/setFinalDebtBalance: supplierWaitPeriod has not passed yet"
+            "shutdown/setFinalDebtBalance: Waiting for auctions to complete"
         );
         require(
             vaultEngine.unbackedDebt(address(reservePool)) == 0 || vaultEngine.stablecoin(address(reservePool)) == 0,
             "shutdown/setFinalDebtBalance: system reserve or debt must be zero"
-        ); // system debt or system reserve should be zero
+        );
 
         finalDebtBalance = vaultEngine.totalDebt();
     }

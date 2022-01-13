@@ -82,7 +82,7 @@ describe("Shutdown Unit Tests", function () {
   });
 
   describe("switchAddress Unit Tests", function () {
-    it("tests priceFeed address switch", async () => {
+    it("should switch the PriceFeed address", async () => {
       const NEW_ADDRESS = user.address;
 
       const before = await shutdown.priceFeed();
@@ -92,7 +92,7 @@ describe("Shutdown Unit Tests", function () {
       expect(after).to.equal(NEW_ADDRESS);
     });
 
-    it("tests vaultEngine address switch", async () => {
+    it("should switch the VaultEngine address", async () => {
       const NEW_ADDRESS = user.address;
 
       const before = await shutdown.vaultEngine();
@@ -102,7 +102,7 @@ describe("Shutdown Unit Tests", function () {
       expect(after).to.equal(NEW_ADDRESS);
     });
 
-    it("tests reservePool address switch", async () => {
+    it("should switch the ReservePool address", async () => {
       const NEW_ADDRESS = user.address;
 
       const before = await shutdown.reservePool();
@@ -112,7 +112,7 @@ describe("Shutdown Unit Tests", function () {
       expect(after).to.equal(NEW_ADDRESS);
     });
 
-    it("tests Teller address switch", async () => {
+    it("should switch the Teller address", async () => {
       const NEW_ADDRESS = user.address;
 
       const before = await shutdown.teller();
@@ -122,7 +122,7 @@ describe("Shutdown Unit Tests", function () {
       expect(after).to.equal(NEW_ADDRESS);
     });
 
-    it("tests Treasury address switch", async () => {
+    it("should switch the Treasury address", async () => {
       const NEW_ADDRESS = user.address;
 
       const before = await shutdown.treasury();
@@ -132,7 +132,7 @@ describe("Shutdown Unit Tests", function () {
       expect(after).to.equal(NEW_ADDRESS);
     });
 
-    it("tests Liquidator address switch", async () => {
+    it("should switch the Liquidator address", async () => {
       const NEW_ADDRESS = user.address;
 
       const before = await shutdown.liquidator();
@@ -142,7 +142,7 @@ describe("Shutdown Unit Tests", function () {
       expect(after).to.equal(NEW_ADDRESS);
     });
 
-    it("fail if which is unknown", async () => {
+    it("should fail if which is unknown", async () => {
       await assertRevert(
         shutdown.switchAddress(bytes32("unknown"), user.address),
         "shutdown/switchAddress: unknown which"
@@ -150,7 +150,7 @@ describe("Shutdown Unit Tests", function () {
       await shutdown.switchAddress(bytes32("VaultEngine"), user.address);
     });
 
-    it("fail if shutdown is set", async () => {
+    it("should fail if shutdown is set", async () => {
       await shutdown.switchAddress(bytes32("PriceFeed"), priceFeed.address);
       await shutdown.initiateShutdown();
       await assertRevert(
@@ -159,7 +159,7 @@ describe("Shutdown Unit Tests", function () {
       );
     });
 
-    it("fail if not from gov", async () => {
+    it("should fail if not from gov", async () => {
       await assertRevert(
         shutdown
           .connect(user)
@@ -829,7 +829,7 @@ describe("Shutdown Unit Tests", function () {
     it("fails if supplierWaitPeriod has not passed", async () => {
       await assertRevert(
         shutdown.setFinalDebtBalance(),
-        "shutdown/setFinalDebtBalance: supplierWaitPeriod has not passed yet"
+        "shutdown/setFinalDebtBalance: Waiting for auctions to complete"
       );
       await increaseTime(172800 * 2);
       await shutdown.setFinalDebtBalance();
@@ -856,7 +856,7 @@ describe("Shutdown Unit Tests", function () {
 
       await assertRevert(
         shutdown.setFinalDebtBalance(),
-        "shutdown/setFinalDebtBalance: finalDebtBalance has already been set"
+        "shutdown/setFinalDebtBalance: Balance already set"
       );
     });
   });
