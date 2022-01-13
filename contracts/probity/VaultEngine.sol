@@ -21,7 +21,7 @@ contract VaultEngine is Stateful, Eventful {
         uint256 activeAssetAmount; // assets that are actively covering a position
         uint256 debt; // Vault's debt balance
         uint256 equity; // Vault's equity balance
-        uint256 initialEquity; // Most recent value of the equity rate accumulator
+        uint256 initialEquity; // Tracks the amount of equity (less interest)
     }
 
     struct Asset {
