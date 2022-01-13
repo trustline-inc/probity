@@ -122,7 +122,19 @@ describe("Shutdown Flow Test", function () {
   const TWO_DAYS_IN_SECONDS = 86400 * 2;
   const DEBT_THRESHOLD = RAD.mul(5000);
   let balances: {
-    [key: string]: { flr: Object; fxrp: Object; stablecoin: BigNumber };
+    [key: string]: {
+      flr: {
+        debt?: BigNumber;
+        activeAmount?: BigNumber;
+        equity?: BigNumber;
+      };
+      fxrp: {
+        debt?: BigNumber;
+        activeAmount?: BigNumber;
+        equity?: BigNumber;
+      };
+      stablecoin: BigNumber;
+    };
   };
   let reserveBalances;
 
@@ -197,18 +209,25 @@ describe("Shutdown Flow Test", function () {
   it("test happy flow where system is solvent", async () => {
     // sets up scenario for solvent system.
     // current collateral ratio: 150%
-    // starting price flr: $1.10
-    // starting price fxrp: $2.78
+
+    // FLR = $1.10
     await ftsoFlr.setCurrentPrice(RAY.mul(11).div(10));
     await priceFeed.updateAdjustedPrice(flrAssetId);
+
+    // FXRP = $2.78
     await ftsoFxrp.setCurrentPrice(RAY.mul(278).div(100));
     await priceFeed.updateAdjustedPrice(fxrpAssetId);
 
-    // have at least 3 vaults that are undercollateralized
+    /*
+     * Set up 4 users with 3 unhealthy vaults
+     */
+
+    let expectedTotalDebt: BigNumber = BigNumber.from(0);
+
+    // User 1 activates 2300 FLR to MINT 1000 AUR
     await flrWallet
       .connect(user1)
       .deposit({ value: ethers.utils.parseEther("2300") });
-    await fxrpDeposit(user1, WAD.mul(1_000_000));
     await vaultEngine
       .connect(user1)
       .modifyEquity(flrAssetId, treasury.address, WAD.mul(2300), RAD.mul(1000));
@@ -216,6 +235,8 @@ describe("Shutdown Flow Test", function () {
       activeAmount: WAD.mul(2300),
       equity: WAD.mul(1000),
     };
+    // User 1 activates 1_000_000 FXRP to MINT 300_000 AUR
+    await fxrpDeposit(user1, WAD.mul(1_000_000));
     await vaultEngine
       .connect(user1)
       .modifyEquity(
@@ -230,6 +251,7 @@ describe("Shutdown Flow Test", function () {
     };
     await expectBalancesToMatch(user1, balances.user1);
 
+    // User 2 activates 2300 FLR to BORROW 1500 AUR
     await flrWallet
       .connect(user2)
       .deposit({ value: ethers.utils.parseEther("2300") });
@@ -241,47 +263,51 @@ describe("Shutdown Flow Test", function () {
       activeAmount: WAD.mul(2300),
       debt: WAD.mul(1500),
     };
-
+    expectedTotalDebt = expectedTotalDebt.add(balances.user2.flr.debt);
+    // User 2 activates 150_000 FXRP to BORROW 135_000 AUR
     await vaultEngine
       .connect(user2)
       .modifyDebt(
         fxrpAssetId,
         treasury.address,
-        WAD.mul(150000),
-        RAD.mul(135000)
+        WAD.mul(150_000),
+        RAD.mul(135_000)
       );
     balances.user2.fxrp = {
-      activeAmount: WAD.mul(150000),
-      debt: WAD.mul(135000),
+      activeAmount: WAD.mul(150_000),
+      debt: WAD.mul(135_000),
     };
-    balances.user2.stablecoin = RAD.mul(135000 + 1500);
+    balances.user2.stablecoin = RAD.mul(135_000 + 1500);
     await expectBalancesToMatch(user2, balances.user2);
 
-    await fxrpDeposit(user3, WAD.mul(600000));
+    // User 3 activates 400_000 FXRP to MINT 150_000 AUR
+    await fxrpDeposit(user3, WAD.mul(600_000));
     await vaultEngine
       .connect(user3)
       .modifyEquity(
         fxrpAssetId,
         treasury.address,
-        WAD.mul(400000),
-        RAD.mul(150000)
+        WAD.mul(400_000),
+        RAD.mul(150_000)
       );
+    // User 3 activates 200_000 FXRP to BORROW 150_000 AUR
     await vaultEngine
       .connect(user3)
       .modifyDebt(
         fxrpAssetId,
         treasury.address,
-        WAD.mul(200000),
-        RAD.mul(150000)
+        WAD.mul(200_000),
+        RAD.mul(150_000)
       );
     balances.user3.fxrp = {
-      activeAmount: WAD.mul(600000),
-      debt: WAD.mul(150000),
-      equity: WAD.mul(150000),
+      activeAmount: WAD.mul(600_000),
+      debt: WAD.mul(150_000),
+      equity: WAD.mul(150_000),
     };
-    balances.user3.stablecoin = RAD.mul(150000);
+    balances.user3.stablecoin = RAD.mul(150_000);
     await expectBalancesToMatch(user3, balances.user3);
 
+    // User 4 activates 6900 FLR to BORROW 4500 AUR
     await flrWallet
       .connect(user4)
       .deposit({ value: ethers.utils.parseEther("6900") });
@@ -295,8 +321,8 @@ describe("Shutdown Flow Test", function () {
     balances.user4.stablecoin = RAD.mul(4500);
     await expectBalancesToMatch(user4, balances.user4);
 
-    // totalDebt should be $291000
-    expect(await vaultEngine.totalDebt()).to.equal(RAD.mul(291000));
+    // totalDebt should be 291_000
+    expect(await vaultEngine.totalDebt()).to.equal(RAD.mul(291_000));
 
     // drop prices flr: $0.60, fxrp: $1.23
     await ftsoFlr.setCurrentPrice(RAY.mul(60).div(100));
