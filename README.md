@@ -129,7 +129,7 @@ You should run an initial transaction before deploying contracts:
 npm run createInitialTx:local
 ```
 
-2. Deploy to the network.
+2. Deploy to the local network.
 
 Deploy the smart contract in the local network using the `deploy:local` script.
 
@@ -145,6 +145,10 @@ npm run deploy:local
 ```
 
 If you get the error `ProviderError: err: Invalid value for block.coinbase`, that means you have to first run `npm run createInitialTx:local`, which creates a genesis transaction in order for the network to start properly.
+
+### Remote Deployment
+
+When deploying non-locally, we keep contract addresses the same across networks. The contract address is dependent on the address of the deployer and the nonce, so you should just use one account with the same nonce (newly created, for example) on each network and do not make any other transactions other than the deployment.
 
 ## Initialization
 
