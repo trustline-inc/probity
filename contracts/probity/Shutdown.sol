@@ -6,18 +6,19 @@ import "../dependencies/Eventful.sol";
 import "./Treasury.sol";
 import "./priceFunction/LinearDecrease.sol";
 
-// Shutdown Module's main purpose is to pause probity functionality and
-// allow user to redeem AUR for the remaining
-// collateral in the system
-// Step 1. Pause all normal functionality
-// Step 2. Set Final price of all collateral
-// Step 3. free up collateral on Over Collateralized vaults,
-// allow users to withdraw free Collateral (this is only available after final price has been set)
-// Step 4. Allow Auctions to finish (is this gonna take too long?)
-// Step 5. Calculate net +/- in reserve vs system debt
-// Step 6. Calculate the net deficit in UnderCollateralized vaults
-// (both debt side and supply side) (can we do this earlier?)
-// Step 7. Calculate final Collateral per AUR = Collateral / Total AUR in Circulation
+/**
+ * The shutdown module's main purpose is to pause functionality and
+ * allow borrowers to redeem stablecoins for the remaining collateral
+ * and allows investors to redeem underlying assets.
+ *
+ * Step 1: Pause all normal functionality
+ * Step 2: Set final asset prices
+ * Step 3: Allow users to withdraw excess assets from healthy vaults
+ * Step 4: Allow auctions to finish (is this gonna take too long?)
+ * Step 5: Calculate net +/- in reserve vs. system debt
+ * Step 6: Calculate the net deficit in unhealthy vaults (can we do this earlier?)
+ * Step 7: Calculate final asset per AUR = amount of asset in vault / total AUR in circulation
+ */
 
 interface PriceFeedLike {
     function setShutdownState() external;
