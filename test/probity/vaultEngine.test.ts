@@ -331,11 +331,11 @@ describe("Vault Engine Unit Tests", function () {
 
   describe("collectInterest Unit Tests", function () {
     const UNDERLYING_AMOUNT = WAD.mul(10000);
-    const COLL_AMOUNT_DEBT = WAD.mul(10000);
+    const COLL_AMOUNT = WAD.mul(10000);
     const EQUITY_AMOUNT = RAD.mul(2000);
     const DEBT_AMOUNT = RAD.mul(1000);
     const DEBT_TO_RAISE = BigNumber.from("251035088626883475473007");
-    const CAP_TO_RAISE = BigNumber.from("125509667994754929166541");
+    const EQUITY_TO_RAISE = BigNumber.from("125509667994754929166541");
 
     beforeEach(async function () {
       await owner.sendTransaction({
@@ -355,11 +355,11 @@ describe("Vault Engine Unit Tests", function () {
 
       await vaultEngine
         .connect(assetManager)
-        .modifyStandbyAsset(flrAssetId, owner.address, COLL_AMOUNT_DEBT);
+        .modifyStandbyAsset(flrAssetId, owner.address, COLL_AMOUNT);
 
       await vaultEngine
         .connect(assetManager)
-        .modifyStandbyAsset(flrAssetId, user.address, COLL_AMOUNT_DEBT);
+        .modifyStandbyAsset(flrAssetId, user.address, COLL_AMOUNT);
 
       await vaultEngine.modifyEquity(
         flrAssetId,
@@ -369,12 +369,7 @@ describe("Vault Engine Unit Tests", function () {
       );
       await vaultEngine
         .connect(user)
-        .modifyDebt(
-          flrAssetId,
-          treasury.address,
-          COLL_AMOUNT_DEBT,
-          DEBT_AMOUNT
-        );
+        .modifyDebt(flrAssetId, treasury.address, COLL_AMOUNT, DEBT_AMOUNT);
 
       await registry.connect(gov).setupAddress(bytes32("teller"), user.address);
 
@@ -384,13 +379,13 @@ describe("Vault Engine Unit Tests", function () {
           flrAssetId,
           reservePool.address,
           DEBT_TO_RAISE,
-          CAP_TO_RAISE,
+          EQUITY_TO_RAISE,
           BigNumber.from(0)
         );
     });
 
     it("test tat pbt is added properly", async () => {
-      const EXPECTED_VALUE = CAP_TO_RAISE.mul(EQUITY_AMOUNT).div(RAY);
+      const EXPECTED_VALUE = EQUITY_TO_RAISE.mul(EQUITY_AMOUNT).div(RAY);
 
       const before = await vaultEngine.pbt(owner.address);
       expect(before).to.equal(0);
@@ -401,7 +396,7 @@ describe("Vault Engine Unit Tests", function () {
     });
 
     it("test that stablecoin is added properly", async () => {
-      const EXPECTED_VALUE = CAP_TO_RAISE.mul(EQUITY_AMOUNT).div(RAY);
+      const EXPECTED_VALUE = EQUITY_TO_RAISE.mul(EQUITY_AMOUNT).div(RAY);
 
       const before = await vaultEngine.stablecoin(owner.address);
       expect(before).to.equal(0);
@@ -412,9 +407,9 @@ describe("Vault Engine Unit Tests", function () {
     });
 
     it("test that equity is reduced properly", async () => {
-      const ACCUMULATOR = RAY.add(CAP_TO_RAISE);
+      const ACCUMULATOR = RAY.add(EQUITY_TO_RAISE);
       const EXPECTED_VALUE = EQUITY_AMOUNT.div(RAY).sub(
-        CAP_TO_RAISE.mul(EQUITY_AMOUNT).div(RAY).div(ACCUMULATOR)
+        EQUITY_TO_RAISE.mul(EQUITY_AMOUNT).div(RAY).div(ACCUMULATOR)
       );
 
       const before = await vaultEngine.vaults(flrAssetId, owner.address);
