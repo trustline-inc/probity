@@ -170,7 +170,7 @@ contract VaultEngineSB is Stateful, Eventful {
      * @param user The address of the vault to reduce PBT from.
      * @param amount The amount of PBT to reduce.
      */
-    function reducePBT(address user, uint256 amount) external onlyBy("treasury") {
+    function reducePbt(address user, uint256 amount) external onlyBy("treasury") {
         pbt[user] -= amount;
     }
 
