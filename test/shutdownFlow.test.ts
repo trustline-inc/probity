@@ -222,7 +222,7 @@ describe("Shutdown Flow Test", function () {
      * Set up 4 users with 3 unhealthy vaults
      */
 
-    let expectedTotalDebt: number;
+    let expectedTotalDebt = 0;
 
     // User 1 activates 2300 FLR to MINT 1000 AUR
     await flrWallet
@@ -325,7 +325,9 @@ describe("Shutdown Flow Test", function () {
     await expectBalancesToMatch(user4, balances.user4);
 
     // total debt should be $291,000
-    expect(await vaultEngine.totalDebt()).to.equal(RAD.mul(expectedTotalDebt));
+    expect(await vaultEngine.totalDebt()).to.equal(
+      RAD.mul(BigNumber.from(expectedTotalDebt))
+    );
 
     // drop prices (flr: $1.10 => $0.60), fxrp: ($2.78 => $1.23)
     await ftsoFlr.setCurrentPrice(RAY.mul(60).div(100));
@@ -435,7 +437,7 @@ describe("Shutdown Flow Test", function () {
     await shutdown.initiateShutdown();
     expect(await shutdown.initiated()).to.equal(true);
 
-    // drop prices flr: $0.42, fxrp: $1.03
+    // drop prices flr: ($60 => $0.42), fxrp: ($1.23 => $1.03)
     await ftsoFlr.setCurrentPrice(RAY.mul(42).div(100));
     await ftsoFxrp.setCurrentPrice(RAY.mul(103).div(100));
 
@@ -450,7 +452,7 @@ describe("Shutdown Flow Test", function () {
     );
 
     // process debt for flr collateral
-    // gap shouldn't change for user1 since user1 only supplied
+    // NOTE: gap shouldn't change for user 1 since they never borrowed
     await shutdown.processUserDebt(flrAssetId, user1.address);
 
     let EXPECTED_FLR_GAP = "0";
