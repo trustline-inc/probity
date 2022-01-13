@@ -451,26 +451,27 @@ describe("Shutdown Flow Test", function () {
       RAY.mul(103).div(100)
     );
 
-    // process debt for flr collateral
+    // Process debt for FLR vaults
     // NOTE: gap shouldn't change for user 1 since they never borrowed
     await shutdown.processUserDebt(flrAssetId, user1.address);
 
     let EXPECTED_FLR_GAP = "0";
     expect((await shutdown.assets(flrAssetId)).gap).to.equal(EXPECTED_FLR_GAP);
 
-    // gap shouldn't change for user2 since user2's vault is in auction
+    // gap shouldn't change for user 2 since their collateral is on auction
     await shutdown.processUserDebt(flrAssetId, user2.address);
 
     EXPECTED_FLR_GAP = "0";
     expect((await shutdown.assets(flrAssetId)).gap).to.equal(EXPECTED_FLR_GAP);
 
-    // gap should still be zero because user3 doesn't have flrWallet vault
+    // gap should still be zero because user 3 doesn't have a FLR vault
     await shutdown.processUserDebt(flrAssetId, user3.address);
 
     EXPECTED_FLR_GAP = "0";
     expect((await shutdown.assets(flrAssetId)).gap).to.equal(EXPECTED_FLR_GAP);
 
-    // owed $4500 AUR, value of coll:  69000 flr * $0.42 per collateral = $2898, Aur Gap should be 1602 and coll.gap should be 3814.28571429
+    // User 4 owed 4500 AUR; value of coll: 69_000 FLR * $0.42 per collateral unit = $2898
+    // AUR gap should be 1602 and coll.gap should be 3814.28571429
     await shutdown.processUserDebt(flrAssetId, user4.address);
 
     EXPECTED_FLR_GAP = "3814285714285714285714";
@@ -481,7 +482,7 @@ describe("Shutdown Flow Test", function () {
       (await shutdown.aurGap()).sub(EXPECTED_AUR_GAP).abs().lte(RAD)
     ).to.equal(true);
 
-    // process debt for fxrp collateral
+    // Process debt for FXRP collateral
     await shutdown.processUserDebt(fxrpAssetId, user1.address);
     await shutdown.processUserDebt(fxrpAssetId, user2.address);
     await shutdown.processUserDebt(fxrpAssetId, user3.address);
@@ -493,21 +494,21 @@ describe("Shutdown Flow Test", function () {
       EXPECTED_FXRP_GAP
     );
 
-    // increaseTime
+    // Increase time by 2 days
     await increaseTime(TWO_DAYS_IN_SECONDS);
 
     // use the system reserve to settle system debt
-    await reserve.settle(RAD.mul(137500));
-    reserveBalances.reserve = reserveBalances.reserve.sub(RAD.mul(137500));
-    reserveBalances.debt = reserveBalances.debt.sub(RAD.mul(137500));
+    await reserve.settle(RAD.mul(137_500));
+    reserveBalances.reserve = reserveBalances.reserve.sub(RAD.mul(137_500));
+    reserveBalances.debt = reserveBalances.debt.sub(RAD.mul(137_500));
     await checkReserveBalances(reserveBalances);
 
     await shutdown.fillInAurGap();
-    reserveBalances.reserve = reserveBalances.reserve.sub(RAD.mul(137500));
+    reserveBalances.reserve = reserveBalances.reserve.sub(RAD.mul(137_500));
 
     // setFinalDebtBalance
     await shutdown.setFinalDebtBalance();
-    const EXPECTED_FINAL_DEBT_BALANCE = RAD.mul(154500);
+    const EXPECTED_FINAL_DEBT_BALANCE = RAD.mul(154_500);
 
     await shutdown.calculateSupplierObligation();
 
@@ -517,30 +518,30 @@ describe("Shutdown Flow Test", function () {
       EXPECTED_SUPPLIER_OBLIGATION_RATIO
     );
 
-    // increaseTime
+    // Increase time by 2 days
     await increaseTime(TWO_DAYS_IN_SECONDS);
 
     expect(await shutdown.finalDebtBalance()).to.equal(
       EXPECTED_FINAL_DEBT_BALANCE
     );
 
-    // calcuate redeem ratio
+    // calcuate redemption ratio
     await shutdown.calculateRedeemRatio(flrAssetId);
-    // redeem Ratio = theoretical max - gap / total stablecoin in circulation
+    // redeemption ratio = theoretical max - gap / total stablecoin in circulation
     // 10714285714285714285714 - 3814285714285714285714 (6900000000000000000000) / $154500
     // 6900 / $154500 = 0.0446601941
 
-    const EXPECTED_FLR_REDEEM_RATIO = "44660194174757281553398058";
-    expect((await shutdown.assets(flrAssetId)).redeemRatio).to.equal(
-      EXPECTED_FLR_REDEEM_RATIO
+    const EXPECTED_FLR_REDEMPTION_RATIO = "44660194174757281553398058";
+    expect((await shutdown.assets(flrAssetId)).redemptionRatio).to.equal(
+      EXPECTED_FLR_REDEMPTION_RATIO
     );
 
     await shutdown.calculateRedeemRatio(fxrpAssetId);
-    // redeem Ratio = theoretical max - gap / total stablecoin in circulation
+    // redemption ratio = theoretical max - gap / total stablecoin in circulation
     // 150000 / $1.03 / $154500 = 0.9425959091
-    const EXPECTED_FXRP_REDEEM_RATIO = "942595909133754359506077669";
-    expect((await shutdown.assets(fxrpAssetId)).redeemRatio).to.equal(
-      EXPECTED_FXRP_REDEEM_RATIO
+    const EXPECTED_FXRP_REDEMPTION_RATIO = "942595909133754359506077669";
+    expect((await shutdown.assets(fxrpAssetId)).redemptionRatio).to.equal(
+      EXPECTED_FXRP_REDEMPTION_RATIO
     );
 
     // return stablecoin
@@ -555,7 +556,7 @@ describe("Shutdown Flow Test", function () {
     await shutdown.connect(user2).redeemCollateral(flrAssetId);
     let after = (await vaultEngine.vaults(flrAssetId, user2.address))
       .standbyAssetAmount;
-    // redeem ratio * stablecoin returned
+    // redemption ratio * stablecoin returned
     // 0.0446601941 * 66500 = 2969.90290765
     const EXPECTED_FLR_COLL_REDEEMED = WAD.mul(296990290765).div(1e8);
     // we are okay with up to 0.001 collateral difference
@@ -569,7 +570,7 @@ describe("Shutdown Flow Test", function () {
     after = (await vaultEngine.vaults(fxrpAssetId, user2.address))
       .standbyAssetAmount;
 
-    // redeem ratio * stablecoin returned
+    // redemption ratio * stablecoin returned
     // 0.9425959091 * 66500 = 62682.6279552
     const EXPECTED_FXRP_COLL_REDEEMED = WAD.mul("626826279552").div(1e7);
     // we are okay with up to 0.001 collateral difference
@@ -1007,34 +1008,34 @@ describe("Shutdown Flow Test", function () {
         .lte(WAD.div(10))
     ).to.equal(true);
 
-    // increaseTime
+    // increase time by 2 days
     await increaseTime(TWO_DAYS_IN_SECONDS);
 
-    // calcuate redeem ratio
+    // calcuate redemption ratio
     await shutdown.calculateRedeemRatio(flrAssetId);
-    // redeem Ratio = theoretical max - gap / total stablecoin in circulation
+    // redemption ratio = theoretical max - gap / total stablecoin in circulation
     // ((26500 / $2.23) - 2115.9732496600 / $3685500
     // 11883.4080717 - 2063.5106908794 = 9767.43482209
     // 9767.43482209 / 3685500 = 0.00265023329
 
-    const EXPECTED_FLR_REDEEM_RATIO = RAY.mul("265023329").div(1e11);
+    const EXPECTED_FLR_REDEMPTION_RATIO = RAY.mul("265023329").div(1e11);
     expect(
-      (await shutdown.assets(flrAssetId)).redeemRatio
-        .sub(EXPECTED_FLR_REDEEM_RATIO)
+      (await shutdown.assets(flrAssetId)).redemptionRatio
+        .sub(EXPECTED_FLR_REDEMPTION_RATIO)
         .abs()
         .lte(WAD.div(100))
     ).to.equal(true);
 
     await shutdown.calculateRedeemRatio(fxrpAssetId);
-    // redeem Ratio = theoretical max - gap / total stablecoin in circulation
+    // redemption ratio = theoretical max - gap / total stablecoin in circulation
     // ((2700000 / $2.20) - 10081.9030487 / $3685500
     // 1227272.72727 - 10081.9030487 = 1217190.82422
     // 1217190.82422 / $3685500 = 0.3302647739
-    const EXPECTED_FXRP_REDEEM_RATIO = RAY.mul("3302647739").div(1e10);
+    const EXPECTED_FXRP_REDEMPTION_RATIO = RAY.mul("3302647739").div(1e10);
 
     expect(
-      (await shutdown.assets(fxrpAssetId)).redeemRatio
-        .sub(EXPECTED_FXRP_REDEEM_RATIO)
+      (await shutdown.assets(fxrpAssetId)).redemptionRatio
+        .sub(EXPECTED_FXRP_REDEMPTION_RATIO)
         .abs()
         .lte(WAD.div(100))
     ).to.equal(true);

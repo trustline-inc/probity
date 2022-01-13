@@ -909,17 +909,17 @@ describe("Shutdown Unit Tests", function () {
       await increaseTime(172800);
     });
 
-    it("tests that redeemRatio calculated correctly when gap is 0", async () => {
+    it("tests that redemptionRatio calculated correctly when gap is 0", async () => {
       let expected = RAY;
 
       await shutdown.setFinalDebtBalance();
       await shutdown.calculateRedeemRatio(flrAssetId);
 
       const collType = await shutdown.assets(flrAssetId);
-      expect(collType.redeemRatio).to.equal(expected);
+      expect(collType.redemptionRatio).to.equal(expected);
     });
 
-    it("tests that redeemRatio calculated correctly when gap is non zero", async () => {
+    it("tests that redemptionRatio calculated correctly when gap is non zero", async () => {
       await shutdown.setFinalDebtBalance();
       await shutdown.processUserDebt(flrAssetId, user.address);
       let expected = RAY.mul(2).div(3);
@@ -927,7 +927,7 @@ describe("Shutdown Unit Tests", function () {
       await shutdown.calculateRedeemRatio(flrAssetId);
 
       const collType = await shutdown.assets(flrAssetId);
-      expect(collType.redeemRatio).to.equal(expected);
+      expect(collType.redemptionRatio).to.equal(expected);
     });
 
     it("fails if finalDebtBalance is not set", async () => {

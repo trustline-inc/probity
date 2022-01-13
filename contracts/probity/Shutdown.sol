@@ -133,7 +133,7 @@ contract Shutdown is Stateful, Eventful {
         uint256 finalPrice;
         uint256 normalizedDebt;
         uint256 gap;
-        uint256 redeemRatio;
+        uint256 redemptionRatio;
     }
 
     /////////////////////////////////////////
@@ -158,7 +158,7 @@ contract Shutdown is Stateful, Eventful {
     mapping(bytes32 => mapping(address => uint256)) public collRedeemed;
     mapping(address => uint256) public stablecoin;
     uint256 public finalAurUtilizationRatio;
-    uint256 public redeemRatio;
+    uint256 public redemptionRatio;
     uint256 public aurGap; // value of under-collateralized vaults
     uint256 public supplierObligationRatio;
     uint256 public debt;
@@ -278,17 +278,18 @@ contract Shutdown is Stateful, Eventful {
         assets[assetId].finalPrice = price;
     }
 
-    // process the vault:
-    // cancel all outstanding debt,
-    // collect the appropriate amount of collateral, free up extra collateral
-    // suppliers's collateral should
+    /**
+     * @notice Cancels outstanding debt, collects the appropriate amount of collateral, & frees excess collateral
+     * @param assetId The ID of the vault asset
+     * @param user The address of the vault user
+     */
     function processUserDebt(bytes32 assetId, address user) external onlyIfFinalPriceSet(assetId) {
         (, uint256 activeAssetAmount, uint256 userDebt, , ) = vaultEngine.vaults(assetId, user);
-        (uint256 debtAccum, , , , , , ) = vaultEngine.assets(assetId);
+        (uint256 debtAccummulator, , , , , , ) = vaultEngine.assets(assetId);
 
-        uint256 debtCollAmount = (userDebt * debtAccum) / assets[assetId].finalPrice;
-        uint256 amountToGrab = min(activeAssetAmount, debtCollAmount);
-        uint256 gap = debtCollAmount - amountToGrab;
+        uint256 collateral = (userDebt * debtAccummulator) / assets[assetId].finalPrice;
+        uint256 amountToGrab = min(activeAssetAmount, collateral);
+        uint256 gap = collateral - amountToGrab;
         assets[assetId].gap += gap;
         aurGap += gap * assets[assetId].finalPrice;
 
@@ -397,7 +398,7 @@ contract Shutdown is Stateful, Eventful {
         uint256 normalizedDebt = assets[assetId].normalizedDebt;
 
         uint256 max = (normalizedDebt * debtAccum) / assets[assetId].finalPrice;
-        assets[assetId].redeemRatio = ((max - assets[assetId].gap) * RAY) / (finalDebtBalance / RAY);
+        assets[assetId].redemptionRatio = ((max - assets[assetId].gap) * RAY) / (finalDebtBalance / RAY);
     }
 
     function returnStablecoin(uint256 amount) external {
@@ -407,7 +408,7 @@ contract Shutdown is Stateful, Eventful {
 
     function redeemCollateral(bytes32 assetId) external {
         // can withdraw collateral returnedStablecoin * collateralPerAUR for collateral type
-        uint256 redeemAmount = ((stablecoin[msg.sender] / 1e9) * assets[assetId].redeemRatio) /
+        uint256 redeemAmount = ((stablecoin[msg.sender] / 1e9) * assets[assetId].redemptionRatio) /
             WAD /
             RAY -
             collRedeemed[assetId][msg.sender];
