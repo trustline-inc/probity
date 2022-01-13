@@ -178,6 +178,21 @@ describe("Vault Engine Unit Tests", function () {
       expect(after.length).to.equal(1);
       expect(after[0]).to.equal(owner.address);
     });
+
+    it("initialEquity is added properly", async () => {
+      const before = await vaultEngine.vaults(flrAssetId, owner.address);
+      expect(before.initialEquity).to.equal(0);
+
+      await vaultEngine.modifyEquity(
+        flrAssetId,
+        treasury.address,
+        UNDERLYING_AMOUNT.div(2),
+        EQUITY_AMOUNT.div(2)
+      );
+
+      const after = await vaultEngine.vaults(flrAssetId, owner.address);
+      expect(after.initialEquity).to.equal(EQUITY_AMOUNT.div(2));
+    });
   });
 
   describe("modifyDebt Unit Tests", function () {
@@ -311,6 +326,106 @@ describe("Vault Engine Unit Tests", function () {
       const after = await vaultEngine.getUserList();
       expect(after.length).to.equal(2);
       expect(after[1]).to.equal(owner.address);
+    });
+  });
+
+  describe("collectInterest Unit Tests", function () {
+    const UNDERLYING_AMOUNT = WAD.mul(10000);
+    const COLL_AMOUNT_DEBT = WAD.mul(10000);
+    const EQUITY_AMOUNT = RAD.mul(2000);
+    const DEBT_AMOUNT = RAD.mul(1000);
+    const DEBT_TO_RAISE = BigNumber.from("251035088626883475473007");
+    const CAP_TO_RAISE = BigNumber.from("125509667994754929166541");
+
+    beforeEach(async function () {
+      await owner.sendTransaction({
+        to: user.address,
+        value: ethers.utils.parseEther("1"),
+      });
+      await vaultEngine.connect(gov).initAssetType(flrAssetId);
+      await vaultEngine
+        .connect(gov)
+        .updateCeiling(flrAssetId, RAD.mul(10000000));
+      await registry
+        .connect(gov)
+        .setupAddress(bytes32("assetManager"), assetManager.address);
+      await vaultEngine
+        .connect(gov)
+        .updateAdjustedPrice(flrAssetId, RAY.mul(1));
+
+      await vaultEngine
+        .connect(assetManager)
+        .modifyStandbyAsset(flrAssetId, owner.address, COLL_AMOUNT_DEBT);
+
+      await vaultEngine
+        .connect(assetManager)
+        .modifyStandbyAsset(flrAssetId, user.address, COLL_AMOUNT_DEBT);
+
+      await vaultEngine.modifyEquity(
+        flrAssetId,
+        treasury.address,
+        UNDERLYING_AMOUNT,
+        EQUITY_AMOUNT
+      );
+      await vaultEngine
+        .connect(user)
+        .modifyDebt(
+          flrAssetId,
+          treasury.address,
+          COLL_AMOUNT_DEBT,
+          DEBT_AMOUNT
+        );
+
+      await registry.connect(gov).setupAddress(bytes32("teller"), user.address);
+
+      await vaultEngine
+        .connect(user)
+        .updateAccumulators(
+          flrAssetId,
+          reservePool.address,
+          DEBT_TO_RAISE,
+          CAP_TO_RAISE,
+          BigNumber.from(0)
+        );
+    });
+
+    it("test tat pbt is added properly", async () => {
+      const EXPECTED_VALUE = CAP_TO_RAISE.mul(EQUITY_AMOUNT).div(RAY);
+
+      const before = await vaultEngine.pbt(owner.address);
+      expect(before).to.equal(0);
+      await vaultEngine.collectInterest(flrAssetId);
+
+      const after = await vaultEngine.pbt(owner.address);
+      expect(after).to.equal(EXPECTED_VALUE);
+    });
+
+    it("test that stablecoin is added properly", async () => {
+      const EXPECTED_VALUE = CAP_TO_RAISE.mul(EQUITY_AMOUNT).div(RAY);
+
+      const before = await vaultEngine.stablecoin(owner.address);
+      expect(before).to.equal(0);
+      await vaultEngine.collectInterest(flrAssetId);
+
+      const after = await vaultEngine.stablecoin(owner.address);
+      expect(after).to.equal(EXPECTED_VALUE);
+    });
+
+    it("test that equity is reduced properly", async () => {
+      const ACCUMULATOR = RAY.add(CAP_TO_RAISE);
+      const EXPECTED_VALUE = EQUITY_AMOUNT.div(RAY).sub(
+        CAP_TO_RAISE.mul(EQUITY_AMOUNT).div(RAY).div(ACCUMULATOR)
+      );
+
+      const before = await vaultEngine.vaults(flrAssetId, owner.address);
+      console.log(before);
+      expect(before.equity).to.equal(EQUITY_AMOUNT.div(RAY));
+      await vaultEngine.collectInterest(flrAssetId);
+
+      const after = await vaultEngine.vaults(flrAssetId, owner.address);
+      console.log(after.equity.mul(ACCUMULATOR).toString());
+      console.log(after.initialEquity.toString());
+      expect(after.equity).to.equal(EXPECTED_VALUE);
     });
   });
 
