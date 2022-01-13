@@ -861,7 +861,7 @@ describe("Shutdown Unit Tests", function () {
     });
   });
 
-  describe("calculateRedeemRatio Unit Tests", function () {
+  describe("calculateRedemptionRatio Unit Tests", function () {
     const PRICE_TO_SET = RAY.mul(1);
     const COLL_TO_SET = WAD.mul(100);
     const DEBT_TO_SET = WAD.mul(150);
@@ -913,7 +913,7 @@ describe("Shutdown Unit Tests", function () {
       let expected = RAY;
 
       await shutdown.setFinalDebtBalance();
-      await shutdown.calculateRedeemRatio(flrAssetId);
+      await shutdown.calculateRedemptionRatio(flrAssetId);
 
       const collType = await shutdown.assets(flrAssetId);
       expect(collType.redemptionRatio).to.equal(expected);
@@ -924,7 +924,7 @@ describe("Shutdown Unit Tests", function () {
       await shutdown.processUserDebt(flrAssetId, user.address);
       let expected = RAY.mul(2).div(3);
 
-      await shutdown.calculateRedeemRatio(flrAssetId);
+      await shutdown.calculateRedemptionRatio(flrAssetId);
 
       const collType = await shutdown.assets(flrAssetId);
       expect(collType.redemptionRatio).to.equal(expected);
@@ -932,12 +932,12 @@ describe("Shutdown Unit Tests", function () {
 
     it("fails if finalDebtBalance is not set", async () => {
       await assertRevert(
-        shutdown.calculateRedeemRatio(flrAssetId),
-        "shutdown/calculateRedeemRatio: must set final debt balance first"
+        shutdown.calculateRedemptionRatio(flrAssetId),
+        "shutdown/calculateRedemptionRatio: must set final debt balance first"
       );
       await shutdown.setFinalDebtBalance();
 
-      await shutdown.calculateRedeemRatio(flrAssetId);
+      await shutdown.calculateRedemptionRatio(flrAssetId);
     });
   });
 
@@ -1024,7 +1024,7 @@ describe("Shutdown Unit Tests", function () {
       await increaseTime(172800);
       await increaseTime(172800);
       await shutdown.setFinalDebtBalance();
-      await shutdown.calculateRedeemRatio(flrAssetId);
+      await shutdown.calculateRedemptionRatio(flrAssetId);
 
       await vaultEngine.setStablecoin(owner.address, AUREI_AMOUNT_TO_SET);
       await vaultEngine.updateVault(

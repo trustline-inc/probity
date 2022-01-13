@@ -328,6 +328,9 @@ contract Shutdown is Stateful, Eventful {
         aurGap -= amountToMove;
     }
 
+    /**
+     * @notice TODO
+     */
     function calculateSupplierObligation() external onlyWhenInShutdown {
         // assumptions:
         //    - all under-collateralized vaults have been processed
@@ -390,8 +393,8 @@ contract Shutdown is Stateful, Eventful {
         finalDebtBalance = vaultEngine.totalDebt();
     }
 
-    function calculateRedeemRatio(bytes32 assetId) external {
-        require(finalDebtBalance != 0, "shutdown/calculateRedeemRatio: must set final debt balance first");
+    function calculateRedemptionRatio(bytes32 assetId) external {
+        require(finalDebtBalance != 0, "shutdown/calculateRedemptionRatio: must set final debt balance first");
 
         (uint256 debtAccum, , , , , , ) = vaultEngine.assets(assetId);
 

@@ -526,7 +526,7 @@ describe("Shutdown Flow Test", function () {
     );
 
     // calcuate redemption ratio
-    await shutdown.calculateRedeemRatio(flrAssetId);
+    await shutdown.calculateRedemptionRatio(flrAssetId);
     // redeemption ratio = theoretical max - gap / total stablecoin in circulation
     // 10714285714285714285714 - 3814285714285714285714 (6900000000000000000000) / $154500
     // 6900 / $154500 = 0.0446601941
@@ -536,7 +536,7 @@ describe("Shutdown Flow Test", function () {
       EXPECTED_FLR_REDEMPTION_RATIO
     );
 
-    await shutdown.calculateRedeemRatio(fxrpAssetId);
+    await shutdown.calculateRedemptionRatio(fxrpAssetId);
     // redemption ratio = theoretical max - gap / total stablecoin in circulation
     // 150000 / $1.03 / $154500 = 0.9425959091
     const EXPECTED_FXRP_REDEMPTION_RATIO = "942595909133754359506077669";
@@ -1012,7 +1012,7 @@ describe("Shutdown Flow Test", function () {
     await increaseTime(TWO_DAYS_IN_SECONDS);
 
     // calcuate redemption ratio
-    await shutdown.calculateRedeemRatio(flrAssetId);
+    await shutdown.calculateRedemptionRatio(flrAssetId);
     // redemption ratio = theoretical max - gap / total stablecoin in circulation
     // ((26500 / $2.23) - 2115.9732496600 / $3685500
     // 11883.4080717 - 2063.5106908794 = 9767.43482209
@@ -1026,7 +1026,7 @@ describe("Shutdown Flow Test", function () {
         .lte(WAD.div(100))
     ).to.equal(true);
 
-    await shutdown.calculateRedeemRatio(fxrpAssetId);
+    await shutdown.calculateRedemptionRatio(fxrpAssetId);
     // redemption ratio = theoretical max - gap / total stablecoin in circulation
     // ((2700000 / $2.20) - 10081.9030487 / $3685500
     // 1227272.72727 - 10081.9030487 = 1217190.82422
