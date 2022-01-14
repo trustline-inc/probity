@@ -425,6 +425,7 @@ contract VaultEngine is Stateful, Eventful {
      */
     function updateInflationRate(uint256 _inflationRate) external onlyByProbity {
         inflationRate = _inflationRate;
+        // TODO: Assert that a month has passed since the last update before adding below!
         aggregateInflationRate += _inflationRate;
         // TODO: Emit event
     }
