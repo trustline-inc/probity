@@ -1443,9 +1443,19 @@ const deployTest = async (stablecoin?: string) => {
 };
 
 const deployProd = async (stablecoin?: string) => {
+  await parseExistingContracts();
   const signers = await getSigners();
-  await deployRegistry();
-  await deployProbity(stablecoin);
+  try {
+    await deployRegistry();
+    await deployMocks(); // for coston only
+    await deployProbity(stablecoin);
+    await deployAuctioneer();
+    await deployERC20Token();
+    await deployVPToken();
+  } catch (err) {
+    console.error("Error occurred while deploying", err);
+    return { contracts, signers };
+  }
   return { contracts, signers };
 };
 
