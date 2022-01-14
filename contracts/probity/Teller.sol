@@ -18,6 +18,10 @@ interface VaultEngineLike {
         uint256 equityRateIncrease,
         uint256 protocolFeeRates
     ) external;
+
+    function aggregateInflationRate() external;
+
+    function inflationRate() external;
 }
 
 interface IAPR {
@@ -50,7 +54,6 @@ contract Teller is Stateful {
     IAPR public immutable lowAprRate;
     IAPR public immutable highAprRate;
 
-    uint256 public aggregateInflationRate;
     address public reservePool;
     uint256 public apr; // Annualized percentage rate
     uint256 public mpr; // Momentized percentage rate
@@ -69,14 +72,12 @@ contract Teller is Stateful {
         VaultEngineLike vaultEngineAddress,
         address reservePoolAddress,
         IAPR lowAprAddress,
-        IAPR highAprAddress,
-        uint256 _aggregateInflationRate
+        IAPR highAprAddress
     ) Stateful(registryAddress) {
         vaultEngine = vaultEngineAddress;
         lowAprRate = lowAprAddress;
         highAprRate = highAprAddress;
         reservePool = reservePoolAddress;
-        aggregateInflationRate = _aggregateInflationRate;
         apr = RAY;
         mpr = RAY;
     }

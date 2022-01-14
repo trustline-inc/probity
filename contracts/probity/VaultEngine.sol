@@ -42,6 +42,8 @@ contract VaultEngine is Stateful, Eventful {
     uint256 public totalDebt;
     uint256 public totalEquity;
     uint256 public totalUnbackedDebt;
+    uint256 public inflationRate;
+    uint256 public aggregateInflationRate;
     address[] public userList;
     mapping(address => bool) public userExists;
     mapping(address => uint256) public stablecoin;
@@ -415,6 +417,16 @@ contract VaultEngine is Stateful, Eventful {
     function updateAdjustedPrice(bytes32 assetId, uint256 price) external onlyByProbity {
         emit LogVarUpdate("Vault", assetId, "price", assets[assetId].adjustedPrice, price);
         assets[assetId].adjustedPrice = price;
+    }
+
+    /**
+     * @notice Updates the peg currency inflation rate
+     * @param _inflationRate The current inflation rate of the peg currency
+     */
+    function updateInflationRate(uint256 _inflationRate) external onlyByProbity {
+        inflationRate = _inflationRate;
+        aggregateInflationRate += _inflationRate;
+        // TODO: Emit event
     }
 
     /////////////////////////////////////////

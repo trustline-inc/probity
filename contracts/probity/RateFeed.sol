@@ -44,6 +44,14 @@ contract RateFeed is Stateful, Eventful {
         (inflationRate, ) = ftso.getCurrentInflationRate();
     }
 
+    /**
+     * @notice Sets the current inflation rate.
+     * @param inflationRate The current inflation rate
+     */
+    function updateInflationRate(uint256 inflationRate) external {
+        vaultEngine.updateInflationRate(inflationRate);
+    }
+
     /////////////////////////////////////////
     // Internal functions
     /////////////////////////////////////////
