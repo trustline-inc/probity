@@ -148,11 +148,18 @@ If you get the error `ProviderError: err: Invalid value for block.coinbase`, tha
 
 ### Remote Deployment
 
-When deploying non-locally, we keep contract addresses the same across networks. The contract address is dependent on the address of the deployer and the nonce, so you should just use one account with the same nonce (newly created, for example) on each network and do not make any other transactions other than the deployment.
+There are currently three remote deployment target networks: `internal` and `coston`.
+
+```
+FLARE_DIR=~/Desktop/flare \
+STABLECOIN=PHI \
+NATIVE_TOKEN_LOCAL=SGB \
+npm run deploy:internal
+```
 
 ## Initialization
 
-You can use the `initProbity` script to initialize the system with a new collateral type.
+You can use the `initProbity` scripts to initialize the system with a new asset type., E.g.:
 
 ```
 TOKEN=SGB \
