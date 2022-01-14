@@ -129,7 +129,7 @@ You should run an initial transaction before deploying contracts:
 npm run createInitialTx:local
 ```
 
-2. Deploy to the network.
+2. Deploy to the local network.
 
 Deploy the smart contract in the local network using the `deploy:local` script.
 
@@ -146,9 +146,20 @@ npm run deploy:local
 
 If you get the error `ProviderError: err: Invalid value for block.coinbase`, that means you have to first run `npm run createInitialTx:local`, which creates a genesis transaction in order for the network to start properly.
 
+### Remote Deployment
+
+There are currently three remote deployment target networks: `internal` and `coston`.
+
+```
+FLARE_DIR=~/Desktop/flare \
+STABLECOIN=PHI \
+NATIVE_TOKEN_LOCAL=SGB \
+npm run deploy:internal
+```
+
 ## Initialization
 
-You can use the `initProbity` script to initialize the system with a new collateral type.
+You can use the `initProbity` scripts to initialize the system with a new asset type., E.g.:
 
 ```
 TOKEN=SGB \
