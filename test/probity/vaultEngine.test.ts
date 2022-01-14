@@ -40,7 +40,7 @@ let flrAssetId = bytes32("FLR");
 
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
-describe("Vault Engine Unit Tests", function () {
+describe.only("Vault Engine Unit Tests", function () {
   beforeEach(async function () {
     let { contracts, signers } = await deployTest();
     // Set contracts
@@ -138,6 +138,24 @@ describe("Vault Engine Unit Tests", function () {
         UNDERLYING_AMOUNT,
         EQUITY_AMOUNT
       );
+    });
+
+    it.only("tests that values are properly updated when calling with positive values", async () => {
+      const before = await vaultEngine.vaults(flrAssetId, owner.address);
+
+      const after = await vaultEngine.vaults(flrAssetId, owner.address);
+    });
+
+    it.only("fails if vault debt balances goes under zero when calling with negative values", async () => {
+      const before = await vaultEngine.vaults(flrAssetId, owner.address);
+
+      const after = await vaultEngine.vaults(flrAssetId, owner.address);
+    });
+
+    it.only("tests that values are properly updated when calling with negative values", async () => {
+      const before = await vaultEngine.vaults(flrAssetId, owner.address);
+
+      const after = await vaultEngine.vaults(flrAssetId, owner.address);
     });
 
     it("adds a new user to the user list", async () => {
@@ -289,6 +307,24 @@ describe("Vault Engine Unit Tests", function () {
       );
     });
 
+    it.only("tests that values are properly updated when called with positive values", async () => {
+      const before = await vaultEngine.vaults(flrAssetId, owner.address);
+
+      const after = await vaultEngine.vaults(flrAssetId, owner.address);
+    });
+
+    it.only("fails if vault debt balances goes under zero when calling with negative values", async () => {
+      const before = await vaultEngine.vaults(flrAssetId, owner.address);
+
+      const after = await vaultEngine.vaults(flrAssetId, owner.address);
+    });
+
+    it.only("tests that values are properly updated when calling with negative values", async () => {
+      const before = await vaultEngine.vaults(flrAssetId, owner.address);
+
+      const after = await vaultEngine.vaults(flrAssetId, owner.address);
+    });
+
     it("adds a new user to the user list", async () => {
       const before = await vaultEngine.getUserList();
       expect(before.length).to.equal(1);
@@ -413,13 +449,10 @@ describe("Vault Engine Unit Tests", function () {
       );
 
       const before = await vaultEngine.vaults(flrAssetId, owner.address);
-      console.log(before);
       expect(before.equity).to.equal(EQUITY_AMOUNT.div(RAY));
       await vaultEngine.collectInterest(flrAssetId);
 
       const after = await vaultEngine.vaults(flrAssetId, owner.address);
-      console.log(after.equity.mul(ACCUMULATOR).toString());
-      console.log(after.initialEquity.toString());
       expect(after.equity).to.equal(EXPECTED_VALUE);
     });
   });
@@ -540,7 +573,7 @@ describe("Vault Engine Unit Tests", function () {
       expect(totalEquityAfter.sub(totalEquityBefore).gte(0)).to.equal(true);
     });
 
-    it("fails if the equity increase (+ protocol fee) is larger than the debt increase", async () => {
+    it("fails if the equity increase is larger than the debt increase", async () => {
       const debtRateIncrease = BigNumber.from("251035088626883475473007");
       let equityRateIncrease = debtRateIncrease.add(1);
       await assertRevert(
@@ -565,6 +598,36 @@ describe("Vault Engine Unit Tests", function () {
           debtRateIncrease,
           equityRateIncrease,
           BigNumber.from(0)
+        );
+    });
+
+    it("fails if the equity increase (+ protocol fee) is larger than the debt increase", async () => {
+      const debtRateIncrease = BigNumber.from("251035088626883475473007");
+      const equityRateIncrease = BigNumber.from("125509667994754929166541");
+      let protocolRateIncrease = BigNumber.from("25509667994754929166541");
+      await assertRevert(
+        vaultEngine
+          .connect(user)
+          .updateAccumulators(
+            flrAssetId,
+            reservePool.address,
+            debtRateIncrease,
+            equityRateIncrease,
+            protocolRateIncrease
+          ),
+        "VaultEngine/updateAccumulators: The equity rate increase is larger than the debt rate increase"
+      );
+
+      protocolRateIncrease = BigNumber.from(0);
+
+      await vaultEngine
+        .connect(user)
+        .updateAccumulators(
+          flrAssetId,
+          reservePool.address,
+          debtRateIncrease,
+          equityRateIncrease,
+          protocolRateIncrease
         );
     });
 
