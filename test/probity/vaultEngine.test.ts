@@ -142,20 +142,145 @@ describe.only("Vault Engine Unit Tests", function () {
 
     it.only("tests that values are properly updated when calling with positive values", async () => {
       const before = await vaultEngine.vaults(flrAssetId, owner.address);
+      expect(before.standbyAssetAmount).to.equal(UNDERLYING_AMOUNT);
+      expect(before.activeAssetAmount).to.equal(0);
+      expect(before.debt).to.equal(0);
+      expect(before.equity).to.equal(0);
+      expect(before.initialEquity).to.equal(0);
+
+      await vaultEngine.modifyEquity(
+        flrAssetId,
+        treasury.address,
+        UNDERLYING_AMOUNT,
+        EQUITY_AMOUNT
+      );
 
       const after = await vaultEngine.vaults(flrAssetId, owner.address);
+      expect(after.standbyAssetAmount).to.equal(0);
+      expect(after.activeAssetAmount).to.equal(UNDERLYING_AMOUNT);
+      expect(after.debt).to.equal(0);
+      expect(after.equity).to.equal(EQUITY_AMOUNT.div(RAY));
+      expect(after.initialEquity).to.equal(EQUITY_AMOUNT);
     });
 
     it.only("fails if vault debt balances goes under zero when calling with negative values", async () => {
-      const before = await vaultEngine.vaults(flrAssetId, owner.address);
+      await vaultEngine.modifyEquity(
+        flrAssetId,
+        treasury.address,
+        UNDERLYING_AMOUNT,
+        EQUITY_AMOUNT
+      );
 
-      const after = await vaultEngine.vaults(flrAssetId, owner.address);
+      await assertRevert(
+        vaultEngine.modifyEquity(
+          flrAssetId,
+          treasury.address,
+          BigNumber.from(0).sub(UNDERLYING_AMOUNT),
+          BigNumber.from(0).sub(EQUITY_AMOUNT.add(1))
+        ),
+        "reverted with reason string 'Vault/add: add op failed"
+      );
+
+      await vaultEngine.modifyEquity(
+        flrAssetId,
+        treasury.address,
+        BigNumber.from(0).sub(UNDERLYING_AMOUNT),
+        BigNumber.from(0).sub(EQUITY_AMOUNT)
+      );
     });
 
     it.only("tests that values are properly updated when calling with negative values", async () => {
+      await vaultEngine.modifyEquity(
+        flrAssetId,
+        treasury.address,
+        UNDERLYING_AMOUNT,
+        EQUITY_AMOUNT
+      );
+
       const before = await vaultEngine.vaults(flrAssetId, owner.address);
+      expect(before.standbyAssetAmount).to.equal(0);
+      expect(before.activeAssetAmount).to.equal(UNDERLYING_AMOUNT);
+      expect(before.debt).to.equal(0);
+      expect(before.equity).to.equal(EQUITY_AMOUNT.div(RAY));
+      expect(before.initialEquity).to.equal(EQUITY_AMOUNT);
+
+      await vaultEngine.modifyEquity(
+        flrAssetId,
+        treasury.address,
+        BigNumber.from(0).sub(UNDERLYING_AMOUNT.div(2)),
+        BigNumber.from(0).sub(EQUITY_AMOUNT.div(2))
+      );
 
       const after = await vaultEngine.vaults(flrAssetId, owner.address);
+      expect(after.standbyAssetAmount).to.equal(UNDERLYING_AMOUNT.div(2));
+      expect(after.activeAssetAmount).to.equal(UNDERLYING_AMOUNT.div(2));
+      expect(after.debt).to.equal(0);
+      expect(after.equity).to.equal(EQUITY_AMOUNT.div(2).div(RAY));
+      expect(after.initialEquity).to.equal(EQUITY_AMOUNT.div(2));
+    });
+
+    it.only("tests that equity is updated properly when accumulator is above initial", async () => {
+      const ASSET_AMOUNT = UNDERLYING_AMOUNT.div(2);
+      const DEBT_AMOUNT = EQUITY_AMOUNT.div(2);
+
+      const debtRateIncrease = BigNumber.from("251035088626883475473007");
+      const equityRateIncrease = BigNumber.from("125509667994754929166541");
+
+      await vaultEngine
+        .connect(assetManager)
+        .modifyStandbyAsset(flrAssetId, owner.address, UNDERLYING_AMOUNT);
+
+      await vaultEngine.modifyEquity(
+        flrAssetId,
+        treasury.address,
+        UNDERLYING_AMOUNT,
+        EQUITY_AMOUNT
+      );
+
+      await vaultEngine.modifyDebt(
+        flrAssetId,
+        treasury.address,
+        ASSET_AMOUNT,
+        DEBT_AMOUNT
+      );
+
+      // update accumulator
+      await registry.connect(gov).setupAddress(bytes32("teller"), user.address);
+
+      await vaultEngine
+        .connect(user)
+        .updateAccumulators(
+          flrAssetId,
+          reservePool.address,
+          debtRateIncrease,
+          equityRateIncrease,
+          BigNumber.from(0)
+        );
+
+      const before = await vaultEngine.vaults(flrAssetId, owner.address);
+      expect(before.standbyAssetAmount).to.equal(UNDERLYING_AMOUNT.div(2));
+      expect(before.activeAssetAmount).to.equal(
+        UNDERLYING_AMOUNT.mul(3).div(2)
+      );
+      expect(before.debt).to.equal(DEBT_AMOUNT.div(RAY));
+      expect(before.equity).to.equal(EQUITY_AMOUNT.div(RAY));
+      expect(before.initialEquity).to.equal(EQUITY_AMOUNT);
+
+      await vaultEngine.modifyEquity(
+        flrAssetId,
+        treasury.address,
+        UNDERLYING_AMOUNT.div(2),
+        EQUITY_AMOUNT.div(2)
+      );
+
+      const after = await vaultEngine.vaults(flrAssetId, owner.address);
+      expect(after.standbyAssetAmount).to.equal(0);
+      expect(after.activeAssetAmount).to.equal(UNDERLYING_AMOUNT.mul(2));
+      expect(after.debt).to.equal(DEBT_AMOUNT.div(RAY));
+      expect(after.initialEquity).to.equal(EQUITY_AMOUNT.mul(3).div(2));
+      expect(after.equity.lt(EQUITY_AMOUNT.mul(3).div(2).div(RAY))).to.equal(
+        true
+      );
     });
 
     it("adds a new user to the user list", async () => {
@@ -309,20 +434,82 @@ describe.only("Vault Engine Unit Tests", function () {
 
     it.only("tests that values are properly updated when called with positive values", async () => {
       const before = await vaultEngine.vaults(flrAssetId, owner.address);
+      expect(before.standbyAssetAmount).to.equal(UNDERLYING_AMOUNT);
+      expect(before.activeAssetAmount).to.equal(0);
+      expect(before.debt).to.equal(0);
+      expect(before.equity).to.equal(0);
+      expect(before.initialEquity).to.equal(0);
+
+      await vaultEngine.modifyDebt(
+        flrAssetId,
+        treasury.address,
+        ASSET_AMOUNT,
+        DEBT_AMOUNT
+      );
 
       const after = await vaultEngine.vaults(flrAssetId, owner.address);
+      console.log(after);
+      expect(after.standbyAssetAmount).to.equal(UNDERLYING_AMOUNT);
+      expect(after.activeAssetAmount).to.equal(0);
+      expect(after.debt).to.equal(0);
+      expect(after.equity).to.equal(0);
+      expect(after.initialEquity).to.equal(0);
     });
 
     it.only("fails if vault debt balances goes under zero when calling with negative values", async () => {
-      const before = await vaultEngine.vaults(flrAssetId, owner.address);
+      await vaultEngine.modifyDebt(
+        flrAssetId,
+        treasury.address,
+        ASSET_AMOUNT,
+        DEBT_AMOUNT
+      );
 
-      const after = await vaultEngine.vaults(flrAssetId, owner.address);
+      await assertRevert(
+        vaultEngine.modifyDebt(
+          flrAssetId,
+          treasury.address,
+          BigNumber.from(0).sub(ASSET_AMOUNT),
+          BigNumber.from(0).sub(DEBT_AMOUNT.add(1))
+        ),
+        "reverted with reason string 'Vault/add: add op failed"
+      );
+
+      await vaultEngine.modifyDebt(
+        flrAssetId,
+        treasury.address,
+        BigNumber.from(0).sub(ASSET_AMOUNT),
+        BigNumber.from(0).sub(DEBT_AMOUNT)
+      );
     });
 
     it.only("tests that values are properly updated when calling with negative values", async () => {
+      await vaultEngine.modifyDebt(
+        flrAssetId,
+        treasury.address,
+        ASSET_AMOUNT,
+        DEBT_AMOUNT
+      );
+
       const before = await vaultEngine.vaults(flrAssetId, owner.address);
+      expect(before.standbyAssetAmount).to.equal(UNDERLYING_AMOUNT);
+      expect(before.activeAssetAmount).to.equal(0);
+      expect(before.debt).to.equal(0);
+      expect(before.equity).to.equal(0);
+      expect(before.initialEquity).to.equal(0);
+
+      await vaultEngine.modifyDebt(
+        flrAssetId,
+        treasury.address,
+        BigNumber.from(0).sub(ASSET_AMOUNT),
+        BigNumber.from(0).sub(DEBT_AMOUNT)
+      );
 
       const after = await vaultEngine.vaults(flrAssetId, owner.address);
+      expect(after.standbyAssetAmount).to.equal(UNDERLYING_AMOUNT);
+      expect(after.activeAssetAmount).to.equal(0);
+      expect(after.debt).to.equal(0);
+      expect(after.equity).to.equal(0);
+      expect(after.initialEquity).to.equal(0);
     });
 
     it("adds a new user to the user list", async () => {
