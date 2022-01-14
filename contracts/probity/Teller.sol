@@ -19,9 +19,9 @@ interface VaultEngineLike {
         uint256 protocolFeeRates
     ) external;
 
-    function aggregateInflationRate() external;
+    function aggregateInflationRate() external returns (uint256);
 
-    function inflationRate() external;
+    function inflationRate() external returns (uint256);
 }
 
 interface IAPR {
@@ -53,6 +53,7 @@ contract Teller is Stateful {
     VaultEngineLike public immutable vaultEngine;
     IAPR public immutable lowAprRate;
     IAPR public immutable highAprRate;
+    uint256 public baseApr;
 
     address public reservePool;
     uint256 public apr; // Annualized percentage rate
@@ -95,6 +96,10 @@ contract Teller is Stateful {
     function initCollType(bytes32 assetId, uint256 protocolFee) external onlyBy("gov") {
         collateralTypes[assetId].lastUpdated = block.timestamp;
         collateralTypes[assetId].protocolFee = protocolFee;
+    }
+
+    function updateBaseApr() public {
+        baseApr = vaultEngine.inflationRate();
     }
 
     function setReservePoolAddress(address newReservePool) public onlyBy("gov") {
