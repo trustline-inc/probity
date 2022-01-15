@@ -596,4 +596,14 @@ describe("Vault Engine Unit Tests", function () {
       );
     });
   });
+
+  describe("updateInflationRate Unit Tests", () => {
+    it("updates the inflation rate", async () => {
+      // TODO
+    });
+
+    it("updates the aggregate inflation rate", async () => {
+      // TODO
+    });
+  });
 });
