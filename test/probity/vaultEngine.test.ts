@@ -40,7 +40,7 @@ let flrAssetId = bytes32("FLR");
 
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
-describe.only("Vault Engine Unit Tests", function () {
+describe("Vault Engine Unit Tests", function () {
   beforeEach(async function () {
     let { contracts, signers } = await deployTest();
     // Set contracts
@@ -140,7 +140,7 @@ describe.only("Vault Engine Unit Tests", function () {
       );
     });
 
-    it.only("tests that values are properly updated when calling with positive values", async () => {
+    it("tests that values are properly updated when calling with positive values", async () => {
       const before = await vaultEngine.vaults(flrAssetId, owner.address);
       expect(before.standbyAssetAmount).to.equal(UNDERLYING_AMOUNT);
       expect(before.activeAssetAmount).to.equal(0);
@@ -163,7 +163,7 @@ describe.only("Vault Engine Unit Tests", function () {
       expect(after.initialEquity).to.equal(EQUITY_AMOUNT);
     });
 
-    it.only("fails if vault debt balances goes under zero when calling with negative values", async () => {
+    it("fails if vault debt balances goes under zero when calling with negative values", async () => {
       await vaultEngine.modifyEquity(
         flrAssetId,
         treasury.address,
@@ -189,7 +189,7 @@ describe.only("Vault Engine Unit Tests", function () {
       );
     });
 
-    it.only("tests that values are properly updated when calling with negative values", async () => {
+    it("tests that values are properly updated when calling with negative values", async () => {
       await vaultEngine.modifyEquity(
         flrAssetId,
         treasury.address,
@@ -219,7 +219,7 @@ describe.only("Vault Engine Unit Tests", function () {
       expect(after.initialEquity).to.equal(EQUITY_AMOUNT.div(2));
     });
 
-    it.only("tests that equity is updated properly when accumulator is above initial", async () => {
+    it("tests that equity is updated properly when accumulator is above initial", async () => {
       const ASSET_AMOUNT = UNDERLYING_AMOUNT.div(2);
       const DEBT_AMOUNT = EQUITY_AMOUNT.div(2);
 
@@ -280,6 +280,26 @@ describe.only("Vault Engine Unit Tests", function () {
       expect(after.initialEquity).to.equal(EQUITY_AMOUNT.mul(3).div(2));
       expect(after.equity.lt(EQUITY_AMOUNT.mul(3).div(2).div(RAY))).to.equal(
         true
+      );
+    });
+
+    it("fails if vault is undercollateralized", async () => {
+      const MINIMUM_AMOUNT = EQUITY_AMOUNT.div(RAY);
+      await assertRevert(
+        vaultEngine.modifyEquity(
+          flrAssetId,
+          treasury.address,
+          MINIMUM_AMOUNT.sub(1),
+          EQUITY_AMOUNT
+        ),
+        "Vault/certify: Not enough underlying/collateral"
+      );
+
+      await vaultEngine.modifyEquity(
+        flrAssetId,
+        treasury.address,
+        MINIMUM_AMOUNT,
+        EQUITY_AMOUNT
       );
     });
 
@@ -432,7 +452,7 @@ describe.only("Vault Engine Unit Tests", function () {
       );
     });
 
-    it.only("tests that values are properly updated when called with positive values", async () => {
+    it("tests that values are properly updated when called with positive values", async () => {
       const before = await vaultEngine.vaults(flrAssetId, owner.address);
       expect(before.standbyAssetAmount).to.equal(UNDERLYING_AMOUNT);
       expect(before.activeAssetAmount).to.equal(0);
@@ -448,15 +468,16 @@ describe.only("Vault Engine Unit Tests", function () {
       );
 
       const after = await vaultEngine.vaults(flrAssetId, owner.address);
-      console.log(after);
-      expect(after.standbyAssetAmount).to.equal(UNDERLYING_AMOUNT);
-      expect(after.activeAssetAmount).to.equal(0);
-      expect(after.debt).to.equal(0);
+      expect(after.standbyAssetAmount).to.equal(
+        UNDERLYING_AMOUNT.sub(ASSET_AMOUNT)
+      );
+      expect(after.activeAssetAmount).to.equal(ASSET_AMOUNT);
+      expect(after.debt).to.equal(DEBT_AMOUNT.div(RAY));
       expect(after.equity).to.equal(0);
       expect(after.initialEquity).to.equal(0);
     });
 
-    it.only("fails if vault debt balances goes under zero when calling with negative values", async () => {
+    it("fails if vault debt balances goes under zero when calling with negative values", async () => {
       await vaultEngine.modifyDebt(
         flrAssetId,
         treasury.address,
@@ -482,7 +503,7 @@ describe.only("Vault Engine Unit Tests", function () {
       );
     });
 
-    it.only("tests that values are properly updated when calling with negative values", async () => {
+    it("tests that values are properly updated when calling with negative values", async () => {
       await vaultEngine.modifyDebt(
         flrAssetId,
         treasury.address,
@@ -491,25 +512,104 @@ describe.only("Vault Engine Unit Tests", function () {
       );
 
       const before = await vaultEngine.vaults(flrAssetId, owner.address);
-      expect(before.standbyAssetAmount).to.equal(UNDERLYING_AMOUNT);
-      expect(before.activeAssetAmount).to.equal(0);
-      expect(before.debt).to.equal(0);
+      expect(before.standbyAssetAmount).to.equal(
+        UNDERLYING_AMOUNT.sub(ASSET_AMOUNT)
+      );
+      expect(before.activeAssetAmount).to.equal(ASSET_AMOUNT);
+      expect(before.debt).to.equal(DEBT_AMOUNT.div(RAY));
       expect(before.equity).to.equal(0);
       expect(before.initialEquity).to.equal(0);
 
       await vaultEngine.modifyDebt(
         flrAssetId,
         treasury.address,
-        BigNumber.from(0).sub(ASSET_AMOUNT),
-        BigNumber.from(0).sub(DEBT_AMOUNT)
+        BigNumber.from(0).sub(ASSET_AMOUNT.div(2)),
+        BigNumber.from(0).sub(DEBT_AMOUNT.div(2))
+      );
+
+      const after = await vaultEngine.vaults(flrAssetId, owner.address);
+      expect(after.standbyAssetAmount).to.equal(
+        UNDERLYING_AMOUNT.sub(ASSET_AMOUNT.div(2))
+      );
+      expect(after.activeAssetAmount).to.equal(ASSET_AMOUNT.div(2));
+      expect(after.debt).to.equal(DEBT_AMOUNT.div(2).div(RAY));
+      expect(after.equity).to.equal(0);
+      expect(after.initialEquity).to.equal(0);
+    });
+
+    it("fails if vault is undercollateralized", async () => {
+      const MINIMUM_AMOUNT = DEBT_AMOUNT.div(RAY);
+      await assertRevert(
+        vaultEngine.modifyDebt(
+          flrAssetId,
+          treasury.address,
+          MINIMUM_AMOUNT.sub(1),
+          DEBT_AMOUNT
+        ),
+        "Vault/certify: Not enough underlying/collateral"
+      );
+
+      await vaultEngine.modifyDebt(
+        flrAssetId,
+        treasury.address,
+        MINIMUM_AMOUNT,
+        DEBT_AMOUNT
+      );
+    });
+
+    it("tests that debt is updated properly when accumulator is above initial", async () => {
+      const ASSET_AMOUNT = UNDERLYING_AMOUNT.div(2);
+      const DEBT_AMOUNT = EQUITY_AMOUNT.div(2);
+
+      const debtRateIncrease = BigNumber.from("251035088626883475473007");
+      const equityRateIncrease = BigNumber.from("125509667994754929166541");
+
+      await vaultEngine
+        .connect(assetManager)
+        .modifyStandbyAsset(flrAssetId, owner.address, UNDERLYING_AMOUNT);
+
+      await vaultEngine.modifyDebt(
+        flrAssetId,
+        treasury.address,
+        ASSET_AMOUNT,
+        DEBT_AMOUNT
+      );
+
+      // update accumulator
+      await registry.connect(gov).setupAddress(bytes32("teller"), user.address);
+
+      await vaultEngine
+        .connect(user)
+        .updateAccumulators(
+          flrAssetId,
+          reservePool.address,
+          debtRateIncrease,
+          equityRateIncrease,
+          BigNumber.from(0)
+        );
+
+      const before = await vaultEngine.vaults(flrAssetId, owner.address);
+      expect(before.standbyAssetAmount).to.equal(
+        UNDERLYING_AMOUNT.mul(3).div(2)
+      );
+      expect(before.activeAssetAmount).to.equal(UNDERLYING_AMOUNT.div(2));
+      expect(before.debt).to.equal(DEBT_AMOUNT.div(RAY));
+      expect(before.equity).to.equal(0);
+      expect(before.initialEquity).to.equal(0);
+
+      await vaultEngine.modifyDebt(
+        flrAssetId,
+        treasury.address,
+        UNDERLYING_AMOUNT.div(2),
+        DEBT_AMOUNT.div(2)
       );
 
       const after = await vaultEngine.vaults(flrAssetId, owner.address);
       expect(after.standbyAssetAmount).to.equal(UNDERLYING_AMOUNT);
-      expect(after.activeAssetAmount).to.equal(0);
-      expect(after.debt).to.equal(0);
-      expect(after.equity).to.equal(0);
+      expect(after.activeAssetAmount).to.equal(UNDERLYING_AMOUNT);
+      expect(after.debt.lt(DEBT_AMOUNT.mul(3).div(2).div(RAY))).to.equal(true);
       expect(after.initialEquity).to.equal(0);
+      expect(after.equity).to.equal(0);
     });
 
     it("adds a new user to the user list", async () => {
