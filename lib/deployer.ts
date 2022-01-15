@@ -165,7 +165,6 @@ const contracts: ContractDict = {
   pbtToken: null,
   vaultEngine: null,
   vaultEngineSB: null,
-  vaultManager: null,
   nativeToken: null,
   erc20Token: null,
   ftsoManager: null,
