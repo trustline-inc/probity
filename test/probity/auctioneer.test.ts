@@ -211,7 +211,7 @@ describe("Auctioneer Unit Tests", function () {
 
       await assertRevert(
         auctioneer.placeBid(0, RAY, LOT_SIZE.div(10)),
-        "Auctioneer/placeBid: this user has already placed a bid"
+        "Auctioneer/placeBid: This user has already placed a bid"
       );
     });
 
@@ -506,7 +506,7 @@ describe("Auctioneer Unit Tests", function () {
 
       await assertRevert(
         auctioneer.finalizeSale(0),
-        "Auctioneer/finalizeSale: the current price has not passed the bid price"
+        "Auctioneer/finalizeSale: The current price has not passed the bid price"
       );
     });
 

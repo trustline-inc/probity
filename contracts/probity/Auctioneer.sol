@@ -161,7 +161,7 @@ contract Auctioneer is Stateful, Eventful {
     ) external {
         require(!auctions[auctionId].isOver, "Auctioneer/placeBid: Auction is over");
         // @todo re-evaluate why user shouldn't be able to place two bids
-        require(bids[auctionId][msg.sender].price == 0, "Auctioneer/placeBid: this user has already placed a bid");
+        require(bids[auctionId][msg.sender].price == 0, "Auctioneer/placeBid: This user has already placed a bid");
 
         (uint256 totalBidValue, uint256 totalBidLot, address indexToAdd) = totalBidValueAtPrice(auctionId, bidPrice);
         uint256 bidAbleAmount = auctions[auctionId].debt - totalBidValue;
@@ -231,7 +231,7 @@ contract Auctioneer is Stateful, Eventful {
         require(bids[auctionId][msg.sender].price != 0, "Auctioneer/finalizeSale: The caller has no active bids");
         require(
             (calculatePrice(auctionId) * nextBidRatio) / ONE <= bids[auctionId][msg.sender].price,
-            "Auctioneer/finalizeSale: the current price has not passed the bid price"
+            "Auctioneer/finalizeSale: The current price has not passed the bid price"
         );
         uint256 buyAmount = bids[auctionId][msg.sender].price * bids[auctionId][msg.sender].lot;
 
