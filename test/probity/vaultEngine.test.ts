@@ -598,12 +598,74 @@ describe("Vault Engine Unit Tests", function () {
   });
 
   describe("updateInflationRate Unit Tests", () => {
-    it("updates the inflation rate", async () => {
-      // TODO
+    const UNDERLYING_AMOUNT = WAD.mul(10000);
+    const ASSET_AMOUNT = WAD.mul(10000);
+    const EQUITY_AMOUNT = RAD.mul(2000);
+    const DEBT_AMOUNT = RAD.mul(1000);
+
+    beforeEach(async function () {
+      await owner.sendTransaction({
+        to: user.address,
+        value: ethers.utils.parseEther("1"),
+      });
+      await vaultEngine.connect(gov).initAssetType(flrAssetId);
+      await vaultEngine
+        .connect(gov)
+        .updateCeiling(flrAssetId, RAD.mul(10000000));
+      await registry
+        .connect(gov)
+        .setupAddress(bytes32("assetManager"), assetManager.address);
+      await vaultEngine
+        .connect(assetManager)
+        .modifyStandbyAsset(
+          flrAssetId,
+          owner.address,
+          ASSET_AMOUNT.add(UNDERLYING_AMOUNT)
+        );
+      await vaultEngine
+        .connect(gov)
+        .updateAdjustedPrice(flrAssetId, RAY.mul(1));
+      await registry.connect(gov).setupAddress(bytes32("teller"), user.address);
     });
 
-    it("updates the aggregate inflation rate", async () => {
-      // TODO
+    it("updates the inflation rate", async () => {
+      // Rates are initialized as zero
+      let inflationRate = await vaultEngine.inflationRate();
+      let aggregateInflationRate = await vaultEngine.aggregateInflationRate();
+      expect(inflationRate).to.equal(0);
+      expect(aggregateInflationRate).to.equal(0);
+
+      // Rates are updated by gov
+      const fiveBP = ethers.utils.parseUnits("0.005", 27); // 5 basis points in RAY
+      await vaultEngine.connect(gov).updateInflationRate(fiveBP);
+      inflationRate = await vaultEngine.inflationRate();
+      aggregateInflationRate = await vaultEngine.aggregateInflationRate();
+      expect(inflationRate).to.equal(fiveBP);
+      expect(aggregateInflationRate).to.equal(fiveBP);
+
+      // Rates are updated a second time
+      await vaultEngine.connect(gov).updateInflationRate(fiveBP);
+      aggregateInflationRate = await vaultEngine.aggregateInflationRate();
+      expect(inflationRate).to.equal(fiveBP);
+      expect(aggregateInflationRate).to.equal(
+        ethers.utils.parseUnits("0.01", 27)
+      );
+    });
+
+    it("updates the underlying and collateral ratios", async () => {
+      const fiveBP = ethers.utils.parseUnits("0.005", 27); // 5 basis points in RAY
+      await vaultEngine.connect(gov).updateInflationRate(fiveBP);
+
+      await vaultEngine
+        .connect(assetManager)
+        .modifyStandbyAsset(flrAssetId, owner.address, UNDERLYING_AMOUNT);
+
+      await vaultEngine.modifyEquity(
+        flrAssetId,
+        treasury.address,
+        UNDERLYING_AMOUNT,
+        EQUITY_AMOUNT
+      );
     });
   });
 });
