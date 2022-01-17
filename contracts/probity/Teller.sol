@@ -151,6 +151,7 @@ contract Teller is Stateful {
             uint256 round = 0.0025 * 10**27;
             apr = oneDividedByOneMinusUtilization + RAY;
             apr = ((apr + round - 1) / round) * round;
+            apr = apr + baseApr;
 
             if (apr > MAX_APR) {
                 apr = MAX_APR;
