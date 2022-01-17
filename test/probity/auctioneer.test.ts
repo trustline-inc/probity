@@ -364,7 +364,7 @@ describe("Auctioneer Unit Tests", function () {
     it("fails if current price is higher than max buyItNow price", async () => {
       await assertRevert(
         auctioneer.connect(user1).buyItNow(0, RAY, LOT_SIZE.div(10)),
-        "Auctioneer/buyItNow: current price is higher than max price"
+        "Auctioneer/buyItNow: Current price is higher than max price"
       );
 
       await auctioneer.buyItNow(0, RAY.mul(12).div(10), LOT_SIZE);
@@ -375,7 +375,7 @@ describe("Auctioneer Unit Tests", function () {
 
       await assertRevert(
         auctioneer.connect(user1).buyItNow(0, RAY, LOT_SIZE.div(10)),
-        "Auctioneer/buyItNow: Current Price is now 0"
+        "Auctioneer/buyItNow: Current price is now zero"
       );
     });
 

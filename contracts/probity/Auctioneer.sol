@@ -194,10 +194,9 @@ contract Auctioneer is Stateful, Eventful {
         uint256 lot
     ) external {
         require(!auctions[auctionId].isOver, "Auctioneer/buyItNow: Auction is over");
-        // fail if currentPrice <= max Price
         uint256 currentPrice = calculatePrice(auctionId);
-        require(currentPrice <= maxPrice, "Auctioneer/buyItNow: current price is higher than max price");
-        require(currentPrice != 0, "Auctioneer/buyItNow: Current Price is now 0");
+        require(currentPrice <= maxPrice, "Auctioneer/buyItNow: Current price is higher than max price");
+        require(currentPrice != 0, "Auctioneer/buyItNow: Current price is now zero");
         uint256 buyableAmount = lot * currentPrice;
 
         (uint256 bidValueAtCurrent, uint256 totalBidLot, address index) = totalBidValueAtPrice(auctionId, currentPrice);
