@@ -182,6 +182,12 @@ contract Auctioneer is Stateful, Eventful {
         cancelOldBids(auctionId, totalBidValue, totalBidLot, indexToAdd);
     }
 
+    /**
+     * @notice Allows a user to purchase collateral outright
+     * @param auctionId The ID of the auction
+     * @param maxPrice TODO: where is this used?
+     * @param lot The amount of collateral to purchase
+     */
     function buyItNow(
         uint256 auctionId,
         uint256 maxPrice,
