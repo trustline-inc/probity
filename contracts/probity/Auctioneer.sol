@@ -246,6 +246,11 @@ contract Auctioneer is Stateful, Eventful {
         checkIfAuctionEnded(auctionId);
     }
 
+    /**
+     * @notice Returns the current price of the given auction
+     * @param auctionId The ID of the auction to check
+     * @return price The current price of the auction
+     */
     function calculatePrice(uint256 auctionId) public returns (uint256 price) {
         return priceCalc.price(auctions[auctionId].startPrice, block.timestamp - auctions[auctionId].startTime);
     }
