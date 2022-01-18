@@ -11,7 +11,7 @@ contract Registry is IRegistry {
     /////////////////////////////////////////
     // State Variables
     /////////////////////////////////////////
-    mapping(address => bytes32) private addressToName;
+    mapping(address => bytes32) public addressToName;
 
     /////////////////////////////////////////
     // Modifiers
