@@ -450,7 +450,6 @@ describe("Probity happy flow", function () {
     await auctioneerUser.buyItNow(0, RAY.mul(12).div(10), WAD.mul(10));
     let userVaultAfter = await vaultEngine.vaults(flrAssetId, user.address);
     let userAurAfter = await vaultEngine.stablecoin(user.address);
-
     expect(
       userAurBefore.sub(userAurAfter).sub(EXPECTED_BUY_VALUE).abs().lte(RAD)
     ).to.equal(true);

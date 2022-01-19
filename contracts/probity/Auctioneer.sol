@@ -57,6 +57,7 @@ contract Auctioneer is Stateful, Eventful {
     // State Variables
     /////////////////////////////////////////
     uint256 private constant ONE = 1.00E18;
+    uint256 private constant RAY = 1e27;
     address public constant HEAD = address(1);
 
     VaultEngineLike public immutable vaultEngine;
@@ -138,7 +139,7 @@ contract Auctioneer is Stateful, Eventful {
         address beneficiary
     ) external onlyBy("liquidator") {
         (uint256 currPrice, ) = ftso.getCurrentPrice();
-        uint256 startingPrice = (currPrice * priceBuffer) / ONE;
+        uint256 startingPrice = (rdiv(currPrice, 1e5) * priceBuffer) / ONE;
         uint256 auctionId = auctionCount++;
         auctions[auctionId] = Auction(
             collId,
@@ -407,5 +408,12 @@ contract Auctioneer is Stateful, Eventful {
             index = nextHighestBidder[auctionId][index];
         }
         require(removed, "Auctioneer/removeIndex: The index could not be found");
+    }
+
+    /////////////////////////////////////////
+    // Internal functions
+    /////////////////////////////////////////
+    function rdiv(uint256 x, uint256 y) internal pure returns (uint256 z) {
+        z = ((x * RAY) + (y / 2)) / y;
     }
 }
