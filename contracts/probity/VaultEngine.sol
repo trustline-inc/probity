@@ -428,7 +428,7 @@ contract VaultEngine is Stateful, Eventful {
      */
     function certify(bytes32 assetId, Vault memory vault) internal view {
         require(
-            (vault.debt * assets[assetId].debtAccumulator) + (vault.equity * RAY) <=
+            (vault.debt * assets[assetId].debtAccumulator) + vault.initialEquity <=
                 vault.activeAssetAmount * assets[assetId].adjustedPrice,
             "Vault/certify: Not enough underlying/collateral"
         );
