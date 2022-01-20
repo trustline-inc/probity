@@ -267,7 +267,6 @@ describe("Liquidator Unit Tests", function () {
     it("test that auctioneer's startAuction is called with correct parameters", async () => {
       const EXPECTED_DEBT_SIZE = VAULT_DEBT.mul(117)
         .div(100)
-        .add(VAULT_EQUITY.mul(105).div(100))
         .mul(DEBT_ACCUMULATOR);
       const before = await auctioneer.lastStartAuctionCall();
       expect(before.collId).to.equal(bytes32(""));

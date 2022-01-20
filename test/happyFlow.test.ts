@@ -437,17 +437,18 @@ describe("Probity happy flow", function () {
       RAD.mul(600)
     );
 
-    await auctioneerUser.placeBid(0, RAY.mul(11).div(10), WAD.mul("100"));
+    await auctioneerUser.placeBid(0, RAY.mul(10).div(10), WAD.mul("100"));
     let bidAfter = await auctioneer.bids(0, user.address);
-    expect(bidAfter[0]).to.equal(RAY.mul(11).div(10));
+    expect(bidAfter[0]).to.equal(RAY.mul(10).div(10));
     expect(bidAfter[1]).to.equal(WAD.mul("100"));
 
+    const BUY_PRICE = RAY.mul(12).div(10);
     const EXPECTED_BUY_LOT = WAD.mul(10);
-    const EXPECTED_BUY_VALUE = RAY.mul(12).div(10).mul(EXPECTED_BUY_LOT);
+    const EXPECTED_BUY_VALUE = BUY_PRICE.mul(EXPECTED_BUY_LOT);
 
     let userVaultBefore = await vaultEngine.vaults(flrAssetId, user.address);
     let userAurBefore = await vaultEngine.stablecoin(user.address);
-    await auctioneerUser.buyItNow(0, RAY.mul(12).div(10), WAD.mul(10));
+    await auctioneerUser.buyItNow(0, BUY_PRICE, EXPECTED_BUY_LOT);
     let userVaultAfter = await vaultEngine.vaults(flrAssetId, user.address);
     let userAurAfter = await vaultEngine.stablecoin(user.address);
 

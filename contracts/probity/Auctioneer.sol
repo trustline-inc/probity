@@ -195,7 +195,6 @@ contract Auctioneer is Stateful, Eventful {
         uint256 buyableAmount = lot * currentPrice;
 
         (uint256 bidValueAtCurrent, uint256 totalBidLot, address index) = totalBidValueAtPrice(auctionId, currentPrice);
-
         require(
             bidValueAtCurrent < auctions[auctionId].debt && totalBidLot < auctions[auctionId].lot,
             "Auctioneer/buyItNow: Price has reach a point where BuyItNow is no longer available"
@@ -210,7 +209,7 @@ contract Auctioneer is Stateful, Eventful {
         lotToBuy = min(lotToBuy, auctions[auctionId].lot);
         buyableAmount = lotToBuy * currentPrice;
 
-        vaultEngine.moveStablecoin(msg.sender, auctions[auctionId].beneficiary, lotToBuy * currentPrice);
+        vaultEngine.moveStablecoin(msg.sender, auctions[auctionId].beneficiary, buyableAmount);
         vaultEngine.moveAsset(auctions[auctionId].collId, address(this), msg.sender, lotToBuy);
 
         auctions[auctionId].debt = auctions[auctionId].debt - buyableAmount;
