@@ -744,6 +744,76 @@ describe("Vault Engine Unit Tests", function () {
     });
   });
 
+  describe("liquidateVault Unit Tests", function () {
+    const UNDERLYING_AMOUNT = WAD.mul(10000);
+    const ASSET_AMOUNT = WAD.mul(10000);
+    const EQUITY_AMOUNT = RAD.mul(2000);
+    const DEBT_AMOUNT = RAD.mul(1000);
+
+    beforeEach(async function () {
+      await owner.sendTransaction({
+        to: user.address,
+        value: ethers.utils.parseEther("1"),
+      });
+      await vaultEngine.connect(gov).initAssetType(flrAssetId);
+      await vaultEngine
+        .connect(gov)
+        .updateCeiling(flrAssetId, RAD.mul(10000000));
+      await registry
+        .connect(gov)
+        .setupAddress(bytes32("assetManager"), assetManager.address);
+      await vaultEngine
+        .connect(assetManager)
+        .modifyStandbyAsset(
+          flrAssetId,
+          owner.address,
+          ASSET_AMOUNT.add(UNDERLYING_AMOUNT)
+        );
+      await vaultEngine
+        .connect(gov)
+        .updateAdjustedPrice(flrAssetId, RAY.mul(1));
+
+      await vaultEngine.modifyEquity(
+        flrAssetId,
+        treasury.address,
+        UNDERLYING_AMOUNT,
+        EQUITY_AMOUNT
+      );
+      await vaultEngine.modifyDebt(
+        flrAssetId,
+        treasury.address,
+        ASSET_AMOUNT,
+        DEBT_AMOUNT
+      );
+
+      await registry
+        .connect(gov)
+        .setupAddress(bytes32("liquidator"), user.address);
+    });
+
+    it("tests that initialEquity is reduced correctly", async () => {
+      const AMOUNT_TO_LIQUIDATE = EQUITY_AMOUNT.div(RAY).div(2);
+      const before = (await vaultEngine.vaults(flrAssetId, owner.address))
+        .initialEquity;
+
+      await vaultEngine
+        .connect(user)
+        .liquidateVault(
+          flrAssetId,
+          owner.address,
+          assetManager.address,
+          assetManager.address,
+          0,
+          0,
+          BigNumber.from("0").sub(AMOUNT_TO_LIQUIDATE)
+        );
+
+      const after = (await vaultEngine.vaults(flrAssetId, owner.address))
+        .initialEquity;
+      expect(after.sub(before).abs().lte(EQUITY_AMOUNT.div(2))).to.equal(true);
+    });
+  });
+
   describe("updateAccumulator Unit Tests", function () {
     const UNDERLYING_AMOUNT = WAD.mul(10000);
     const ASSET_AMOUNT = WAD.mul(10000);
