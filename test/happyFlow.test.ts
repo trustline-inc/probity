@@ -54,12 +54,12 @@ const RAD = ethers.BigNumber.from(
 const ASSET_AMOUNT = WAD.mul(1000);
 const UNDERLYING_AMOUNT = WAD.mul(400);
 const UNDERLYING_AMOUNT_TO_DECREASE = WAD.mul(-400);
-const EQUITY_AMOUNT_TO_DECREASE = RAD.mul(-200);
-const EQUITY_AMOUNT = RAD.mul(200);
+const EQUITY_AMOUNT_TO_DECREASE = WAD.mul(-200);
+const EQUITY_AMOUNT = WAD.mul(200);
 const COLL_AMOUNT = WAD.mul(200);
-const LOAN_AMOUNT = RAD.mul(100);
+const LOAN_AMOUNT = WAD.mul(100);
 const LOAN_REPAY_COLL_AMOUNT = WAD.mul(-200);
-const LOAN_REPAY_AMOUNT = RAD.mul(-100);
+const LOAN_REPAY_AMOUNT = WAD.mul(-100);
 
 const flrAssetId = web3.utils.keccak256("FLR");
 const fxrpAssetId = web3.utils.keccak256("FXRP");
@@ -187,9 +187,7 @@ describe("Probity happy flow", function () {
     expect(userVaultBefore[0].sub(userVaultAfter[0])).to.equal(
       UNDERLYING_AMOUNT
     );
-    expect(userVaultAfter[3].sub(userVaultBefore[3])).to.equal(
-      EQUITY_AMOUNT.div(RAY)
-    );
+    expect(userVaultAfter[3].sub(userVaultBefore[3])).to.equal(EQUITY_AMOUNT);
 
     userVaultBefore = await vaultEngine.vaults(flrAssetId, owner.address);
     let aurBefore = await vaultEngine.stablecoin(owner.address);
@@ -203,12 +201,10 @@ describe("Probity happy flow", function () {
     );
 
     let aurAfter = await vaultEngine.stablecoin(owner.address);
-    expect(aurAfter.sub(aurBefore)).to.equal(LOAN_AMOUNT);
+    expect(aurAfter.sub(aurBefore)).to.equal(LOAN_AMOUNT.mul(RAY));
     userVaultAfter = await vaultEngine.vaults(flrAssetId, owner.address);
     expect(userVaultBefore[0].sub(userVaultAfter[0])).to.equal(COLL_AMOUNT);
-    expect(userVaultAfter[2].sub(userVaultBefore[2])).to.equal(
-      LOAN_AMOUNT.div(RAY)
-    );
+    expect(userVaultAfter[2].sub(userVaultBefore[2])).to.equal(LOAN_AMOUNT);
 
     // Stablecoin withdrawal
     let ownerBalanceBefore = await aurei.balanceOf(owner.address);
@@ -252,12 +248,10 @@ describe("Probity happy flow", function () {
     );
 
     let aurAfter = await vaultEngine.stablecoin(owner.address);
-    expect(aurAfter.sub(aurBefore)).to.equal(LOAN_AMOUNT);
+    expect(aurAfter.sub(aurBefore)).to.equal(LOAN_AMOUNT.mul(RAY));
     let userVaultAfter = await vaultEngine.vaults(flrAssetId, owner.address);
     expect(userVaultBefore[0].sub(userVaultAfter[0])).to.equal(COLL_AMOUNT);
-    expect(userVaultAfter[2].sub(userVaultBefore[2])).to.equal(
-      LOAN_AMOUNT.div(RAY)
-    );
+    expect(userVaultAfter[2].sub(userVaultBefore[2])).to.equal(LOAN_AMOUNT);
 
     userVaultBefore = await vaultEngine.vaults(flrAssetId, owner.address);
     aurBefore = await vaultEngine.stablecoin(owner.address);
@@ -271,13 +265,13 @@ describe("Probity happy flow", function () {
     );
 
     aurAfter = await vaultEngine.stablecoin(owner.address);
-    expect(aurAfter.sub(aurBefore)).to.equal(LOAN_REPAY_AMOUNT);
+    expect(aurAfter.sub(aurBefore)).to.equal(LOAN_REPAY_AMOUNT.mul(RAY));
     userVaultAfter = await vaultEngine.vaults(flrAssetId, owner.address);
     expect(userVaultBefore[0].sub(userVaultAfter[0])).to.equal(
       LOAN_REPAY_COLL_AMOUNT
     );
     expect(userVaultAfter[2].sub(userVaultBefore[2])).to.equal(
-      LOAN_REPAY_AMOUNT.div(RAY)
+      LOAN_REPAY_AMOUNT
     );
   });
 
@@ -308,9 +302,7 @@ describe("Probity happy flow", function () {
     expect(userVaultBefore[0].sub(userVaultAfter[0])).to.equal(
       UNDERLYING_AMOUNT
     );
-    expect(userVaultAfter[3].sub(userVaultBefore[3])).to.equal(
-      EQUITY_AMOUNT.div(RAY)
-    );
+    expect(userVaultAfter[3].sub(userVaultBefore[3])).to.equal(EQUITY_AMOUNT);
 
     // Redeem underlying assets
     await vaultEngine.modifyEquity(
@@ -328,7 +320,7 @@ describe("Probity happy flow", function () {
       UNDERLYING_AMOUNT_TO_DECREASE
     );
     expect(userVaultAfterDecrease[3].sub(userVaultAfter[3])).to.equal(
-      EQUITY_AMOUNT_TO_DECREASE.div(RAY)
+      EQUITY_AMOUNT_TO_DECREASE
     );
   });
 
@@ -383,7 +375,7 @@ describe("Probity happy flow", function () {
     let unBackedAurAfter = await vaultEngine.unbackedDebt(reserve.address);
     let userVaultAfter = await vaultEngine.vaults(flrAssetId, owner.address);
     expect(unBackedAurAfter.sub(unBackedAurBefore)).to.equal(
-      EQUITY_AMOUNT.add(LOAN_AMOUNT)
+      EQUITY_AMOUNT.add(LOAN_AMOUNT).mul(RAY)
     );
     expect(userVaultBefore[1].sub(userVaultAfter[1])).to.equal(
       UNDERLYING_AMOUNT.add(COLL_AMOUNT)
@@ -428,13 +420,13 @@ describe("Probity happy flow", function () {
       flrAssetId,
       treasury.address,
       WAD.mul(20000),
-      RAD.mul(1000)
+      WAD.mul(1000)
     );
     await vaultUser.modifyDebt(
       flrAssetId,
       treasury.address,
       WAD.mul(900),
-      RAD.mul(600)
+      WAD.mul(600)
     );
 
     await auctioneerUser.placeBid(0, RAY.mul(11).div(10), WAD.mul("100"));
@@ -498,14 +490,14 @@ describe("Probity happy flow", function () {
       flrAssetId,
       treasury.address,
       WAD.mul(20000),
-      RAD.mul(1000)
+      WAD.mul(1000)
     );
 
     await vaultUser.modifyDebt(
       flrAssetId,
       treasury.address,
       WAD.mul(900),
-      RAD.mul(600)
+      WAD.mul(600)
     );
 
     await liquidator.reduceAuctionDebt(RAD.mul(201));
