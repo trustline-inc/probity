@@ -7,7 +7,7 @@ contract MockFtso {
     uint256 lastUpdated;
 
     constructor() {
-        price = 1e27;
+        price = 1e5;
         lastUpdated = block.timestamp;
     }
 
@@ -16,11 +16,7 @@ contract MockFtso {
         lastUpdated = block.timestamp;
     }
 
-    function getCurrentPrice()
-        external
-        view
-        returns (uint256 _price, uint256 _timestamp)
-    {
+    function getCurrentPrice() external view returns (uint256 _price, uint256 _timestamp) {
         return (price, lastUpdated);
     }
 }

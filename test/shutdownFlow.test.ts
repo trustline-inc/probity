@@ -330,9 +330,9 @@ describe("Shutdown Flow Test", function () {
     );
 
     // drop prices (flr: $1.10 => $0.60), fxrp: ($2.78 => $1.23)
-    await ftsoFlr.setCurrentPrice(RAY.mul(60).div(100));
+    await ftsoFlr.setCurrentPrice(RAY.div(RAY).mul(1e5).mul(60).div(100));
     await priceFeed.updateAdjustedPrice(flrAssetId);
-    await ftsoFxrp.setCurrentPrice(RAY.mul(123).div(100));
+    await ftsoFxrp.setCurrentPrice(RAY.div(RAY).mul(1e5).mul(123).div(100));
     await priceFeed.updateAdjustedPrice(fxrpAssetId);
 
     /**
@@ -742,9 +742,9 @@ describe("Shutdown Flow Test", function () {
     // drop prices flr: $3.60, fxrp: $4.48
     await priceFeed.updateLiquidationRatio(flrAssetId, WAD.mul(175).div(100));
     await priceFeed.updateLiquidationRatio(fxrpAssetId, WAD.mul(175).div(100));
-    await ftsoFlr.setCurrentPrice(RAY.mul(360).div(100));
+    await ftsoFlr.setCurrentPrice(RAY.div(RAY).mul(1e5).mul(360).div(100));
     await priceFeed.updateAdjustedPrice(flrAssetId);
-    await ftsoFxrp.setCurrentPrice(RAY.mul(448).div(100));
+    await ftsoFxrp.setCurrentPrice(RAY.div(RAY).mul(1e5).mul(448).div(100));
     await priceFeed.updateAdjustedPrice(fxrpAssetId);
 
     // start 2 auction 1 of each collateral
