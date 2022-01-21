@@ -64,7 +64,7 @@ async function depositFxrp(user: SignerWithAddress, amount: BigNumber) {
 
 async function expectBalancesToMatch(user: SignerWithAddress, balance) {
   if (balance["AUR"] !== undefined) {
-    let stablecoin = await vaultEngine["AUR"](user.address);
+    let stablecoin = await vaultEngine.stablecoin(user.address);
 
     expect(stablecoin).to.equal(balance["AUR"]);
   }
@@ -101,7 +101,7 @@ async function expectBalancesToMatch(user: SignerWithAddress, balance) {
 }
 
 async function checkReserveBalances(reserveBalances) {
-  expect(await vaultEngine["AUR"](reserve.address)).to.equal(
+  expect(await vaultEngine.stablecoin(reserve.address)).to.equal(
     reserveBalances.reserve
   );
   expect(await vaultEngine.unbackedDebt(reserve.address)).to.equal(
