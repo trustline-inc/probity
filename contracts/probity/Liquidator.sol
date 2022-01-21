@@ -192,13 +192,13 @@ contract Liquidator is Stateful, Eventful {
      * @param user The address of the vault to liquidate
      */
     function liquidateEquityPosition(bytes32 collId, address user) external {
-        (, uint256 equityAccumulator, uint256 adjustedPrice) = vaultEngine.assets(collId);
+        (, , uint256 adjustedPrice) = vaultEngine.assets(collId);
         (, uint256 activeAssetAmount, , uint256 equity) = vaultEngine.vaults(collId, user);
 
         require(activeAssetAmount != 0 && equity != 0, "Lidquidator: Nothing to liquidate");
 
         require(
-            activeAssetAmount * adjustedPrice < equity * equityAccumulator,
+            activeAssetAmount * adjustedPrice < equity,
             "Liquidator: Equity position underlying is above the liquidation ratio"
         );
 
