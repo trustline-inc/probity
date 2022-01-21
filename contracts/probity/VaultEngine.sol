@@ -309,14 +309,17 @@ contract VaultEngine is Stateful, Eventful {
         vault.activeAssetAmount = add(vault.activeAssetAmount, assetAmount);
         vault.debt = add(vault.debt, debtAmount);
         vault.equity = add(vault.equity, equityAmount);
+        vault.initialEquity = add(vault.initialEquity, mul(asset.equityAccumulator, equityAmount));
         asset.normDebt = add(asset.normDebt, debtAmount);
         asset.normEquity = add(asset.normEquity, equityAmount);
+
         int256 aurToRaise = mul(asset.debtAccumulator, debtAmount) + mul(RAY, equityAmount);
 
         vaults[assetId][auctioneer].standbyAssetAmount = sub(
             vaults[assetId][auctioneer].standbyAssetAmount,
             assetAmount
         );
+
         unbackedDebt[reservePool] = sub(unbackedDebt[reservePool], aurToRaise);
         totalUnbackedDebt = sub(totalUnbackedDebt, aurToRaise);
 
