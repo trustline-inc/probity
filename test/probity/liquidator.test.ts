@@ -19,7 +19,14 @@ import {
 import { deployTest, probity } from "../../lib/deployer";
 import { ethers } from "hardhat";
 import * as chai from "chai";
-import { ADDRESS_ZERO, bytes32, RAD, WAD, RAY } from "../utils/constants";
+import {
+  ADDRESS_ZERO,
+  ASSETS,
+  bytes32,
+  RAD,
+  WAD,
+  RAY,
+} from "../utils/constants";
 import { BigNumber } from "ethers";
 import assertRevert from "../utils/assertRevert";
 const expect = chai.expect;
@@ -36,13 +43,12 @@ let auctioneer: MockAuctioneer;
 let liquidator: Liquidator;
 let treasury: Treasury;
 
-let flrAssetId = bytes32("FLR");
-
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
 describe("Liquidator Unit Tests", function () {
   beforeEach(async function () {
     let { contracts, signers } = await deployTest();
+
     // Set contracts
     registry = contracts.registry;
     vaultEngine = contracts.mockVaultEngine;
@@ -69,14 +75,14 @@ describe("Liquidator Unit Tests", function () {
       const EXPECTED_DEBT_PENALTY_FEE = WAD.mul(117).div(100);
       const EXPECTED_SUPP_PENALTY_FEE = WAD.mul(105).div(100);
 
-      const before = await liquidator.collateralTypes(flrAssetId);
+      const before = await liquidator.collateralTypes(ASSETS["FLR"]);
       expect(before.auctioneer).to.equal(ADDRESS_ZERO);
       expect(before.debtPenaltyFee).to.equal(0);
       expect(before.equityPenaltyFee).to.equal(0);
 
-      await liquidator.init(flrAssetId, EXPECTED_AUCTIONEER_ADDRESS);
+      await liquidator.init(ASSETS["FLR"], EXPECTED_AUCTIONEER_ADDRESS);
 
-      const after = await liquidator.collateralTypes(flrAssetId);
+      const after = await liquidator.collateralTypes(ASSETS["FLR"]);
       expect(after.auctioneer).to.equal(EXPECTED_AUCTIONEER_ADDRESS);
       expect(after.debtPenaltyFee).to.equal(EXPECTED_DEBT_PENALTY_FEE);
       expect(after.equityPenaltyFee).to.equal(EXPECTED_SUPP_PENALTY_FEE);
@@ -87,23 +93,23 @@ describe("Liquidator Unit Tests", function () {
     const DEFAULT_DEBT_PENALTY_FEE = WAD.mul(117).div(100);
     const DEFAULT_SUPP_PENALTY_FEE = WAD.mul(105).div(100);
     beforeEach(async function () {
-      await liquidator.init(flrAssetId, auctioneer.address);
+      await liquidator.init(ASSETS["FLR"], auctioneer.address);
     });
 
     it("tests that penaltyFees are updated correctly", async () => {
       const NEW_DEBT_PENALTY_FEE = RAY.mul(123).div(100);
       const NEW_SUPP_PENALTY_FEE = RAY.mul(107).div(100);
-      const before = await liquidator.collateralTypes(flrAssetId);
+      const before = await liquidator.collateralTypes(ASSETS["FLR"]);
       expect(before.debtPenaltyFee).to.equal(DEFAULT_DEBT_PENALTY_FEE);
       expect(before.equityPenaltyFee).to.equal(DEFAULT_SUPP_PENALTY_FEE);
 
       await liquidator.updatePenalties(
-        flrAssetId,
+        ASSETS["FLR"],
         NEW_DEBT_PENALTY_FEE,
         NEW_SUPP_PENALTY_FEE
       );
 
-      const after = await liquidator.collateralTypes(flrAssetId);
+      const after = await liquidator.collateralTypes(ASSETS["FLR"]);
       expect(after.debtPenaltyFee).to.equal(NEW_DEBT_PENALTY_FEE);
       expect(after.equityPenaltyFee).to.equal(NEW_SUPP_PENALTY_FEE);
     });
@@ -111,25 +117,25 @@ describe("Liquidator Unit Tests", function () {
 
   describe("updateAuctioneer Unit Tests", function () {
     beforeEach(async function () {
-      await liquidator.init(flrAssetId, auctioneer.address);
+      await liquidator.init(ASSETS["FLR"], auctioneer.address);
     });
 
     it("tests that auctioneer address is updated correctly", async () => {
       const DEFAULT_AUCTIONEER_ADDRESS = auctioneer.address;
       const NEW_AUCTIONEER_ADDRESS = owner.address;
-      const before = await liquidator.collateralTypes(flrAssetId);
+      const before = await liquidator.collateralTypes(ASSETS["FLR"]);
       expect(before.auctioneer).to.equal(DEFAULT_AUCTIONEER_ADDRESS);
 
-      await liquidator.updateAuctioneer(flrAssetId, NEW_AUCTIONEER_ADDRESS);
+      await liquidator.updateAuctioneer(ASSETS["FLR"], NEW_AUCTIONEER_ADDRESS);
 
-      const after = await liquidator.collateralTypes(flrAssetId);
+      const after = await liquidator.collateralTypes(ASSETS["FLR"]);
       expect(after.auctioneer).to.equal(NEW_AUCTIONEER_ADDRESS);
     });
   });
 
   describe("reduceAuctionDebt Unit Tests", function () {
     beforeEach(async function () {
-      await liquidator.init(flrAssetId, auctioneer.address);
+      await liquidator.init(ASSETS["FLR"], auctioneer.address);
     });
 
     it("tests that reservePool's reduceAuctionDebt is called with correct parameters", async () => {
@@ -144,107 +150,109 @@ describe("Liquidator Unit Tests", function () {
   });
 
   describe("liquidateVault Unit Tests", function () {
-    const VAULT_LOCKED_COLL = WAD.mul(999);
-    const VAULT_DEBT = WAD.mul(500);
-    const VAULT_EQUITY = WAD.mul(500);
+    const UNDERLYING = WAD.mul(499);
+    const COLLATERAL = WAD.mul(499);
+    const DEBT = WAD.mul(500);
+    const EQUITY = WAD.mul(500);
     const DEBT_ACCUMULATOR = RAY;
     const EQUITY_ACCUMULATOR = RAY;
     const PRICE = RAY;
 
     beforeEach(async function () {
-      await liquidator.init(flrAssetId, auctioneer.address);
+      await liquidator.init(ASSETS["FLR"], auctioneer.address);
       await vaultEngine.updateAsset(
-        flrAssetId,
+        ASSETS["FLR"],
         PRICE,
-        VAULT_DEBT,
-        VAULT_EQUITY,
-        RAD.mul(1000000),
+        DEBT,
+        EQUITY,
+        RAD.mul(1_000_000),
         0
       );
       await vaultEngine.updateAccumulators(
-        flrAssetId,
+        ASSETS["FLR"],
         reservePool.address,
         DEBT_ACCUMULATOR,
         EQUITY_ACCUMULATOR,
         0
       );
       await vaultEngine.updateVault(
-        flrAssetId,
+        ASSETS["FLR"],
         user.address,
         0,
-        VAULT_LOCKED_COLL,
-        VAULT_DEBT,
-        VAULT_EQUITY,
-        0
+        UNDERLYING,
+        COLLATERAL,
+        DEBT,
+        EQUITY
       );
     });
 
     it("fails if vault has nothing to liquidate", async () => {
-      await vaultEngine.updateVault(flrAssetId, user.address, 0, 0, 0, 0, 0);
+      await vaultEngine.updateVault(ASSETS["FLR"], user.address, 0, 0, 0, 0, 0);
 
       await assertRevert(
-        liquidator.liquidateVault(flrAssetId, user.address),
+        liquidator.liquidateVault(ASSETS["FLR"], user.address),
         "Lidquidator: Nothing to liquidate"
       );
 
       await vaultEngine.updateVault(
-        flrAssetId,
+        ASSETS["FLR"],
         user.address,
         0,
-        VAULT_LOCKED_COLL,
-        VAULT_DEBT,
-        VAULT_EQUITY,
-        0
+        UNDERLYING,
+        COLLATERAL,
+        DEBT,
+        EQUITY
       );
 
-      await liquidator.liquidateVault(flrAssetId, user.address);
+      await liquidator.liquidateVault(ASSETS["FLR"], user.address);
     });
 
     it("fails if vault is not undercollateralized ", async () => {
+      // 1000 underlying, 1000 FLR collateral, 500 debt, 500 equity, 150% L.R.
       await vaultEngine.updateVault(
-        flrAssetId,
+        ASSETS["FLR"],
         user.address,
         0,
-        VAULT_LOCKED_COLL.add(WAD.mul(2)),
-        VAULT_DEBT,
-        VAULT_EQUITY,
-        0
+        UNDERLYING.add(WAD.mul(1)),
+        COLLATERAL.add(WAD.mul(1)),
+        DEBT,
+        EQUITY
       );
 
       await assertRevert(
-        liquidator.liquidateVault(flrAssetId, user.address),
-        "Liquidator: Vault collateral is still above required minimal ratio"
+        liquidator.liquidateVault(ASSETS["FLR"], user.address),
+        "Liquidator: Vault collateral/underlying is above the liquidation ratio"
       );
 
       await vaultEngine.updateVault(
-        flrAssetId,
+        ASSETS["FLR"],
         user.address,
         0,
-        VAULT_LOCKED_COLL,
-        VAULT_DEBT,
-        VAULT_EQUITY,
-        0
+        UNDERLYING,
+        COLLATERAL,
+        DEBT,
+        EQUITY
       );
 
-      await liquidator.liquidateVault(flrAssetId, user.address);
+      await liquidator.liquidateVault(ASSETS["FLR"], user.address);
     });
 
-    it("test that reservePool's addAuctionDebt is called with correct parameters", async () => {
-      const EXPECTED_AUCTION_DEBT =
-        VAULT_DEBT.add(VAULT_EQUITY).mul(DEBT_ACCUMULATOR);
+    it("adds reserve pool auction debt", async () => {
+      const EXPECTED_AUCTION_DEBT = DEBT.mul(DEBT_ACCUMULATOR);
 
       const before = await reservePool.lastAddAuctionDebtAmount();
       expect(before).to.equal(0);
-      await liquidator.liquidateVault(flrAssetId, user.address);
+      await liquidator.liquidateVault(ASSETS["FLR"], user.address);
 
       const after = await reservePool.lastAddAuctionDebtAmount();
       expect(after).to.equal(EXPECTED_AUCTION_DEBT);
     });
 
-    it("test that vaultEngine's liquidateVault is called with correct parameters", async () => {
-      const EXPECTD_COLL_AMOUNT = WAD.mul(0).sub(VAULT_LOCKED_COLL);
-      const EXPECTED_DEBT_AMOUNT = WAD.mul(0).sub(VAULT_DEBT);
-      const EXPECTED_EQUITY_AMOUNT = WAD.mul(0).sub(VAULT_EQUITY);
+    it("calls vaultEngine's liquidateVault with the correct parameters", async () => {
+      // TODO: Check with vaultEngine.lastLiquidateEquityPositionCall
+
+      const EXPECTD_COLL_AMOUNT = WAD.mul(0).sub(COLLATERAL);
+      const EXPECTED_DEBT_AMOUNT = WAD.mul(0).sub(DEBT);
 
       const before = await vaultEngine.lastLiquidateDebtPositionCall();
       expect(before.collId).to.equal(bytes32(""));
@@ -254,10 +262,10 @@ describe("Liquidator Unit Tests", function () {
       expect(before.collateralAmount).to.equal(0);
       expect(before.debtAmount).to.equal(0);
 
-      await liquidator.liquidateVault(flrAssetId, user.address);
+      await liquidator.liquidateVault(ASSETS["FLR"], user.address);
 
       const after = await vaultEngine.lastLiquidateDebtPositionCall();
-      expect(after.collId).to.equal(flrAssetId);
+      expect(after.collId).to.equal(ASSETS["FLR"]);
       expect(after.user).to.equal(user.address);
       expect(after.auctioneer).to.equal(auctioneer.address);
       expect(after.reservePool).to.equal(reservePool.address);
@@ -265,21 +273,19 @@ describe("Liquidator Unit Tests", function () {
       expect(after.debtAmount).to.equal(EXPECTED_DEBT_AMOUNT);
     });
 
-    it("test that auctioneer's startAuction is called with correct parameters", async () => {
-      const EXPECTED_DEBT_SIZE = VAULT_DEBT.mul(117)
-        .div(100)
-        .mul(DEBT_ACCUMULATOR);
+    it("calls auctioneer's startAuction with the correct parameters", async () => {
+      const EXPECTED_DEBT_SIZE = DEBT.mul(117).div(100).mul(DEBT_ACCUMULATOR);
       const before = await auctioneer.lastStartAuctionCall();
       expect(before.collId).to.equal(bytes32(""));
       expect(before.lotSize).to.equal(0);
       expect(before.debtSize).to.equal(0);
       expect(before.owner).to.equal(ADDRESS_ZERO);
       expect(before.beneficiary).to.equal(ADDRESS_ZERO);
-      await liquidator.liquidateVault(flrAssetId, user.address);
+      await liquidator.liquidateVault(ASSETS["FLR"], user.address);
 
       const after = await auctioneer.lastStartAuctionCall();
-      expect(after.collId).to.equal(flrAssetId);
-      expect(after.lotSize).to.equal(VAULT_LOCKED_COLL);
+      expect(after.collId).to.equal(ASSETS["FLR"]);
+      expect(after.lotSize).to.equal(COLLATERAL);
       expect(after.debtSize).to.equal(EXPECTED_DEBT_SIZE);
       expect(after.owner).to.equal(user.address);
       expect(after.beneficiary).to.equal(reservePool.address);

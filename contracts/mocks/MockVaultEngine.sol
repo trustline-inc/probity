@@ -29,6 +29,14 @@ contract MockVaultEngine {
         int256 debtAmount;
     }
 
+    struct LiquidateEquityPositionCall {
+        bytes32 collId;
+        address user;
+        int256 underlying;
+        int256 equity;
+        address treasuryAddress;
+    }
+
     mapping(bytes32 => mapping(address => Vault)) public vaults;
     mapping(bytes32 => bool) public states;
     mapping(bytes32 => Asset) public assets;
@@ -40,6 +48,7 @@ contract MockVaultEngine {
     uint256 public totalDebt;
     uint256 public totalEquity;
     LiquidateDebtPositionCall public lastLiquidateDebtPositionCall;
+    LiquidateEquityPositionCall public lastLiquidateEquityPositionCall;
 
     function addStablecoin(address user, uint256 amount) external {
         stablecoin[user] += amount;
@@ -165,6 +174,22 @@ contract MockVaultEngine {
             reservePool,
             collateralAmount,
             debtAmount
+        );
+    }
+
+    function liquidateEquityPosition(
+        bytes32 collId,
+        address user,
+        int256 underlyingAmount,
+        int256 equityAmount,
+        address treasuryAddress
+    ) external {
+        lastLiquidateEquityPositionCall = LiquidateEquityPositionCall(
+            collId,
+            user,
+            underlyingAmount,
+            equityAmount,
+            treasuryAddress
         );
     }
 

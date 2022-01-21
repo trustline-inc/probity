@@ -18,6 +18,7 @@ import * as chai from "chai";
 import { ASSETS, bytes32, RAD, WAD, RAY } from "../utils/constants";
 import { BigNumber } from "ethers";
 import assertRevert from "../utils/assertRevert";
+
 const expect = chai.expect;
 
 // Wallets
@@ -64,8 +65,8 @@ describe("Vault Engine Unit Tests", function () {
   });
 
   describe("modifyEquity Unit Tests", function () {
-    const STANDBY_AMOUNT = WAD.mul(10000);
-    const UNDERLYING_AMOUNT = WAD.mul(10000);
+    const STANDBY_AMOUNT = WAD.mul(10_000);
+    const UNDERLYING_AMOUNT = WAD.mul(10_000);
     const EQUITY_AMOUNT = WAD.mul(2000);
 
     beforeEach(async function () {
@@ -76,7 +77,7 @@ describe("Vault Engine Unit Tests", function () {
       await vaultEngine.connect(gov).initAssetType(ASSETS["FLR"]);
       await vaultEngine
         .connect(gov)
-        .updateCeiling(ASSETS["FLR"], RAD.mul(10000000));
+        .updateCeiling(ASSETS["FLR"], RAD.mul(10_000_000));
       await registry
         .connect(gov)
         .setupAddress(bytes32("assetManager"), assetManager.address);
@@ -118,12 +119,16 @@ describe("Vault Engine Unit Tests", function () {
     it("fails if equity amount falls below the minimum (floor)", async () => {
       const FLOOR_AMOUNT = RAD.mul(1000);
       const EQUITY_AMOUNT_UNDER_FLOOR = FLOOR_AMOUNT.div(RAY).sub(1);
+
+      // Add owner to the whitelist
       await registry
         .connect(gov)
         .setupAddress(bytes32("whitelisted"), owner.address);
 
+      // Update FLR asset floor
       await vaultEngine.connect(gov).updateFloor(ASSETS["FLR"], FLOOR_AMOUNT);
 
+      // Increase equity (expect revert)
       await assertRevert(
         vaultEngine.modifyEquity(
           ASSETS["FLR"],
@@ -134,6 +139,7 @@ describe("Vault Engine Unit Tests", function () {
         "Vault/modifyEquity: Equity smaller than floor"
       );
 
+      // Increase equity
       await vaultEngine.modifyEquity(
         ASSETS["FLR"],
         treasury.address,
@@ -142,7 +148,7 @@ describe("Vault Engine Unit Tests", function () {
       );
     });
 
-    it("tests that values are properly updated when calling with positive values", async () => {
+    it("updates balances when called with positive values", async () => {
       const before = await vaultEngine.vaults(ASSETS["FLR"], owner.address);
       expect(before.standby).to.equal(STANDBY_AMOUNT);
       expect(before.underlying).to.equal(0);
@@ -168,7 +174,8 @@ describe("Vault Engine Unit Tests", function () {
       expect(after.initialEquity).to.equal(EQUITY_AMOUNT.mul(RAY));
     });
 
-    it("fails if vault debt balances goes under zero when calling with negative values", async () => {
+    it("fails if vault debt goes below zero when called with negative values", async () => {
+      // Increase equity
       await vaultEngine.modifyEquity(
         ASSETS["FLR"],
         treasury.address,
@@ -176,6 +183,7 @@ describe("Vault Engine Unit Tests", function () {
         EQUITY_AMOUNT
       );
 
+      // Decrease equity (expect revert)
       await assertRevert(
         vaultEngine.modifyEquity(
           ASSETS["FLR"],
@@ -186,6 +194,7 @@ describe("Vault Engine Unit Tests", function () {
         "reverted with reason string 'Vault/add: add op failed"
       );
 
+      // Decrease equity
       await vaultEngine.modifyEquity(
         ASSETS["FLR"],
         treasury.address,
@@ -194,7 +203,8 @@ describe("Vault Engine Unit Tests", function () {
       );
     });
 
-    it("tests that values are properly updated when calling with negative values", async () => {
+    it("updates balances when called with negative values", async () => {
+      // Increase equity
       await vaultEngine.modifyEquity(
         ASSETS["FLR"],
         treasury.address,
@@ -202,6 +212,7 @@ describe("Vault Engine Unit Tests", function () {
         EQUITY_AMOUNT
       );
 
+      // Get balances before decreasing equity
       const before = await vaultEngine.vaults(ASSETS["FLR"], owner.address);
       expect(before.standby).to.equal(0);
       expect(before.underlying).to.equal(UNDERLYING_AMOUNT);
@@ -210,6 +221,7 @@ describe("Vault Engine Unit Tests", function () {
       expect(before.equity).to.equal(EQUITY_AMOUNT);
       expect(before.initialEquity).to.equal(EQUITY_AMOUNT.mul(RAY));
 
+      // Decrease equity
       await vaultEngine.modifyEquity(
         ASSETS["FLR"],
         treasury.address,
@@ -217,6 +229,7 @@ describe("Vault Engine Unit Tests", function () {
         BigNumber.from(0).sub(EQUITY_AMOUNT.div(2))
       );
 
+      // Expect balances to be updated
       const after = await vaultEngine.vaults(ASSETS["FLR"], owner.address);
       expect(after.standby).to.equal(UNDERLYING_AMOUNT.div(2));
       expect(after.underlying).to.equal(UNDERLYING_AMOUNT.div(2));
@@ -226,17 +239,19 @@ describe("Vault Engine Unit Tests", function () {
       expect(after.initialEquity).to.equal(EQUITY_AMOUNT.div(2).mul(RAY));
     });
 
-    it("tests that equity is updated properly when accumulator is above initial", async () => {
-      const COLLATERAL_AMOUNT = UNDERLYING_AMOUNT.div(2); // 5000
-      const DEBT_AMOUNT = EQUITY_AMOUNT.div(2); // 1000
+    it("updates equity when the accumulators are greater than the initial value", async () => {
+      const COLLATERAL_AMOUNT = UNDERLYING_AMOUNT.div(2); // 5000 FLR
+      const DEBT_AMOUNT = EQUITY_AMOUNT.div(2); // 1000 AUR
 
       const debtRateIncrease = BigNumber.from("251035088626883475473007");
       const equityRateIncrease = BigNumber.from("125509667994754929166541");
 
+      // Add more standby FLR to wallet (20,000 total)
       await vaultEngine
         .connect(assetManager)
         .modifyStandbyAsset(ASSETS["FLR"], owner.address, STANDBY_AMOUNT);
 
+      // Increase equity (underlying = 10,000, equity = 2000)
       await vaultEngine.modifyEquity(
         ASSETS["FLR"],
         treasury.address,
@@ -244,6 +259,7 @@ describe("Vault Engine Unit Tests", function () {
         EQUITY_AMOUNT
       );
 
+      // Increase debt (collateral = 5000, debt = 1000)
       await vaultEngine.modifyDebt(
         ASSETS["FLR"],
         treasury.address,
@@ -251,9 +267,8 @@ describe("Vault Engine Unit Tests", function () {
         DEBT_AMOUNT
       );
 
-      // Update accumulator
+      // Update accumulators
       await registry.connect(gov).setupAddress(bytes32("teller"), user.address);
-
       await vaultEngine
         .connect(user)
         .updateAccumulators(
@@ -264,6 +279,7 @@ describe("Vault Engine Unit Tests", function () {
           BigNumber.from(0)
         );
 
+      // Expect balances to be updated
       const before = await vaultEngine.vaults(ASSETS["FLR"], owner.address);
       expect(before.standby).to.equal(STANDBY_AMOUNT.div(2));
       expect(before.underlying).to.equal(UNDERLYING_AMOUNT);
@@ -272,6 +288,7 @@ describe("Vault Engine Unit Tests", function () {
       expect(before.equity).to.equal(EQUITY_AMOUNT);
       expect(before.initialEquity).to.equal(EQUITY_AMOUNT.mul(RAY));
 
+      // Increase equity (5000 underlying, 1000 equity)
       await vaultEngine.modifyEquity(
         ASSETS["FLR"],
         treasury.address,
@@ -279,6 +296,7 @@ describe("Vault Engine Unit Tests", function () {
         EQUITY_AMOUNT.div(2)
       );
 
+      // Expect balances to be updated
       const after = await vaultEngine.vaults(ASSETS["FLR"], owner.address);
       expect(after.standby).to.equal(0);
       expect(after.underlying).to.equal(UNDERLYING_AMOUNT.mul(3).div(2));
@@ -290,8 +308,11 @@ describe("Vault Engine Unit Tests", function () {
       expect(after.equity).to.equal(EQUITY_AMOUNT.mul(3).div(2));
     });
 
-    it("fails if vault is undercollateralized", async () => {
+    it("fails if equity net asset value is below $1", async () => {
+      // Underlying is set to 2000
       const MINIMUM_AMOUNT = EQUITY_AMOUNT;
+
+      // Increase equity (expect revert)
       await assertRevert(
         vaultEngine.modifyEquity(
           ASSETS["FLR"],
@@ -302,6 +323,7 @@ describe("Vault Engine Unit Tests", function () {
         "Vault/certify: Not enough underlying/collateral"
       );
 
+      // Increase equity
       await vaultEngine.modifyEquity(
         ASSETS["FLR"],
         treasury.address,
@@ -349,7 +371,7 @@ describe("Vault Engine Unit Tests", function () {
       expect(after[0]).to.equal(owner.address);
     });
 
-    it("initialEquity is added properly", async () => {
+    it("increases the user's initial equity", async () => {
       const before = await vaultEngine.vaults(ASSETS["FLR"], owner.address);
       expect(before.initialEquity).to.equal(0);
 
@@ -366,9 +388,9 @@ describe("Vault Engine Unit Tests", function () {
   });
 
   describe("modifyDebt Unit Tests", function () {
-    const UNDERLYING_AMOUNT = WAD.mul(10000);
-    const COLLATERAL_AMOUNT = WAD.mul(10000);
-    const ASSET_AMOUNT = WAD.mul(10000);
+    const UNDERLYING_AMOUNT = WAD.mul(10_000);
+    const COLLATERAL_AMOUNT = WAD.mul(10_000);
+    const ASSET_AMOUNT = WAD.mul(10_000);
     const EQUITY_AMOUNT = WAD.mul(2000);
     const DEBT_AMOUNT = WAD.mul(1000);
 
@@ -380,7 +402,7 @@ describe("Vault Engine Unit Tests", function () {
       await vaultEngine.connect(gov).initAssetType(ASSETS["FLR"]);
       await vaultEngine
         .connect(gov)
-        .updateCeiling(ASSETS["FLR"], RAD.mul(10000000));
+        .updateCeiling(ASSETS["FLR"], RAD.mul(10_000_000));
       await registry
         .connect(gov)
         .setupAddress(bytes32("assetManager"), assetManager.address);
@@ -460,7 +482,7 @@ describe("Vault Engine Unit Tests", function () {
       );
     });
 
-    it("tests that values are properly updated when called with positive values", async () => {
+    it("updates balances when called with positive values", async () => {
       const before = await vaultEngine.vaults(ASSETS["FLR"], owner.address);
       expect(before.standby).to.equal(COLLATERAL_AMOUNT);
       expect(before.collateral).to.equal(0);
@@ -483,7 +505,7 @@ describe("Vault Engine Unit Tests", function () {
       expect(after.initialEquity).to.equal(0);
     });
 
-    it("fails if vault debt balances goes under zero when calling with negative values", async () => {
+    it("fails if debt balance goes below zero when called with negative values", async () => {
       await vaultEngine.modifyDebt(
         ASSETS["FLR"],
         treasury.address,
@@ -509,7 +531,7 @@ describe("Vault Engine Unit Tests", function () {
       );
     });
 
-    it("tests that values are properly updated when calling with negative values", async () => {
+    it("allows debt repayment", async () => {
       await vaultEngine.modifyDebt(
         ASSETS["FLR"],
         treasury.address,
@@ -541,7 +563,7 @@ describe("Vault Engine Unit Tests", function () {
       expect(after.initialEquity).to.equal(0);
     });
 
-    it("fails if vault is undercollateralized", async () => {
+    it("fails if debt position is undercollateralized", async () => {
       const MINIMUM_AMOUNT = DEBT_AMOUNT;
       await assertRevert(
         vaultEngine.modifyDebt(
@@ -561,7 +583,7 @@ describe("Vault Engine Unit Tests", function () {
       );
     });
 
-    it("tests that debt is updated properly when accumulator is above initial", async () => {
+    it("updates balances when the accumulators are above the initial values", async () => {
       const ASSET_AMOUNT = COLLATERAL_AMOUNT.div(2);
       const DEBT_AMOUNT = EQUITY_AMOUNT.div(2);
 
@@ -579,9 +601,8 @@ describe("Vault Engine Unit Tests", function () {
         DEBT_AMOUNT
       );
 
-      // update accumulator
+      // Update accumulators
       await registry.connect(gov).setupAddress(bytes32("teller"), user.address);
-
       await vaultEngine
         .connect(user)
         .updateAccumulators(
@@ -709,7 +730,7 @@ describe("Vault Engine Unit Tests", function () {
         );
     });
 
-    it("test that pbt is added properly", async () => {
+    it("increases the PBT balance", async () => {
       const EXPECTED_VALUE = EQUITY_TO_RAISE.mul(EQUITY_AMOUNT);
 
       const before = await vaultEngine.pbt(owner.address);
@@ -720,7 +741,7 @@ describe("Vault Engine Unit Tests", function () {
       expect(after).to.equal(EXPECTED_VALUE);
     });
 
-    it("test that stablecoin is added properly", async () => {
+    it("increases stablecoin balance", async () => {
       const EXPECTED_VALUE = EQUITY_TO_RAISE.mul(EQUITY_AMOUNT);
 
       const before = await vaultEngine.stablecoin(owner.address);
@@ -731,7 +752,7 @@ describe("Vault Engine Unit Tests", function () {
       expect(after).to.equal(EXPECTED_VALUE);
     });
 
-    it("test that equity is reduced properly", async () => {
+    it("reduces the equity balance", async () => {
       const ACCUMULATOR = RAY.add(EQUITY_TO_RAISE);
       const EXPECTED_VALUE = EQUITY_AMOUNT.sub(
         EQUITY_TO_RAISE.mul(EQUITY_AMOUNT).div(ACCUMULATOR)
@@ -747,8 +768,8 @@ describe("Vault Engine Unit Tests", function () {
   });
 
   describe("liquidateVault Unit Tests", function () {
-    const UNDERLYING_AMOUNT = WAD.mul(10000);
-    const ASSET_AMOUNT = WAD.mul(10000);
+    const UNDERLYING_AMOUNT = WAD.mul(10_000);
+    const ASSET_AMOUNT = WAD.mul(10_000);
     const EQUITY_AMOUNT = RAD.mul(2000);
     const DEBT_AMOUNT = RAD.mul(1000);
 
@@ -757,32 +778,32 @@ describe("Vault Engine Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.connect(gov).initAssetType(flrAssetId);
+      await vaultEngine.connect(gov).initAssetType(ASSETS["FLR"]);
       await vaultEngine
         .connect(gov)
-        .updateCeiling(flrAssetId, RAD.mul(10000000));
+        .updateCeiling(ASSETS["FLR"], RAD.mul(10_000_000));
       await registry
         .connect(gov)
         .setupAddress(bytes32("assetManager"), assetManager.address);
       await vaultEngine
         .connect(assetManager)
         .modifyStandbyAsset(
-          flrAssetId,
+          ASSETS["FLR"],
           owner.address,
           ASSET_AMOUNT.add(UNDERLYING_AMOUNT)
         );
       await vaultEngine
         .connect(gov)
-        .updateAdjustedPrice(flrAssetId, RAY.mul(1));
+        .updateAdjustedPrice(ASSETS["FLR"], RAY.mul(1));
 
       await vaultEngine.modifyEquity(
-        flrAssetId,
+        ASSETS["FLR"],
         treasury.address,
         UNDERLYING_AMOUNT,
         EQUITY_AMOUNT
       );
       await vaultEngine.modifyDebt(
-        flrAssetId,
+        ASSETS["FLR"],
         treasury.address,
         ASSET_AMOUNT,
         DEBT_AMOUNT
@@ -793,32 +814,30 @@ describe("Vault Engine Unit Tests", function () {
         .setupAddress(bytes32("liquidator"), user.address);
     });
 
-    it("tests that initialEquity is reduced correctly", async () => {
-      const AMOUNT_TO_LIQUIDATE = EQUITY_AMOUNT.div(RAY).div(2);
-      const before = (await vaultEngine.vaults(flrAssetId, owner.address))
+    it("reduces initial equity", async () => {
+      const AMOUNT_TO_LIQUIDATE = EQUITY_AMOUNT.div(RAY).div(2); // 1000 FLR
+      const before = (await vaultEngine.vaults(ASSETS["FLR"], owner.address))
         .initialEquity;
 
       await vaultEngine
         .connect(user)
-        .liquidateVault(
-          flrAssetId,
+        .liquidateEquityPosition(
+          ASSETS["FLR"],
           owner.address,
-          assetManager.address,
-          assetManager.address,
           0,
-          0,
-          BigNumber.from("0").sub(AMOUNT_TO_LIQUIDATE)
+          BigNumber.from("0").sub(AMOUNT_TO_LIQUIDATE),
+          treasury.address
         );
 
-      const after = (await vaultEngine.vaults(flrAssetId, owner.address))
+      const after = (await vaultEngine.vaults(ASSETS["FLR"], owner.address))
         .initialEquity;
       expect(after.sub(before).abs().lte(EQUITY_AMOUNT.div(2))).to.equal(true);
     });
   });
 
   describe("updateAccumulator Unit Tests", function () {
-    const UNDERLYING_AMOUNT = WAD.mul(10000);
-    const ASSET_AMOUNT = WAD.mul(10000);
+    const UNDERLYING_AMOUNT = WAD.mul(10_000);
+    const ASSET_AMOUNT = WAD.mul(10_000);
     const EQUITY_AMOUNT = WAD.mul(2000);
     const DEBT_AMOUNT = WAD.mul(1000);
 
@@ -830,7 +849,7 @@ describe("Vault Engine Unit Tests", function () {
       await vaultEngine.connect(gov).initAssetType(ASSETS["FLR"]);
       await vaultEngine
         .connect(gov)
-        .updateCeiling(ASSETS["FLR"], RAD.mul(10000000));
+        .updateCeiling(ASSETS["FLR"], RAD.mul(10_000_000));
       await registry
         .connect(gov)
         .setupAddress(bytes32("assetManager"), assetManager.address);
@@ -861,7 +880,7 @@ describe("Vault Engine Unit Tests", function () {
       await registry.connect(gov).setupAddress(bytes32("teller"), user.address);
     });
 
-    it("only allows teller to call updateAccumulators", async () => {
+    it("only allows teller to update rate accumulators", async () => {
       const debtRateIncrease = BigNumber.from("251035088626883475473007");
       const equityRateIncrease = BigNumber.from("125509667994754929166541");
 

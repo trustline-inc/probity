@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 
 import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
+import "hardhat/console.sol";
 
 interface VaultEngineLike {
     function vaults(bytes32 collId, address user)
@@ -163,11 +164,12 @@ contract Liquidator is Stateful, Eventful {
         (uint256 debtAccumulator, , uint256 adjustedPrice) = vaultEngine.assets(collId);
         (, uint256 underlying, uint256 collateral, uint256 debt, uint256 equity) = vaultEngine.vaults(collId, user);
 
-        require(underlying + collateral != 0 && (debt != 0 || equity != 0), "Lidquidator: Nothing to liquidate");
+        require((underlying + collateral) != 0 && (debt + equity != 0), "Lidquidator: Nothing to liquidate");
 
+        // TODO: Should equity be initialEquity below?
         require(
-            collateral * adjustedPrice < debt * debtAccumulator || underlying * adjustedPrice < equity,
-            "Liquidator: Vault collateral is above the liquidation ratio"
+            collateral * adjustedPrice < debt * debtAccumulator || underlying * adjustedPrice < equity * RAY,
+            "Liquidator: Vault collateral/underlying is above the liquidation ratio"
         );
 
         if (collateral * adjustedPrice < debt * debtAccumulator) {

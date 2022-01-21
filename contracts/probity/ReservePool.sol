@@ -157,7 +157,7 @@ contract ReservePool is Stateful, Eventful {
      * @param amountToSettle The amount of debt to settle
      * TODO: Check permissions
      */
-    function increaseSystemDebt(uint256 amountToSettle) external onlyByProbity {
+    function increaseSystemDebt(uint256 amountToSettle) external onlyBy("liquidator") {
         vaultEngine.increaseSystemDebt(amountToSettle);
     }
 
