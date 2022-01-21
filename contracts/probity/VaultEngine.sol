@@ -285,42 +285,65 @@ contract VaultEngine is Stateful, Eventful {
     }
 
     /**
-     * @notice Liquidates an undercollateralized vault
+     * @notice Liquidates an undercollateralized debt position
      * @param assetId The ID of the vault asset type
      * @param user The address of the vault to liquidate
      * @param auctioneer The address of the desired auctioneer contract
      * @param reservePool The address of the desired reserve pool contract
      * @param assetAmount The amount of asset to liquidate
      * @param debtAmount The amount of debt to clear
-     * @param equityAmount The amount of equity to clear
      */
-    function liquidateVault(
+    function liquidateDebtPosition(
         bytes32 assetId,
         address user,
         address auctioneer,
         address reservePool,
         int256 assetAmount,
-        int256 debtAmount,
-        int256 equityAmount
+        int256 debtAmount
     ) external onlyByProbity {
         Vault storage vault = vaults[assetId][user];
         Asset storage asset = assets[assetId];
 
         vault.activeAssetAmount = add(vault.activeAssetAmount, assetAmount);
         vault.debt = add(vault.debt, debtAmount);
-        vault.equity = add(vault.equity, equityAmount);
         asset.normDebt = add(asset.normDebt, debtAmount);
-        asset.normEquity = add(asset.normEquity, equityAmount);
-        int256 aurToRaise = mul(asset.debtAccumulator, debtAmount) + mul(RAY, equityAmount);
+        int256 fundraiseTarget = mul(asset.debtAccumulator, debtAmount);
 
         vaults[assetId][auctioneer].standbyAssetAmount = sub(
             vaults[assetId][auctioneer].standbyAssetAmount,
             assetAmount
         );
-        unbackedDebt[reservePool] = sub(unbackedDebt[reservePool], aurToRaise);
-        totalUnbackedDebt = sub(totalUnbackedDebt, aurToRaise);
+        unbackedDebt[reservePool] = sub(unbackedDebt[reservePool], fundraiseTarget);
+        totalUnbackedDebt = sub(totalUnbackedDebt, fundraiseTarget);
 
-        emit Log("vault", "liquidateVault", msg.sender);
+        emit Log("vault", "liquidateDebtPosition", msg.sender);
+    }
+
+    /**
+     * @notice Liquidates an undercollateralized equity position
+     * @dev Returns underlying asset to user vault with penalty
+     * @param assetId The ID of the vault asset type
+     * @param user The address of the vault to liquidate
+     * @param assetAmount The amount of asset to liquidate
+     * @param equityAmount The amount of equity to clear
+     */
+    function liquidateEquityPosition(
+        bytes32 assetId,
+        address user,
+        int256 assetAmount,
+        int256 equityAmount
+    ) external onlyByProbity {
+        Vault storage vault = vaults[assetId][user];
+        Asset storage asset = assets[assetId];
+
+        // TODO: Assess penalty
+
+        vault.activeAssetAmount = add(vault.activeAssetAmount, assetAmount);
+        vault.standbyAssetAmount = add(vault.standbyAssetAmount, -assetAmount);
+        vault.equity = add(vault.equity, equityAmount);
+        asset.normEquity = add(asset.normEquity, equityAmount);
+
+        emit Log("vault", "liquidateEquityPosition", msg.sender);
     }
 
     /**

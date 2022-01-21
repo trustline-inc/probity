@@ -23,13 +23,19 @@ interface VaultEngineLike {
             uint256 adjustedPrice
         );
 
-    function liquidateVault(
+    function liquidateDebtPosition(
         bytes32 collId,
         address user,
         address auctioneer,
         address reservePool,
         int256 collateralAmount,
-        int256 debtAmount,
+        int256 debtAmount
+    ) external;
+
+    function liquidateEquityPosition(
+        bytes32 collId,
+        address user,
+        int256 underlyingAmount,
         int256 equityAmount
     ) external;
 }
@@ -148,31 +154,54 @@ contract Liquidator is Stateful, Eventful {
      * @param collId The ID of the collateral type
      * @param user The address of the vault to liquidate
      */
-    function liquidateVault(bytes32 collId, address user) external {
-        // check if vault can be liquidated
+    function liquidateDebtPosition(bytes32 collId, address user) external {
         (uint256 debtAccumulator, , uint256 adjustedPrice) = vaultEngine.assets(collId);
-        (, uint256 activeAssetAmount, uint256 debt, uint256 equity) = vaultEngine.vaults(collId, user);
+        (, uint256 activeAssetAmount, uint256 debt, ) = vaultEngine.vaults(collId, user);
 
-        require(activeAssetAmount != 0 && debt + equity != 0, "Lidquidator: Nothing to liquidate");
+        require(activeAssetAmount != 0 && debt != 0, "Lidquidator: Nothing to liquidate");
 
         require(
-            activeAssetAmount * adjustedPrice < debt * debtAccumulator + equity * RAY,
-            "Liquidator: Vault collateral is still above required minimal ratio"
+            activeAssetAmount * adjustedPrice < debt * debtAccumulator,
+            "Liquidator: Debt position collateral is above the liquidation ratio"
         );
 
-        // transfer the debt to reservePool
-        reserve.addAuctionDebt(((debt + equity) * RAY));
-        vaultEngine.liquidateVault(
+        // Transfer the debt to reserve pool
+        reserve.addAuctionDebt(debt * RAY);
+        vaultEngine.liquidateDebtPosition(
             collId,
             user,
             address(collateralTypes[collId].auctioneer),
             address(reserve),
             -int256(activeAssetAmount),
-            -int256(debt),
-            -int256(equity)
+            -int256(debt)
         );
 
-        uint256 aurToRaise = (debt * debtAccumulator * collateralTypes[collId].debtPenaltyFee) / WAD;
-        collateralTypes[collId].auctioneer.startAuction(collId, activeAssetAmount, aurToRaise, user, address(reserve));
+        uint256 fundraiseTarget = (debt * debtAccumulator * collateralTypes[collId].debtPenaltyFee) / WAD;
+        collateralTypes[collId].auctioneer.startAuction(
+            collId,
+            activeAssetAmount,
+            fundraiseTarget,
+            user,
+            address(reserve)
+        );
+    }
+
+    /**
+     * @notice Liquidates an undercollateralized vault
+     * @param collId The ID of the collateral type
+     * @param user The address of the vault to liquidate
+     */
+    function liquidateEquityPosition(bytes32 collId, address user) external {
+        (, uint256 equityAccumulator, uint256 adjustedPrice) = vaultEngine.assets(collId);
+        (, uint256 activeAssetAmount, , uint256 equity) = vaultEngine.vaults(collId, user);
+
+        require(activeAssetAmount != 0 && equity != 0, "Lidquidator: Nothing to liquidate");
+
+        require(
+            activeAssetAmount * adjustedPrice < equity * equityAccumulator,
+            "Liquidator: Equity position underlying is above the liquidation ratio"
+        );
+
+        vaultEngine.liquidateEquityPosition(collId, user, -int256(activeAssetAmount), -int256(equity));
     }
 }
