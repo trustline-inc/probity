@@ -191,7 +191,9 @@ contract Liquidator is Stateful, Eventful {
                 user,
                 address(reserve)
             );
-        } else if (activeAssetAmount * adjustedPrice < equity) {
+        }
+
+        if (activeAssetAmount * adjustedPrice < equity) {
             vaultEngine.liquidateEquityPosition(
                 collId,
                 user,
