@@ -3,8 +3,8 @@
 pragma solidity ^0.8.0;
 
 contract MockFtso {
-    uint256 price;
-    uint256 lastUpdated;
+    uint256 public price;
+    uint256 public lastUpdated;
 
     constructor() {
         price = 1e5;

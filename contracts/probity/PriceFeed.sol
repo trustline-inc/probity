@@ -58,27 +58,44 @@ contract PriceFeed is Stateful, Eventful {
         assets[assetId].ftso = ftso;
     }
 
+    /**
+     * @notice Updates the given asset's liquidation ratio.
+     * @dev Only callable by governance.
+     * @param assetId The ID of the asset to update
+     * @param liquidationRatio The new ratio
+     */
     function updateLiquidationRatio(bytes32 assetId, uint256 liquidationRatio) external onlyBy("gov") {
         emit LogVarUpdate("priceFeed", assetId, "liquidationRatio", assets[assetId].liquidationRatio, liquidationRatio);
         assets[assetId].liquidationRatio = liquidationRatio;
     }
 
+    /**
+     * @notice Updates the FTSO address of this price feed.
+     * @param assetId The ID of the asset to update
+     * @param newFtso The address of the new FTSO
+     */
     function updateFtso(bytes32 assetId, FtsoLike newFtso) external onlyBy("gov") {
         emit LogVarUpdate("priceFeed", assetId, "ftso", address(assets[assetId].ftso), address(newFtso));
         assets[assetId].ftso = newFtso;
     }
 
+    /**
+     * @notice Gets the current price of the given asset.
+     * @param assetId The ID of the asset to get the price for
+     */
     function getPrice(bytes32 assetId) public collateralExists(assetId) returns (uint256 price) {
         (price, ) = assets[assetId].ftso.getCurrentPrice();
     }
 
+    /**
+     * @notice Update the adjusted price used in VaultEngine
+     * @dev The FTSO has a price precision of 5
+     * @param assetId The ID of the asset to to update
+     */
     function updateAdjustedPrice(bytes32 assetId) external {
         require(address(assets[assetId].ftso) != address(0), "PriceFeed/UpdatePrice: Asset is not initialized");
         (uint256 price, ) = assets[assetId].ftso.getCurrentPrice();
-
-        // using 1e5 here because ftso's is in 5 decimal places
         uint256 adjustedPrice = rdiv(rdiv(price, 1e5), assets[assetId].liquidationRatio * 1e9);
-
         vaultEngine.updateAdjustedPrice(assetId, adjustedPrice);
     }
 

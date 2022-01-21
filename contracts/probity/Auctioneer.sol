@@ -131,6 +131,14 @@ contract Auctioneer is Stateful, Eventful {
     // External Functions
     /////////////////////////////////////////
 
+    /**
+     * @notice Starts a collateral auction
+     * @param collId The ID of the collateral on auction
+     * @param lotSize The size of the lot
+     * @param debtSize TODO
+     * @param owner The owner of the liquidated vault
+     * @param beneficiary TODO
+     */
     function startAuction(
         bytes32 collId,
         uint256 lotSize,
@@ -155,14 +163,20 @@ contract Auctioneer is Stateful, Eventful {
         emit AuctionStarted(collId, auctionId, lotSize);
     }
 
+    /**
+     * @notice Place a bid on an auction
+     * @param auctionId The ID of the auction
+     * @param bidPrice The price of the bid
+     * @param bidLot The lot size of the bid
+     */
     function placeBid(
         uint256 auctionId,
         uint256 bidPrice,
         uint256 bidLot
     ) external {
         require(!auctions[auctionId].isOver, "Auctioneer/placeBid: Auction is over");
-        // @todo re-evaluate why user shouldn't be able to place two bids
-        require(bids[auctionId][msg.sender].price == 0, "Auctioneer/placeBid: this user has already placed a bid");
+        // TODO: re-evaluate why user shouldn't be able to place two bids
+        require(bids[auctionId][msg.sender].price == 0, "Auctioneer/placeBid: This user has already placed a bid");
 
         (uint256 totalBidValue, uint256 totalBidLot, address indexToAdd) = totalBidValueAtPrice(auctionId, bidPrice);
         uint256 bidAbleAmount = auctions[auctionId].debt - totalBidValue;
@@ -183,16 +197,21 @@ contract Auctioneer is Stateful, Eventful {
         cancelOldBids(auctionId, totalBidValue, totalBidLot, indexToAdd);
     }
 
+    /**
+     * @notice Allows a user to purchase collateral outright
+     * @param auctionId The ID of the auction
+     * @param maxPrice TODO: where is this used?
+     * @param lot The amount of collateral to purchase
+     */
     function buyItNow(
         uint256 auctionId,
         uint256 maxPrice,
         uint256 lot
     ) external {
         require(!auctions[auctionId].isOver, "Auctioneer/buyItNow: Auction is over");
-        // fail if currentPrice <= max Price
         uint256 currentPrice = calculatePrice(auctionId);
-        require(currentPrice <= maxPrice, "Auctioneer/buyItNow: current price is higher than max price");
-        require(currentPrice != 0, "Auctioneer/buyItNow: Current Price is now 0");
+        require(currentPrice <= maxPrice, "Auctioneer/buyItNow: Current price is higher than max price");
+        require(currentPrice != 0, "Auctioneer/buyItNow: Current price is now zero");
         uint256 buyableAmount = lot * currentPrice;
 
         (uint256 bidValueAtCurrent, uint256 totalBidLot, address index) = totalBidValueAtPrice(auctionId, currentPrice);
@@ -204,7 +223,7 @@ contract Auctioneer is Stateful, Eventful {
             buyableAmount = auctions[auctionId].debt - bidValueAtCurrent;
         }
 
-        // @todo lotToBuy could be zero if buyableAmount < currentPrice
+        // TODO: lotToBuy could be zero if buyableAmount < currentPrice
         uint256 lotToBuy = buyableAmount / currentPrice;
 
         lotToBuy = min(lotToBuy, auctions[auctionId].lot);
@@ -218,15 +237,18 @@ contract Auctioneer is Stateful, Eventful {
 
         checkIfAuctionEnded(auctionId);
         emit Sale(auctions[auctionId].collId, auctionId, msg.sender, currentPrice, lotToBuy);
-        // starting lot and startingValue is 0
         cancelOldBids(auctionId, 0, 0, index);
     }
 
+    /**
+     * @notice TODO
+     * @param auctionId The ID of the auction to finalize
+     */
     function finalizeSale(uint256 auctionId) public {
         require(bids[auctionId][msg.sender].price != 0, "Auctioneer/finalizeSale: The caller has no active bids");
         require(
             (calculatePrice(auctionId) * nextBidRatio) / ONE <= bids[auctionId][msg.sender].price,
-            "Auctioneer/finalizeSale: the current price has not passed the bid price"
+            "Auctioneer/finalizeSale: The current price has not passed the bid price"
         );
         uint256 buyAmount = bids[auctionId][msg.sender].price * bids[auctionId][msg.sender].lot;
 
@@ -246,10 +268,21 @@ contract Auctioneer is Stateful, Eventful {
         checkIfAuctionEnded(auctionId);
     }
 
+    /**
+     * @notice Returns the current price of the given auction
+     * @param auctionId The ID of the auction to check
+     * @return price The current price of the auction
+     */
     function calculatePrice(uint256 auctionId) public returns (uint256 price) {
         return priceCalc.price(auctions[auctionId].startPrice, block.timestamp - auctions[auctionId].startTime);
     }
 
+    /**
+     * @notice Cancels the auction
+     * @dev Only callable by Probity during shutdown
+     * @param auctionId The ID of the auction to cancel
+     * @param recipient The address of the recipient (e.g., ReservePool)
+     */
     function cancelAuction(uint256 auctionId, address recipient) external onlyByProbity {
         Auction storage auction = auctions[auctionId];
 
@@ -262,6 +295,11 @@ contract Auctioneer is Stateful, Eventful {
         auction.lot = 0;
     }
 
+    /**
+     * @notice TODO
+     * @param auctionId The ID of the auction
+     * @param cutOffPrice TODO
+     */
     function totalBidValueAtPrice(uint256 auctionId, uint256 cutOffPrice)
         public
         view
@@ -297,6 +335,10 @@ contract Auctioneer is Stateful, Eventful {
     // Internal Functions
     /////////////////////////////////////////
 
+    /**
+     * @notice Ends an auction if it is done
+     * @param auctionId The ID of the auction
+     */
     function checkIfAuctionEnded(uint256 auctionId) internal {
         if (auctions[auctionId].debt == 0 || auctions[auctionId].lot == 0) {
             auctions[auctionId].isOver = true;
@@ -315,14 +357,13 @@ contract Auctioneer is Stateful, Eventful {
         }
     }
 
-    function min(uint256 a, uint256 b) internal pure returns (uint256 c) {
-        if (a > b) {
-            return b;
-        } else {
-            return a;
-        }
-    }
-
+    /**
+     * @notice TODO
+     * @param auctionId The ID of the auction to cancel old bids for
+     * @param startingValue TODO
+     * @param startingLot TODO
+     * @param prev TODO
+     */
     function cancelOldBids(
         uint256 auctionId,
         uint256 startingValue,
@@ -394,6 +435,11 @@ contract Auctioneer is Stateful, Eventful {
         }
     }
 
+    /**
+     * @notice TODO
+     * @param auctionId The ID of the auction
+     * @param indexToRemove TODO
+     */
     function removeIndex(uint256 auctionId, address indexToRemove) internal {
         bool removed = false;
         address index = HEAD;
@@ -412,6 +458,15 @@ contract Auctioneer is Stateful, Eventful {
     /////////////////////////////////////////
     // Internal functions
     /////////////////////////////////////////
+
+    function min(uint256 a, uint256 b) internal pure returns (uint256 c) {
+        if (a > b) {
+            return b;
+        } else {
+            return a;
+        }
+    }
+
     function rdiv(uint256 x, uint256 y) internal pure returns (uint256 z) {
         z = ((x * RAY) + (y / 2)) / y;
     }

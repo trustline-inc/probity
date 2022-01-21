@@ -22,11 +22,19 @@ const init = async () => {
     owner
   );
 
-  await registry.setupAddress(
-    ethers.utils.formatBytes32String("whitelisted"),
-    "0x6310B7E8bDFD25EFbeDfB17987Ba69D9191a45bD",
-    { gasLimit: 300000 }
-  );
+  try {
+    const args = [
+      ethers.utils.formatBytes32String("whitelisted"),
+      "0x6310B7E8bDFD25EFbeDfB17987Ba69D9191a45bD",
+      { gasLimit: 300000 },
+    ];
+    await registry.callStatic.setupAddress(...args);
+    const result = await registry.setupAddress(...args);
+
+    await result.wait();
+  } catch (error) {
+    console.log(error);
+  }
 };
 
 init();

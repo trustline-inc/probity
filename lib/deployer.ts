@@ -18,7 +18,6 @@ import {
   PbtToken,
   VaultEngine,
   VaultEngineSB,
-  VaultManager,
   NativeToken,
   ERC20Token,
   Teller,
@@ -73,7 +72,6 @@ import {
   MockPriceCalc__factory,
   MockReservePool__factory,
   VaultEngineSB__factory,
-  VaultManager__factory,
 } from "../typechain";
 
 /**
@@ -101,7 +99,6 @@ interface ContractDict {
   pbtToken: PbtToken;
   vaultEngine: VaultEngine;
   vaultEngineSB: VaultEngineSB;
-  vaultManager: VaultManager;
   nativeToken: NativeToken;
   erc20Token: ERC20Token;
   ftsoManager: MockFtsoManager;
@@ -135,7 +132,6 @@ const artifactNameMap = {
   pbtToken: "PbtToken",
   vaultEngine: "VaultEngine",
   vaultEngineSB: "VaultEngineSB",
-  vaultManager: "VaultManager",
   nativeToken: "NativeToken",
   erc20Token: "ERC20Token",
   ftsoManager: "MockFtsoManager",
@@ -169,7 +165,6 @@ const contracts: ContractDict = {
   pbtToken: null,
   vaultEngine: null,
   vaultEngineSB: null,
-  vaultManager: null,
   nativeToken: null,
   erc20Token: null,
   ftsoManager: null,
@@ -710,58 +705,6 @@ const deployShutdown = async (param?: {
   await contracts.registry.setupAddress(
     bytes32("shutdown"),
     contracts.shutdown.address
-  );
-
-  await checkDeploymentDelay();
-  return contracts;
-};
-
-const deployVaultManager = async (param?: {
-  registry?: string;
-  treasury?: string;
-  vaultEngine?: string;
-}) => {
-  if (contracts.vaultManager !== null && process.env.NODE_ENV !== "test") {
-    console.info("vaultManager contract has already been deployed, skipping");
-    return contracts;
-  }
-
-  const registry =
-    param && param.registry ? param.registry : contracts.registry.address;
-  const treasury =
-    param && param.treasury ? param.treasury : contracts.treasury.address;
-  const vaultEngine =
-    param && param.vaultEngine
-      ? param.vaultEngine
-      : process.env.STABLECOIN?.toUpperCase() === "PHI"
-      ? contracts.vaultEngineSB.address
-      : contracts.vaultEngine.address;
-
-  // Set signers
-  const signers = await getSigners();
-
-  const vaultManagerFactory = (await ethers.getContractFactory(
-    "VaultManager",
-    signers.owner
-  )) as VaultManager__factory;
-  contracts.vaultManager = await vaultManagerFactory.deploy(
-    registry,
-    treasury,
-    vaultEngine
-  );
-  await contracts.vaultManager.deployed();
-  if (process.env.NODE_ENV !== "test") {
-    console.info("vaultManager deployed ✓");
-    console.info({
-      registry,
-      treasury,
-      vaultEngine,
-    });
-  }
-
-  await contracts.registry.setupAddress(
-    bytes32("vaultManager"),
-    contracts.vaultManager.address
   );
 
   await checkDeploymentDelay();
@@ -1395,7 +1338,6 @@ const deployProbity = async (stablecoin?: string) => {
   });
   await deployLiquidator();
   await deployShutdown();
-  await deployVaultManager();
 
   return { contracts, signers };
 };
@@ -1476,7 +1418,6 @@ const probity = {
   deployReservePool,
   deployLiquidator,
   deployShutdown,
-  deployVaultManager,
 };
 
 const mock = {

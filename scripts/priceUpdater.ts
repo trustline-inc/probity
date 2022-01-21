@@ -19,7 +19,7 @@ function sleep(ms: number) {
   );
 
   setInterval(async () => {
-    console.log("Updating rates...");
+    console.log("Updating price...");
 
     try {
       const [price] = await ftso.getCurrentPrice();
