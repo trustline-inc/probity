@@ -99,6 +99,12 @@ contract Liquidator is Stateful, Eventful {
         collateralTypes[collId].equityPenaltyFee = 1.05E18;
     }
 
+    /**
+     * @notice Updates liquidation penalties
+     * @param collId The ID of the collateral type
+     * @param debtPenalty The new debt position penalty
+     * @param equityPenalty The new equity position penalty
+     */
     function updatePenalties(
         bytes32 collId,
         uint256 debtPenalty,
@@ -117,6 +123,11 @@ contract Liquidator is Stateful, Eventful {
         collateralTypes[collId].equityPenaltyFee = equityPenalty;
     }
 
+    /**
+     * @notice Updates the address of the auctioneer contract used by Liquidator
+     * @param collId The ID of the collateral type
+     * @param newAuctioneer The address of the new auctioneer
+     */
     function updateAuctioneer(bytes32 collId, AuctioneerLike newAuctioneer) external onlyBy("gov") {
         emit LogVarUpdate(
             "adjustedPriceFeed",
@@ -132,15 +143,20 @@ contract Liquidator is Stateful, Eventful {
         reserve.reduceAuctionDebt(amount);
     }
 
+    /**
+     * @notice Liquidates an undercollateralized vault
+     * @param collId The ID of the collateral type
+     * @param user The address of the vault to liquidate
+     */
     function liquidateVault(bytes32 collId, address user) external {
         // check if vault can be liquidated
-        (uint256 debtAccumulator, uint256 equityAccumulator, uint256 adjustedPrice) = vaultEngine.assets(collId);
-        (, uint256 lockedColl, uint256 debt, uint256 equity) = vaultEngine.vaults(collId, user);
+        (uint256 debtAccumulator, , uint256 adjustedPrice) = vaultEngine.assets(collId);
+        (, uint256 activeAssetAmount, uint256 debt, uint256 equity) = vaultEngine.vaults(collId, user);
 
-        require(lockedColl != 0 && debt + equity != 0, "Lidquidator: Nothing to liquidate");
+        require(activeAssetAmount != 0 && debt + equity != 0, "Lidquidator: Nothing to liquidate");
 
         require(
-            lockedColl * adjustedPrice < debt * debtAccumulator + equity * RAY,
+            activeAssetAmount * adjustedPrice < debt * debtAccumulator + equity * RAY,
             "Liquidator: Vault collateral is still above required minimal ratio"
         );
 
@@ -151,12 +167,12 @@ contract Liquidator is Stateful, Eventful {
             user,
             address(collateralTypes[collId].auctioneer),
             address(reserve),
-            -int256(lockedColl),
+            -int256(activeAssetAmount),
             -int256(debt),
             -int256(equity)
         );
 
         uint256 aurToRaise = (debt * debtAccumulator * collateralTypes[collId].debtPenaltyFee) / WAD;
-        collateralTypes[collId].auctioneer.startAuction(collId, lockedColl, aurToRaise, user, address(reserve));
+        collateralTypes[collId].auctioneer.startAuction(collId, activeAssetAmount, aurToRaise, user, address(reserve));
     }
 }
