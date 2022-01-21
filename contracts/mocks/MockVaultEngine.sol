@@ -19,14 +19,13 @@ contract MockVaultEngine {
         uint256 floor; // Min. amount of asset that must be active to open a position
     }
 
-    struct LiquidateVaultCall {
+    struct LiquidateDebtPositionCall {
         bytes32 collId;
         address user;
         address auctioneer;
         address reservePool;
         int256 collateralAmount;
         int256 debtAmount;
-        int256 equityAmount;
     }
 
     mapping(bytes32 => mapping(address => Vault)) public vaults;
@@ -39,7 +38,7 @@ contract MockVaultEngine {
     uint256 public protocolFeeRates;
     uint256 public totalDebt;
     uint256 public totalEquity;
-    LiquidateVaultCall public lastLiquidateVaultCall;
+    LiquidateDebtPositionCall public lastLiquidateDebtPositionCall;
 
     function addStablecoin(address user, uint256 amount) external {
         stablecoin[user] += amount;
@@ -150,23 +149,21 @@ contract MockVaultEngine {
         states[bytes32("shutdown")] = true;
     }
 
-    function liquidateVault(
+    function liquidateDebtPosition(
         bytes32 collId,
         address user,
         address auctioneer,
         address reservePool,
         int256 collateralAmount,
-        int256 debtAmount,
-        int256 equityAmount
+        int256 debtAmount
     ) external {
-        lastLiquidateVaultCall = LiquidateVaultCall(
+        lastLiquidateDebtPositionCall = LiquidateDebtPositionCall(
             collId,
             user,
             auctioneer,
             reservePool,
             collateralAmount,
-            debtAmount,
-            equityAmount
+            debtAmount
         );
     }
 

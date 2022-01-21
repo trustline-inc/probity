@@ -82,6 +82,7 @@ contract Liquidator is Stateful, Eventful {
 
     VaultEngineLike public immutable vaultEngine;
     ReservePoolLike public immutable reserve;
+    address public immutable treasuryAddress;
 
     mapping(bytes32 => Collateral) public collateralTypes;
 
@@ -91,10 +92,12 @@ contract Liquidator is Stateful, Eventful {
     constructor(
         address registryAddress,
         VaultEngineLike vaultEngineAddress,
-        ReservePoolLike reservePoolAddress
+        ReservePoolLike reservePoolAddress,
+        address _treasuryAddress
     ) Stateful(registryAddress) {
         vaultEngine = vaultEngineAddress;
         reserve = reservePoolAddress;
+        treasuryAddress = _treasuryAddress;
     }
 
     /////////////////////////////////////////
@@ -154,13 +157,8 @@ contract Liquidator is Stateful, Eventful {
      * @notice Liquidates an undercollateralized vault
      * @param collId The ID of the collateral type
      * @param user The address of the vault to liquidate
-     * @param treasuryAddress Address of the treasury, only used for equity position liq.
      */
-    function liquidateVault(
-        bytes32 collId,
-        address user,
-        address treasuryAddress
-    ) external {
+    function liquidateVault(bytes32 collId, address user) external {
         (uint256 debtAccumulator, , uint256 adjustedPrice) = vaultEngine.assets(collId);
         (, uint256 activeAssetAmount, uint256 debt, uint256 equity) = vaultEngine.vaults(collId, user);
 

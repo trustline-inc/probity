@@ -72,14 +72,20 @@ interface VaultLike {
             uint256 floor
         );
 
-    function liquidateVault(
+    function liquidateDebtPosition(
         bytes32 assetId,
         address user,
         address auctioneer,
         address reservePool,
         int256 collAmount,
-        int256 debt,
-        int256 equity
+        int256 debt
+    ) external;
+
+    function liquidateEquityPosition(
+        bytes32 assetId,
+        address user,
+        int256 collAmount,
+        address treasury
     ) external;
 }
 
@@ -306,14 +312,13 @@ contract Shutdown is Stateful, Eventful {
         assets[assetId].gap += gap;
         unbackedDebt += gap * assets[assetId].finalPrice;
 
-        vaultEngine.liquidateVault(
+        vaultEngine.liquidateDebtPosition(
             assetId,
             user,
             address(this),
             address(this),
             -int256(amountToGrab),
-            -int256(debt),
-            0
+            -int256(debt)
         );
     }
 
@@ -333,7 +338,7 @@ contract Shutdown is Stateful, Eventful {
 
         uint256 amountToFree = activeAssetAmount - hookedCollAmount;
 
-        vaultEngine.liquidateVault(assetId, user, user, address(this), -int256(amountToFree), 0, 0);
+        vaultEngine.liquidateDebtPosition(assetId, user, user, address(this), -int256(amountToFree), 0);
     }
 
     /**
@@ -390,15 +395,7 @@ contract Shutdown is Stateful, Eventful {
         assets[assetId].gap -= amountToGrab;
         unbackedDebt -= amountToGrab * assets[assetId].finalPrice;
 
-        vaultEngine.liquidateVault(
-            assetId,
-            user,
-            address(this),
-            address(this),
-            -int256(amountToGrab),
-            0,
-            -int256(equity)
-        );
+        vaultEngine.liquidateEquityPosition(assetId, user, -int256(equity), address(treasury));
     }
 
     /**

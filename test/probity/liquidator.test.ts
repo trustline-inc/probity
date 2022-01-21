@@ -34,6 +34,7 @@ let registry: Registry;
 let reservePool: MockReservePool;
 let auctioneer: MockAuctioneer;
 let liquidator: Liquidator;
+let treasury: Treasury;
 
 let flrAssetId = bytes32("FLR");
 
@@ -47,11 +48,13 @@ describe("Liquidator Unit Tests", function () {
     vaultEngine = contracts.mockVaultEngine;
     reservePool = contracts.mockReserve;
     auctioneer = contracts.mockAuctioneer;
+    treasury = contracts.treasury;
 
     contracts = await probity.deployLiquidator({
       registry: registry.address,
       vaultEngine: vaultEngine.address,
       reservePool: reservePool.address,
+      treasury: treasury.address,
     });
 
     liquidator = contracts.liquidator;
@@ -243,25 +246,23 @@ describe("Liquidator Unit Tests", function () {
       const EXPECTED_DEBT_AMOUNT = WAD.mul(0).sub(VAULT_DEBT);
       const EXPECTED_EQUITY_AMOUNT = WAD.mul(0).sub(VAULT_EQUITY);
 
-      const before = await vaultEngine.lastLiquidateVaultCall();
+      const before = await vaultEngine.lastLiquidateDebtPositionCall();
       expect(before.collId).to.equal(bytes32(""));
       expect(before.user).to.equal(ADDRESS_ZERO);
       expect(before.auctioneer).to.equal(ADDRESS_ZERO);
       expect(before.reservePool).to.equal(ADDRESS_ZERO);
       expect(before.collateralAmount).to.equal(0);
       expect(before.debtAmount).to.equal(0);
-      expect(before.equityAmount).to.equal(0);
 
       await liquidator.liquidateVault(flrAssetId, user.address);
 
-      const after = await vaultEngine.lastLiquidateVaultCall();
+      const after = await vaultEngine.lastLiquidateDebtPositionCall();
       expect(after.collId).to.equal(flrAssetId);
       expect(after.user).to.equal(user.address);
       expect(after.auctioneer).to.equal(auctioneer.address);
       expect(after.reservePool).to.equal(reservePool.address);
       expect(after.collateralAmount).to.equal(EXPECTD_COLL_AMOUNT);
       expect(after.debtAmount).to.equal(EXPECTED_DEBT_AMOUNT);
-      expect(after.equityAmount).to.equal(EXPECTED_EQUITY_AMOUNT);
     });
 
     it("test that auctioneer's startAuction is called with correct parameters", async () => {

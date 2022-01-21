@@ -441,18 +441,19 @@ describe("Shutdown Unit Tests", function () {
       const EXPECTED_USER_DEBT = DEBT_TO_SET;
       await shutdown.setFinalPrice(flrAssetId);
 
-      let lastLiquidateVaultCall = await vaultEngine.lastLiquidateVaultCall();
+      let lastLiquidateVaultCall =
+        await vaultEngine.lastLiquidateDebtPositionCall();
       expect(lastLiquidateVaultCall.collId).to.equal(BYTES32_ZERO);
       expect(lastLiquidateVaultCall.user).to.equal(ADDRESS_ZERO);
       expect(lastLiquidateVaultCall.auctioneer).to.equal(ADDRESS_ZERO);
       expect(lastLiquidateVaultCall.reservePool).to.equal(ADDRESS_ZERO);
       expect(lastLiquidateVaultCall.collateralAmount).to.equal(0);
       expect(lastLiquidateVaultCall.debtAmount).to.equal(0);
-      expect(lastLiquidateVaultCall.equityAmount).to.equal(0);
 
       await shutdown.processUserDebt(flrAssetId, user.address);
 
-      lastLiquidateVaultCall = await vaultEngine.lastLiquidateVaultCall();
+      lastLiquidateVaultCall =
+        await vaultEngine.lastLiquidateDebtPositionCall();
       expect(lastLiquidateVaultCall.collId).to.equal(flrAssetId);
       expect(lastLiquidateVaultCall.user).to.equal(user.address);
       expect(lastLiquidateVaultCall.auctioneer).to.equal(shutdown.address);
@@ -463,7 +464,6 @@ describe("Shutdown Unit Tests", function () {
       expect(lastLiquidateVaultCall.debtAmount).to.equal(
         BigNumber.from(0).sub(EXPECTED_USER_DEBT)
       );
-      expect(lastLiquidateVaultCall.equityAmount).to.equal(0);
     });
 
     it("fail if final price is not set", async () => {
@@ -514,7 +514,8 @@ describe("Shutdown Unit Tests", function () {
 
       await shutdown.freeExcessCollateral(flrAssetId, owner.address);
 
-      let lastLiquidateVaultCall = await vaultEngine.lastLiquidateVaultCall();
+      let lastLiquidateVaultCall =
+        await vaultEngine.lastLiquidateDebtPositionCall();
       expect(lastLiquidateVaultCall.collId).to.equal(flrAssetId);
       expect(lastLiquidateVaultCall.user).to.equal(owner.address);
       expect(lastLiquidateVaultCall.auctioneer).to.equal(owner.address);
@@ -525,7 +526,6 @@ describe("Shutdown Unit Tests", function () {
       expect(lastLiquidateVaultCall.debtAmount).to.equal(
         BigNumber.from(0).sub(0)
       );
-      expect(lastLiquidateVaultCall.equityAmount).to.equal(0);
     });
 
     it("fail if final price is not set", async () => {
@@ -624,7 +624,7 @@ describe("Shutdown Unit Tests", function () {
       await increaseTime(TIME_TO_FORWARD);
     });
 
-    it("tests that supplierObligation calculation is zero when the system surplus >= unbackedDebt", async () => {
+    it("tests that investorObligation calculation is zero when the system surplus >= unbackedDebt", async () => {
       const TOTAL_DEBT_TO_SET = RAD.mul(100);
       const TOTAL_CAP_TO_SET = RAD.mul(150);
       const EXPECTED_AUR_GAP = DEBT_TO_SET.sub(COLL_TO_SET).mul(RAY);
@@ -651,7 +651,7 @@ describe("Shutdown Unit Tests", function () {
       expect(suppObligation).to.equal(0);
     });
 
-    it("tests that supplierObligation and unbackedDebt calculation is correct", async () => {
+    it("tests that investorObligation and unbackedDebt calculation is correct", async () => {
       const SYSTEM_RESERVE_TO_SET = RAD.mul(10);
       const EXPECTED_SUPP_OBLIGATION = wdiv(RAD.mul(40), RAD.mul(100));
 
@@ -673,7 +673,7 @@ describe("Shutdown Unit Tests", function () {
       expect(suppObligation).to.equal(EXPECTED_SUPP_OBLIGATION);
     });
 
-    it("tests that supplierObligation max out at 100%", async () => {
+    it("tests that investorObligation max out at 100%", async () => {
       const SYSTEM_RESERVE_TO_SET = RAD.mul(10);
       await vaultEngine.setTotalDebt(RAD.mul(30));
 
@@ -790,7 +790,8 @@ describe("Shutdown Unit Tests", function () {
         .div(WAD)
         .div(PRICE_TO_SET);
 
-      const lastLiqudateVaultCall = await vaultEngine.lastLiquidateVaultCall();
+      const lastLiqudateVaultCall =
+        await vaultEngine.lastLiquidateDebtPositionCall();
       expect(lastLiqudateVaultCall.collId).to.equal(flrAssetId);
       expect(lastLiqudateVaultCall.user).to.equal(owner.address);
       expect(lastLiqudateVaultCall.auctioneer).to.equal(shutdown.address);
@@ -800,9 +801,6 @@ describe("Shutdown Unit Tests", function () {
       );
 
       expect(lastLiqudateVaultCall.debtAmount).to.equal(0);
-      expect(lastLiqudateVaultCall.equityAmount).to.equal(
-        BigNumber.from(0).sub(before.equity)
-      );
     });
   });
 
