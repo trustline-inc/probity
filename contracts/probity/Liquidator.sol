@@ -36,7 +36,8 @@ interface VaultEngineLike {
         bytes32 collId,
         address user,
         int256 underlyingAmount,
-        int256 equityAmount
+        int256 equityAmount,
+        address treasuryAddress
     ) external;
 }
 
@@ -153,60 +154,51 @@ contract Liquidator is Stateful, Eventful {
      * @notice Liquidates an undercollateralized vault
      * @param collId The ID of the collateral type
      * @param user The address of the vault to liquidate
+     * @param treasuryAddress Address of the treasury, only used for equity position liq.
      */
-    function liquidateDebtPosition(bytes32 collId, address user) external {
-        (uint256 debtAccumulator, , uint256 adjustedPrice) = vaultEngine.assets(collId);
-        (, uint256 activeAssetAmount, uint256 debt, ) = vaultEngine.vaults(collId, user);
-
-        require(activeAssetAmount != 0 && debt != 0, "Lidquidator: Nothing to liquidate");
-
-        require(
-            activeAssetAmount * adjustedPrice < debt * debtAccumulator,
-            "Liquidator: Debt position collateral is above the liquidation ratio"
-        );
-
-        // Transfer the debt to reserve pool
-        reserve.addAuctionDebt(debt * RAY);
-        vaultEngine.liquidateDebtPosition(
-            collId,
-            user,
-            address(collateralTypes[collId].auctioneer),
-            address(reserve),
-            -int256(activeAssetAmount),
-            -int256(debt)
-        );
-
-        uint256 fundraiseTarget = (debt * debtAccumulator * collateralTypes[collId].debtPenaltyFee) / WAD;
-        collateralTypes[collId].auctioneer.startAuction(
-            collId,
-            activeAssetAmount,
-            fundraiseTarget,
-            user,
-            address(reserve)
-        );
-    }
-
-    /**
-     * @notice Liquidates an undercollateralized vault
-     * @param collId The ID of the collateral type
-     * @param user The address of the vault to liquidate
-     * @param treasury The address of the treasury contract
-     */
-    function liquidateEquityPosition(
+    function liquidateVault(
         bytes32 collId,
         address user,
-        address treasury
+        address treasuryAddress
     ) external {
-        (, , uint256 adjustedPrice) = vaultEngine.assets(collId);
-        (, uint256 activeAssetAmount, , uint256 equity) = vaultEngine.vaults(collId, user);
+        (uint256 debtAccumulator, , uint256 adjustedPrice) = vaultEngine.assets(collId);
+        (, uint256 activeAssetAmount, uint256 debt, uint256 equity) = vaultEngine.vaults(collId, user);
 
-        require(activeAssetAmount != 0 && equity != 0, "Lidquidator: Nothing to liquidate");
+        require(activeAssetAmount != 0 && (debt != 0 || equity != 0), "Lidquidator: Nothing to liquidate");
 
         require(
-            activeAssetAmount * adjustedPrice < equity,
-            "Liquidator: Equity position underlying is above the liquidation ratio"
+            activeAssetAmount * adjustedPrice < debt * debtAccumulator || activeAssetAmount * adjustedPrice < equity,
+            "Liquidator: Vault collateral is above the liquidation ratio"
         );
 
-        vaultEngine.liquidateEquityPosition(collId, user, -int256(activeAssetAmount), -int256(equity));
+        if (activeAssetAmount * adjustedPrice < debt * debtAccumulator) {
+            // Transfer the debt to reserve pool
+            reserve.addAuctionDebt(debt * RAY);
+            vaultEngine.liquidateDebtPosition(
+                collId,
+                user,
+                address(collateralTypes[collId].auctioneer),
+                address(reserve),
+                -int256(activeAssetAmount),
+                -int256(debt)
+            );
+
+            uint256 fundraiseTarget = (debt * debtAccumulator * collateralTypes[collId].debtPenaltyFee) / WAD;
+            collateralTypes[collId].auctioneer.startAuction(
+                collId,
+                activeAssetAmount,
+                fundraiseTarget,
+                user,
+                address(reserve)
+            );
+        } else if (activeAssetAmount * adjustedPrice < equity) {
+            vaultEngine.liquidateEquityPosition(
+                collId,
+                user,
+                -int256(activeAssetAmount),
+                -int256(equity),
+                treasuryAddress
+            );
+        }
     }
 }
