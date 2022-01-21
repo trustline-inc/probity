@@ -303,12 +303,12 @@ contract Shutdown is Stateful, Eventful {
      * @param user The address of the vault user
      */
     function processUserDebt(bytes32 assetId, address user) external onlyIfFinalPriceSet(assetId) {
-        (, uint256 activeAssetAmount, uint256 debt, , ) = vaultEngine.vaults(assetId, user);
+        (, , uint256 collateral, uint256 debt, ) = vaultEngine.vaults(assetId, user);
         (uint256 debtAccumulator, , , , , , ) = vaultEngine.assets(assetId);
 
-        uint256 collateral = (debt * debtAccumulator) / assets[assetId].finalPrice;
-        uint256 amountToGrab = min(activeAssetAmount, collateral);
-        uint256 gap = collateral - amountToGrab;
+        uint256 required = (debt * debtAccumulator) / assets[assetId].finalPrice;
+        uint256 amountToGrab = min(collateral, required);
+        uint256 gap = required - amountToGrab;
         assets[assetId].gap += gap;
         unbackedDebt += gap * assets[assetId].finalPrice;
 
@@ -328,15 +328,15 @@ contract Shutdown is Stateful, Eventful {
      * @param user The address of the user vault
      */
     function freeExcessCollateral(bytes32 assetId, address user) external onlyIfFinalPriceSet(assetId) {
-        (, uint256 activeAssetAmount, uint256 debt, uint256 equity, ) = vaultEngine.vaults(assetId, user);
+        (, , uint256 collateral, uint256 debt, uint256 equity) = vaultEngine.vaults(assetId, user);
         require(debt == 0, "Shutdown/freeExcessCollateral: User needs to process debt first before calling this");
 
         // how do we make it so this can be reused
         uint256 hookedAmount = (equity * finalAurUtilizationRatio);
         uint256 hookedCollAmount = hookedAmount / assets[assetId].finalPrice;
-        require(activeAssetAmount > hookedCollAmount, "Shutdown/freeExcessCollateral: No collateral to free");
+        require(collateral > hookedCollAmount, "Shutdown/freeExcessCollateral: No collateral to free");
 
-        uint256 amountToFree = activeAssetAmount - hookedCollAmount;
+        uint256 amountToFree = collateral - hookedCollAmount;
 
         vaultEngine.liquidateDebtPosition(assetId, user, user, address(this), -int256(amountToFree), 0);
     }

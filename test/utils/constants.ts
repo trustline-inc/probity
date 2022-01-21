@@ -1,4 +1,5 @@
 import { ethers } from "hardhat";
+import web3 from "web3";
 
 const errorTypes = {
   ISSUER_EXISTS: "An issuer already exists with this address.",
@@ -28,6 +29,20 @@ const RAD = ethers.BigNumber.from(
   "1000000000000000000000000000000000000000000000"
 );
 
+const ASSETS = {
+  FLR: web3.utils.keccak256("FLR"),
+  FXRP: web3.utils.keccak256("FXRP"),
+};
+
 const bytes32 = (string) => ethers.utils.formatBytes32String(string);
 
-export { errorTypes, ADDRESS_ZERO, BYTES32_ZERO, WAD, RAD, RAY, bytes32 };
+export {
+  errorTypes,
+  ADDRESS_ZERO,
+  BYTES32_ZERO,
+  WAD,
+  RAD,
+  RAY,
+  bytes32,
+  ASSETS,
+};

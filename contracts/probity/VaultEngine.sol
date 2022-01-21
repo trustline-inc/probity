@@ -363,6 +363,11 @@ contract VaultEngine is Stateful, Eventful {
         emit Log("vault", "settle", msg.sender);
     }
 
+    /**
+     * @notice Increases the system debt
+     * @param amount The amount of the debt increase
+     * @dev Called by ReservePool
+     */
     function increaseSystemDebt(uint256 amount) external onlyByProbity {
         stablecoin[msg.sender] += amount;
         unbackedDebt[msg.sender] += amount;
