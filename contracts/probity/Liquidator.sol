@@ -190,8 +190,13 @@ contract Liquidator is Stateful, Eventful {
      * @notice Liquidates an undercollateralized vault
      * @param collId The ID of the collateral type
      * @param user The address of the vault to liquidate
+     * @param treasury The address of the treasury contract
      */
-    function liquidateEquityPosition(bytes32 collId, address user) external {
+    function liquidateEquityPosition(
+        bytes32 collId,
+        address user,
+        address treasury
+    ) external {
         (, , uint256 adjustedPrice) = vaultEngine.assets(collId);
         (, uint256 activeAssetAmount, , uint256 equity) = vaultEngine.vaults(collId, user);
 

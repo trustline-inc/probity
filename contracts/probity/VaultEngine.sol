@@ -331,12 +331,18 @@ contract VaultEngine is Stateful, Eventful {
         bytes32 assetId,
         address user,
         int256 assetAmount,
-        int256 equityAmount
+        int256 equityAmount,
+        address treasuryAddress
     ) external onlyByProbity {
         Vault storage vault = vaults[assetId][user];
         Asset storage asset = assets[assetId];
 
         // TODO: Assess penalty
+
+        require(
+            stablecoin[treasuryAddress] >= uint256(equityAmount),
+            "VaultEngine/liquidateEquityPosition: Not enough treasury funds"
+        );
 
         vault.activeAssetAmount = add(vault.activeAssetAmount, assetAmount);
         vault.standbyAssetAmount = add(vault.standbyAssetAmount, -assetAmount);
