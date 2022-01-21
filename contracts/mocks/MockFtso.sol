@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 
 contract MockFtso {
     uint256 public price;
-    uint256 public inflationRate;
     uint256 public lastUpdated;
 
     constructor() {
@@ -19,14 +18,5 @@ contract MockFtso {
 
     function getCurrentPrice() external view returns (uint256 _price, uint256 _timestamp) {
         return (price, lastUpdated);
-    }
-
-    function setCurrentInflationRate(uint256 _inflationRate) external {
-        inflationRate = _inflationRate;
-        lastUpdated = block.timestamp;
-    }
-
-    function getCurrentInflationRate() external view returns (uint256 _inflationRate, uint256 _timestamp) {
-        return (inflationRate, lastUpdated);
     }
 }
