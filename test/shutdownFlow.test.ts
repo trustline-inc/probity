@@ -230,7 +230,7 @@ describe("Shutdown Flow Test", function () {
       .deposit({ value: ethers.utils.parseEther("2300") });
     await vaultEngine
       .connect(user1)
-      .modifyEquity(flrAssetId, treasury.address, WAD.mul(2300), RAD.mul(1000));
+      .modifyEquity(flrAssetId, treasury.address, WAD.mul(2300), WAD.mul(1000));
     balances.user1.flr = {
       activeAmount: WAD.mul(2300),
       equity: WAD.mul(1000),
@@ -243,7 +243,7 @@ describe("Shutdown Flow Test", function () {
         fxrpAssetId,
         treasury.address,
         WAD.mul(1_000_000),
-        RAD.mul(300_000)
+        WAD.mul(300_000)
       );
     balances.user1.fxrp = {
       activeAmount: WAD.mul(1_000_000),
@@ -258,7 +258,7 @@ describe("Shutdown Flow Test", function () {
     await fxrpDeposit(user2, WAD.mul(270000));
     await vaultEngine
       .connect(user2)
-      .modifyDebt(flrAssetId, treasury.address, WAD.mul(2300), RAD.mul(1500));
+      .modifyDebt(flrAssetId, treasury.address, WAD.mul(2300), WAD.mul(1500));
     balances.user2.flr = {
       activeAmount: WAD.mul(2300),
       debt: WAD.mul(1500),
@@ -271,7 +271,7 @@ describe("Shutdown Flow Test", function () {
         fxrpAssetId,
         treasury.address,
         WAD.mul(150_000),
-        RAD.mul(135_000)
+        WAD.mul(135_000)
       );
     balances.user2.fxrp = {
       activeAmount: WAD.mul(150_000),
@@ -289,7 +289,7 @@ describe("Shutdown Flow Test", function () {
         fxrpAssetId,
         treasury.address,
         WAD.mul(400_000),
-        RAD.mul(150_000)
+        WAD.mul(150_000)
       );
     // User 3 activates 200_000 FXRP to BORROW 150_000 AUR
     await vaultEngine
@@ -298,7 +298,7 @@ describe("Shutdown Flow Test", function () {
         fxrpAssetId,
         treasury.address,
         WAD.mul(200_000),
-        RAD.mul(150_000)
+        WAD.mul(150_000)
       );
     balances.user3.fxrp = {
       activeAmount: WAD.mul(600_000),
@@ -315,7 +315,7 @@ describe("Shutdown Flow Test", function () {
       .deposit({ value: ethers.utils.parseEther("6900") });
     await vaultEngine
       .connect(user4)
-      .modifyDebt(flrAssetId, treasury.address, WAD.mul(6900), RAD.mul(4500));
+      .modifyDebt(flrAssetId, treasury.address, WAD.mul(6900), WAD.mul(4500));
     balances.user4.flr = {
       activeAmount: WAD.mul(6900),
       debt: WAD.mul(4500),
@@ -612,7 +612,7 @@ describe("Shutdown Flow Test", function () {
     await fxrpDeposit(user1, WAD.mul(1000000));
     await vaultEngine
       .connect(user1)
-      .modifyEquity(flrAssetId, treasury.address, WAD.mul(4500), RAD.mul(5000));
+      .modifyEquity(flrAssetId, treasury.address, WAD.mul(4500), WAD.mul(5000));
     balances.user1.flr = {
       activeAmount: WAD.mul(4500),
       equity: WAD.mul(5000),
@@ -624,7 +624,7 @@ describe("Shutdown Flow Test", function () {
         fxrpAssetId,
         treasury.address,
         WAD.mul(1000000),
-        RAD.mul(2000000)
+        WAD.mul(2000000)
       );
     balances.user1.fxrp = {
       activeAmount: WAD.mul(1000000),
@@ -638,7 +638,7 @@ describe("Shutdown Flow Test", function () {
     await fxrpDeposit(user2, WAD.mul(270000));
     await vaultEngine
       .connect(user2)
-      .modifyDebt(flrAssetId, treasury.address, WAD.mul(2300), RAD.mul(6000));
+      .modifyDebt(flrAssetId, treasury.address, WAD.mul(2300), WAD.mul(6000));
     balances.user2.flr = {
       activeAmount: WAD.mul(2300),
       debt: WAD.mul(6000),
@@ -649,7 +649,7 @@ describe("Shutdown Flow Test", function () {
         fxrpAssetId,
         treasury.address,
         WAD.mul(270000),
-        RAD.mul(1100000)
+        WAD.mul(1100000)
       );
     balances.user2.fxrp = {
       activeAmount: WAD.mul(270000),
@@ -663,10 +663,10 @@ describe("Shutdown Flow Test", function () {
       .deposit({ value: ethers.utils.parseEther("9000") });
     await vaultEngine
       .connect(user3)
-      .modifyDebt(flrAssetId, treasury.address, WAD.mul(9000), RAD.mul(15000));
+      .modifyDebt(flrAssetId, treasury.address, WAD.mul(9000), WAD.mul(15000));
     await vaultEngine
       .connect(user3)
-      .modifyDebt(flrAssetId, treasury.address, WAD.mul(0), RAD.mul(10000));
+      .modifyDebt(flrAssetId, treasury.address, WAD.mul(0), WAD.mul(10000));
 
     balances.user3.flr = {
       activeAmount: WAD.mul(9000),
@@ -682,7 +682,7 @@ describe("Shutdown Flow Test", function () {
         fxrpAssetId,
         treasury.address,
         WAD.mul(400000),
-        RAD.mul(1000000)
+        WAD.mul(1000000)
       );
     await vaultEngine
       .connect(user4)
@@ -690,7 +690,7 @@ describe("Shutdown Flow Test", function () {
         fxrpAssetId,
         treasury.address,
         WAD.mul(220000),
-        RAD.mul(1500000)
+        WAD.mul(1500000)
       );
 
     balances.user4.fxrp = {
@@ -707,10 +707,10 @@ describe("Shutdown Flow Test", function () {
     await fxrpDeposit(user5, WAD.mul(1830000));
     await vaultEngine
       .connect(user5)
-      .modifyEquity(flrAssetId, treasury.address, WAD.mul(1000), RAD.mul(1500));
+      .modifyEquity(flrAssetId, treasury.address, WAD.mul(1000), WAD.mul(1500));
     await vaultEngine
       .connect(user5)
-      .modifyDebt(flrAssetId, treasury.address, WAD.mul(1000), RAD.mul(1500));
+      .modifyDebt(flrAssetId, treasury.address, WAD.mul(1000), WAD.mul(1500));
 
     balances.user5.flr = {
       activeAmount: WAD.mul(1000 + 1000),
@@ -724,11 +724,11 @@ describe("Shutdown Flow Test", function () {
         fxrpAssetId,
         treasury.address,
         WAD.mul(1830000),
-        RAD.mul(1500000)
+        WAD.mul(1500000)
       );
     await vaultEngine
       .connect(user5)
-      .modifyDebt(fxrpAssetId, treasury.address, WAD.mul(0), RAD.mul(1200000));
+      .modifyDebt(fxrpAssetId, treasury.address, WAD.mul(0), WAD.mul(1200000));
 
     balances.user5.fxrp = {
       activeAmount: WAD.mul(1830000),
