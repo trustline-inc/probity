@@ -377,7 +377,7 @@ describe("Probity happy flow", function () {
     expect(adjustedPrice.sub(expectedPrice).toNumber() <= 10).to.equal(true);
   });
 
-  it.only("liquidates unhealthy vaults", async () => {
+  it("liquidates unhealthy vaults", async () => {
     // Deposit native token (FLR)
     await flrWallet.deposit({ value: STANDBY_AMOUNT });
 
