@@ -325,6 +325,8 @@ describe("Shutdown Flow Test", function () {
      * Increase unbacked system debt and start IOU sale
      */
 
+    // CHECKPOINT
+
     // Increase by 5000 * 1.2 = 6000
     await reserve.increaseSystemDebt(DEBT_THRESHOLD.mul(12).div(10));
     reserveBalances.reserve = DEBT_THRESHOLD.mul(12).div(10);

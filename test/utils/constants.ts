@@ -1,5 +1,4 @@
-import { ethers } from "hardhat";
-import web3 from "web3";
+import { ethers, web3 } from "hardhat";
 
 const errorTypes = {
   ISSUER_EXISTS: "An issuer already exists with this address.",
@@ -34,7 +33,7 @@ const ASSETS = {
   FXRP: web3.utils.keccak256("FXRP"),
 };
 
-const bytes32 = (string) => ethers.utils.formatBytes32String(string);
+const bytes32 = (string: string) => ethers.utils.formatBytes32String(string);
 
 export {
   errorTypes,

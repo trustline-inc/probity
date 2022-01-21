@@ -778,7 +778,7 @@ describe("Shutdown Unit Tests", function () {
         await shutdown.finalAurUtilizationRatio();
 
       const before = await vaultEngine.vaults(flrAssetId, owner.address);
-      expect(before.activeAssetAmount).to.equal(COLL_TO_SET);
+      expect(before.collateral).to.equal(COLL_TO_SET);
       expect(before.equity).to.equal(CAP_TO_SET);
       await shutdown.processUserEquity(flrAssetId, owner.address);
 
