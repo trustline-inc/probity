@@ -461,6 +461,8 @@ contract Auctioneer is Stateful, Eventful {
         } else {
             return a;
         }
+    }
+
     /////////////////////////////////////////
     // Internal functions
     /////////////////////////////////////////
