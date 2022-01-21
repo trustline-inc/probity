@@ -156,10 +156,9 @@ contract Liquidator is Stateful, Eventful {
             -int256(equity)
         );
 
-        uint256 aurToRaise = (debt * debtAccumulator * collateralTypes[collId].debtPenaltyFee) /
-            WAD +
-            (equity * equityAccumulator * collateralTypes[collId].equityPenaltyFee) /
-            WAD;
+        uint256 aurToRaise = (debt * debtAccumulator * collateralTypes[collId].debtPenaltyFee) / WAD;
+        //            (equity * equityAccumulator * collateralTypes[collId].equityPenaltyFee) /
+        //            WAD;
         // start the auction
         collateralTypes[collId].auctioneer.startAuction(collId, lockedColl, aurToRaise, user, address(reserve));
     }

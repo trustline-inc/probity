@@ -57,6 +57,7 @@ contract Auctioneer is Stateful, Eventful {
     // State Variables
     /////////////////////////////////////////
     uint256 private constant ONE = 1.00E18;
+    uint256 private constant RAY = 1e27;
     address public constant HEAD = address(1);
 
     VaultEngineLike public immutable vaultEngine;
@@ -146,7 +147,7 @@ contract Auctioneer is Stateful, Eventful {
         address beneficiary
     ) external onlyBy("liquidator") {
         (uint256 currPrice, ) = ftso.getCurrentPrice();
-        uint256 startingPrice = (currPrice * priceBuffer) / ONE;
+        uint256 startingPrice = (rdiv(currPrice, 1e5) * priceBuffer) / ONE;
         uint256 auctionId = auctionCount++;
         auctions[auctionId] = Auction(
             collId,
@@ -214,7 +215,6 @@ contract Auctioneer is Stateful, Eventful {
         uint256 buyableAmount = lot * currentPrice;
 
         (uint256 bidValueAtCurrent, uint256 totalBidLot, address index) = totalBidValueAtPrice(auctionId, currentPrice);
-
         require(
             bidValueAtCurrent < auctions[auctionId].debt && totalBidLot < auctions[auctionId].lot,
             "Auctioneer/buyItNow: Price has reach a point where BuyItNow is no longer available"
@@ -229,7 +229,7 @@ contract Auctioneer is Stateful, Eventful {
         lotToBuy = min(lotToBuy, auctions[auctionId].lot);
         buyableAmount = lotToBuy * currentPrice;
 
-        vaultEngine.moveStablecoin(msg.sender, auctions[auctionId].beneficiary, lotToBuy * currentPrice);
+        vaultEngine.moveStablecoin(msg.sender, auctions[auctionId].beneficiary, buyableAmount);
         vaultEngine.moveAsset(auctions[auctionId].collId, address(this), msg.sender, lotToBuy);
 
         auctions[auctionId].debt = auctions[auctionId].debt - buyableAmount;
@@ -461,5 +461,10 @@ contract Auctioneer is Stateful, Eventful {
         } else {
             return a;
         }
+    /////////////////////////////////////////
+    // Internal functions
+    /////////////////////////////////////////
+    function rdiv(uint256 x, uint256 y) internal pure returns (uint256 z) {
+        z = ((x * RAY) + (y / 2)) / y;
     }
 }

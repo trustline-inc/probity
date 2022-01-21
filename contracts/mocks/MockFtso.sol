@@ -8,7 +8,7 @@ contract MockFtso {
     uint256 public lastUpdated;
 
     constructor() {
-        price = 1e27;
+        price = 1e5;
         lastUpdated = block.timestamp;
     }
 
