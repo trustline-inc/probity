@@ -551,11 +551,9 @@ describe("Shutdown Flow Test", function () {
     );
 
     // redeem collateral
-    let before = (await vaultEngine.vaults(flrAssetId, user2.address))
-      .standbyAssetAmount;
+    let before = (await vaultEngine.vaults(flrAssetId, user2.address)).standby;
     await shutdown.connect(user2).redeemCollateral(flrAssetId);
-    let after = (await vaultEngine.vaults(flrAssetId, user2.address))
-      .standbyAssetAmount;
+    let after = (await vaultEngine.vaults(flrAssetId, user2.address)).standby;
     // redemption ratio * stablecoin returned
     // 0.0446601941 * 66500 = 2969.90290765
     const EXPECTED_FLR_COLL_REDEEMED = WAD.mul(296990290765).div(1e8);
@@ -564,11 +562,9 @@ describe("Shutdown Flow Test", function () {
       after.sub(before).sub(EXPECTED_FLR_COLL_REDEEMED).lte(WAD.div(100))
     ).to.equal(true);
 
-    before = (await vaultEngine.vaults(fxrpAssetId, user2.address))
-      .standbyAssetAmount;
+    before = (await vaultEngine.vaults(fxrpAssetId, user2.address)).standby;
     await shutdown.connect(user2).redeemCollateral(fxrpAssetId);
-    after = (await vaultEngine.vaults(fxrpAssetId, user2.address))
-      .standbyAssetAmount;
+    after = (await vaultEngine.vaults(fxrpAssetId, user2.address)).standby;
 
     // redemption ratio * stablecoin returned
     // 0.9425959091 * 66500 = 62682.6279552
@@ -1054,11 +1050,9 @@ describe("Shutdown Flow Test", function () {
     expect(await shutdown.stablecoin(user2.address)).to.equal(RAD.mul(1099000));
 
     // redeem collateral
-    let before = (await vaultEngine.vaults(flrAssetId, user2.address))
-      .standbyAssetAmount;
+    let before = (await vaultEngine.vaults(flrAssetId, user2.address)).standby;
     await shutdown.connect(user2).redeemCollateral(flrAssetId);
-    let after = (await vaultEngine.vaults(flrAssetId, user2.address))
-      .standbyAssetAmount;
+    let after = (await vaultEngine.vaults(flrAssetId, user2.address)).standby;
     // user2 stablecoin balance: 1099000
     // stablecoin balance * flr Redeemed Collateral
     // 1099000 * 0.00265023329 = 2912.60638571
@@ -1067,11 +1061,9 @@ describe("Shutdown Flow Test", function () {
       after.sub(before).sub(EXPECTED_FLR_COLL_REDEEMED).abs().lte(WAD.div(100))
     ).to.equal(true);
 
-    before = (await vaultEngine.vaults(fxrpAssetId, user2.address))
-      .standbyAssetAmount;
+    before = (await vaultEngine.vaults(fxrpAssetId, user2.address)).standby;
     await shutdown.connect(user2).redeemCollateral(fxrpAssetId);
-    after = (await vaultEngine.vaults(fxrpAssetId, user2.address))
-      .standbyAssetAmount;
+    after = (await vaultEngine.vaults(fxrpAssetId, user2.address)).standby;
     // user2 stablecoin balance: 1099000
     // stablecoin balance * flr Redeemed Collateral
     // 1099000 * 0.3302647739 = 362960.986516

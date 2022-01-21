@@ -142,7 +142,7 @@ describe("Vault Engine Unit Tests", function () {
 
     it("tests that values are properly updated when calling with positive values", async () => {
       const before = await vaultEngine.vaults(flrAssetId, owner.address);
-      expect(before.standbyAssetAmount).to.equal(UNDERLYING_AMOUNT);
+      expect(before.standby).to.equal(UNDERLYING_AMOUNT);
       expect(before.activeAssetAmount).to.equal(0);
       expect(before.debt).to.equal(0);
       expect(before.equity).to.equal(0);
@@ -156,7 +156,7 @@ describe("Vault Engine Unit Tests", function () {
       );
 
       const after = await vaultEngine.vaults(flrAssetId, owner.address);
-      expect(after.standbyAssetAmount).to.equal(0);
+      expect(after.standby).to.equal(0);
       expect(after.activeAssetAmount).to.equal(UNDERLYING_AMOUNT);
       expect(after.debt).to.equal(0);
       expect(after.equity).to.equal(EQUITY_AMOUNT);
@@ -198,7 +198,7 @@ describe("Vault Engine Unit Tests", function () {
       );
 
       const before = await vaultEngine.vaults(flrAssetId, owner.address);
-      expect(before.standbyAssetAmount).to.equal(0);
+      expect(before.standby).to.equal(0);
       expect(before.activeAssetAmount).to.equal(UNDERLYING_AMOUNT);
       expect(before.debt).to.equal(0);
       expect(before.equity).to.equal(EQUITY_AMOUNT);
@@ -212,7 +212,7 @@ describe("Vault Engine Unit Tests", function () {
       );
 
       const after = await vaultEngine.vaults(flrAssetId, owner.address);
-      expect(after.standbyAssetAmount).to.equal(UNDERLYING_AMOUNT.div(2));
+      expect(after.standby).to.equal(UNDERLYING_AMOUNT.div(2));
       expect(after.activeAssetAmount).to.equal(UNDERLYING_AMOUNT.div(2));
       expect(after.debt).to.equal(0);
       expect(after.equity).to.equal(EQUITY_AMOUNT.div(2));
@@ -258,7 +258,7 @@ describe("Vault Engine Unit Tests", function () {
         );
 
       const before = await vaultEngine.vaults(flrAssetId, owner.address);
-      expect(before.standbyAssetAmount).to.equal(UNDERLYING_AMOUNT.div(2));
+      expect(before.standby).to.equal(UNDERLYING_AMOUNT.div(2));
       expect(before.activeAssetAmount).to.equal(
         UNDERLYING_AMOUNT.mul(3).div(2)
       );
@@ -274,7 +274,7 @@ describe("Vault Engine Unit Tests", function () {
       );
 
       const after = await vaultEngine.vaults(flrAssetId, owner.address);
-      expect(after.standbyAssetAmount).to.equal(0);
+      expect(after.standby).to.equal(0);
       expect(after.activeAssetAmount).to.equal(UNDERLYING_AMOUNT.mul(2));
       expect(after.debt).to.equal(DEBT_AMOUNT);
       expect(
@@ -454,7 +454,7 @@ describe("Vault Engine Unit Tests", function () {
 
     it("tests that values are properly updated when called with positive values", async () => {
       const before = await vaultEngine.vaults(flrAssetId, owner.address);
-      expect(before.standbyAssetAmount).to.equal(UNDERLYING_AMOUNT);
+      expect(before.standby).to.equal(UNDERLYING_AMOUNT);
       expect(before.activeAssetAmount).to.equal(0);
       expect(before.debt).to.equal(0);
       expect(before.equity).to.equal(0);
@@ -468,9 +468,7 @@ describe("Vault Engine Unit Tests", function () {
       );
 
       const after = await vaultEngine.vaults(flrAssetId, owner.address);
-      expect(after.standbyAssetAmount).to.equal(
-        UNDERLYING_AMOUNT.sub(ASSET_AMOUNT)
-      );
+      expect(after.standby).to.equal(UNDERLYING_AMOUNT.sub(ASSET_AMOUNT));
       expect(after.activeAssetAmount).to.equal(ASSET_AMOUNT);
       expect(after.debt).to.equal(DEBT_AMOUNT);
       expect(after.equity).to.equal(0);
@@ -512,9 +510,7 @@ describe("Vault Engine Unit Tests", function () {
       );
 
       const before = await vaultEngine.vaults(flrAssetId, owner.address);
-      expect(before.standbyAssetAmount).to.equal(
-        UNDERLYING_AMOUNT.sub(ASSET_AMOUNT)
-      );
+      expect(before.standby).to.equal(UNDERLYING_AMOUNT.sub(ASSET_AMOUNT));
       expect(before.activeAssetAmount).to.equal(ASSET_AMOUNT);
       expect(before.debt).to.equal(DEBT_AMOUNT);
       expect(before.equity).to.equal(0);
@@ -528,7 +524,7 @@ describe("Vault Engine Unit Tests", function () {
       );
 
       const after = await vaultEngine.vaults(flrAssetId, owner.address);
-      expect(after.standbyAssetAmount).to.equal(
+      expect(after.standby).to.equal(
         UNDERLYING_AMOUNT.sub(ASSET_AMOUNT.div(2))
       );
       expect(after.activeAssetAmount).to.equal(ASSET_AMOUNT.div(2));
@@ -589,9 +585,7 @@ describe("Vault Engine Unit Tests", function () {
         );
 
       const before = await vaultEngine.vaults(flrAssetId, owner.address);
-      expect(before.standbyAssetAmount).to.equal(
-        UNDERLYING_AMOUNT.mul(3).div(2)
-      );
+      expect(before.standby).to.equal(UNDERLYING_AMOUNT.mul(3).div(2));
       expect(before.activeAssetAmount).to.equal(UNDERLYING_AMOUNT.div(2));
       expect(before.debt).to.equal(DEBT_AMOUNT);
       expect(before.equity).to.equal(0);
@@ -605,7 +599,7 @@ describe("Vault Engine Unit Tests", function () {
       );
 
       const after = await vaultEngine.vaults(flrAssetId, owner.address);
-      expect(after.standbyAssetAmount).to.equal(UNDERLYING_AMOUNT);
+      expect(after.standby).to.equal(UNDERLYING_AMOUNT);
       expect(after.activeAssetAmount).to.equal(UNDERLYING_AMOUNT);
       expect(after.debt).to.equal(DEBT_AMOUNT.mul(3).div(2));
       expect(after.initialEquity).to.equal(0);

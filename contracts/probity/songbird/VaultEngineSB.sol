@@ -17,7 +17,7 @@ contract VaultEngineSB is Stateful, Eventful {
     // Type Declarations
     /////////////////////////////////////////
     struct Vault {
-        uint256 standbyAssetAmount; // assets that are on standby
+        uint256 standby; // assets that are on standby
         uint256 activeAssetAmount; // assets that are actively covering a position
         uint256 debt; // Vault's debt balance
         uint256 equity; // Vault's equity balance
@@ -112,7 +112,7 @@ contract VaultEngineSB is Stateful, Eventful {
         address user,
         int256 amount
     ) external onlyByProbity {
-        vaults[asset][user].standbyAssetAmount = add(vaults[asset][user].standbyAssetAmount, amount);
+        vaults[asset][user].standby = add(vaults[asset][user].standby, amount);
     }
 
     /**
@@ -128,8 +128,8 @@ contract VaultEngineSB is Stateful, Eventful {
         address to,
         uint256 amount
     ) external onlyByProbity {
-        vaults[asset][from].standbyAssetAmount -= amount;
-        vaults[asset][to].standbyAssetAmount += amount;
+        vaults[asset][from].standby -= amount;
+        vaults[asset][to].standby += amount;
     }
 
     /**
@@ -211,7 +211,7 @@ contract VaultEngineSB is Stateful, Eventful {
 
         collectInterest(assetId);
         Vault storage vault = vaults[assetId][msg.sender];
-        vault.standbyAssetAmount = sub(vault.standbyAssetAmount, underlyingAmount);
+        vault.standby = sub(vault.standby, underlyingAmount);
         vault.activeAssetAmount = add(vault.activeAssetAmount, underlyingAmount);
         int256 normalizedEquity = div(equityAmount, assets[assetId].equityAccumulator);
         vault.equity = add(vault.equity, normalizedEquity);
@@ -262,7 +262,7 @@ contract VaultEngineSB is Stateful, Eventful {
         }
 
         Vault memory vault = vaults[assetId][msg.sender];
-        vault.standbyAssetAmount = sub(vault.standbyAssetAmount, collAmount);
+        vault.standby = sub(vault.standby, collAmount);
         vault.activeAssetAmount = add(vault.activeAssetAmount, collAmount);
         int256 normalizedDebt = div(debtAmount, assets[assetId].debtAccumulator);
         vault.debt = add(vault.debt, normalizedDebt);
@@ -316,10 +316,7 @@ contract VaultEngineSB is Stateful, Eventful {
         coll.normEquity = add(coll.normEquity, equityAmount);
         int256 aurToRaise = mul(coll.debtAccumulator, debtAmount) + mul(RAY, equityAmount);
 
-        vaults[assetId][auctioneer].standbyAssetAmount = sub(
-            vaults[assetId][auctioneer].standbyAssetAmount,
-            assetAmount
-        );
+        vaults[assetId][auctioneer].standby = sub(vaults[assetId][auctioneer].standby, assetAmount);
         unbackedDebt[reservePool] = sub(unbackedDebt[reservePool], aurToRaise);
         totalUnbackedDebt = sub(totalUnbackedDebt, aurToRaise);
 

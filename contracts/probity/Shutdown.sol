@@ -53,11 +53,11 @@ interface VaultLike {
     function vaults(bytes32 assetId, address user)
         external
         returns (
-            uint256 standbyAssetAmount,
-            uint256 activeAssoutAmount,
+            uint256 standby,
+            uint256 underlying,
+            uint256 collateral,
             uint256 debt,
-            uint256 equity,
-            uint256 lastEquityAccumulator
+            uint256 equity
         );
 
     function assets(bytes32 assetId)

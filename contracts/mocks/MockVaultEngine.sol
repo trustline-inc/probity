@@ -2,11 +2,12 @@ pragma solidity ^0.8.0;
 
 contract MockVaultEngine {
     struct Vault {
-        uint256 standbyAssetAmount; // assets that are on standby
-        uint256 activeAssetAmount; // assets that are actively covering a position
-        uint256 debt; // Vault's debt balance
-        uint256 equity; // Vault's equity balance
-        uint256 lastEquityAccumulator; // Most recent value of the equity rate accumulator
+        uint256 standby; // Assets that are on standby
+        uint256 underlying; // Amount covering an equity position
+        uint256 collateral; // Amount covering a debt position
+        uint256 debt; // Vault debt balance
+        uint256 equity; // Vault equity balance
+        uint256 initialEquity; // Tracks the amount of equity (less interest)
     }
 
     struct Asset {
@@ -132,17 +133,17 @@ contract MockVaultEngine {
         bytes32 assetId,
         address user,
         uint256 standbyAmount,
-        uint256 activeAmount,
+        uint256 underlyingAmount,
+        uint256 collateralAmount,
         uint256 debt,
-        uint256 equity,
-        uint256 lastEquityAccumulator
+        uint256 equity
     ) external {
         Vault storage vault = vaults[assetId][user];
-        vault.standbyAssetAmount = standbyAmount;
-        vault.activeAssetAmount = activeAmount;
+        vault.standby = standbyAmount;
+        vault.underlying = underlyingAmount;
+        vault.collateral = collateralAmount;
         vault.debt = debt;
         vault.equity = equity;
-        vault.lastEquityAccumulator = lastEquityAccumulator;
     }
 
     function setShutdownState() external {
@@ -173,8 +174,8 @@ contract MockVaultEngine {
         address to,
         uint256 amount
     ) external {
-        vaults[collateral][from].standbyAssetAmount -= amount;
-        vaults[collateral][to].standbyAssetAmount += amount;
+        vaults[collateral][from].standby -= amount;
+        vaults[collateral][to].standby += amount;
     }
 
     function sub(uint256 a, int256 b) internal pure returns (uint256 c) {
