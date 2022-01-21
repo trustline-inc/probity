@@ -455,6 +455,10 @@ contract Auctioneer is Stateful, Eventful {
         require(removed, "Auctioneer/removeIndex: The index could not be found");
     }
 
+    /////////////////////////////////////////
+    // Internal functions
+    /////////////////////////////////////////
+
     function min(uint256 a, uint256 b) internal pure returns (uint256 c) {
         if (a > b) {
             return b;
@@ -463,9 +467,6 @@ contract Auctioneer is Stateful, Eventful {
         }
     }
 
-    /////////////////////////////////////////
-    // Internal functions
-    /////////////////////////////////////////
     function rdiv(uint256 x, uint256 y) internal pure returns (uint256 z) {
         z = ((x * RAY) + (y / 2)) / y;
     }
