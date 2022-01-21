@@ -18,10 +18,6 @@ interface VaultEngineLike {
         uint256 equityRateIncrease,
         uint256 protocolFeeRates
     ) external;
-
-    function aggregateInflationRate() external returns (uint256);
-
-    function inflationRate() external returns (uint256);
 }
 
 interface IAPR {
