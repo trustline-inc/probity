@@ -85,6 +85,7 @@ interface VaultLike {
         bytes32 assetId,
         address user,
         int256 collAmount,
+        int256 equity,
         address treasury
     ) external;
 }
@@ -137,7 +138,7 @@ contract Shutdown is Stateful, Eventful {
 
     struct Collateral {
         uint256 finalPrice;
-        uint256 normalizedDebt;
+        uint256 normDebt;
         uint256 gap;
         uint256 redemptionRatio;
     }
@@ -293,7 +294,7 @@ contract Shutdown is Stateful, Eventful {
     function setFinalPrice(bytes32 assetId) external onlyWhenInShutdown {
         uint256 price = priceFeed.getPrice(assetId);
         require(price != 0, "Shutdown/setFinalPrice: price retrieved is zero");
-        (, , , assets[assetId].normalizedDebt, , , ) = vaultEngine.assets(assetId);
+        (, , , assets[assetId].normDebt, , , ) = vaultEngine.assets(assetId);
         assets[assetId].finalPrice = price;
     }
 
@@ -381,13 +382,13 @@ contract Shutdown is Stateful, Eventful {
     function processUserEquity(bytes32 assetId, address user) external {
         require(investorObligationRatio != 0, "Shutdown/processUserEquity: Investor has no obligation");
 
-        (, uint256 activeAssetAmount, , uint256 equity, ) = vaultEngine.vaults(assetId, user);
+        (, uint256 underlying, , uint256 equity, ) = vaultEngine.vaults(assetId, user);
 
         (, uint256 equityAccumulator, , , , , ) = vaultEngine.assets(assetId);
         uint256 hookedSuppliedAmount = (equity * equityAccumulator * finalAurUtilizationRatio) / WAD;
-        uint256 suppObligatedAmount = ((hookedSuppliedAmount * investorObligationRatio) / WAD) /
+        uint256 investorObligation = ((hookedSuppliedAmount * investorObligationRatio) / WAD) /
             assets[assetId].finalPrice;
-        uint256 amountToGrab = min(activeAssetAmount, suppObligatedAmount);
+        uint256 amountToGrab = min(underlying, investorObligation);
 
         if (amountToGrab > assets[assetId].gap) {
             amountToGrab = assets[assetId].gap;
@@ -395,7 +396,7 @@ contract Shutdown is Stateful, Eventful {
         assets[assetId].gap -= amountToGrab;
         unbackedDebt -= amountToGrab * assets[assetId].finalPrice;
 
-        vaultEngine.liquidateEquityPosition(assetId, user, -int256(equity), address(treasury));
+        vaultEngine.liquidateEquityPosition(assetId, user, -int256(underlying), -int256(equity), address(treasury));
     }
 
     /**
@@ -420,13 +421,10 @@ contract Shutdown is Stateful, Eventful {
      * @param assetId The ID of the asset to be redeemed
      */
     function calculateRedemptionRatio(bytes32 assetId) external {
-        require(finalDebtBalance != 0, "shutdown/calculateRedemptionRatio: must set final debt balance first");
-
+        require(finalDebtBalance != 0, "shutdown/calculateRedemptionRatio: Must set final debt balance first");
         (uint256 debtAccumulator, , , , , , ) = vaultEngine.assets(assetId);
-
-        uint256 normalizedDebt = assets[assetId].normalizedDebt;
-
-        uint256 max = (normalizedDebt * debtAccumulator) / assets[assetId].finalPrice;
+        uint256 normDebt = assets[assetId].normDebt;
+        uint256 max = (normDebt * debtAccumulator) / assets[assetId].finalPrice;
         assets[assetId].redemptionRatio = ((max - assets[assetId].gap) * RAY) / (finalDebtBalance / RAY);
     }
 
