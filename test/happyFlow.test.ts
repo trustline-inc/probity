@@ -292,7 +292,7 @@ describe("Probity happy flow", function () {
       ASSETS["FLR"],
       owner.address
     );
-    expect(standby3.sub(standby2)).to.equal(LOAN_REPAY_COLL_AMOUNT);
+    expect(standby2.sub(standby3)).to.equal(LOAN_REPAY_COLL_AMOUNT);
     expect(debt3.sub(debt2)).to.equal(LOAN_REPAY_DEBT_AMOUNT);
   });
 
@@ -568,6 +568,13 @@ describe("Probity happy flow", function () {
     // Liquidate the vault
     await liquidator.liquidateVault(ASSETS["FLR"], owner.address);
 
+    // Check the amount on auction (lot = 200 FLR, debt = 100 AUR + 17 AUR penalty)
+    // TODO: The penalty should be assessed before going to auction!
+    let auction = await auctioneer.auctions(0);
+    const penalty = WAD.mul(17);
+    expect(auction.lot).to.equal(COLL_AMOUNT);
+    expect(auction.debt).to.equal(LOAN_AMOUNT.add(penalty).mul(RAY));
+
     // Deposit FLR as a secondary user
     await flrWallet.connect(user).deposit({ value: WAD.mul(30_000) });
 
@@ -586,25 +593,40 @@ describe("Probity happy flow", function () {
       .connect(user)
       .modifyDebt(ASSETS["FLR"], treasury.address, WAD.mul(900), WAD.mul(600));
 
-    // Reduce auction debt by 201 (?)
-    await liquidator.reduceAuctionDebt(RAD.mul(201));
+    // Expect unbacked debt to equal amount on auction (100)
+    const unbackedDebt = await vaultEngine.unbackedDebt(reserve.address);
+    expect(unbackedDebt).to.equal(LOAN_AMOUNT.mul(RAY));
 
-    // Set debt threshold to 200 (?)
-    await reserve.connect(gov).updateDebtThreshold(RAD.mul(200));
+    // Reduce auction debt by 20 AUR (from 100 to 80)
+    const debtToReduce = RAD.mul(20);
+    await liquidator.reduceAuctionDebt(debtToReduce);
 
-    // Start an IOU sale
+    // Expect debt to be reduced
+    // TODO: Shouldn't it actually reduce the debt of a particular auction?
+    const debtOnAuction = await reserve.debtOnAuction();
+    expect(debtOnAuction).to.equal(LOAN_AMOUNT.mul(RAY).sub(debtToReduce));
+
+    // Set debt threshold to 10 AUR
+    const debtThreshold = RAD.mul(10);
+    await reserve.connect(gov).updateDebtThreshold(debtThreshold);
+
+    // Expect debt threshold to be reduced
+    const _debtThreshold = await reserve.debtThreshold();
+    expect(_debtThreshold).to.equal(debtThreshold);
+
+    // Start an IOU sale (unbackedDebt - debtOnAuction > debtThreshold)
     await reserve.startSale();
 
     await ethers.provider.send("evm_increaseTime", [21601]);
     await ethers.provider.send("evm_mine", []);
 
-    // Purchase 100 vouchers
-    await reserve.connect(user).purchaseVouchers(RAD.mul(100));
+    // Purchase 10 vouchers
+    await reserve.connect(user).purchaseVouchers(RAD.mul(10));
 
     // Get the amount of vouchers
     let vouchers = await reserve.vouchers(user.address);
 
-    // Expect more than 100 vouchers (?)
-    expect(vouchers > RAD.mul(100)).to.equal(true);
+    // Expect more than 10 vouchers (?)
+    expect(vouchers > RAD.mul(10)).to.equal(true);
   });
 });
