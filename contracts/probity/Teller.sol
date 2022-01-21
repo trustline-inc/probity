@@ -53,7 +53,6 @@ contract Teller is Stateful {
     VaultEngineLike public immutable vaultEngine;
     IAPR public immutable lowAprRate;
     IAPR public immutable highAprRate;
-    uint256 public baseApr;
 
     address public reservePool;
     uint256 public apr; // Annualized percentage rate
@@ -96,10 +95,6 @@ contract Teller is Stateful {
     function initCollType(bytes32 assetId, uint256 protocolFee) external onlyBy("gov") {
         collateralTypes[assetId].lastUpdated = block.timestamp;
         collateralTypes[assetId].protocolFee = protocolFee;
-    }
-
-    function updateBaseApr() public {
-        baseApr = vaultEngine.inflationRate();
     }
 
     function setReservePoolAddress(address newReservePool) public onlyBy("gov") {
@@ -151,7 +146,6 @@ contract Teller is Stateful {
             uint256 round = 0.0025 * 10**27;
             apr = oneDividedByOneMinusUtilization + RAY;
             apr = ((apr + round - 1) / round) * round;
-            apr = apr + baseApr;
 
             if (apr > MAX_APR) {
                 apr = MAX_APR;

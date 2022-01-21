@@ -42,8 +42,6 @@ contract VaultEngine is Stateful, Eventful {
     uint256 public totalDebt;
     uint256 public totalEquity;
     uint256 public totalUnbackedDebt;
-    uint256 public inflationRate;
-    uint256 public aggregateInflationRate;
     address[] public userList;
     mapping(address => bool) public userExists;
     mapping(address => uint256) public stablecoin;
@@ -419,17 +417,6 @@ contract VaultEngine is Stateful, Eventful {
         assets[assetId].adjustedPrice = price;
     }
 
-    /**
-     * @notice Updates the peg currency inflation rate
-     * @param _inflationRate The current inflation rate of the peg currency
-     */
-    function updateInflationRate(uint256 _inflationRate) external onlyByProbity {
-        emit LogVarUpdate("Vault", "inflationRate", inflationRate, _inflationRate);
-        inflationRate = _inflationRate;
-        // TODO: Assert that a month has passed since the last update before adding below!
-        aggregateInflationRate += _inflationRate;
-    }
-
     /////////////////////////////////////////
     // Internal Functions
     /////////////////////////////////////////
@@ -442,7 +429,7 @@ contract VaultEngine is Stateful, Eventful {
     function certify(bytes32 assetId, Vault memory vault) internal view {
         require(
             (vault.debt * assets[assetId].debtAccumulator) + vault.initialEquity <=
-                ((vault.activeAssetAmount * assets[assetId].adjustedPrice) / (RAY + aggregateInflationRate) * RAY),
+                vault.activeAssetAmount * assets[assetId].adjustedPrice,
             "Vault/certify: Not enough underlying/collateral"
         );
     }

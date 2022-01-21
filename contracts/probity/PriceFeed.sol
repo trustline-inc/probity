@@ -89,16 +89,13 @@ contract PriceFeed is Stateful, Eventful {
 
     /**
      * @notice Update the adjusted price used in VaultEngine
+     * @dev The FTSO has a price precision of 5
      * @param assetId The ID of the asset to to update
-     * TODO: #203 FTSO has a precision of 5, fix math accordingly
      */
     function updateAdjustedPrice(bytes32 assetId) external {
         require(address(assets[assetId].ftso) != address(0), "PriceFeed/UpdatePrice: Asset is not initialized");
         (uint256 price, ) = assets[assetId].ftso.getCurrentPrice();
-
-        // using 1e5 here because ftso's is in 5 decimal places
         uint256 adjustedPrice = rdiv(rdiv(price, 1e5), assets[assetId].liquidationRatio * 1e9);
-
         vaultEngine.updateAdjustedPrice(assetId, adjustedPrice);
     }
 
