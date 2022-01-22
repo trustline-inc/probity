@@ -164,7 +164,7 @@ contract Shutdown is Stateful, Eventful {
     mapping(bytes32 => Collateral) public assets;
     mapping(bytes32 => mapping(address => uint256)) public collRedeemed;
     mapping(address => uint256) public stablecoin;
-    uint256 public finalAurUtilizationRatio;
+    uint256 public finalUtilizationRatio;
     uint256 public redemptionRatio;
     uint256 public unbackedDebt;
     uint256 public investorObligationRatio;
@@ -280,9 +280,9 @@ contract Shutdown is Stateful, Eventful {
         uint256 totalEquity = vaultEngine.totalEquity();
         if (totalEquity != 0) {
             if (totalDebt >= totalEquity) {
-                finalAurUtilizationRatio = RAY;
+                finalUtilizationRatio = RAY;
             } else {
-                finalAurUtilizationRatio = wdiv(totalDebt, totalEquity);
+                finalUtilizationRatio = wdiv(totalDebt, totalEquity);
             }
         }
     }
@@ -293,7 +293,7 @@ contract Shutdown is Stateful, Eventful {
      */
     function setFinalPrice(bytes32 assetId) external onlyWhenInShutdown {
         uint256 price = priceFeed.getPrice(assetId);
-        require(price != 0, "Shutdown/setFinalPrice: price retrieved is zero");
+        require(price != 0, "Shutdown/setFinalPrice: Price retrieved is zero");
         (, , , assets[assetId].normDebt, , , ) = vaultEngine.assets(assetId);
         assets[assetId].finalPrice = price;
     }
@@ -333,7 +333,7 @@ contract Shutdown is Stateful, Eventful {
         require(debt == 0, "Shutdown/freeExcessCollateral: User needs to process debt first before calling this");
 
         // how do we make it so this can be reused
-        uint256 hookedAmount = (equity * finalAurUtilizationRatio);
+        uint256 hookedAmount = (equity * finalUtilizationRatio);
         uint256 hookedCollAmount = hookedAmount / assets[assetId].finalPrice;
         require(collateral > hookedCollAmount, "Shutdown/freeExcessCollateral: No collateral to free");
 
@@ -385,7 +385,7 @@ contract Shutdown is Stateful, Eventful {
         (, uint256 underlying, , uint256 equity, ) = vaultEngine.vaults(assetId, user);
 
         (, uint256 equityAccumulator, , , , , ) = vaultEngine.assets(assetId);
-        uint256 hookedSuppliedAmount = (equity * equityAccumulator * finalAurUtilizationRatio) / WAD;
+        uint256 hookedSuppliedAmount = (equity * equityAccumulator * finalUtilizationRatio) / WAD;
         uint256 investorObligation = ((hookedSuppliedAmount * investorObligationRatio) / WAD) /
             assets[assetId].finalPrice;
         uint256 amountToGrab = min(underlying, investorObligation);

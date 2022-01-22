@@ -270,7 +270,7 @@ describe("Shutdown Unit Tests", function () {
       expect(initiated).to.equal(false);
       let initiatedAt = await shutdown.initiatedAt();
       expect(initiatedAt).to.equal(0);
-      let utilRatio = await shutdown.finalAurUtilizationRatio();
+      let utilRatio = await shutdown.finalUtilizationRatio();
       expect(utilRatio).to.equal(0);
 
       await vaultEngine.setTotalEquity(EQUITY_TO_SET);
@@ -282,17 +282,17 @@ describe("Shutdown Unit Tests", function () {
       expect(initiated).to.equal(true);
       initiatedAt = await shutdown.initiatedAt();
       expect(initiatedAt).to.not.equal(0);
-      utilRatio = await shutdown.finalAurUtilizationRatio();
+      utilRatio = await shutdown.finalUtilizationRatio();
       expect(utilRatio).to.equal(EXPECTED_UTIL_RATIO);
     });
 
     it("tests utilRatio is zero when total equity is 0", async () => {
-      let utilRatio = await shutdown.finalAurUtilizationRatio();
+      let utilRatio = await shutdown.finalUtilizationRatio();
       expect(utilRatio).to.equal(0);
 
       await shutdown.initiateShutdown();
 
-      utilRatio = await shutdown.finalAurUtilizationRatio();
+      utilRatio = await shutdown.finalUtilizationRatio();
       expect(utilRatio).to.equal(0);
     });
 
@@ -301,7 +301,7 @@ describe("Shutdown Unit Tests", function () {
       const DEBT_TO_SET = RAD.mul(1100);
       const EXPECTED_UTIL_RATIO = RAY;
 
-      let utilRatio = await shutdown.finalAurUtilizationRatio();
+      let utilRatio = await shutdown.finalUtilizationRatio();
       expect(utilRatio).to.equal(0);
 
       await vaultEngine.setTotalEquity(EQUITY_TO_SET);
@@ -309,7 +309,7 @@ describe("Shutdown Unit Tests", function () {
 
       await shutdown.initiateShutdown();
 
-      utilRatio = await shutdown.finalAurUtilizationRatio();
+      utilRatio = await shutdown.finalUtilizationRatio();
       expect(utilRatio).to.equal(EXPECTED_UTIL_RATIO);
     });
 
@@ -357,14 +357,14 @@ describe("Shutdown Unit Tests", function () {
       await shutdown.setFinalPrice(ASSETS["FLR"]);
     });
 
-    it("fail if price is zero", async () => {
+    it("fails if the price is zero", async () => {
       const PRICE_TO_SET = RAY;
       await priceFeed.setPrice(ASSETS["FLR"], 0);
       await shutdown.initiateShutdown();
 
       await assertRevert(
         shutdown.setFinalPrice(ASSETS["FLR"]),
-        "Shutdown/setFinalPrice: price retrieved is zero"
+        "Shutdown/setFinalPrice: Price retrieved is zero"
       );
       await priceFeed.setPrice(ASSETS["FLR"], PRICE_TO_SET);
       await shutdown.setFinalPrice(ASSETS["FLR"]);
@@ -492,7 +492,7 @@ describe("Shutdown Unit Tests", function () {
 
       await vaultEngine.initAssetType(ASSETS["FLR"]);
 
-      // overCollateralized
+      // Overcollateralized
       await vaultEngine.updateVault(
         ASSETS["FLR"],
         user.address,
@@ -789,8 +789,8 @@ describe("Shutdown Unit Tests", function () {
 
       await shutdown.calculateInvestorObligation();
       // const obligationRatio = await shutdown.investorObligationRatio();
-      // const finalAurUtilizationRatio =
-      //   await shutdown.finalAurUtilizationRatio();
+      // const finalUtilizationRatio =
+      //   await shutdown.finalUtilizationRatio();
 
       const before = await vaultEngine.vaults(ASSETS["FLR"], owner.address);
       expect(before.collateral).to.equal(COLL_TO_SET);
@@ -799,7 +799,7 @@ describe("Shutdown Unit Tests", function () {
 
       // const EXPECTED_AMOUNT = before.equity
       //   .mul(RAY)
-      //   .mul(finalAurUtilizationRatio)
+      //   .mul(finalUtilizationRatio)
       //   .div(WAD)
       //   .mul(obligationRatio)
       //   .div(WAD)
@@ -861,7 +861,7 @@ describe("Shutdown Unit Tests", function () {
       // await shutdown.setFinalDebtBalance()
     });
 
-    it("fails if finalDebtBalance is already set", async () => {
+    it("fails if the final debt balance is already set", async () => {
       await increaseTime(172800 * 2);
       await shutdown.setFinalDebtBalance();
 
@@ -908,10 +908,10 @@ describe("Shutdown Unit Tests", function () {
       await vaultEngine.updateAsset(
         ASSETS["FLR"],
         0,
-        0,
-        0,
         DEBT_TO_SET,
-        EQUITY_TO_SET
+        EQUITY_TO_SET,
+        0,
+        0
       );
 
       await shutdown.initiateShutdown();
@@ -923,7 +923,7 @@ describe("Shutdown Unit Tests", function () {
       await increaseTime(172800);
     });
 
-    it.only("tests that redemptionRatio calculated correctly when gap is 0", async () => {
+    it("calculates the redemption ratio with a zero gap", async () => {
       let expected = RAY;
 
       await shutdown.setFinalDebtBalance();
@@ -933,7 +933,7 @@ describe("Shutdown Unit Tests", function () {
       expect(asset.redemptionRatio).to.equal(expected);
     });
 
-    it.only("tests that redemptionRatio calculated correctly when gap is non zero", async () => {
+    it("calculates redemption ratio with a non-zero gap", async () => {
       await shutdown.setFinalDebtBalance();
       await shutdown.processUserDebt(ASSETS["FLR"], user.address);
       let expected = RAY.mul(2).div(3);
@@ -944,10 +944,10 @@ describe("Shutdown Unit Tests", function () {
       expect(asset.redemptionRatio).to.equal(expected);
     });
 
-    it("fails if finalDebtBalance is not set", async () => {
+    it("fails if the final debt balance is not set", async () => {
       await assertRevert(
         shutdown.calculateRedemptionRatio(ASSETS["FLR"]),
-        "shutdown/calculateRedemptionRatio: must set final debt balance first"
+        "shutdown/calculateRedemptionRatio: Must set final debt balance first"
       );
       await shutdown.setFinalDebtBalance();
 
@@ -1024,9 +1024,9 @@ describe("Shutdown Unit Tests", function () {
       await vaultEngine.updateAsset(
         ASSETS["FLR"],
         0,
-        0,
         DEBT_TO_SET,
         EQUITY_TO_SET,
+        0,
         0
       );
 
