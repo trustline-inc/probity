@@ -62,7 +62,10 @@ async function depositFxrp(user: SignerWithAddress, amount: BigNumber) {
   await fxrpWallet.connect(user).deposit(amount);
 }
 
-async function expectBalancesToMatch(user: SignerWithAddress, balance) {
+async function expectBalancesToMatch(
+  user: SignerWithAddress,
+  balance: UserBalances[string]
+) {
   if (balance["AUR"] !== undefined) {
     let stablecoin = await vaultEngine.stablecoin(user.address);
 
@@ -100,12 +103,12 @@ async function expectBalancesToMatch(user: SignerWithAddress, balance) {
   }
 }
 
-async function checkReserveBalances(reserveBalances) {
+async function checkReserveBalances(reserveBalances: ReserveBalances) {
   expect(await vaultEngine.stablecoin(reserve.address)).to.equal(
     reserveBalances.reserve
   );
   expect(await vaultEngine.unbackedDebt(reserve.address)).to.equal(
-    reserveBalances.debt
+    reserveBalances.debtToCover
   );
 }
 
@@ -250,11 +253,12 @@ describe("Shutdown Flow Test", function () {
 
     // Bob utilizes 150,000 FXRP ($417,000) to BORROW 135,000 AUR
     (collateral = WAD.mul(150_000)), (debt = WAD.mul(135_000));
+    await depositFxrp(bob, collateral);
     await vaultEngine
       .connect(bob)
       .modifyDebt(ASSETS["FXRP"], treasury.address, collateral, debt);
     balances.bob["FXRP"] = { collateral, debt };
-    balances.bob["AUR"] = balances.bob["AUR"].add(debt);
+    balances.bob["AUR"] = balances.bob["AUR"].add(debt.mul(RAY));
     expectedTotalDebt = expectedTotalDebt.add(debt.mul(RAY));
     await expectBalancesToMatch(bob, balances.bob);
 
@@ -269,12 +273,12 @@ describe("Shutdown Flow Test", function () {
 
     // Charlie utilizes 200,000 FXRP ($556,000) to BORROW 150,000 AUR
     (collateral = WAD.mul(200_000)), (debt = WAD.mul(150_000));
+    await depositFxrp(charlie, collateral);
     await vaultEngine
       .connect(charlie)
       .modifyDebt(ASSETS["FXRP"], treasury.address, collateral, debt);
-    balances.charlie["FXRP"].debt = debt;
-    balances.charlie["FXRP"].collateral = collateral;
-    balances.charlie["AUR"] = RAY.mul(debt);
+    balances.charlie["FXRP"] = { collateral, debt };
+    balances.charlie["AUR"] = debt.mul(RAY);
     expectedTotalDebt = expectedTotalDebt.add(debt.mul(RAY));
     await expectBalancesToMatch(charlie, balances.charlie);
 

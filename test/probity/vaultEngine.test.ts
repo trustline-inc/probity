@@ -770,8 +770,8 @@ describe("Vault Engine Unit Tests", function () {
   describe("liquidateVault Unit Tests", function () {
     const UNDERLYING_AMOUNT = WAD.mul(10_000);
     const ASSET_AMOUNT = WAD.mul(10_000);
-    const EQUITY_AMOUNT = RAD.mul(2000);
-    const DEBT_AMOUNT = RAD.mul(1000);
+    const EQUITY_AMOUNT = WAD.mul(2000);
+    const DEBT_AMOUNT = WAD.mul(1000);
 
     beforeEach(async function () {
       await owner.sendTransaction({
