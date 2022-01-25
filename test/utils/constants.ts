@@ -28,7 +28,7 @@ const RAD = ethers.BigNumber.from(
   "1000000000000000000000000000000000000000000000"
 );
 
-const ASSETS = {
+const ASSET_ID = {
   FLR: web3.utils.keccak256("FLR"),
   FXRP: web3.utils.keccak256("FXRP"),
 };
@@ -43,5 +43,5 @@ export {
   RAD,
   RAY,
   bytes32,
-  ASSETS,
+  ASSET_ID,
 };

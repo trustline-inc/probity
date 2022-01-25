@@ -228,7 +228,7 @@ contract VaultEngine is Stateful, Eventful {
             vault.equity == 0 || (vault.equity * RAY) > assets[assetId].floor,
             "Vault/modifyEquity: Equity smaller than floor"
         );
-        certify(assetId, vault);
+        certifyEquityPosition(assetId, vault);
 
         stablecoin[treasuryAddress] = add(stablecoin[treasuryAddress], equityCreated);
 
@@ -277,7 +277,7 @@ contract VaultEngine is Stateful, Eventful {
             vault.debt == 0 || (vault.debt * RAY) > assets[assetId].floor,
             "Vault/modifyDebt: Debt smaller than floor"
         );
-        certify(assetId, vault);
+        certifyDebtPosition(assetId, vault);
 
         stablecoin[msg.sender] = add(stablecoin[msg.sender], debtCreated);
         stablecoin[treasuryAddress] = sub(stablecoin[treasuryAddress], debtCreated);
@@ -338,16 +338,23 @@ contract VaultEngine is Stateful, Eventful {
         Asset storage asset = assets[assetId];
 
         // TODO: Assess penalty
-
-        require(
-            stablecoin[treasuryAddress] >= uint256(equityAmount),
-            "VaultEngine/liquidateEquityPosition: Not enough treasury funds"
-        );
+        if (equityAmount < 0) {
+            require(
+                stablecoin[treasuryAddress] >= uint256(0 - equityAmount * 2),
+                "VaultEngine/liquidateEquityPosition: Not enough treasury funds"
+            );
+        } else {
+            require(
+                stablecoin[treasuryAddress] >= uint256(equityAmount),
+                "VaultEngine/liquidateEquityPosition: Not enough treasury funds"
+            );
+        }
 
         vault.underlying = add(vault.underlying, assetAmount);
         vault.standby = add(vault.standby, -assetAmount);
         vault.equity = add(vault.equity, equityAmount);
         asset.normEquity = add(asset.normEquity, equityAmount);
+        stablecoin[treasuryAddress] = sub(stablecoin[treasuryAddress], equityAmount);
 
         emit Log("vault", "liquidateEquityPosition", msg.sender);
     }
@@ -460,11 +467,22 @@ contract VaultEngine is Stateful, Eventful {
      * @param assetId The asset type ID
      * @param vault The vault to certify
      */
-    function certify(bytes32 assetId, Vault memory vault) internal view {
+    function certifyEquityPosition(bytes32 assetId, Vault memory vault) internal view {
         require(
-            (vault.debt * assets[assetId].debtAccumulator) + vault.initialEquity <=
-                (vault.collateral + vault.underlying) * assets[assetId].adjustedPrice,
-            "Vault/certify: Not enough underlying/collateral"
+            vault.initialEquity <= vault.underlying * assets[assetId].adjustedPrice,
+            "Vault/certify: Not enough underlying"
+        );
+    }
+
+    /**
+     * @dev Certifies that the vault meets the asset requirement
+     * @param assetId The asset type ID
+     * @param vault The vault to certify
+     */
+    function certifyDebtPosition(bytes32 assetId, Vault memory vault) internal view {
+        require(
+            (vault.debt * assets[assetId].debtAccumulator) <= vault.collateral * assets[assetId].adjustedPrice,
+            "Vault/certify: Not enough collateral"
         );
     }
 

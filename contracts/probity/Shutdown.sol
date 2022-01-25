@@ -166,7 +166,7 @@ contract Shutdown is Stateful, Eventful {
     mapping(address => uint256) public stablecoin;
     uint256 public finalUtilizationRatio;
     uint256 public redemptionRatio;
-    uint256 public unbackedDebt;
+    uint256 public stablecoinGap;
     uint256 public investorObligationRatio;
     uint256 public finalDebtBalance;
     uint256 public finalTotalReserve;
@@ -311,7 +311,7 @@ contract Shutdown is Stateful, Eventful {
         uint256 amountToGrab = min(collateral, required);
         uint256 gap = required - amountToGrab;
         assets[assetId].gap += gap;
-        unbackedDebt += gap * assets[assetId].finalPrice;
+        stablecoinGap += gap * assets[assetId].finalPrice;
 
         vaultEngine.liquidateDebtPosition(
             assetId,
@@ -347,9 +347,9 @@ contract Shutdown is Stateful, Eventful {
      */
     function writeOffFromReserves() external onlyWhenInShutdown {
         uint256 reserveBalance = vaultEngine.stablecoin(address(reservePool));
-        uint256 amountToMove = min(unbackedDebt, reserveBalance);
+        uint256 amountToMove = min(stablecoinGap, reserveBalance);
         vaultEngine.moveStablecoin(address(reservePool), address(this), amountToMove);
-        unbackedDebt -= amountToMove;
+        stablecoinGap -= amountToMove;
     }
 
     /**
@@ -363,13 +363,12 @@ contract Shutdown is Stateful, Eventful {
         require(finalDebtBalance != 0, "shutdown/setFinalDebtBalance: finalDebtBalance must be set first");
 
         require(
-            unbackedDebt == 0 || vaultEngine.stablecoin(address(reservePool)) == 0,
-            "shutdown/setFinalDebtBalance: system reserve or unbacked debt must be zero"
+            stablecoinGap == 0 || vaultEngine.stablecoin(address(reservePool)) == 0,
+            "shutdown/setFinalDebtBalance: system reserve or stablecoin gap must be zero"
         );
+        investorObligationRatio = wdiv(stablecoinGap, finalDebtBalance);
 
-        investorObligationRatio = wdiv(unbackedDebt, finalDebtBalance);
-
-        if (investorObligationRatio >= WAD) {
+        if (investorObligationRatio > WAD) {
             investorObligationRatio = WAD;
         }
     }
@@ -382,8 +381,7 @@ contract Shutdown is Stateful, Eventful {
     function processUserEquity(bytes32 assetId, address user) external {
         require(investorObligationRatio != 0, "Shutdown/processUserEquity: Investor has no obligation");
 
-        (, uint256 underlying, , uint256 equity, ) = vaultEngine.vaults(assetId, user);
-
+        (, uint256 underlying, , , uint256 equity) = vaultEngine.vaults(assetId, user);
         (, uint256 equityAccumulator, , , , , ) = vaultEngine.assets(assetId);
         uint256 hookedSuppliedAmount = (equity * equityAccumulator * finalUtilizationRatio) / WAD;
         uint256 investorObligation = ((hookedSuppliedAmount * investorObligationRatio) / WAD) /
@@ -393,8 +391,9 @@ contract Shutdown is Stateful, Eventful {
         if (amountToGrab > assets[assetId].gap) {
             amountToGrab = assets[assetId].gap;
         }
+
         assets[assetId].gap -= amountToGrab;
-        unbackedDebt -= amountToGrab * assets[assetId].finalPrice;
+        stablecoinGap -= amountToGrab * assets[assetId].finalPrice;
 
         vaultEngine.liquidateEquityPosition(assetId, user, -int256(underlying), -int256(equity), address(treasury));
     }
