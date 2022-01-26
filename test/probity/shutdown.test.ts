@@ -767,8 +767,8 @@ describe("Shutdown Unit Tests", function () {
         ASSET_ID["FLR"],
         owner.address,
         0,
-        0,
         COLL_TO_SET,
+        0,
         0,
         EQUITY_TO_SET,
         EQUITY_TO_SET.mul(RAY)
@@ -799,7 +799,7 @@ describe("Shutdown Unit Tests", function () {
       await shutdown.calculateInvestorObligation();
 
       const before = await vaultEngine.vaults(ASSET_ID["FLR"], owner.address);
-      expect(before.collateral).to.equal(COLL_TO_SET);
+      expect(before.underlying).to.equal(COLL_TO_SET);
       expect(before.equity).to.equal(EQUITY_TO_SET);
       await shutdown.processUserEquity(ASSET_ID["FLR"], owner.address);
 
@@ -807,7 +807,9 @@ describe("Shutdown Unit Tests", function () {
         await vaultEngine.lastLiquidateEquityPositionCall();
       expect(lastLiquidateEquityPositionCall.collId).to.equal(ASSET_ID["FLR"]);
       expect(lastLiquidateEquityPositionCall.user).to.equal(owner.address);
-      expect(lastLiquidateEquityPositionCall.underlying).to.equal(0);
+      expect(lastLiquidateEquityPositionCall.underlying).to.equal(
+        BigNumber.from(0).sub(COLL_TO_SET)
+      );
       expect(lastLiquidateEquityPositionCall.equity).to.equal(
         BigNumber.from(0).sub(EQUITY_TO_SET)
       );
