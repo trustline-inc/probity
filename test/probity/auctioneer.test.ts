@@ -188,6 +188,7 @@ describe("Auctioneer Unit Tests", function () {
         0,
         0,
         0,
+        0,
         0
       );
       await vaultEngine.addStablecoin(owner.address, RAD.mul(1000000));
@@ -344,6 +345,7 @@ describe("Auctioneer Unit Tests", function () {
         0,
         0,
         0,
+        0,
         0
       );
       await vaultEngine.addStablecoin(owner.address, RAD.mul(1000000));
@@ -476,6 +478,7 @@ describe("Auctioneer Unit Tests", function () {
         flrAssetId,
         auctioneer.address,
         LOT_SIZE,
+        0,
         0,
         0,
         0,
@@ -635,6 +638,7 @@ describe("Auctioneer Unit Tests", function () {
         flrAssetId,
         auctioneer.address,
         LOT_SIZE,
+        0,
         0,
         0,
         0,

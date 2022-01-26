@@ -145,7 +145,8 @@ contract MockVaultEngine {
         uint256 underlyingAmount,
         uint256 collateralAmount,
         uint256 debt,
-        uint256 equity
+        uint256 equity,
+        uint256 initialEquity
     ) external {
         Vault storage vault = vaults[assetId][user];
         vault.standby = standbyAmount;
@@ -153,6 +154,7 @@ contract MockVaultEngine {
         vault.collateral = collateralAmount;
         vault.debt = debt;
         vault.equity = equity;
+        vault.initialEquity = initialEquity;
     }
 
     function setShutdownState() external {

@@ -393,6 +393,7 @@ describe("Shutdown Unit Tests", function () {
         0,
         COLL_TO_SET,
         DEBT_TO_SET,
+        0,
         0
       );
 
@@ -404,6 +405,7 @@ describe("Shutdown Unit Tests", function () {
         0,
         COLL_TO_SET,
         UNDERCOLL_DEBT_TO_SET,
+        0,
         0
       );
     });
@@ -500,6 +502,7 @@ describe("Shutdown Unit Tests", function () {
         0,
         COLL_TO_SET,
         DEBT_TO_SET,
+        0,
         0
       );
 
@@ -509,6 +512,7 @@ describe("Shutdown Unit Tests", function () {
         0,
         0,
         COLL_TO_SET,
+        0,
         0,
         0
       );
@@ -555,6 +559,7 @@ describe("Shutdown Unit Tests", function () {
         0,
         COLL_TO_SET,
         0,
+        0,
         0
       );
       await shutdown.freeExcessCollateral(ASSET_ID["FLR"], user.address);
@@ -564,6 +569,7 @@ describe("Shutdown Unit Tests", function () {
       await vaultEngine.updateVault(
         ASSET_ID["FLR"],
         owner.address,
+        0,
         0,
         0,
         0,
@@ -582,6 +588,7 @@ describe("Shutdown Unit Tests", function () {
         0,
         0,
         COLL_TO_SET,
+        0,
         0,
         0
       );
@@ -612,6 +619,7 @@ describe("Shutdown Unit Tests", function () {
         0,
         COLL_TO_SET,
         DEBT_TO_SET,
+        0,
         0
       );
       await vaultEngine.updateVault(
@@ -620,6 +628,7 @@ describe("Shutdown Unit Tests", function () {
         0,
         0,
         COLL_TO_SET,
+        0,
         0,
         0
       );
@@ -751,6 +760,7 @@ describe("Shutdown Unit Tests", function () {
         0,
         COLL_TO_SET,
         DEBT_TO_SET,
+        0,
         0
       );
       await vaultEngine.updateVault(
@@ -760,7 +770,8 @@ describe("Shutdown Unit Tests", function () {
         0,
         COLL_TO_SET,
         0,
-        EQUITY_TO_SET
+        EQUITY_TO_SET,
+        EQUITY_TO_SET.mul(RAY)
       );
 
       await vaultEngine.setUnbackedDebt(
@@ -785,25 +796,12 @@ describe("Shutdown Unit Tests", function () {
     });
 
     it("tests that correct amount of collateral is grabbed from equity position", async () => {
-      // TODO: Verify this is the correct flow.
-
       await shutdown.calculateInvestorObligation();
-      // const obligationRatio = await shutdown.investorObligationRatio();
-      // const finalUtilizationRatio =
-      //   await shutdown.finalUtilizationRatio();
 
       const before = await vaultEngine.vaults(ASSET_ID["FLR"], owner.address);
       expect(before.collateral).to.equal(COLL_TO_SET);
       expect(before.equity).to.equal(EQUITY_TO_SET);
       await shutdown.processUserEquity(ASSET_ID["FLR"], owner.address);
-
-      // const EXPECTED_AMOUNT = before.equity
-      //   .mul(RAY)
-      //   .mul(finalUtilizationRatio)
-      //   .div(WAD)
-      //   .mul(obligationRatio)
-      //   .div(WAD)
-      //   .div(PRICE_TO_SET);
 
       const lastLiquidateEquityPositionCall =
         await vaultEngine.lastLiquidateEquityPositionCall();
@@ -892,6 +890,7 @@ describe("Shutdown Unit Tests", function () {
         0,
         COLL_TO_SET,
         DEBT_TO_SET,
+        0,
         0
       );
       // Owner vault
@@ -902,7 +901,8 @@ describe("Shutdown Unit Tests", function () {
         UNDERLYING_TO_SET,
         COLL_TO_SET,
         0,
-        EQUITY_TO_SET
+        EQUITY_TO_SET,
+        EQUITY_TO_SET.mul(RAY)
       );
 
       await vaultEngine.setTotalDebt(TOTAL_DEBT_TO_SET);
@@ -1009,6 +1009,7 @@ describe("Shutdown Unit Tests", function () {
         0,
         COLL_TO_SET,
         DEBT_TO_SET,
+        0,
         0
       );
       await vaultEngine.updateVault(
@@ -1018,7 +1019,8 @@ describe("Shutdown Unit Tests", function () {
         0,
         COLL_TO_SET,
         0,
-        EQUITY_TO_SET
+        EQUITY_TO_SET,
+        EQUITY_TO_SET.mul(RAY)
       );
 
       await vaultEngine.setTotalDebt(TOTAL_DEBT_TO_SET);
@@ -1047,6 +1049,7 @@ describe("Shutdown Unit Tests", function () {
         ASSET_ID["FLR"],
         shutdown.address,
         DEBT_TO_SET,
+        0,
         0,
         0,
         0,

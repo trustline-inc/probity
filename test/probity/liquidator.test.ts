@@ -185,7 +185,8 @@ describe("Liquidator Unit Tests", function () {
         UNDERLYING,
         COLLATERAL,
         DEBT,
-        EQUITY
+        EQUITY,
+        EQUITY.mul(RAY)
       );
     });
 
@@ -193,6 +194,7 @@ describe("Liquidator Unit Tests", function () {
       await vaultEngine.updateVault(
         ASSET_ID["FLR"],
         user.address,
+        0,
         0,
         0,
         0,
@@ -212,7 +214,8 @@ describe("Liquidator Unit Tests", function () {
         UNDERLYING,
         COLLATERAL,
         DEBT,
-        EQUITY
+        EQUITY,
+        EQUITY.mul(RAY)
       );
 
       await liquidator.liquidateVault(ASSET_ID["FLR"], user.address);
@@ -227,7 +230,8 @@ describe("Liquidator Unit Tests", function () {
         UNDERLYING.add(WAD.mul(1)),
         COLLATERAL.add(WAD.mul(1)),
         DEBT,
-        EQUITY
+        EQUITY,
+        EQUITY.mul(RAY)
       );
 
       await assertRevert(
@@ -242,7 +246,8 @@ describe("Liquidator Unit Tests", function () {
         UNDERLYING,
         COLLATERAL,
         DEBT,
-        EQUITY
+        EQUITY,
+        EQUITY.mul(RAY)
       );
 
       await liquidator.liquidateVault(ASSET_ID["FLR"], user.address);

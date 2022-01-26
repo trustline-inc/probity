@@ -3,8 +3,6 @@ pragma solidity ^0.8.0;
 
 import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
-import "./Treasury.sol";
-import "./priceFunction/LinearDecrease.sol";
 
 /**
  * The shutdown module's main purpose is to pause functionality and
@@ -57,7 +55,8 @@ interface VaultLike {
             uint256 underlying,
             uint256 collateral,
             uint256 debt,
-            uint256 equity
+            uint256 equity,
+            uint256 initialEquity
         );
 
     function assets(bytes32 assetId)
@@ -304,7 +303,7 @@ contract Shutdown is Stateful, Eventful {
      * @param user The address of the vault user
      */
     function processUserDebt(bytes32 assetId, address user) external onlyIfFinalPriceSet(assetId) {
-        (, , uint256 collateral, uint256 debt, ) = vaultEngine.vaults(assetId, user);
+        (, , uint256 collateral, uint256 debt, , ) = vaultEngine.vaults(assetId, user);
         (uint256 debtAccumulator, , , , , , ) = vaultEngine.assets(assetId);
 
         uint256 required = (debt * debtAccumulator) / assets[assetId].finalPrice;
@@ -329,11 +328,11 @@ contract Shutdown is Stateful, Eventful {
      * @param user The address of the user vault
      */
     function freeExcessCollateral(bytes32 assetId, address user) external onlyIfFinalPriceSet(assetId) {
-        (, , uint256 collateral, uint256 debt, uint256 equity) = vaultEngine.vaults(assetId, user);
+        (, , uint256 collateral, uint256 debt, , uint256 initialEquity) = vaultEngine.vaults(assetId, user);
         require(debt == 0, "Shutdown/freeExcessCollateral: User needs to process debt first before calling this");
 
         // how do we make it so this can be reused
-        uint256 hookedAmount = (equity * finalUtilizationRatio);
+        uint256 hookedAmount = (initialEquity * finalUtilizationRatio);
         uint256 hookedCollAmount = hookedAmount / assets[assetId].finalPrice;
         require(collateral > hookedCollAmount, "Shutdown/freeExcessCollateral: No collateral to free");
 
@@ -381,9 +380,8 @@ contract Shutdown is Stateful, Eventful {
     function processUserEquity(bytes32 assetId, address user) external {
         require(investorObligationRatio != 0, "Shutdown/processUserEquity: Investor has no obligation");
 
-        (, uint256 underlying, , , uint256 equity) = vaultEngine.vaults(assetId, user);
-        (, uint256 equityAccumulator, , , , , ) = vaultEngine.assets(assetId);
-        uint256 hookedSuppliedAmount = (equity * equityAccumulator * finalUtilizationRatio) / WAD;
+        (, uint256 underlying, , , , uint256 initialEquity) = vaultEngine.vaults(assetId, user);
+        uint256 hookedSuppliedAmount = (initialEquity * finalUtilizationRatio) / WAD;
         uint256 investorObligation = ((hookedSuppliedAmount * investorObligationRatio) / WAD) /
             assets[assetId].finalPrice;
         uint256 amountToGrab = min(underlying, investorObligation);
@@ -395,7 +393,13 @@ contract Shutdown is Stateful, Eventful {
         assets[assetId].gap -= amountToGrab;
         stablecoinGap -= amountToGrab * assets[assetId].finalPrice;
 
-        vaultEngine.liquidateEquityPosition(assetId, user, -int256(underlying), -int256(equity), address(treasury));
+        vaultEngine.liquidateEquityPosition(
+            assetId,
+            user,
+            -int256(underlying),
+            -int256(initialEquity / RAY),
+            address(treasury)
+        );
     }
 
     /**
