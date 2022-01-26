@@ -772,7 +772,7 @@ describe("Vault Engine Unit Tests", function () {
     });
   });
 
-  describe("liquidateVault Unit Tests", function () {
+  describe("liquidateEquityPosition Unit Tests", function () {
     const UNDERLYING_AMOUNT = WAD.mul(10_000);
     const ASSET_AMOUNT = WAD.mul(10_000);
     const EQUITY_AMOUNT = WAD.mul(2000);
@@ -820,7 +820,7 @@ describe("Vault Engine Unit Tests", function () {
     });
 
     it("reduces initial equity", async () => {
-      const AMOUNT_TO_LIQUIDATE = EQUITY_AMOUNT.div(RAY).div(2); // 1000 FLR
+      const AMOUNT_TO_LIQUIDATE = EQUITY_AMOUNT.div(2); // 1000 FLR
       const before = (await vaultEngine.vaults(ASSET_ID["FLR"], owner.address))
         .initialEquity;
 
@@ -836,7 +836,26 @@ describe("Vault Engine Unit Tests", function () {
 
       const after = (await vaultEngine.vaults(ASSET_ID["FLR"], owner.address))
         .initialEquity;
-      expect(after.sub(before).abs().lte(EQUITY_AMOUNT.div(2))).to.equal(true);
+
+      expect(after.sub(before).abs()).to.equal(AMOUNT_TO_LIQUIDATE.mul(RAY));
+    });
+
+    it("tests that totalEquity is lowered properly", async () => {
+      const AMOUNT_TO_LIQUIDATE = EQUITY_AMOUNT.div(2); // 1000 FLR
+      const before = await vaultEngine.totalEquity();
+
+      await vaultEngine
+        .connect(user)
+        .liquidateEquityPosition(
+          ASSET_ID["FLR"],
+          owner.address,
+          0,
+          BigNumber.from("0").sub(AMOUNT_TO_LIQUIDATE),
+          treasury.address
+        );
+
+      const after = await vaultEngine.totalEquity();
+      expect(after.sub(before).abs()).to.equal(AMOUNT_TO_LIQUIDATE.mul(RAY));
     });
   });
 
