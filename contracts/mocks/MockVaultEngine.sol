@@ -2,11 +2,12 @@ pragma solidity ^0.8.0;
 
 contract MockVaultEngine {
     struct Vault {
-        uint256 standbyAssetAmount; // assets that are on standby
-        uint256 activeAssetAmount; // assets that are actively covering a position
-        uint256 debt; // Vault's debt balance
-        uint256 equity; // Vault's equity balance
-        uint256 lastEquityAccumulator; // Most recent value of the equity rate accumulator
+        uint256 standby; // Assets that are on standby
+        uint256 underlying; // Amount covering an equity position
+        uint256 collateral; // Amount covering a debt position
+        uint256 debt; // Vault debt balance
+        uint256 equity; // Vault equity balance
+        uint256 initialEquity; // Tracks the amount of equity (less interest)
     }
 
     struct Asset {
@@ -19,14 +20,21 @@ contract MockVaultEngine {
         uint256 floor; // Min. amount of asset that must be active to open a position
     }
 
-    struct LiquidateVaultCall {
+    struct LiquidateDebtPositionCall {
         bytes32 collId;
         address user;
         address auctioneer;
         address reservePool;
         int256 collateralAmount;
         int256 debtAmount;
-        int256 equityAmount;
+    }
+
+    struct LiquidateEquityPositionCall {
+        bytes32 collId;
+        address user;
+        int256 underlying;
+        int256 equity;
+        address treasuryAddress;
     }
 
     mapping(bytes32 => mapping(address => Vault)) public vaults;
@@ -39,7 +47,8 @@ contract MockVaultEngine {
     uint256 public protocolFeeRates;
     uint256 public totalDebt;
     uint256 public totalEquity;
-    LiquidateVaultCall public lastLiquidateVaultCall;
+    LiquidateDebtPositionCall public lastLiquidateDebtPositionCall;
+    LiquidateEquityPositionCall public lastLiquidateEquityPositionCall;
 
     function addStablecoin(address user, uint256 amount) external {
         stablecoin[user] += amount;
@@ -133,40 +142,56 @@ contract MockVaultEngine {
         bytes32 assetId,
         address user,
         uint256 standbyAmount,
-        uint256 activeAmount,
+        uint256 underlyingAmount,
+        uint256 collateralAmount,
         uint256 debt,
         uint256 equity,
-        uint256 lastEquityAccumulator
+        uint256 initialEquity
     ) external {
         Vault storage vault = vaults[assetId][user];
-        vault.standbyAssetAmount = standbyAmount;
-        vault.activeAssetAmount = activeAmount;
+        vault.standby = standbyAmount;
+        vault.underlying = underlyingAmount;
+        vault.collateral = collateralAmount;
         vault.debt = debt;
         vault.equity = equity;
-        vault.lastEquityAccumulator = lastEquityAccumulator;
+        vault.initialEquity = initialEquity;
     }
 
     function setShutdownState() external {
         states[bytes32("shutdown")] = true;
     }
 
-    function liquidateVault(
+    function liquidateDebtPosition(
         bytes32 collId,
         address user,
         address auctioneer,
         address reservePool,
         int256 collateralAmount,
-        int256 debtAmount,
-        int256 equityAmount
+        int256 debtAmount
     ) external {
-        lastLiquidateVaultCall = LiquidateVaultCall(
+        lastLiquidateDebtPositionCall = LiquidateDebtPositionCall(
             collId,
             user,
             auctioneer,
             reservePool,
             collateralAmount,
-            debtAmount,
-            equityAmount
+            debtAmount
+        );
+    }
+
+    function liquidateEquityPosition(
+        bytes32 collId,
+        address user,
+        int256 underlyingAmount,
+        int256 equityAmount,
+        address treasuryAddress
+    ) external {
+        lastLiquidateEquityPositionCall = LiquidateEquityPositionCall(
+            collId,
+            user,
+            underlyingAmount,
+            equityAmount,
+            treasuryAddress
         );
     }
 
@@ -176,8 +201,8 @@ contract MockVaultEngine {
         address to,
         uint256 amount
     ) external {
-        vaults[collateral][from].standbyAssetAmount -= amount;
-        vaults[collateral][to].standbyAssetAmount += amount;
+        vaults[collateral][from].standby -= amount;
+        vaults[collateral][to].standby += amount;
     }
 
     function sub(uint256 a, int256 b) internal pure returns (uint256 c) {

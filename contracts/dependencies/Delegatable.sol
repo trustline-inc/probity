@@ -32,7 +32,11 @@ interface VPTokenLike {
 interface VaultEngineLike {
     function vaults(bytes32 assetId, address user)
         external
-        returns (uint256 standbyAssetAmount, uint256 activeAssetAmount);
+        returns (
+            uint256 standby,
+            uint256 underlying,
+            uint256 collateral
+        );
 
     function modifyStandbyAsset(
         bytes32 assetId,
@@ -112,8 +116,8 @@ contract Delegatable is Stateful {
             lastClaimedEpoch > userLastClaimedEpoch[msg.sender],
             "Delegatable/userCollectReward: No new epoch to claim"
         );
-        (uint256 freeColl, uint256 lockedColl) = vaultEngine.vaults(collId, msg.sender);
-        uint256 currentBalance = freeColl + lockedColl;
+        (uint256 underlying, uint256 collateral, uint256 standby) = vaultEngine.vaults(collId, msg.sender);
+        uint256 currentBalance = standby + underlying + collateral;
         uint256 rewardBalance = 0;
 
         for (

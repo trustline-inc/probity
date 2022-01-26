@@ -140,7 +140,7 @@ contract ReservePool is Stateful, Eventful {
      * @notice Settles bad debt
      * @param amountToSettle The amount of bad debt to settle
      */
-    function settle(uint256 amountToSettle) external {
+    function settle(uint256 amountToSettle) external onlyByProbity {
         require(
             amountToSettle <= vaultEngine.unbackedDebt(address(this)),
             "ReservePool/settle: Settlement amount is more than the debt"
@@ -156,14 +156,14 @@ contract ReservePool is Stateful, Eventful {
      * @notice Increases system debt
      * @param amountToSettle The amount of debt to settle
      */
-    function increaseSystemDebt(uint256 amountToSettle) external {
+    function increaseSystemDebt(uint256 amountToSettle) external onlyByProbity {
         vaultEngine.increaseSystemDebt(amountToSettle);
     }
 
     /**
      * @notice Starts a sale for future reserve pool profits
      */
-    function startSale() external {
+    function startSale() external onlyByProbity {
         require(
             vaultEngine.unbackedDebt(address(this)) - debtOnAuction > debtThreshold,
             "ReservePool/startSale: Debt threshold is not yet crossed"

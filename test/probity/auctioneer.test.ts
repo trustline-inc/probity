@@ -188,6 +188,7 @@ describe("Auctioneer Unit Tests", function () {
         0,
         0,
         0,
+        0,
         0
       );
       await vaultEngine.addStablecoin(owner.address, RAD.mul(1000000));
@@ -344,6 +345,7 @@ describe("Auctioneer Unit Tests", function () {
         0,
         0,
         0,
+        0,
         0
       );
       await vaultEngine.addStablecoin(owner.address, RAD.mul(1000000));
@@ -413,9 +415,7 @@ describe("Auctioneer Unit Tests", function () {
       await auctioneer.buyItNow(0, RAY.mul(12).div(10), EXPECTED_LOT_SIZE);
 
       const after = await vaultEngine.vaults(flrAssetId, owner.address);
-      expect(before.standbyAssetAmount.add(after.standbyAssetAmount)).to.equal(
-        EXPECTED_LOT_SIZE
-      );
+      expect(before.standby.add(after.standby)).to.equal(EXPECTED_LOT_SIZE);
     });
 
     it("tests that it cancel old bids that are no longer in contention", async () => {
@@ -481,6 +481,7 @@ describe("Auctioneer Unit Tests", function () {
         0,
         0,
         0,
+        0,
         0
       );
       await vaultEngine.addStablecoin(owner.address, RAD.mul(1000000));
@@ -521,9 +522,7 @@ describe("Auctioneer Unit Tests", function () {
       await auctioneer.finalizeSale(0);
 
       const after = await vaultEngine.vaults(flrAssetId, owner.address);
-      expect(before.standbyAssetAmount.add(after.standbyAssetAmount)).to.equal(
-        EXPECTED_LOT_SIZE
-      );
+      expect(before.standby.add(after.standby)).to.equal(EXPECTED_LOT_SIZE);
     });
 
     it("tests that it values are updated correctly", async () => {
@@ -642,6 +641,7 @@ describe("Auctioneer Unit Tests", function () {
         0,
         0,
         0,
+        0,
         0
       );
       await vaultEngine.addStablecoin(owner.address, RAD.mul(1000000));
@@ -679,9 +679,7 @@ describe("Auctioneer Unit Tests", function () {
       await auctioneer.cancelAuction(0, owner.address);
 
       const after = await vaultEngine.vaults(flrAssetId, owner.address);
-      expect(before.standbyAssetAmount.add(after.standbyAssetAmount)).to.equal(
-        LOT_SIZE
-      );
+      expect(before.standby.add(after.standby)).to.equal(LOT_SIZE);
     });
 
     it("tests that all the bids are cancelled", async () => {
