@@ -161,7 +161,7 @@ contract VaultEngine is Stateful, Eventful {
      * @param user The address of the beneficiary vault owner
      * @param amount The amount of stablecoin to remove
      */
-    function removeStablecoin(address user, uint256 amount) external onlyBy("treasury") {
+    function removeStablecoin(address user, uint256 amount) external onlyByProbity {
         stablecoin[user] -= amount;
     }
 
@@ -331,30 +331,17 @@ contract VaultEngine is Stateful, Eventful {
         bytes32 assetId,
         address user,
         int256 assetAmount,
-        int256 equityAmount,
-        address treasuryAddress
+        int256 equityAmount
     ) external onlyByProbity {
         Vault storage vault = vaults[assetId][user];
         Asset storage asset = assets[assetId];
 
         // TODO: Assess penalty
-        if (equityAmount < 0) {
-            require(
-                stablecoin[treasuryAddress] >= uint256(0 - equityAmount * 2),
-                "VaultEngine/liquidateEquityPosition: Not enough treasury funds"
-            );
-        } else {
-            require(
-                stablecoin[treasuryAddress] >= uint256(equityAmount),
-                "VaultEngine/liquidateEquityPosition: Not enough treasury funds"
-            );
-        }
 
         vault.underlying = add(vault.underlying, assetAmount);
         vault.standby = add(vault.standby, -assetAmount);
         vault.equity = add(vault.equity, equityAmount);
         asset.normEquity = add(asset.normEquity, equityAmount);
-        stablecoin[treasuryAddress] = sub(stablecoin[treasuryAddress], equityAmount);
 
         emit Log("vault", "liquidateEquityPosition", msg.sender);
     }

@@ -813,9 +813,6 @@ describe("Shutdown Unit Tests", function () {
       expect(lastLiquidateEquityPositionCall.equity).to.equal(
         BigNumber.from(0).sub(EQUITY_TO_SET)
       );
-      expect(lastLiquidateEquityPositionCall.treasuryAddress).to.equal(
-        treasury.address
-      );
     });
   });
 

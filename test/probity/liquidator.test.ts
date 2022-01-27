@@ -188,6 +188,8 @@ describe("Liquidator Unit Tests", function () {
         EQUITY,
         EQUITY.mul(RAY)
       );
+
+      await vaultEngine.setStablecoin(treasury.address, EQUITY.mul(RAY));
     });
 
     it("fails if vault has nothing to liquidate", async () => {
@@ -305,6 +307,17 @@ describe("Liquidator Unit Tests", function () {
       expect(after.debtSize).to.equal(EXPECTED_DEBT_SIZE);
       expect(after.owner).to.equal(user.address);
       expect(after.beneficiary).to.equal(reservePool.address);
+    });
+
+    it("tests that removeStablecoin is called when liquidating Equity position", async () => {
+      const EXPECTED_DIFF = EQUITY.mul(RAY);
+
+      const before = await vaultEngine.stablecoin(treasury.address);
+      await liquidator.liquidateVault(ASSET_ID["FLR"], user.address);
+      // const AMOUNT_TO_LIQUIDATE = EQUITY_AMOUNT.div(2); // 1000 FLR
+
+      const after = await vaultEngine.stablecoin(treasury.address);
+      expect(before.sub(after)).to.equal(EXPECTED_DIFF);
     });
   });
 });
