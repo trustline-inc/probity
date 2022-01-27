@@ -341,7 +341,10 @@ contract VaultEngine is Stateful, Eventful {
         vault.underlying = add(vault.underlying, assetAmount);
         vault.standby = add(vault.standby, -assetAmount);
         vault.equity = add(vault.equity, equityAmount);
+        vault.initialEquity = add(vault.initialEquity, mul(RAY, equityAmount));
         asset.normEquity = add(asset.normEquity, equityAmount);
+
+        totalEquity = add(totalEquity, mul(RAY, equityAmount));
 
         emit Log("vault", "liquidateEquityPosition", msg.sender);
     }
