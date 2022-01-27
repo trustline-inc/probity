@@ -830,8 +830,7 @@ describe("Vault Engine Unit Tests", function () {
           ASSET_ID["FLR"],
           owner.address,
           0,
-          BigNumber.from("0").sub(AMOUNT_TO_LIQUIDATE),
-          treasury.address
+          BigNumber.from("0").sub(AMOUNT_TO_LIQUIDATE)
         );
 
       const after = (await vaultEngine.vaults(ASSET_ID["FLR"], owner.address))
@@ -850,8 +849,7 @@ describe("Vault Engine Unit Tests", function () {
           ASSET_ID["FLR"],
           owner.address,
           0,
-          BigNumber.from("0").sub(AMOUNT_TO_LIQUIDATE),
-          treasury.address
+          BigNumber.from("0").sub(AMOUNT_TO_LIQUIDATE)
         );
 
       const after = await vaultEngine.totalEquity();
