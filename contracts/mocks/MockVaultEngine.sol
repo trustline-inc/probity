@@ -34,7 +34,6 @@ contract MockVaultEngine {
         address user;
         int256 underlying;
         int256 equity;
-        address treasuryAddress;
     }
 
     mapping(bytes32 => mapping(address => Vault)) public vaults;
@@ -183,16 +182,9 @@ contract MockVaultEngine {
         bytes32 collId,
         address user,
         int256 underlyingAmount,
-        int256 equityAmount,
-        address treasuryAddress
+        int256 equityAmount
     ) external {
-        lastLiquidateEquityPositionCall = LiquidateEquityPositionCall(
-            collId,
-            user,
-            underlyingAmount,
-            equityAmount,
-            treasuryAddress
-        );
+        lastLiquidateEquityPositionCall = LiquidateEquityPositionCall(collId, user, underlyingAmount, equityAmount);
     }
 
     function moveAsset(

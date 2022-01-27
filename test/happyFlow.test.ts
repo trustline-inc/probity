@@ -379,7 +379,7 @@ describe("Probity happy flow", function () {
 
   it("liquidates unhealthy vaults", async () => {
     // Deposit native token (FLR)
-    await flrWallet.deposit({ value: STANDBY_AMOUNT });
+    await flrWallet.deposit({ value: STANDBY_AMOUNT.mul(2) });
 
     // Initialize the FLR asset
     await vaultEngine.connect(gov).initAssetType(ASSET_ID["FLR"]);
@@ -395,7 +395,7 @@ describe("Probity happy flow", function () {
     await vaultEngine.modifyEquity(
       ASSET_ID["FLR"],
       treasury.address,
-      UNDERLYING_AMOUNT,
+      UNDERLYING_AMOUNT.mul(2),
       EQUITY_AMOUNT
     );
 
@@ -432,12 +432,12 @@ describe("Probity happy flow", function () {
 
     // Expect unbacked debt to equal the loan amount and underlying to be the same (?)
     expect(unbackedDebt1.sub(unbackedDebt0)).to.equal(LOAN_AMOUNT.mul(RAY));
-    expect(underlying1).to.equal(UNDERLYING_AMOUNT);
+    expect(underlying1).to.equal(UNDERLYING_AMOUNT.mul(2));
   });
 
   it("creates an auction and allows a user to buy the collateral", async () => {
     // Deposit native token (FLR)
-    await flrWallet.deposit({ value: STANDBY_AMOUNT });
+    await flrWallet.deposit({ value: STANDBY_AMOUNT.mul(2) });
 
     // Initialize the FLR asset
     await vaultEngine.connect(gov).initAssetType(ASSET_ID["FLR"]);
@@ -453,7 +453,7 @@ describe("Probity happy flow", function () {
     await vaultEngine.modifyEquity(
       ASSET_ID["FLR"],
       treasury.address,
-      UNDERLYING_AMOUNT,
+      UNDERLYING_AMOUNT.mul(2),
       EQUITY_AMOUNT
     );
 
@@ -536,7 +536,7 @@ describe("Probity happy flow", function () {
 
   it("runs an IOU sale", async () => {
     // Deposit native token (FLR)
-    await flrWallet.deposit({ value: STANDBY_AMOUNT });
+    await flrWallet.deposit({ value: STANDBY_AMOUNT.mul(2) });
 
     // Initialize the FLR asset
     await vaultEngine.connect(gov).initAssetType(ASSET_ID["FLR"]);
@@ -552,7 +552,7 @@ describe("Probity happy flow", function () {
     await vaultEngine.modifyEquity(
       ASSET_ID["FLR"],
       treasury.address,
-      UNDERLYING_AMOUNT,
+      UNDERLYING_AMOUNT.mul(2),
       EQUITY_AMOUNT
     );
 

@@ -25,6 +25,10 @@ interface VaultEngineLike {
             uint256 adjustedPrice
         );
 
+    function stablecoin(address user) external returns (uint256 balance);
+
+    function removeStablecoin(address user, uint256 amount) external;
+
     function liquidateDebtPosition(
         bytes32 collId,
         address user,
@@ -38,8 +42,7 @@ interface VaultEngineLike {
         bytes32 collId,
         address user,
         int256 underlyingAmount,
-        int256 equityAmount,
-        address treasuryAddress
+        int256 equityAmount
     ) external;
 }
 
@@ -194,8 +197,14 @@ contract Liquidator is Stateful, Eventful {
             );
         }
 
-        if (underlying * adjustedPrice < equity) {
-            vaultEngine.liquidateEquityPosition(collId, user, -int256(underlying), -int256(equity), treasuryAddress);
+        if (underlying * adjustedPrice < equity * RAY) {
+            require(
+                vaultEngine.stablecoin(treasuryAddress) >= equity,
+                "VaultEngine/liquidateEquityPosition: Not enough treasury funds"
+            );
+
+            vaultEngine.liquidateEquityPosition(collId, user, -int256(underlying), -int256(equity));
+            vaultEngine.removeStablecoin(treasuryAddress, equity * RAY);
         }
     }
 }

@@ -772,7 +772,7 @@ describe("Vault Engine Unit Tests", function () {
     });
   });
 
-  describe("liquidateVault Unit Tests", function () {
+  describe("liquidateEquityPosition Unit Tests", function () {
     const UNDERLYING_AMOUNT = WAD.mul(10_000);
     const ASSET_AMOUNT = WAD.mul(10_000);
     const EQUITY_AMOUNT = WAD.mul(2000);
@@ -830,8 +830,7 @@ describe("Vault Engine Unit Tests", function () {
           ASSET_ID["FLR"],
           owner.address,
           0,
-          BigNumber.from("0").sub(AMOUNT_TO_LIQUIDATE),
-          treasury.address
+          BigNumber.from("0").sub(AMOUNT_TO_LIQUIDATE)
         );
 
       const after = (await vaultEngine.vaults(ASSET_ID["FLR"], owner.address))
