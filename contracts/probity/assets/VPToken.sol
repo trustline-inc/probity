@@ -40,7 +40,7 @@ contract VPToken is Delegatable {
     // External Functions
     /////////////////////////////////////////
 
-    function deposit(uint256 amount) external onlyWhen("paused", false) {
+    function deposit(uint256 amount) external onlyWhen("paused", false) onlyByWhiteListed {
         require(token.transferFrom(msg.sender, address(this), amount), "VPToken/deposit: transfer failed");
         vaultEngine.modifyStandbyAsset(collId, msg.sender, int256(amount));
         recentDeposits[msg.sender][ftsoManager.getCurrentRewardEpoch()] += amount;
