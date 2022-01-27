@@ -830,7 +830,8 @@ describe("Vault Engine Unit Tests", function () {
           ASSET_ID["FLR"],
           owner.address,
           0,
-          BigNumber.from("0").sub(AMOUNT_TO_LIQUIDATE)
+          BigNumber.from("0").sub(AMOUNT_TO_LIQUIDATE),
+          treasury.address
         );
 
       const after = (await vaultEngine.vaults(ASSET_ID["FLR"], owner.address))
