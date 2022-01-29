@@ -2,6 +2,7 @@
 
 pragma solidity ^0.8.0;
 
+import "../dependencies/Eventful.sol";
 import "../dependencies/Stateful.sol";
 
 interface VaultEngineLike {
@@ -18,10 +19,6 @@ interface VaultEngineLike {
         uint256 equityRateIncrease,
         uint256 protocolFeeRates
     ) external;
-
-    function aggregateInflationRate() external returns (uint256);
-
-    function inflationRate() external returns (uint256);
 }
 
 interface IAPR {
@@ -32,7 +29,7 @@ interface IAPR {
 /**
  * @notice Creates loans and manages vault debt.
  */
-contract Teller is Stateful {
+contract Teller is Stateful, Eventful {
     /////////////////////////////////////////
     // Type Declarations
     /////////////////////////////////////////
@@ -53,6 +50,10 @@ contract Teller is Stateful {
     VaultEngineLike public immutable vaultEngine;
     IAPR public immutable lowAprRate;
     IAPR public immutable highAprRate;
+    uint256 public baseApr;
+    uint256[12] public inflationRates;
+    uint256 public annualizedInflationRate;
+    uint256 public cumulativeInflationRate;
 
     address public reservePool;
     uint256 public apr; // Annualized percentage rate
@@ -87,6 +88,14 @@ contract Teller is Stateful {
     /////////////////////////////////////////
     function setProtocolFee(bytes32 assetId, uint256 protocolFee) public onlyBy("gov") {
         collateralTypes[assetId].protocolFee = protocolFee;
+    }
+
+    function updateInflationRate(uint256 newMonthlyRateIncrease) public {
+        emit LogVarUpdate("Teller", "annualizedInflationRate", annualizedInflationRate, newMonthlyRateIncrease);
+        // TODO: Update a linked list: add newMonthlyRateIncrease to head; keep list length of 12
+        uint256 lastElevenMonthsCumulativeRate = 0;
+        annualizedInflationRate = lastElevenMonthsCumulativeRate + newMonthlyRateIncrease;
+        cumulativeInflationRate += newMonthlyRateIncrease;
     }
 
     /////////////////////////////////////////
@@ -146,6 +155,7 @@ contract Teller is Stateful {
             uint256 round = 0.0025 * 10**27;
             apr = oneDividedByOneMinusUtilization + RAY;
             apr = ((apr + round - 1) / round) * round;
+            apr = apr + baseApr;
 
             if (apr > MAX_APR) {
                 apr = MAX_APR;
