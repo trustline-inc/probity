@@ -12,13 +12,15 @@ import { deployTest } from "../../../lib/deployer";
 import parseEvents from "../../utils/parseEvents";
 import { ethers } from "hardhat";
 import * as chai from "chai";
-import { WAD } from "../../utils/constants";
+import { bytes32, WAD } from "../../utils/constants";
+import assertRevert from "../../utils/assertRevert";
 
 const expect = chai.expect;
 
 // Wallets
 let owner: SignerWithAddress;
 let user: SignerWithAddress;
+let gov: SignerWithAddress;
 
 // Contracts
 let vpToken: VPToken;
@@ -43,6 +45,27 @@ describe("VP Token  Unit Test", function () {
 
     owner = signers.owner;
     user = signers.alice;
+    gov = signers.bob;
+
+    await registry.setupAddress(bytes32("gov"), gov.address);
+    await registry
+      .connect(gov)
+      .setupAddress(bytes32("whitelisted"), owner.address);
+  });
+
+  it("fails if caller is not a whitelisted user", async () => {
+    await mockVpToken.mint(user.address, AMOUNT_TO_MINT);
+    await mockVpToken.connect(user).approve(vpToken.address, AMOUNT_TO_MINT);
+
+    await assertRevert(
+      vpToken.connect(user).deposit(AMOUNT_TO_MINT),
+      "AccessControl/onlyByWhiteListed: Access forbidden"
+    );
+
+    await registry
+      .connect(gov)
+      .setupAddress(bytes32("whitelisted"), user.address);
+    await vpToken.connect(user).deposit(AMOUNT_TO_MINT);
   });
 
   it("test DepositVPToken event is emitted properly", async () => {

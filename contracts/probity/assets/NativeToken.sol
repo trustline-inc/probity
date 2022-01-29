@@ -41,7 +41,7 @@ contract NativeToken is Stateful {
     /////////////////////////////////////////
     // External Functions
     /////////////////////////////////////////
-    function deposit() external payable onlyWhen("paused", false) {
+    function deposit() external payable onlyWhen("paused", false) onlyByWhiteListed {
         vaultEngine.modifyStandbyAsset(assetId, msg.sender, int256(msg.value));
         emit DepositNativeCrypto(msg.sender, msg.value);
     }

@@ -6,13 +6,15 @@ import { VaultEngine, Registry, NativeToken } from "../../../typechain";
 import { deployTest } from "../../../lib/deployer";
 import { ethers } from "hardhat";
 import * as chai from "chai";
-import { WAD } from "../../utils/constants";
+import { bytes32, WAD } from "../../utils/constants";
 import parseEvents from "../../utils/parseEvents";
+import assertRevert from "../../utils/assertRevert";
 const expect = chai.expect;
 
 // Wallets
 let owner: SignerWithAddress;
 let user: SignerWithAddress;
+let gov: SignerWithAddress;
 
 // Contracts
 let nativeToken: NativeToken;
@@ -35,6 +37,24 @@ describe("Native Token Unit Test", function () {
 
     owner = signers.owner;
     user = signers.alice;
+    gov = signers.bob;
+
+    await registry.setupAddress(bytes32("gov"), gov.address);
+    await registry
+      .connect(gov)
+      .setupAddress(bytes32("whitelisted"), owner.address);
+  });
+
+  it("fails if caller is not a whitelisted user", async () => {
+    await assertRevert(
+      nativeToken.connect(user).deposit({ value: AMOUNT_TO_DEPOSIT }),
+      "AccessControl/onlyByWhiteListed: Access forbidden"
+    );
+
+    await registry
+      .connect(gov)
+      .setupAddress(bytes32("whitelisted"), user.address);
+    await nativeToken.connect(user).deposit({ value: AMOUNT_TO_DEPOSIT });
   });
 
   it("test DepositNativeCrypto event is emitted properly", async () => {
