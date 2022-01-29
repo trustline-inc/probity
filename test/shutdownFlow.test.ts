@@ -19,23 +19,22 @@ import {
   MockERC20Token,
   Shutdown,
 } from "../typechain";
-import { ethers, web3 } from "hardhat";
-import fundFlr from "./utils/fundFlr";
+import { ethers } from "hardhat";
 import * as chai from "chai";
 import { deployTest, mock, probity } from "../lib/deployer";
 import increaseTime from "./utils/increaseTime";
 import { BigNumber } from "ethers";
-import { bytes32 } from "./utils/constants";
+import { ASSET_ID, bytes32, WAD, RAY, RAD } from "./utils/constants";
 const expect = chai.expect;
 
 // Wallets
 let owner: SignerWithAddress;
-let user1: SignerWithAddress;
-let user2: SignerWithAddress;
-let user3: SignerWithAddress;
-let user4: SignerWithAddress;
-let user5: SignerWithAddress;
-let user6: SignerWithAddress;
+let alice: SignerWithAddress;
+let bob: SignerWithAddress;
+let charlie: SignerWithAddress;
+let don: SignerWithAddress;
+let lender: SignerWithAddress;
+let borrower: SignerWithAddress;
 
 // Contracts
 let aurei: Aurei;
@@ -55,88 +54,89 @@ let reserve: ReservePool;
 let erc20: MockERC20Token;
 let shutdown: Shutdown;
 
-const WAD = ethers.BigNumber.from("1000000000000000000");
-const RAY = ethers.BigNumber.from("1000000000000000000000000000");
-const RAD = ethers.BigNumber.from(
-  "1000000000000000000000000000000000000000000000"
-);
-
-let flrAssetId = web3.utils.keccak256("FLR");
-let fxrpAssetId = web3.utils.keccak256("FXRP");
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
-async function fxrpDeposit(user, amount) {
+async function depositFxrp(user: SignerWithAddress, amount: BigNumber) {
   await erc20.mint(user.address, amount);
   await erc20.connect(user).approve(fxrpWallet.address, amount);
   await fxrpWallet.connect(user).deposit(amount);
 }
 
-async function expectBalancesToMatch(user, balance) {
-  if (balance.stablecoin !== undefined) {
+async function expectBalancesToMatch(
+  user: SignerWithAddress,
+  balance: UserBalances[string]
+) {
+  if (balance["AUR"] !== undefined) {
     let stablecoin = await vaultEngine.stablecoin(user.address);
 
-    expect(stablecoin).to.equal(balance.stablecoin);
+    expect(stablecoin).to.equal(balance["AUR"]);
   }
 
-  if (balance.flr !== undefined) {
-    let vault = await vaultEngine.vaults(flrAssetId, user.address);
+  if (balance["FLR"] !== undefined) {
+    let vault = await vaultEngine.vaults(ASSET_ID["FLR"], user.address);
 
-    if (balance.flr.activeAmount !== undefined) {
-      expect(vault.activeAssetAmount).to.equal(balance.flr.activeAmount);
+    if (balance["FLR"].collateral !== undefined) {
+      expect(vault.collateral).to.equal(balance["FLR"].collateral);
     }
 
-    if (balance.flr.debt !== undefined) {
-      expect(vault.debt).to.equal(balance.flr.debt);
+    if (balance["FLR"].debt !== undefined) {
+      expect(vault.debt).to.equal(balance["FLR"].debt);
     }
-    if (balance.flr.equity !== undefined) {
-      expect(vault.equity).to.equal(balance.flr.equity);
+    if (balance["FLR"].equity !== undefined) {
+      expect(vault.equity).to.equal(balance["FLR"].equity);
     }
   }
 
-  if (balance.fxrp !== undefined) {
-    let vault = await vaultEngine.vaults(fxrpAssetId, user.address);
+  if (balance["FXRP"] !== undefined) {
+    let vault = await vaultEngine.vaults(ASSET_ID["FXRP"], user.address);
 
-    if (balance.fxrp.activeAmount !== undefined) {
-      expect(vault.activeAssetAmount).to.equal(balance.fxrp.activeAmount);
+    if (balance["FXRP"].collateral !== undefined) {
+      expect(vault.collateral).to.equal(balance["FXRP"].collateral);
     }
 
-    if (balance.fxrp.debt !== undefined) {
-      expect(vault.debt).to.equal(balance.fxrp.debt);
+    if (balance["FXRP"].debt !== undefined) {
+      expect(vault.debt).to.equal(balance["FXRP"].debt);
     }
-    if (balance.fxrp.equity !== undefined) {
-      expect(vault.equity).to.equal(balance.fxrp.equity);
+    if (balance["FXRP"].equity !== undefined) {
+      expect(vault.equity).to.equal(balance["FXRP"].equity);
     }
   }
 }
 
-async function checkReserveBalances(reserveBalances) {
+async function checkReserveBalances(reserveBalances: ReserveBalances) {
   expect(await vaultEngine.stablecoin(reserve.address)).to.equal(
     reserveBalances.reserve
   );
   expect(await vaultEngine.unbackedDebt(reserve.address)).to.equal(
-    reserveBalances.debt
+    reserveBalances.debtToCover
   );
 }
+
+type VaultBalance = {
+  underlying?: BigNumber;
+  collateral?: BigNumber;
+  debt?: BigNumber;
+  equity?: BigNumber;
+};
+
+type UserBalances = {
+  [key: string]: {
+    AUR: BigNumber;
+    FLR: VaultBalance;
+    FXRP: VaultBalance;
+  };
+};
+
+type ReserveBalances = {
+  reserve: BigNumber;
+  debtToCover: BigNumber;
+};
 
 describe("Shutdown Flow Test", function () {
   const TWO_DAYS_IN_SECONDS = 86400 * 2;
   const DEBT_THRESHOLD = RAD.mul(5000);
-  let balances: {
-    [key: string]: {
-      flr: {
-        debt?: BigNumber;
-        activeAmount?: BigNumber;
-        equity?: BigNumber;
-      };
-      fxrp: {
-        debt?: BigNumber;
-        activeAmount?: BigNumber;
-        equity?: BigNumber;
-      };
-      stablecoin: BigNumber;
-    };
-  };
-  let reserveBalances;
+  let balances: UserBalances;
+  let reserveBalances: ReserveBalances;
 
   beforeEach(async function () {
     let { contracts, signers } = await deployTest();
@@ -164,270 +164,243 @@ describe("Shutdown Flow Test", function () {
     auctioneerFxrp = contracts.auctioneer;
 
     owner = signers.owner;
-    user1 = signers.alice;
-    user2 = signers.bob;
-    user3 = signers.charlie;
-    user4 = signers.don;
-    user5 = signers.lender;
-    user6 = signers.borrower;
+    alice = signers.alice;
+    bob = signers.bob;
+    charlie = signers.charlie;
+    don = signers.don;
+    lender = signers.lender;
+    borrower = signers.borrower;
 
-    await vaultEngine.initAssetType(flrAssetId);
-    await vaultEngine.updateCeiling(flrAssetId, RAD.mul(10000000));
-    await teller.initCollType(flrAssetId, 0);
-    await priceFeed.init(flrAssetId, WAD.mul(15).div(10), ftsoFlr.address);
-    await liquidator.init(flrAssetId, auctioneerFlr.address);
+    // Initialize FLR asset
+    await vaultEngine.initAssetType(ASSET_ID["FLR"]);
+    await vaultEngine.updateCeiling(ASSET_ID["FLR"], RAD.mul(10_000_000));
+    await teller.initCollType(ASSET_ID["FLR"], 0);
+    await priceFeed.init(ASSET_ID["FLR"], WAD.mul(15).div(10), ftsoFlr.address);
+    await liquidator.init(ASSET_ID["FLR"], auctioneerFlr.address);
 
-    await vaultEngine.initAssetType(fxrpAssetId);
-    await vaultEngine.updateCeiling(fxrpAssetId, RAD.mul(10000000));
-    await teller.initCollType(fxrpAssetId, 0);
-    await priceFeed.init(fxrpAssetId, WAD.mul(15).div(10), ftsoFxrp.address);
-    await liquidator.init(fxrpAssetId, auctioneerFxrp.address);
+    // Initialize FXRP asset
+    await vaultEngine.initAssetType(ASSET_ID["FXRP"]);
+    await vaultEngine.updateCeiling(ASSET_ID["FXRP"], RAD.mul(10_000_000));
+    await teller.initCollType(ASSET_ID["FXRP"], 0);
+    await priceFeed.init(
+      ASSET_ID["FXRP"],
+      WAD.mul(15).div(10),
+      ftsoFxrp.address
+    );
+    await liquidator.init(ASSET_ID["FXRP"], auctioneerFxrp.address);
     await reserve.updateDebtThreshold(DEBT_THRESHOLD);
 
     balances = {
-      user1: { flr: {}, fxrp: {}, stablecoin: WAD.mul(0) },
-      user2: { flr: {}, fxrp: {}, stablecoin: WAD.mul(0) },
-      user3: { flr: {}, fxrp: {}, stablecoin: WAD.mul(0) },
-      user4: { flr: {}, fxrp: {}, stablecoin: WAD.mul(0) },
-      user5: { flr: {}, fxrp: {}, stablecoin: WAD.mul(0) },
-      user6: { flr: {}, fxrp: {}, stablecoin: WAD.mul(0) },
+      alice: { FLR: {}, FXRP: {}, AUR: WAD.mul(0) },
+      bob: { FLR: {}, FXRP: {}, AUR: WAD.mul(0) },
+      charlie: { FLR: {}, FXRP: {}, AUR: WAD.mul(0) },
+      don: { FLR: {}, FXRP: {}, AUR: WAD.mul(0) },
+      lender: { FLR: {}, FXRP: {}, AUR: WAD.mul(0) },
+      borrower: { FLR: {}, FXRP: {}, AUR: WAD.mul(0) },
     };
-    reserveBalances = {
-      reserve: WAD.mul(0),
-      debt: WAD.mul(0),
-    };
+    reserveBalances = { reserve: WAD.mul(0), debtToCover: WAD.mul(0) };
 
-    await registry.setupAddress(bytes32("whitelisted"), user1.address);
-    await registry.setupAddress(bytes32("whitelisted"), user2.address);
-    await registry.setupAddress(bytes32("whitelisted"), user3.address);
-    await registry.setupAddress(bytes32("whitelisted"), user4.address);
-    await registry.setupAddress(bytes32("whitelisted"), user5.address);
-    await registry.setupAddress(bytes32("whitelisted"), user6.address);
-    // await registry.setupAddress(bytes32("whitelisted"), owner.address)
+    await registry.setupAddress(bytes32("whitelisted"), alice.address);
+    await registry.setupAddress(bytes32("whitelisted"), bob.address);
+    await registry.setupAddress(bytes32("whitelisted"), charlie.address);
+    await registry.setupAddress(bytes32("whitelisted"), don.address);
+    await registry.setupAddress(bytes32("whitelisted"), lender.address);
+    await registry.setupAddress(bytes32("whitelisted"), borrower.address);
   });
 
-  it("test happy flow where system is solvent", async () => {
-    // sets up scenario for solvent system.
-    // current collateral ratio: 150%
-
-    // FLR = $1.10
+  it("should shutdown when the system is solvent", async () => {
+    // Set FLR = $1.10
     await ftsoFlr.setCurrentPrice(RAY.mul(11).div(10));
-    await priceFeed.updateAdjustedPrice(flrAssetId);
+    await priceFeed.updateAdjustedPrice(ASSET_ID["FLR"]);
 
-    // FXRP = $2.78
+    // Set FXRP = $2.78
     await ftsoFxrp.setCurrentPrice(RAY.mul(278).div(100));
-    await priceFeed.updateAdjustedPrice(fxrpAssetId);
+    await priceFeed.updateAdjustedPrice(ASSET_ID["FXRP"]);
 
     /**
      * Set up 4 users with 3 unhealthy vaults
      */
 
-    let expectedTotalDebt = 0;
+    let expectedTotalDebt = BigNumber.from(0); // rad
+    let underlying: BigNumber; // wad
+    let equity: BigNumber; // wad
+    let collateral: BigNumber; // wad
+    let debt: BigNumber; // wad
 
-    // User 1 activates 2300 FLR to MINT 1000 AUR
-    await flrWallet
-      .connect(user1)
-      .deposit({ value: ethers.utils.parseEther("2300") });
+    // Alice utilizes 2300 FLR ($2530) to MINT 1000 AUR
+    (underlying = WAD.mul(2300)), (equity = WAD.mul(1000));
+    await flrWallet.connect(alice).deposit({ value: underlying });
     await vaultEngine
-      .connect(user1)
-      .modifyEquity(flrAssetId, treasury.address, WAD.mul(2300), WAD.mul(1000));
-    balances.user1.flr = {
-      activeAmount: WAD.mul(2300),
-      equity: WAD.mul(1000),
-    };
-    // User 1 activates 1_000_000 FXRP to MINT 300_000 AUR
-    await fxrpDeposit(user1, WAD.mul(1_000_000));
-    await vaultEngine
-      .connect(user1)
-      .modifyEquity(
-        fxrpAssetId,
-        treasury.address,
-        WAD.mul(1_000_000),
-        WAD.mul(300_000)
-      );
-    balances.user1.fxrp = {
-      activeAmount: WAD.mul(1_000_000),
-      equity: WAD.mul(300_000),
-    };
-    await expectBalancesToMatch(user1, balances.user1);
+      .connect(alice)
+      .modifyEquity(ASSET_ID["FLR"], treasury.address, underlying, equity);
+    balances.alice["FLR"] = { underlying, equity };
 
-    // User 2 activates 2300 FLR to BORROW 1500 AUR
-    await flrWallet
-      .connect(user2)
-      .deposit({ value: ethers.utils.parseEther("2300") });
-    await fxrpDeposit(user2, WAD.mul(270000));
+    // Alice utilizes 1,000,000 FXRP ($2,780,000) to MINT 300,000 AUR
+    (underlying = WAD.mul(1_000_000)), (equity = WAD.mul(300_000));
+    await depositFxrp(alice, underlying);
     await vaultEngine
-      .connect(user2)
-      .modifyDebt(flrAssetId, treasury.address, WAD.mul(2300), WAD.mul(1500));
-    balances.user2.flr = {
-      activeAmount: WAD.mul(2300),
-      debt: WAD.mul(1500),
-    };
-    expectedTotalDebt += 1500;
-    // User 2 activates 150_000 FXRP to BORROW 135_000 AUR
-    await vaultEngine
-      .connect(user2)
-      .modifyDebt(
-        fxrpAssetId,
-        treasury.address,
-        WAD.mul(150_000),
-        WAD.mul(135_000)
-      );
-    balances.user2.fxrp = {
-      activeAmount: WAD.mul(150_000),
-      debt: WAD.mul(135_000),
-    };
-    expectedTotalDebt += 135_000;
-    balances.user2.stablecoin = RAD.mul(135_000 + 1500);
-    await expectBalancesToMatch(user2, balances.user2);
+      .connect(alice)
+      .modifyEquity(ASSET_ID["FXRP"], treasury.address, underlying, equity);
+    balances.alice["FXRP"] = { underlying, equity };
+    await expectBalancesToMatch(alice, balances.alice);
 
-    // User 3 activates 400_000 FXRP to MINT 150_000 AUR
-    await fxrpDeposit(user3, WAD.mul(600_000));
+    // Bob utilizes 2300 FLR ($2530) to BORROW 1500 AUR
+    (collateral = WAD.mul(2300)), (debt = WAD.mul(1500));
+    await flrWallet.connect(bob).deposit({ value: collateral });
     await vaultEngine
-      .connect(user3)
-      .modifyEquity(
-        fxrpAssetId,
-        treasury.address,
-        WAD.mul(400_000),
-        WAD.mul(150_000)
-      );
-    // User 3 activates 200_000 FXRP to BORROW 150_000 AUR
+      .connect(bob)
+      .modifyDebt(ASSET_ID["FLR"], treasury.address, collateral, debt);
+    balances.bob["FLR"] = { collateral, debt };
+    balances.bob["AUR"] = RAY.mul(debt);
+    expectedTotalDebt = expectedTotalDebt.add(debt.mul(RAY));
+    await expectBalancesToMatch(bob, balances.bob);
+
+    // Bob utilizes 150,000 FXRP ($417,000) to BORROW 135,000 AUR
+    (collateral = WAD.mul(150_000)), (debt = WAD.mul(135_000));
+    await depositFxrp(bob, collateral);
     await vaultEngine
-      .connect(user3)
-      .modifyDebt(
-        fxrpAssetId,
-        treasury.address,
-        WAD.mul(200_000),
-        WAD.mul(150_000)
-      );
-    balances.user3.fxrp = {
-      activeAmount: WAD.mul(600_000),
-      debt: WAD.mul(150_000),
-      equity: WAD.mul(150_000),
-    };
-    expectedTotalDebt += 150_000;
-    balances.user3.stablecoin = RAD.mul(150_000);
-    await expectBalancesToMatch(user3, balances.user3);
+      .connect(bob)
+      .modifyDebt(ASSET_ID["FXRP"], treasury.address, collateral, debt);
+    balances.bob["FXRP"] = { collateral, debt };
+    balances.bob["AUR"] = balances.bob["AUR"].add(debt.mul(RAY));
+    expectedTotalDebt = expectedTotalDebt.add(debt.mul(RAY));
+    await expectBalancesToMatch(bob, balances.bob);
 
-    // User 4 activates 6900 FLR to BORROW 4500 AUR
-    await flrWallet
-      .connect(user4)
-      .deposit({ value: ethers.utils.parseEther("6900") });
+    // Charlie utilizes 400,000 FXRP ($1,112,000) to MINT 150,000 AUR
+    (underlying = WAD.mul(400_000)), (equity = WAD.mul(150_000));
+    await depositFxrp(charlie, underlying);
     await vaultEngine
-      .connect(user4)
-      .modifyDebt(flrAssetId, treasury.address, WAD.mul(6900), WAD.mul(4500));
-    balances.user4.flr = {
-      activeAmount: WAD.mul(6900),
-      debt: WAD.mul(4500),
-    };
-    expectedTotalDebt += 4500;
-    balances.user4.stablecoin = RAD.mul(4500);
-    await expectBalancesToMatch(user4, balances.user4);
+      .connect(charlie)
+      .modifyEquity(ASSET_ID["FXRP"], treasury.address, underlying, equity);
+    balances.charlie["FXRP"] = { underlying, equity };
+    await expectBalancesToMatch(charlie, balances.charlie);
 
-    // total debt should be $291,000
-    expect(await vaultEngine.totalDebt()).to.equal(
-      RAD.mul(BigNumber.from(expectedTotalDebt))
-    );
+    // Charlie utilizes 200,000 FXRP ($556,000) to BORROW 150,000 AUR
+    (collateral = WAD.mul(200_000)), (debt = WAD.mul(150_000));
+    await depositFxrp(charlie, collateral);
+    await vaultEngine
+      .connect(charlie)
+      .modifyDebt(ASSET_ID["FXRP"], treasury.address, collateral, debt);
+    balances.charlie["FXRP"] = { collateral, debt };
+    balances.charlie["AUR"] = debt.mul(RAY);
+    expectedTotalDebt = expectedTotalDebt.add(debt.mul(RAY));
+    await expectBalancesToMatch(charlie, balances.charlie);
 
-    // drop prices (flr: $1.10 => $0.60), fxrp: ($2.78 => $1.23)
+    // Don utilizes 6900 FLR ($7590) to BORROW 4500 AUR
+    (collateral = WAD.mul(6900)), (debt = WAD.mul(4500));
+    await flrWallet.connect(don).deposit({ value: collateral });
+    await vaultEngine
+      .connect(don)
+      .modifyDebt(ASSET_ID["FLR"], treasury.address, collateral, debt);
+    balances.don["FLR"] = { collateral, debt };
+    balances.don["AUR"] = RAY.mul(debt);
+    expectedTotalDebt = expectedTotalDebt.add(debt.mul(RAY));
+    await expectBalancesToMatch(don, balances.don);
+
+    // Total debt should be 291,000 AUR
+    expect(await vaultEngine.totalDebt()).to.equal(expectedTotalDebt);
+
+    // Drop prices (FLR: $1.10 => $0.60), FXRP: ($2.78 => $1.23)
     await ftsoFlr.setCurrentPrice(RAY.div(RAY).mul(1e5).mul(60).div(100));
-    await priceFeed.updateAdjustedPrice(flrAssetId);
+    await priceFeed.updateAdjustedPrice(ASSET_ID["FLR"]);
     await ftsoFxrp.setCurrentPrice(RAY.div(RAY).mul(1e5).mul(123).div(100));
-    await priceFeed.updateAdjustedPrice(fxrpAssetId);
+    await priceFeed.updateAdjustedPrice(ASSET_ID["FXRP"]);
 
     /**
-     * start 2 auctions, 1 of each collateral
+     * Start 2 auctions, 1 of each collateral (FLR, FXRP).
      */
 
-    // Liquidate user 2 FLR vault
-    await liquidator.liquidateVault(flrAssetId, user2.address);
-    reserveBalances.debt = RAD.mul(1500);
+    // Liquidate Bob's FLR vault ($1380 backing 1500 AUR)
+    await liquidator.liquidateVault(ASSET_ID["FLR"], bob.address);
+    let newDebtToCover = balances.bob["FLR"].debt.mul(RAY);
+    reserveBalances.debtToCover = newDebtToCover;
     await checkReserveBalances(reserveBalances);
 
-    // Liquidate user 2 FXRP vault
-    await liquidator.liquidateVault(fxrpAssetId, user2.address);
-    reserveBalances.debt = reserveBalances.debt.add(RAD.mul(135000));
+    // Liquidate Bob's FXRP vault ($184,500 backing 135,000 AUR)
+    await liquidator.liquidateVault(ASSET_ID["FXRP"], bob.address);
+    newDebtToCover = balances.bob["FXRP"].debt.mul(RAY);
+    reserveBalances.debtToCover =
+      reserveBalances.debtToCover.add(newDebtToCover);
     await checkReserveBalances(reserveBalances);
 
     // Update expected balances
-    balances.user2.flr = {
-      activeAmount: WAD.mul(0),
-      debt: WAD.mul(0),
-    };
-    balances.user2.fxrp = {
-      activeAmount: WAD.mul(0),
-      debt: WAD.mul(0),
-    };
-    await expectBalancesToMatch(user2, balances.user2);
+    (collateral = WAD.mul(0)), (debt = WAD.mul(0));
+    balances.bob["FLR"] = { collateral, debt };
+    balances.bob["FXRP"] = { collateral, debt };
+    await expectBalancesToMatch(bob, balances.bob);
 
     /**
-     * increase unbacked system debt and start IOU sale
+     * Increase unbacked system debt and start IOU sale
      */
 
-    // Increase by 5000 * 1.2 = 6000
-    await reserve.increaseSystemDebt(DEBT_THRESHOLD.mul(12).div(10));
-    reserveBalances.reserve = DEBT_THRESHOLD.mul(12).div(10);
-    reserveBalances.debt = reserveBalances.debt.add(
-      DEBT_THRESHOLD.mul(12).div(10)
-    );
+    // Give owner the gov role for testing purposes below
+    await registry.setupAddress(bytes32("gov"), owner.address);
+
+    // Increase debt threshold to 5000 * 1.2 = 6000
+    const newDebtThreshold = DEBT_THRESHOLD.mul(12).div(10);
+    await reserve.connect(owner).increaseSystemDebt(newDebtThreshold);
+    reserveBalances.reserve = newDebtThreshold;
+    reserveBalances.debtToCover =
+      reserveBalances.debtToCover.add(newDebtThreshold);
     await checkReserveBalances(reserveBalances);
 
-    // Send all reserve stablecoins to user 2 (proxy for pool diminishment)
-    await reserve.sendStablecoin(user2.address, DEBT_THRESHOLD.mul(12).div(10));
+    // Send all reserve stablecoins to Bob (as a proxy for pool diminishment)
+    await reserve.connect(owner).sendStablecoin(bob.address, newDebtThreshold);
     reserveBalances.reserve = RAD.mul(0);
     await checkReserveBalances(reserveBalances);
 
-    balances.user2.stablecoin = balances.user2.stablecoin.add(
-      DEBT_THRESHOLD.mul(12).div(10)
-    );
-    await expectBalancesToMatch(user2, balances.user2);
+    // Expect Bob's stablecoin balance to increase
+    balances.bob["AUR"] = balances.bob["AUR"].add(newDebtThreshold);
+    await expectBalancesToMatch(bob, balances.bob);
 
-    // User 3 purchases 5000 * 0.75 = 3750 vouchers
+    // Charlie purchases 5000 * 0.75 = 3750 vouchers
     await reserve.startSale();
-    await reserve.connect(user3).purchaseVouchers(DEBT_THRESHOLD.mul(3).div(4));
-    reserveBalances.debt = reserveBalances.debt.sub(
-      DEBT_THRESHOLD.mul(3).div(4)
-    );
+    let amountOfVouchers = DEBT_THRESHOLD.mul(3).div(4);
+    await reserve.connect(charlie).purchaseVouchers(amountOfVouchers);
+    reserveBalances.debtToCover =
+      reserveBalances.debtToCover.sub(amountOfVouchers);
     await checkReserveBalances(reserveBalances);
 
-    balances.user3.stablecoin = balances.user3.stablecoin.sub(
-      DEBT_THRESHOLD.mul(3).div(4)
-    );
-    await expectBalancesToMatch(user3, balances.user3);
+    // Expect Charlie's stablecoin balance to decrease after purchase
+    balances.charlie["AUR"] = balances.charlie["AUR"].sub(amountOfVouchers);
+    await expectBalancesToMatch(charlie, balances.charlie);
 
-    // User 2 purchases 5000 * 0.25 = 1250 vouchers; all bad debt has been covered
-    await reserve.connect(user2).purchaseVouchers(DEBT_THRESHOLD.div(4));
-    reserveBalances.debt = reserveBalances.debt.sub(DEBT_THRESHOLD.div(4));
+    // Bob purchases 5000 * 0.25 = 1250 vouchers; all bad debt has been covered
+    amountOfVouchers = DEBT_THRESHOLD.div(4);
+    await reserve.connect(bob).purchaseVouchers(amountOfVouchers);
+    reserveBalances.debtToCover =
+      reserveBalances.debtToCover.sub(amountOfVouchers);
     await checkReserveBalances(reserveBalances);
 
-    balances.user2.stablecoin = balances.user2.stablecoin.sub(
-      DEBT_THRESHOLD.div(4)
-    );
-    await expectBalancesToMatch(user2, balances.user2);
+    // Expect Bob's stablecoin balance to decrease after purchase
+    balances.bob["AUR"] = balances.bob["AUR"].sub(amountOfVouchers);
+    await expectBalancesToMatch(bob, balances.bob);
 
     /**
      * Replenish system reserves (enough to cover all bad debt, with extra left over)
      */
 
-    // User 2 (proxy for protocol replenishment) transfers 7000 AUR to the reserve pool
+    // Bob (as a proxy for protocol replenishment) transfers 7000 AUR to the reserve pool
     await treasury
-      .connect(user2)
+      .connect(bob)
       .transferStablecoin(reserve.address, WAD.mul(7000));
 
+    // Expect reserve to be replenished and Bob's balance to decrease
     reserveBalances.reserve = reserveBalances.reserve.add(RAD.mul(7000));
     await checkReserveBalances(reserveBalances);
-    balances.user2.stablecoin = balances.user2.stablecoin.sub(RAD.mul(7000));
-    await expectBalancesToMatch(user2, balances.user2);
+    balances.bob["AUR"] = balances.bob["AUR"].sub(RAD.mul(7000));
+    await expectBalancesToMatch(bob, balances.bob);
 
-    // User 3 transfers 140_000 AUR to the reserve pool
+    // Charlie transfers 140_000 AUR to the reserve pool
     await treasury
-      .connect(user3)
+      .connect(charlie)
       .transferStablecoin(reserve.address, WAD.mul(140_000));
 
+    // Expect reserve to increase and Charlie's balance to decrease
     reserveBalances.reserve = reserveBalances.reserve.add(RAD.mul(140_000));
     await checkReserveBalances(reserveBalances);
-    balances.user3.stablecoin = balances.user3.stablecoin.sub(RAD.mul(140_000));
-    await expectBalancesToMatch(user3, balances.user3);
+    balances.charlie["AUR"] = balances.charlie["AUR"].sub(RAD.mul(140_000));
+    await expectBalancesToMatch(charlie, balances.charlie);
 
     /**
      * Shutdown
@@ -437,83 +410,87 @@ describe("Shutdown Flow Test", function () {
     await shutdown.initiateShutdown();
     expect(await shutdown.initiated()).to.equal(true);
 
-    // drop prices flr: ($60 => $0.42), fxrp: ($1.23 => $1.03)
+    // Drop prices - FLR: ($60 => $0.42), FXRP: ($1.23 => $1.03)
     await ftsoFlr.setCurrentPrice(RAY.mul(42).div(100));
     await ftsoFxrp.setCurrentPrice(RAY.mul(103).div(100));
 
-    // set final prices
-    await shutdown.setFinalPrice(flrAssetId);
-    expect((await shutdown.assets(flrAssetId)).finalPrice).to.equal(
+    // Set final prices and expect them to be updated
+    await shutdown.setFinalPrice(ASSET_ID["FLR"]);
+    expect((await shutdown.assets(ASSET_ID["FLR"])).finalPrice).to.equal(
       RAY.mul(42).div(100)
     );
-    await shutdown.setFinalPrice(fxrpAssetId);
-    expect((await shutdown.assets(fxrpAssetId)).finalPrice).to.equal(
+    await shutdown.setFinalPrice(ASSET_ID["FXRP"]);
+    expect((await shutdown.assets(ASSET_ID["FXRP"])).finalPrice).to.equal(
       RAY.mul(103).div(100)
     );
 
     // Process debt for FLR vaults
-    // NOTE: gap shouldn't change for user 1 since they never borrowed
-    await shutdown.processUserDebt(flrAssetId, user1.address);
+    await shutdown.processUserDebt(ASSET_ID["FLR"], alice.address);
 
+    // Expect shortfall to be zero since Alice never borrowed
     let EXPECTED_FLR_GAP = "0";
-    expect((await shutdown.assets(flrAssetId)).gap).to.equal(EXPECTED_FLR_GAP);
+    expect((await shutdown.assets(ASSET_ID["FLR"])).gap).to.equal(
+      EXPECTED_FLR_GAP
+    );
 
-    // gap shouldn't change for user 2 since their collateral is on auction
-    await shutdown.processUserDebt(flrAssetId, user2.address);
+    // Expect shortfall to be zero since Bob's collateral is on auction
+    await shutdown.processUserDebt(ASSET_ID["FLR"], bob.address);
+    expect((await shutdown.assets(ASSET_ID["FLR"])).gap).to.equal(
+      EXPECTED_FLR_GAP
+    );
 
-    EXPECTED_FLR_GAP = "0";
-    expect((await shutdown.assets(flrAssetId)).gap).to.equal(EXPECTED_FLR_GAP);
+    // Expect shortfall to be zero because Charlie doesn't have a FLR vault
+    await shutdown.processUserDebt(ASSET_ID["FLR"], charlie.address);
+    expect((await shutdown.assets(ASSET_ID["FLR"])).gap).to.equal(
+      EXPECTED_FLR_GAP
+    );
 
-    // gap should still be zero because user 3 doesn't have a FLR vault
-    await shutdown.processUserDebt(flrAssetId, user3.address);
-
-    EXPECTED_FLR_GAP = "0";
-    expect((await shutdown.assets(flrAssetId)).gap).to.equal(EXPECTED_FLR_GAP);
-
-    // User 4 owed 4500 AUR; value of coll: 69_000 FLR * $0.42 per collateral unit = $2898
-    // AUR gap should be 1602 and coll.gap should be 3814.28571429
-    await shutdown.processUserDebt(flrAssetId, user4.address);
-
+    // Don owed 4500 AUR; value of coll: 69_000 FLR * $0.42 per collateral unit = $2898
+    // AUR shortfall should be 1602 and collateral shortfall should be 3814.28571429
+    await shutdown.processUserDebt(ASSET_ID["FLR"], don.address);
     EXPECTED_FLR_GAP = "3814285714285714285714";
     let EXPECTED_AUR_GAP = RAD.mul(1602);
-
-    expect((await shutdown.assets(flrAssetId)).gap).to.equal(EXPECTED_FLR_GAP);
+    expect((await shutdown.assets(ASSET_ID["FLR"])).gap).to.equal(
+      EXPECTED_FLR_GAP
+    );
     expect(
-      (await shutdown.unbackedDebt()).sub(EXPECTED_AUR_GAP).abs().lte(RAD)
+      (await shutdown.stablecoinGap()).sub(EXPECTED_AUR_GAP).abs().lte(RAD)
     ).to.equal(true);
 
     // Process debt for FXRP collateral
-    await shutdown.processUserDebt(fxrpAssetId, user1.address);
-    await shutdown.processUserDebt(fxrpAssetId, user2.address);
-    await shutdown.processUserDebt(fxrpAssetId, user3.address);
-    await shutdown.processUserDebt(fxrpAssetId, user4.address);
+    await shutdown.processUserDebt(ASSET_ID["FXRP"], alice.address);
+    await shutdown.processUserDebt(ASSET_ID["FXRP"], bob.address);
+    await shutdown.processUserDebt(ASSET_ID["FXRP"], charlie.address);
+    await shutdown.processUserDebt(ASSET_ID["FXRP"], don.address);
 
     const EXPECTED_FXRP_GAP = 0;
 
-    expect((await shutdown.assets(fxrpAssetId)).gap).to.equal(
+    expect((await shutdown.assets(ASSET_ID["FXRP"])).gap).to.equal(
       EXPECTED_FXRP_GAP
     );
 
     // Increase time by 2 days
     await increaseTime(TWO_DAYS_IN_SECONDS);
 
-    // use the system reserve to pay off system debt
+    // Use the system reserve to pay off unbacked system debt
     await reserve.settle(RAD.mul(137_500));
     reserveBalances.reserve = reserveBalances.reserve.sub(RAD.mul(137_500));
-    reserveBalances.debt = reserveBalances.debt.sub(RAD.mul(137_500));
+    reserveBalances.debtToCover = reserveBalances.debtToCover.sub(
+      RAD.mul(137_500)
+    );
     await checkReserveBalances(reserveBalances);
-
     await shutdown.writeOffFromReserves();
     reserveBalances.reserve = reserveBalances.reserve.sub(RAD.mul(137_500));
 
-    // setFinalDebtBalance
+    // Set the finalized unbacked debt balance due after processing borrowers
     await shutdown.setFinalDebtBalance();
     const EXPECTED_FINAL_DEBT_BALANCE = RAD.mul(154_500);
 
+    // Calculate the investor obligation
     await shutdown.calculateInvestorObligation();
 
+    // Expect investor obligation ratio to be zero
     const EXPECTED_SUPPLIER_OBLIGATION_RATIO = 0;
-
     expect(await shutdown.investorObligationRatio()).to.equal(
       EXPECTED_SUPPLIER_OBLIGATION_RATIO
     );
@@ -521,64 +498,64 @@ describe("Shutdown Flow Test", function () {
     // Increase time by 2 days
     await increaseTime(TWO_DAYS_IN_SECONDS);
 
+    // Expect final debt balance to equal the previous calculation after two days (?)
     expect(await shutdown.finalDebtBalance()).to.equal(
       EXPECTED_FINAL_DEBT_BALANCE
     );
 
-    // calcuate redemption ratio
-    await shutdown.calculateRedemptionRatio(flrAssetId);
-    // redeemption ratio = theoretical max - gap / total stablecoin in circulation
-    // 10714285714285714285714 - 3814285714285714285714 (6900000000000000000000) / $154500
-    // 6900 / $154500 = 0.0446601941
+    // Calcuate redemption ratio for FLR
+    await shutdown.calculateRedemptionRatio(ASSET_ID["FLR"]);
+    // Redeemption ratio = (theoretical max - gap) / total stablecoin in circulation
+    // (10714285714285714285714 - 3814285714285714285714) / 154_500
+    // 6900000000000000000000 / 154_500
+    // 6900 / 154_500 = 0.0446601941
 
     const EXPECTED_FLR_REDEMPTION_RATIO = "44660194174757281553398058";
-    expect((await shutdown.assets(flrAssetId)).redemptionRatio).to.equal(
+    expect((await shutdown.assets(ASSET_ID["FLR"])).redemptionRatio).to.equal(
       EXPECTED_FLR_REDEMPTION_RATIO
     );
 
-    await shutdown.calculateRedemptionRatio(fxrpAssetId);
-    // redemption ratio = theoretical max - gap / total stablecoin in circulation
-    // 150000 / $1.03 / $154500 = 0.9425959091
+    // Calcuate redemption ratio for FXRP
+    await shutdown.calculateRedemptionRatio(ASSET_ID["FXRP"]);
+    // Redeemption ratio = (theoretical max - gap) / total stablecoin in circulation
+    // 150_000 - 1.03 / 154_500 = 0.9425959091 (?)
     const EXPECTED_FXRP_REDEMPTION_RATIO = "942595909133754359506077669";
-    expect((await shutdown.assets(fxrpAssetId)).redemptionRatio).to.equal(
+    expect((await shutdown.assets(ASSET_ID["FXRP"])).redemptionRatio).to.equal(
       EXPECTED_FXRP_REDEMPTION_RATIO
     );
 
-    // return stablecoin
-    await shutdown.connect(user2).returnStablecoin(RAD.mul(65000 + 1500));
-    expect(await shutdown.stablecoin(user2.address)).to.equal(
+    await shutdown.connect(bob).returnStablecoin(RAD.mul(65000 + 1500));
+    expect(await shutdown.stablecoin(bob.address)).to.equal(
       RAD.mul(65000 + 1500)
     );
 
-    // redeem collateral
-    let before = (await vaultEngine.vaults(flrAssetId, user2.address))
-      .standbyAssetAmount;
-    await shutdown.connect(user2).redeemCollateral(flrAssetId);
-    let after = (await vaultEngine.vaults(flrAssetId, user2.address))
-      .standbyAssetAmount;
-    // redemption ratio * stablecoin returned
+    // Redeem collateral
+    let before = (await vaultEngine.vaults(ASSET_ID["FLR"], bob.address))
+      .standby;
+    await shutdown.connect(bob).redeemCollateral(ASSET_ID["FLR"]);
+    let after = (await vaultEngine.vaults(ASSET_ID["FLR"], bob.address))
+      .standby;
+    // Redemption ratio * stablecoin returned
     // 0.0446601941 * 66500 = 2969.90290765
     const EXPECTED_FLR_COLL_REDEEMED = WAD.mul(296990290765).div(1e8);
-    // we are okay with up to 0.001 collateral difference
+    // We are okay with up to 0.001 collateral difference
     expect(
       after.sub(before).sub(EXPECTED_FLR_COLL_REDEEMED).lte(WAD.div(100))
     ).to.equal(true);
 
-    before = (await vaultEngine.vaults(fxrpAssetId, user2.address))
-      .standbyAssetAmount;
-    await shutdown.connect(user2).redeemCollateral(fxrpAssetId);
-    after = (await vaultEngine.vaults(fxrpAssetId, user2.address))
-      .standbyAssetAmount;
+    before = (await vaultEngine.vaults(ASSET_ID["FXRP"], bob.address)).standby;
+    await shutdown.connect(bob).redeemCollateral(ASSET_ID["FXRP"]);
+    after = (await vaultEngine.vaults(ASSET_ID["FXRP"], bob.address)).standby;
 
-    // redemption ratio * stablecoin returned
+    // Redemption ratio * stablecoins returned
     // 0.9425959091 * 66500 = 62682.6279552
     const EXPECTED_FXRP_COLL_REDEEMED = WAD.mul("626826279552").div(1e7);
-    // we are okay with up to 0.001 collateral difference
+    // We are okay with up to 0.001 collateral difference
     expect(
       after.sub(before).sub(EXPECTED_FXRP_COLL_REDEEMED).lte(WAD.div(100))
     ).to.equal(true);
 
-    // set finalSystemReserve
+    // set the final system reserve balance
     await shutdown.setFinalSystemReserve();
     const EXPECTED_FINAL_TOTAL_RESERVE = RAD.mul(7898);
     expect(
@@ -588,330 +565,375 @@ describe("Shutdown Flow Test", function () {
         .lte(RAD.div(100))
     ).to.equal(true);
 
-    before = await reserve.vouchers(user2.address);
-    await shutdown.connect(user2).redeemVouchers();
-    after = await reserve.vouchers(user2.address);
+    // Bob redeems his vouchers
+    before = await reserve.vouchers(bob.address);
+    await shutdown.connect(bob).redeemVouchers();
+    after = await reserve.vouchers(bob.address);
     const EXPECTED_IOU_BALANCE_CHANGE = DEBT_THRESHOLD.div(4);
     expect(before.sub(after)).to.equal(EXPECTED_IOU_BALANCE_CHANGE);
   });
 
-  it("test happy flow where system is insolvent", async () => {
-    // set up scenario for insolvent system
-
-    // current collateral ratio: 150%
-    // starting price flr: $4.30, fxrp: $6.23
+  it("should shutdown when the system is no longer solvent", async () => {
+    // Current collateral ratio: 150%
+    // Starting prices: (FLR: $4.30, FXRP: $6.23)
     await ftsoFlr.setCurrentPrice(RAY.mul(43).div(10));
-    await priceFeed.updateAdjustedPrice(flrAssetId);
+    await priceFeed.updateAdjustedPrice(ASSET_ID["FLR"]);
     await ftsoFxrp.setCurrentPrice(RAY.mul(623).div(100));
-    await priceFeed.updateAdjustedPrice(fxrpAssetId);
+    await priceFeed.updateAdjustedPrice(ASSET_ID["FXRP"]);
 
-    // have at least 4 vault that is undercollateralized
+    // Have at least 4 vaults that are undercollateralized
     await flrWallet
-      .connect(user1)
+      .connect(alice)
       .deposit({ value: ethers.utils.parseEther("4500") });
-    await fxrpDeposit(user1, WAD.mul(1000000));
+    await depositFxrp(alice, WAD.mul(1000000));
     await vaultEngine
-      .connect(user1)
-      .modifyEquity(flrAssetId, treasury.address, WAD.mul(4500), WAD.mul(5000));
-    balances.user1.flr = {
-      activeAmount: WAD.mul(4500),
+      .connect(alice)
+      .modifyEquity(
+        ASSET_ID["FLR"],
+        treasury.address,
+        WAD.mul(4500),
+        WAD.mul(5000)
+      );
+    balances.alice["FLR"] = {
+      underlying: WAD.mul(4500),
       equity: WAD.mul(5000),
     };
 
     await vaultEngine
-      .connect(user1)
+      .connect(alice)
       .modifyEquity(
-        fxrpAssetId,
+        ASSET_ID["FXRP"],
         treasury.address,
         WAD.mul(1000000),
         WAD.mul(2000000)
       );
-    balances.user1.fxrp = {
-      activeAmount: WAD.mul(1000000),
+    balances.alice["FXRP"] = {
+      underlying: WAD.mul(1000000),
       equity: WAD.mul(2000000),
     };
-    await expectBalancesToMatch(user1, balances.user1);
+    await expectBalancesToMatch(alice, balances.alice);
 
     await flrWallet
-      .connect(user2)
+      .connect(bob)
       .deposit({ value: ethers.utils.parseEther("2300") });
-    await fxrpDeposit(user2, WAD.mul(270000));
+    await depositFxrp(bob, WAD.mul(270000));
     await vaultEngine
-      .connect(user2)
-      .modifyDebt(flrAssetId, treasury.address, WAD.mul(2300), WAD.mul(6000));
-    balances.user2.flr = {
-      activeAmount: WAD.mul(2300),
+      .connect(bob)
+      .modifyDebt(
+        ASSET_ID["FLR"],
+        treasury.address,
+        WAD.mul(2300),
+        WAD.mul(6000)
+      );
+    balances.bob["FLR"] = {
+      collateral: WAD.mul(2300),
       debt: WAD.mul(6000),
     };
     await vaultEngine
-      .connect(user2)
+      .connect(bob)
       .modifyDebt(
-        fxrpAssetId,
+        ASSET_ID["FXRP"],
         treasury.address,
-        WAD.mul(270000),
-        WAD.mul(1100000)
+        WAD.mul(270_000),
+        WAD.mul(1_100_000)
       );
-    balances.user2.fxrp = {
-      activeAmount: WAD.mul(270000),
-      debt: WAD.mul(1100000),
+    balances.bob["FXRP"] = {
+      collateral: WAD.mul(270_000),
+      debt: WAD.mul(1_100_000),
     };
-    balances.user2.stablecoin = RAD.mul(6000 + 1100000);
-    await expectBalancesToMatch(user2, balances.user2);
+    balances.bob["AUR"] = RAD.mul(6000 + 1_100_000);
+    await expectBalancesToMatch(bob, balances.bob);
 
     await flrWallet
-      .connect(user3)
+      .connect(charlie)
       .deposit({ value: ethers.utils.parseEther("9000") });
     await vaultEngine
-      .connect(user3)
-      .modifyDebt(flrAssetId, treasury.address, WAD.mul(9000), WAD.mul(15000));
-    await vaultEngine
-      .connect(user3)
-      .modifyDebt(flrAssetId, treasury.address, WAD.mul(0), WAD.mul(10000));
-
-    balances.user3.flr = {
-      activeAmount: WAD.mul(9000),
-      debt: WAD.mul(10000 + 15000),
-    };
-    balances.user3.stablecoin = RAD.mul(15000 + 10000);
-    await expectBalancesToMatch(user3, balances.user3);
-
-    await fxrpDeposit(user4, WAD.mul(620000));
-    await vaultEngine
-      .connect(user4)
-      .modifyEquity(
-        fxrpAssetId,
-        treasury.address,
-        WAD.mul(400000),
-        WAD.mul(1000000)
-      );
-    await vaultEngine
-      .connect(user4)
+      .connect(charlie)
       .modifyDebt(
-        fxrpAssetId,
+        ASSET_ID["FLR"],
         treasury.address,
-        WAD.mul(220000),
-        WAD.mul(1500000)
+        WAD.mul(9000),
+        WAD.mul(15_000)
+      );
+    await vaultEngine
+      .connect(charlie)
+      .modifyDebt(
+        ASSET_ID["FLR"],
+        treasury.address,
+        WAD.mul(0),
+        WAD.mul(10_000)
       );
 
-    balances.user4.fxrp = {
-      activeAmount: WAD.mul(400000 + 220000),
-      debt: WAD.mul(1500000),
-      equity: WAD.mul(1000000),
+    balances.charlie["FLR"] = {
+      collateral: WAD.mul(9000),
+      debt: WAD.mul(10_000 + 15_000),
     };
-    balances.user4.stablecoin = RAD.mul(1500000);
-    await expectBalancesToMatch(user4, balances.user4);
+    balances.charlie["AUR"] = RAD.mul(15_000 + 10_000);
+    await expectBalancesToMatch(charlie, balances.charlie);
+
+    await depositFxrp(don, WAD.mul(1_020_000));
+    await vaultEngine
+      .connect(don)
+      .modifyEquity(
+        ASSET_ID["FXRP"],
+        treasury.address,
+        WAD.mul(20_000),
+        WAD.mul(1_000_000)
+      );
+    await vaultEngine
+      .connect(don)
+      .modifyDebt(
+        ASSET_ID["FXRP"],
+        treasury.address,
+        WAD.mul(620_000),
+        WAD.mul(1_500_000)
+      );
+
+    balances.don["FXRP"] = {
+      underlying: WAD.mul(20_000),
+      collateral: WAD.mul(620_000),
+      debt: WAD.mul(1_500_000),
+      equity: WAD.mul(1_000_000),
+    };
+    balances.don["AUR"] = RAD.mul(1_500_000);
+    await expectBalancesToMatch(don, balances.don);
 
     await flrWallet
-      .connect(user5)
+      .connect(lender)
       .deposit({ value: ethers.utils.parseEther("2000") });
-    await fxrpDeposit(user5, WAD.mul(1830000));
+    await depositFxrp(lender, WAD.mul(3_830_000));
     await vaultEngine
-      .connect(user5)
-      .modifyEquity(flrAssetId, treasury.address, WAD.mul(1000), WAD.mul(1500));
+      .connect(lender)
+      .modifyEquity(
+        ASSET_ID["FLR"],
+        treasury.address,
+        WAD.mul(1000),
+        WAD.mul(1500)
+      );
     await vaultEngine
-      .connect(user5)
-      .modifyDebt(flrAssetId, treasury.address, WAD.mul(1000), WAD.mul(1500));
+      .connect(lender)
+      .modifyDebt(
+        ASSET_ID["FLR"],
+        treasury.address,
+        WAD.mul(1000),
+        WAD.mul(1500)
+      );
 
-    balances.user5.flr = {
-      activeAmount: WAD.mul(1000 + 1000),
+    balances.lender["FLR"] = {
+      underlying: WAD.mul(1000),
+      collateral: WAD.mul(1000),
       debt: WAD.mul(1500),
       equity: WAD.mul(1500),
     };
 
     await vaultEngine
-      .connect(user5)
+      .connect(lender)
       .modifyEquity(
-        fxrpAssetId,
+        ASSET_ID["FXRP"],
         treasury.address,
-        WAD.mul(1830000),
-        WAD.mul(1500000)
+        WAD.mul(1_830_000),
+        WAD.mul(1_500_000)
       );
     await vaultEngine
-      .connect(user5)
-      .modifyDebt(fxrpAssetId, treasury.address, WAD.mul(0), WAD.mul(1200000));
+      .connect(lender)
+      .modifyDebt(
+        ASSET_ID["FXRP"],
+        treasury.address,
+        WAD.mul(1_830_000),
+        WAD.mul(1_200_000)
+      );
 
-    balances.user5.fxrp = {
-      activeAmount: WAD.mul(1830000),
-      debt: WAD.mul(1200000),
-      equity: WAD.mul(1500000),
+    balances.lender["FXRP"] = {
+      underlying: WAD.mul(1_830_000),
+      collateral: WAD.mul(1_830_000),
+      debt: WAD.mul(1_200_000),
+      equity: WAD.mul(1_500_000),
     };
-    balances.user5.stablecoin = RAD.mul(1200000 + 1500);
-    await expectBalancesToMatch(user5, balances.user5);
+    balances.lender["AUR"] = RAD.mul(1_200_000 + 1500);
+    await expectBalancesToMatch(lender, balances.lender);
 
-    // new collateral ratio: 175%
-    // drop prices flr: $3.60, fxrp: $4.48
-    await priceFeed.updateLiquidationRatio(flrAssetId, WAD.mul(175).div(100));
-    await priceFeed.updateLiquidationRatio(fxrpAssetId, WAD.mul(175).div(100));
+    // New collateral ratio: 175%
+    // Drop prices FLR: $3.60, FXRP: $4.48
+    await priceFeed.updateLiquidationRatio(
+      ASSET_ID["FLR"],
+      WAD.mul(175).div(100)
+    );
+    await priceFeed.updateLiquidationRatio(
+      ASSET_ID["FXRP"],
+      WAD.mul(175).div(100)
+    );
     await ftsoFlr.setCurrentPrice(RAY.div(RAY).mul(1e5).mul(360).div(100));
-    await priceFeed.updateAdjustedPrice(flrAssetId);
+    await priceFeed.updateAdjustedPrice(ASSET_ID["FLR"]);
     await ftsoFxrp.setCurrentPrice(RAY.div(RAY).mul(1e5).mul(448).div(100));
-    await priceFeed.updateAdjustedPrice(fxrpAssetId);
+    await priceFeed.updateAdjustedPrice(ASSET_ID["FXRP"]);
 
-    // start 2 auction 1 of each collateral
+    // Start 2 auctions, 1 of each collateral
 
-    await liquidator.liquidateVault(flrAssetId, user2.address);
-    balances.user2.flr = {
-      activeAmount: WAD.mul(0),
+    await liquidator.liquidateVault(ASSET_ID["FLR"], bob.address);
+    balances.bob["FLR"] = {
+      collateral: WAD.mul(0),
       debt: WAD.mul(0),
     };
-    reserveBalances.debt = RAD.mul(6000);
+    reserveBalances.debtToCover = RAD.mul(6000);
     await checkReserveBalances(reserveBalances);
 
-    await liquidator.liquidateVault(fxrpAssetId, user2.address);
-    balances.user2.fxrp = {
-      activeAmount: WAD.mul(0),
+    await liquidator.liquidateVault(ASSET_ID["FXRP"], bob.address);
+    balances.bob["FXRP"] = {
+      collateral: WAD.mul(0),
       debt: WAD.mul(0),
     };
-    reserveBalances.debt = reserveBalances.debt.add(RAD.mul(1100000));
+    reserveBalances.debtToCover = reserveBalances.debtToCover.add(
+      RAD.mul(1_100_000)
+    );
     await checkReserveBalances(reserveBalances);
 
-    // put system reserve to fill up some gap but not entirely
+    // Put system reserve to fill up some gap but not entirely
     await treasury
-      .connect(user2)
+      .connect(bob)
       .transferStablecoin(reserve.address, WAD.mul(7000));
 
     reserveBalances.reserve = reserveBalances.reserve.add(RAD.mul(7000));
     await checkReserveBalances(reserveBalances);
-    balances.user2.stablecoin = balances.user2.stablecoin.sub(RAD.mul(7000));
-    await expectBalancesToMatch(user2, balances.user2);
+    balances.bob["AUR"] = balances.bob["AUR"].sub(RAD.mul(7000));
+    await expectBalancesToMatch(bob, balances.bob);
 
     await treasury
-      .connect(user4)
-      .transferStablecoin(reserve.address, WAD.mul(140000));
+      .connect(don)
+      .transferStablecoin(reserve.address, WAD.mul(140_000));
 
-    reserveBalances.reserve = reserveBalances.reserve.add(RAD.mul(140000));
+    reserveBalances.reserve = reserveBalances.reserve.add(RAD.mul(140_000));
     await checkReserveBalances(reserveBalances);
-    balances.user4.stablecoin = balances.user4.stablecoin.sub(RAD.mul(140000));
-    await expectBalancesToMatch(user4, balances.user4);
+    balances.don["AUR"] = balances.don["AUR"].sub(RAD.mul(140_000));
+    await expectBalancesToMatch(don, balances.don);
 
-    // initiate shutdown
+    // Initiate shutdown
     await shutdown.initiateShutdown();
     expect(await shutdown.initiated()).to.equal(true);
 
-    // drop prices flr: $2.23, fxrp: $2.20
+    // Drop prices: (FLR => $2.23, FXRP => $2.20)
     await ftsoFlr.setCurrentPrice(RAY.mul(223).div(100));
     await ftsoFxrp.setCurrentPrice(RAY.mul(220).div(100));
 
-    // set final prices
-    await shutdown.setFinalPrice(flrAssetId);
-    expect((await shutdown.assets(flrAssetId)).finalPrice).to.equal(
+    // Set final prices
+    await shutdown.setFinalPrice(ASSET_ID["FLR"]);
+    expect((await shutdown.assets(ASSET_ID["FLR"])).finalPrice).to.equal(
       RAY.mul(223).div(100)
     );
-    await shutdown.setFinalPrice(fxrpAssetId);
-    expect((await shutdown.assets(fxrpAssetId)).finalPrice).to.equal(
+    await shutdown.setFinalPrice(ASSET_ID["FXRP"]);
+    expect((await shutdown.assets(ASSET_ID["FXRP"])).finalPrice).to.equal(
       RAY.mul(220).div(100)
     );
 
-    // process debt for flr collateral
-    await shutdown.processUserDebt(flrAssetId, user1.address);
+    // Process debt for FLR collateral
+    await shutdown.processUserDebt(ASSET_ID["FLR"], alice.address);
     let EXPECTED_FLR_GAP = WAD.mul(0);
-    expect((await shutdown.assets(flrAssetId)).gap).to.equal(EXPECTED_FLR_GAP);
-    await shutdown.processUserDebt(flrAssetId, user2.address);
-    expect((await shutdown.assets(flrAssetId)).gap).to.equal(EXPECTED_FLR_GAP);
-    await shutdown.processUserDebt(flrAssetId, user3.address);
+    expect((await shutdown.assets(ASSET_ID["FLR"])).gap).to.equal(
+      EXPECTED_FLR_GAP
+    );
+    await shutdown.processUserDebt(ASSET_ID["FLR"], bob.address);
+    expect((await shutdown.assets(ASSET_ID["FLR"])).gap).to.equal(
+      EXPECTED_FLR_GAP
+    );
+    await shutdown.processUserDebt(ASSET_ID["FLR"], charlie.address);
 
-    // user 3 have debt of $25000 and have 9000 flr coll @ 2.23 = $20070
-    // unbackedDebt should be 25000 - 20070 = 4930
+    // user 3 have debt of $25000 and have 9000 FLR coll @ 2.23 = $20070
+    // stablecoinGap should be 25000 - 20070 = 4930
     // collGap should be 4930 / 2.23 = 2210.76233184
     EXPECTED_FLR_GAP = WAD.mul("221076233184").div(1e8);
     let EXPECTED_AUR_GAP = RAD.mul(4930);
     expect(
-      (await shutdown.unbackedDebt())
+      (await shutdown.stablecoinGap())
         .sub(EXPECTED_AUR_GAP)
         .abs()
         .lte(RAD.div(100))
     ).to.equal(true);
     expect(
-      (await shutdown.assets(flrAssetId)).gap
+      (await shutdown.assets(ASSET_ID["FLR"])).gap
         .sub(EXPECTED_FLR_GAP)
         .abs()
         .lte(WAD.div(100))
     ).to.equal(true);
 
-    await shutdown.processUserDebt(flrAssetId, user4.address);
+    await shutdown.processUserDebt(ASSET_ID["FLR"], don.address);
     expect(
-      (await shutdown.assets(flrAssetId)).gap
+      (await shutdown.assets(ASSET_ID["FLR"])).gap
         .sub(EXPECTED_FLR_GAP)
         .abs()
         .lte(WAD.div(100))
     ).to.equal(true);
-    await shutdown.processUserDebt(flrAssetId, user5.address);
+    await shutdown.processUserDebt(ASSET_ID["FLR"], lender.address);
     expect(
-      (await shutdown.assets(flrAssetId)).gap
+      (await shutdown.assets(ASSET_ID["FLR"])).gap
         .sub(EXPECTED_FLR_GAP)
         .abs()
         .lte(WAD.div(100))
     ).to.equal(true);
 
-    // process debt for fxrp collateral
-    await shutdown.processUserDebt(fxrpAssetId, user1.address);
+    // Process debt for FXRP collateral
+    await shutdown.processUserDebt(ASSET_ID["FXRP"], alice.address);
     let EXPECTED_FXRP_GAP = WAD.mul(0);
-    expect((await shutdown.assets(fxrpAssetId)).gap).to.equal(
+    expect((await shutdown.assets(ASSET_ID["FXRP"])).gap).to.equal(
       EXPECTED_FXRP_GAP
     );
 
-    await shutdown.processUserDebt(fxrpAssetId, user2.address);
-    expect((await shutdown.assets(fxrpAssetId)).gap).to.equal(
+    await shutdown.processUserDebt(ASSET_ID["FXRP"], bob.address);
+    expect((await shutdown.assets(ASSET_ID["FXRP"])).gap).to.equal(
       EXPECTED_FXRP_GAP
     );
 
-    await shutdown.processUserDebt(fxrpAssetId, user3.address);
-    expect((await shutdown.assets(fxrpAssetId)).gap).to.equal(
+    await shutdown.processUserDebt(ASSET_ID["FXRP"], charlie.address);
+    expect((await shutdown.assets(ASSET_ID["FXRP"])).gap).to.equal(
       EXPECTED_FXRP_GAP
     );
 
-    await shutdown.processUserDebt(fxrpAssetId, user4.address);
+    await shutdown.processUserDebt(ASSET_ID["FXRP"], don.address);
     // user 4 have debt of $1500000, coll value: 620000 * 2.20 = 1364000
-    // unbackedDebt should be 1500000 - 1364000 = 136000
+    // stablecoinGap should be 1500000 - 1364000 = 136000
     // collGap should be 136000 / 2.20 = 61818.1818182
     EXPECTED_FXRP_GAP = WAD.mul("618181818182").div(1e7);
-    EXPECTED_AUR_GAP = EXPECTED_AUR_GAP.add(RAD.mul(136000));
+    EXPECTED_AUR_GAP = EXPECTED_AUR_GAP.add(RAD.mul(136_000));
+    let stablecoinGap = await shutdown.stablecoinGap();
     expect(
-      (await shutdown.unbackedDebt())
+      stablecoinGap.sub(EXPECTED_AUR_GAP).abs().lte(RAD.div(100))
+    ).to.equal(true);
+    const gap = (await shutdown.assets(ASSET_ID["FXRP"])).gap;
+    expect(gap.sub(EXPECTED_FXRP_GAP).abs().lte(WAD.div(100))).to.equal(true);
+
+    await shutdown.processUserDebt(ASSET_ID["FXRP"], lender.address);
+    stablecoinGap = await shutdown.stablecoinGap();
+
+    expect(
+      (await shutdown.stablecoinGap())
         .sub(EXPECTED_AUR_GAP)
         .abs()
         .lte(RAD.div(100))
     ).to.equal(true);
     expect(
-      (await shutdown.assets(fxrpAssetId)).gap
-        .sub(EXPECTED_FXRP_GAP)
-        .abs()
-        .lte(WAD.div(100))
-    ).to.equal(true);
-    await shutdown.processUserDebt(fxrpAssetId, user5.address);
-
-    expect(
-      (await shutdown.unbackedDebt())
-        .sub(EXPECTED_AUR_GAP)
-        .abs()
-        .lte(RAD.div(100))
-    ).to.equal(true);
-    expect(
-      (await shutdown.assets(fxrpAssetId)).gap
+      (await shutdown.assets(ASSET_ID["FXRP"])).gap
         .sub(EXPECTED_FXRP_GAP)
         .abs()
         .lte(WAD.div(100))
     ).to.equal(true);
 
-    // increaseTime
+    // Fast forward by two days
     await increaseTime(TWO_DAYS_IN_SECONDS);
 
-    // use the system reserve to settle system debt
-    await reserve.settle(RAD.mul(147000));
+    // Use the system reserve to settle system debt
+    await reserve.settle(RAD.mul(147_000));
 
-    // setFinalDebtBalance
+    // Set the final debt balance
     await shutdown.setFinalDebtBalance();
-    const EXPECTED_FINAL_DEBT_BALANCE = RAD.mul(3685500);
+    const EXPECTED_FINAL_DEBT_BALANCE = RAD.mul(3_685_500);
     expect(await shutdown.finalDebtBalance()).to.equal(
       EXPECTED_FINAL_DEBT_BALANCE
     );
 
     await shutdown.calculateInvestorObligation();
 
-    // total unbackedDebt 140930
+    // total stablecoinGap 140930
     // total equity * final utilization Ratio = total equity in use
     // $4506500 * 0.85043825585 = 3832500
-    // total unbackedDebt / total equity in use = supplier obligation ratio
+    // total stablecoinGap / total equity in use = supplier obligation ratio
     // 140930 / 3685500 = 0.0382390449
 
     const EXPECTED_SUPPLIER_OBLIGATION_RATIO = WAD.mul("382390449").div(1e10);
@@ -922,96 +944,100 @@ describe("Shutdown Flow Test", function () {
         .lte(WAD.div(100))
     ).to.equal(true);
     // process supplier for flr collateral
-    await shutdown.processUserEquity(flrAssetId, user1.address);
+    await shutdown.processUserEquity(ASSET_ID["FLR"], alice.address);
     // user 1 has supplied $5000, 0.85043825585 = 4252.19127925 on hook
     // supplied amount * supplier obligation ratio
     // 4252.19127925  * 0.0382390449 = 162.599733251
     // coll amount = 162.599733251 / 2.23 = 72.9146785877
     EXPECTED_FLR_GAP = EXPECTED_FLR_GAP.sub(WAD.mul("729146785877").div(1e10));
     expect(
-      (await shutdown.assets(flrAssetId)).gap
+      (await shutdown.assets(ASSET_ID["FLR"])).gap
         .sub(EXPECTED_FLR_GAP)
         .abs()
         .lte(WAD.div(10))
     ).to.equal(true);
-    await shutdown.processUserEquity(flrAssetId, user2.address);
+    await shutdown.processUserEquity(ASSET_ID["FLR"], bob.address);
     expect(
-      (await shutdown.assets(flrAssetId)).gap
+      (await shutdown.assets(ASSET_ID["FLR"])).gap
         .sub(EXPECTED_FLR_GAP)
         .abs()
         .lte(WAD.div(10))
     ).to.equal(true);
 
-    await shutdown.processUserEquity(flrAssetId, user3.address);
+    await shutdown.processUserEquity(ASSET_ID["FLR"], charlie.address);
     expect(
-      (await shutdown.assets(flrAssetId)).gap
+      (await shutdown.assets(ASSET_ID["FLR"])).gap
         .sub(EXPECTED_FLR_GAP)
         .abs()
         .lte(WAD.div(10))
     ).to.equal(true);
-    await shutdown.processUserEquity(flrAssetId, user4.address);
+    await shutdown.processUserEquity(ASSET_ID["FLR"], don.address);
     expect(
-      (await shutdown.assets(flrAssetId)).gap
+      (await shutdown.assets(ASSET_ID["FLR"])).gap
         .sub(EXPECTED_FLR_GAP)
         .abs()
         .lte(WAD.div(10))
     ).to.equal(true);
-    await shutdown.processUserEquity(flrAssetId, user5.address);
+    await shutdown.processUserEquity(ASSET_ID["FLR"], lender.address);
 
-    // user5 supplied $1500 * 0.85043825585 = 1275.65738377
+    // lender supplied $1500 * 0.85043825585 = 1275.65738377
     // 1275.65738377 * 0.0382390449 = 48.779919975
     // 48.779919975 / 2.23 = 21.8744035762
     EXPECTED_FLR_GAP = EXPECTED_FLR_GAP.sub(WAD.mul("218744035762").div(1e10));
 
     expect(
-      (await shutdown.assets(flrAssetId)).gap
+      (await shutdown.assets(ASSET_ID["FLR"])).gap
         .sub(EXPECTED_FLR_GAP)
         .abs()
         .lte(WAD.div(10))
     ).to.equal(true);
 
     // process supplier for fxrp collateral
-    await shutdown.processUserEquity(fxrpAssetId, user1.address);
-    // user1 supplied $2000000 * 0.85043825585 = 1700876.5117
+    await shutdown.processUserEquity(ASSET_ID["FXRP"], alice.address);
+    // alice supplied $2000000 * 0.85043825585 = 1700876.5117
     // 1700876.5117 * 0.0382390449 = 65039.8933003
     // 65039.8933003 / 2.20 = 29563.5878638
     EXPECTED_FXRP_GAP = EXPECTED_FXRP_GAP.sub(WAD.mul("295635878638").div(1e7));
     expect(
-      (await shutdown.assets(fxrpAssetId)).gap
+      (await shutdown.assets(ASSET_ID["FXRP"])).gap
         .sub(EXPECTED_FXRP_GAP)
         .abs()
         .lte(WAD.div(10))
     ).to.equal(true);
-    await shutdown.processUserEquity(fxrpAssetId, user2.address);
+    await shutdown.processUserEquity(ASSET_ID["FXRP"], bob.address);
     expect(
-      (await shutdown.assets(fxrpAssetId)).gap
+      (await shutdown.assets(ASSET_ID["FXRP"])).gap
         .sub(EXPECTED_FXRP_GAP)
         .abs()
         .lte(WAD.div(10))
     ).to.equal(true);
-    await shutdown.processUserEquity(fxrpAssetId, user3.address);
+    await shutdown.processUserEquity(ASSET_ID["FXRP"], charlie.address);
     expect(
-      (await shutdown.assets(fxrpAssetId)).gap
+      (await shutdown.assets(ASSET_ID["FXRP"])).gap
         .sub(EXPECTED_FXRP_GAP)
         .abs()
         .lte(WAD.div(10))
     ).to.equal(true);
-    await shutdown.processUserEquity(fxrpAssetId, user4.address);
+    await shutdown.processUserEquity(ASSET_ID["FXRP"], don.address);
+
+    // don supplied $1_000_000 * 0.85043825585 = 850438.25585
+    // 850438.25585 * 0.0382390449 = 32519.9466501
+    // 32519.9466501 / 2.20 = 14781.7939319
+    EXPECTED_FXRP_GAP = EXPECTED_FXRP_GAP.sub(WAD.mul("147817939319").div(1e7));
     expect(
-      (await shutdown.assets(fxrpAssetId)).gap
+      (await shutdown.assets(ASSET_ID["FXRP"])).gap
         .sub(EXPECTED_FXRP_GAP)
         .abs()
         .lte(WAD.div(10))
     ).to.equal(true);
 
-    // user5 supplied $1500000 * 0.85043825585 = 1275657.38377
+    // lender supplied $1500000 * 0.85043825585 = 1275657.38377
     // 1275657.38377 * 0.0382390449 = 48779.919975
     // 48779.919975 / 2.20 = 22172.6908977
-    EXPECTED_FXRP_GAP = EXPECTED_FXRP_GAP.sub(WAD.mul("221726908977").div(1e7));
-
-    await shutdown.processUserEquity(fxrpAssetId, user5.address);
+    EXPECTED_FXRP_GAP = WAD.mul(0);
+    await shutdown.processUserEquity(ASSET_ID["FXRP"], lender.address);
     expect(
-      (await shutdown.assets(fxrpAssetId)).gap
+      (await shutdown.assets(ASSET_ID["FXRP"])).gap
         .sub(EXPECTED_FXRP_GAP)
         .abs()
         .lte(WAD.div(10))
@@ -1021,61 +1047,59 @@ describe("Shutdown Flow Test", function () {
     await increaseTime(TWO_DAYS_IN_SECONDS);
 
     // calcuate redemption ratio
-    await shutdown.calculateRedemptionRatio(flrAssetId);
-    // redemption ratio = theoretical max - gap / total stablecoin in circulation
+    await shutdown.calculateRedemptionRatio(ASSET_ID["FLR"]);
+    // redemption ratio = theoretical max - gap / total["AUR"] in circulation
     // ((26500 / $2.23) - 2115.9732496600 / $3685500
     // 11883.4080717 - 2063.5106908794 = 9767.43482209
     // 9767.43482209 / 3685500 = 0.00265023329
 
     const EXPECTED_FLR_REDEMPTION_RATIO = RAY.mul("265023329").div(1e11);
     expect(
-      (await shutdown.assets(flrAssetId)).redemptionRatio
+      (await shutdown.assets(ASSET_ID["FLR"])).redemptionRatio
         .sub(EXPECTED_FLR_REDEMPTION_RATIO)
         .abs()
         .lte(WAD.div(100))
     ).to.equal(true);
 
-    await shutdown.calculateRedemptionRatio(fxrpAssetId);
-    // redemption ratio = theoretical max - gap / total stablecoin in circulation
-    // ((2700000 / $2.20) - 10081.9030487 / $3685500
-    // 1227272.72727 - 10081.9030487 = 1217190.82422
-    // 1217190.82422 / $3685500 = 0.3302647739
-    const EXPECTED_FXRP_REDEMPTION_RATIO = RAY.mul("3302647739").div(1e10);
+    await shutdown.calculateRedemptionRatio(ASSET_ID["FXRP"]);
+    // redemption ratio = theoretical max - gap / total["AUR"] in circulation
+    // ((2700000 / $2.20) - 0/ $3685500
+    // 1227272.72727 - 0= 1227272.72727
+    // 1227272.72727 / 3685500 = 0.333000333
+    const EXPECTED_FXRP_REDEMPTION_RATIO = RAY.mul("333000333").div(1e9);
 
     expect(
-      (await shutdown.assets(fxrpAssetId)).redemptionRatio
+      (await shutdown.assets(ASSET_ID["FXRP"])).redemptionRatio
         .sub(EXPECTED_FXRP_REDEMPTION_RATIO)
         .abs()
         .lte(WAD.div(100))
     ).to.equal(true);
 
     // return stablecoin
-    await shutdown.connect(user2).returnStablecoin(RAD.mul(1099000));
-    expect(await shutdown.stablecoin(user2.address)).to.equal(RAD.mul(1099000));
+    await shutdown.connect(bob).returnStablecoin(RAD.mul(1_099_000));
+    expect(await vaultEngine.stablecoin(bob.address)).to.equal(0);
 
     // redeem collateral
-    let before = (await vaultEngine.vaults(flrAssetId, user2.address))
-      .standbyAssetAmount;
-    await shutdown.connect(user2).redeemCollateral(flrAssetId);
-    let after = (await vaultEngine.vaults(flrAssetId, user2.address))
-      .standbyAssetAmount;
-    // user2 stablecoin balance: 1099000
-    // stablecoin balance * flr Redeemed Collateral
+    let before = (await vaultEngine.vaults(ASSET_ID["FLR"], bob.address))
+      .standby;
+    await shutdown.connect(bob).redeemCollateral(ASSET_ID["FLR"]);
+    let after = (await vaultEngine.vaults(ASSET_ID["FLR"], bob.address))
+      .standby;
+    // bob["AUR"] balance: 1099000
+    //["AUR"] balance * flr Redeemed Collateral
     // 1099000 * 0.00265023329 = 2912.60638571
     const EXPECTED_FLR_COLL_REDEEMED = WAD.mul("291260638571").div(1e8);
     expect(
       after.sub(before).sub(EXPECTED_FLR_COLL_REDEEMED).abs().lte(WAD.div(100))
     ).to.equal(true);
 
-    before = (await vaultEngine.vaults(fxrpAssetId, user2.address))
-      .standbyAssetAmount;
-    await shutdown.connect(user2).redeemCollateral(fxrpAssetId);
-    after = (await vaultEngine.vaults(fxrpAssetId, user2.address))
-      .standbyAssetAmount;
-    // user2 stablecoin balance: 1099000
-    // stablecoin balance * flr Redeemed Collateral
-    // 1099000 * 0.3302647739 = 362960.986516
-    const EXPECTED_FXRP_COLL_REDEEMED = WAD.mul("362960986516").div(1e6);
+    before = (await vaultEngine.vaults(ASSET_ID["FXRP"], bob.address)).standby;
+    await shutdown.connect(bob).redeemCollateral(ASSET_ID["FXRP"]);
+    after = (await vaultEngine.vaults(ASSET_ID["FXRP"], bob.address)).standby;
+    // bob["AUR"] balance: 1099000
+    //["AUR"] balance * flr Redeemed Collateral
+    // 1099000 * 0.333000333 = 365967.365967
+    const EXPECTED_FXRP_COLL_REDEEMED = WAD.mul("365967365967").div(1e6);
     expect(
       after.sub(before).sub(EXPECTED_FXRP_COLL_REDEEMED).abs().lte(WAD.div(100))
     ).to.equal(true);

@@ -1004,6 +1004,7 @@ const deployLiquidator = async (param?: {
   registry?: string;
   vaultEngine?: string;
   reservePool?: string;
+  treasury?: string;
 }) => {
   if (contracts.liquidator !== null && process.env.NODE_ENV !== "test") {
     console.info("liquidator contract has already been deployed, skipping");
@@ -1022,6 +1023,8 @@ const deployLiquidator = async (param?: {
     param && param.reservePool
       ? param.reservePool
       : contracts.reservePool.address;
+  const treasury =
+    param && param.treasury ? param.treasury : contracts.treasury.address;
 
   const signers = await getSigners();
   const liquidatorFactory = (await ethers.getContractFactory(
@@ -1031,7 +1034,8 @@ const deployLiquidator = async (param?: {
   contracts.liquidator = await liquidatorFactory.deploy(
     registry,
     vaultEngine,
-    reservePool
+    reservePool,
+    treasury
   );
   await contracts.liquidator.deployed();
   if (process.env.NODE_ENV !== "test") {

@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 
 contract MockFtso {
     uint256 public price;
-    uint256 public inflationRate;
     uint256 public lastUpdated;
 
     constructor() {

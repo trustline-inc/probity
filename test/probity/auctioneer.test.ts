@@ -169,6 +169,104 @@ describe("Auctioneer Unit Tests", function () {
     });
   });
 
+  describe("resetAuction Unit Test", function () {
+    beforeEach(async function () {
+      await priceCalc.setPrice(RAY.mul(12).div(10));
+      await auctioneer
+        .connect(liquidatorCaller)
+        .startAuction(
+          flrAssetId,
+          LOT_SIZE,
+          DEBT_SIZE,
+          user1.address,
+          reservePool.address
+        );
+
+      await vaultEngine.updateVault(
+        flrAssetId,
+        auctioneer.address,
+        LOT_SIZE,
+        0,
+        0,
+        0,
+        0,
+        0
+      );
+      await vaultEngine.addStablecoin(owner.address, RAD.mul(1000000));
+      await vaultEngine.addStablecoin(user1.address, RAD.mul(1000000));
+      await vaultEngine.addStablecoin(user2.address, RAD.mul(1000000));
+      await vaultEngine.addStablecoin(user3.address, RAD.mul(1000000));
+    });
+
+    it("fails if auction is over", async () => {
+      await auctioneer.buyItNow(0, RAY.mul(2), LOT_SIZE);
+
+      await assertRevert(
+        auctioneer.resetAuction(0),
+        "Auctioneer/resetAuction: Auction is over"
+      );
+    });
+
+    it("fails if current price is not zero", async () => {
+      await assertRevert(
+        auctioneer.resetAuction(0),
+        "Auctioneer/resetAuction: auction can not be reset right now"
+      );
+
+      await priceCalc.setPrice(0);
+    });
+
+    it("fails if auction startTime is zero", async () => {
+      await priceCalc.setPrice(0);
+      await assertRevert(
+        auctioneer.resetAuction(1),
+        "Auctioneer/resetAuction: auction can not be reset right now"
+      );
+
+      await auctioneer.resetAuction(0);
+    });
+
+    it("tests that startPrice is properly updated", async () => {
+      const OLD_PRICE = RAY.mul(12).div(10);
+      const NEW_PRICE = 1.2e5;
+
+      await priceCalc.setPrice(0);
+      await ftso.setCurrentPrice(NEW_PRICE);
+
+      const before = await auctioneer.auctions(0);
+      expect(before.startPrice).to.equal(OLD_PRICE);
+      await auctioneer.resetAuction(0);
+
+      const after = await auctioneer.auctions(0);
+      expect(after.startPrice).to.equal(RAY.mul(144).div(100));
+    });
+
+    it("tests that startTime is properly updated", async () => {
+      await priceCalc.setPrice(0);
+
+      const before = await auctioneer.auctions(0);
+      await auctioneer.resetAuction(0);
+
+      const after = await auctioneer.auctions(0);
+      expect(after.startTime.gt(before.startTime)).to.equal(true);
+    });
+
+    it("tests that auctionReset event is emitted properly", async () => {
+      const EXPECTED_LOT_SIZE = LOT_SIZE;
+      await priceCalc.setPrice(0);
+
+      const parsedEvents = await parseEvents(
+        auctioneer.resetAuction(0),
+        "AuctionReset",
+        auctioneer
+      );
+
+      expect(parsedEvents[0].args.collId).to.equal(flrAssetId);
+      expect(parsedEvents[0].args.auctionId).to.equal(0);
+      expect(parsedEvents[0].args.lotSize).to.equal(EXPECTED_LOT_SIZE);
+    });
+  });
+
   describe("placeBid Unit Test", function () {
     beforeEach(async function () {
       await auctioneer
@@ -185,6 +283,7 @@ describe("Auctioneer Unit Tests", function () {
         flrAssetId,
         auctioneer.address,
         LOT_SIZE,
+        0,
         0,
         0,
         0,
@@ -344,6 +443,7 @@ describe("Auctioneer Unit Tests", function () {
         0,
         0,
         0,
+        0,
         0
       );
       await vaultEngine.addStablecoin(owner.address, RAD.mul(1000000));
@@ -413,9 +513,7 @@ describe("Auctioneer Unit Tests", function () {
       await auctioneer.buyItNow(0, RAY.mul(12).div(10), EXPECTED_LOT_SIZE);
 
       const after = await vaultEngine.vaults(flrAssetId, owner.address);
-      expect(before.standbyAssetAmount.add(after.standbyAssetAmount)).to.equal(
-        EXPECTED_LOT_SIZE
-      );
+      expect(before.standby.add(after.standby)).to.equal(EXPECTED_LOT_SIZE);
     });
 
     it("tests that it cancel old bids that are no longer in contention", async () => {
@@ -481,6 +579,7 @@ describe("Auctioneer Unit Tests", function () {
         0,
         0,
         0,
+        0,
         0
       );
       await vaultEngine.addStablecoin(owner.address, RAD.mul(1000000));
@@ -521,9 +620,7 @@ describe("Auctioneer Unit Tests", function () {
       await auctioneer.finalizeSale(0);
 
       const after = await vaultEngine.vaults(flrAssetId, owner.address);
-      expect(before.standbyAssetAmount.add(after.standbyAssetAmount)).to.equal(
-        EXPECTED_LOT_SIZE
-      );
+      expect(before.standby.add(after.standby)).to.equal(EXPECTED_LOT_SIZE);
     });
 
     it("tests that it values are updated correctly", async () => {
@@ -642,6 +739,7 @@ describe("Auctioneer Unit Tests", function () {
         0,
         0,
         0,
+        0,
         0
       );
       await vaultEngine.addStablecoin(owner.address, RAD.mul(1000000));
@@ -679,9 +777,7 @@ describe("Auctioneer Unit Tests", function () {
       await auctioneer.cancelAuction(0, owner.address);
 
       const after = await vaultEngine.vaults(flrAssetId, owner.address);
-      expect(before.standbyAssetAmount.add(after.standbyAssetAmount)).to.equal(
-        LOT_SIZE
-      );
+      expect(before.standby.add(after.standby)).to.equal(LOT_SIZE);
     });
 
     it("tests that all the bids are cancelled", async () => {

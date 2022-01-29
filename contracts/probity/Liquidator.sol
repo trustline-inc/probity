@@ -4,13 +4,15 @@ pragma solidity ^0.8.0;
 
 import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
+import "hardhat/console.sol";
 
 interface VaultEngineLike {
     function vaults(bytes32 collId, address user)
         external
         returns (
-            uint256 standbyCollateralAmount,
-            uint256 activeCollateralAmount,
+            uint256 standby,
+            uint256 underlying,
+            uint256 collateral,
             uint256 debt,
             uint256 equity
         );
@@ -23,13 +25,23 @@ interface VaultEngineLike {
             uint256 adjustedPrice
         );
 
-    function liquidateVault(
+    function stablecoin(address user) external returns (uint256 balance);
+
+    function removeStablecoin(address user, uint256 amount) external;
+
+    function liquidateDebtPosition(
         bytes32 collId,
         address user,
         address auctioneer,
         address reservePool,
         int256 collateralAmount,
-        int256 debtAmount,
+        int256 debtAmount
+    ) external;
+
+    function liquidateEquityPosition(
+        bytes32 collId,
+        address user,
+        int256 underlyingAmount,
         int256 equityAmount
     ) external;
 }
@@ -75,6 +87,7 @@ contract Liquidator is Stateful, Eventful {
 
     VaultEngineLike public immutable vaultEngine;
     ReservePoolLike public immutable reserve;
+    address public immutable treasuryAddress;
 
     mapping(bytes32 => Collateral) public collateralTypes;
 
@@ -84,10 +97,12 @@ contract Liquidator is Stateful, Eventful {
     constructor(
         address registryAddress,
         VaultEngineLike vaultEngineAddress,
-        ReservePoolLike reservePoolAddress
+        ReservePoolLike reservePoolAddress,
+        address _treasuryAddress
     ) Stateful(registryAddress) {
         vaultEngine = vaultEngineAddress;
         reserve = reservePoolAddress;
+        treasuryAddress = _treasuryAddress;
     }
 
     /////////////////////////////////////////
@@ -99,6 +114,12 @@ contract Liquidator is Stateful, Eventful {
         collateralTypes[collId].equityPenaltyFee = 1.05E18;
     }
 
+    /**
+     * @notice Updates liquidation penalties
+     * @param collId The ID of the collateral type
+     * @param debtPenalty The new debt position penalty
+     * @param equityPenalty The new equity position penalty
+     */
     function updatePenalties(
         bytes32 collId,
         uint256 debtPenalty,
@@ -117,6 +138,11 @@ contract Liquidator is Stateful, Eventful {
         collateralTypes[collId].equityPenaltyFee = equityPenalty;
     }
 
+    /**
+     * @notice Updates the address of the auctioneer contract used by Liquidator
+     * @param collId The ID of the collateral type
+     * @param newAuctioneer The address of the new auctioneer
+     */
     function updateAuctioneer(bytes32 collId, AuctioneerLike newAuctioneer) external onlyBy("gov") {
         emit LogVarUpdate(
             "adjustedPriceFeed",
@@ -132,34 +158,53 @@ contract Liquidator is Stateful, Eventful {
         reserve.reduceAuctionDebt(amount);
     }
 
+    /**
+     * @notice Liquidates an undercollateralized vault
+     * @param collId The ID of the collateral type
+     * @param user The address of the vault to liquidate
+     */
     function liquidateVault(bytes32 collId, address user) external {
-        // check if vault can be liquidated
-        (uint256 debtAccumulator, uint256 equityAccumulator, uint256 adjustedPrice) = vaultEngine.assets(collId);
-        (, uint256 lockedColl, uint256 debt, uint256 equity) = vaultEngine.vaults(collId, user);
+        (uint256 debtAccumulator, , uint256 adjustedPrice) = vaultEngine.assets(collId);
+        (, uint256 underlying, uint256 collateral, uint256 debt, uint256 equity) = vaultEngine.vaults(collId, user);
 
-        require(lockedColl != 0 && debt + equity != 0, "Lidquidator: Nothing to liquidate");
+        require((underlying + collateral) != 0 && (debt + equity != 0), "Lidquidator: Nothing to liquidate");
 
+        // TODO: Should equity be initialEquity below?
         require(
-            lockedColl * adjustedPrice < debt * debtAccumulator + equity * RAY,
-            "Liquidator: Vault collateral is still above required minimal ratio"
+            collateral * adjustedPrice < debt * debtAccumulator || underlying * adjustedPrice < equity * RAY,
+            "Liquidator: Vault collateral/underlying is above the liquidation ratio"
         );
 
-        // transfer the debt to reservePool
-        reserve.addAuctionDebt(((debt + equity) * RAY));
-        vaultEngine.liquidateVault(
-            collId,
-            user,
-            address(collateralTypes[collId].auctioneer),
-            address(reserve),
-            -int256(lockedColl),
-            -int256(debt),
-            -int256(equity)
-        );
+        if (collateral * adjustedPrice < debt * debtAccumulator) {
+            // Transfer the debt to reserve pool
+            reserve.addAuctionDebt(debt * RAY);
+            vaultEngine.liquidateDebtPosition(
+                collId,
+                user,
+                address(collateralTypes[collId].auctioneer),
+                address(reserve),
+                -int256(collateral),
+                -int256(debt)
+            );
 
-        uint256 aurToRaise = (debt * debtAccumulator * collateralTypes[collId].debtPenaltyFee) / WAD;
-        //            (equity * equityAccumulator * collateralTypes[collId].equityPenaltyFee) /
-        //            WAD;
-        // start the auction
-        collateralTypes[collId].auctioneer.startAuction(collId, lockedColl, aurToRaise, user, address(reserve));
+            uint256 fundraiseTarget = (debt * debtAccumulator * collateralTypes[collId].debtPenaltyFee) / WAD;
+            collateralTypes[collId].auctioneer.startAuction(
+                collId,
+                collateral,
+                fundraiseTarget,
+                user,
+                address(reserve)
+            );
+        }
+
+        if (underlying * adjustedPrice < equity * RAY) {
+            require(
+                vaultEngine.stablecoin(treasuryAddress) >= equity,
+                "VaultEngine/liquidateEquityPosition: Not enough treasury funds"
+            );
+
+            vaultEngine.liquidateEquityPosition(collId, user, -int256(underlying), -int256(equity));
+            vaultEngine.removeStablecoin(treasuryAddress, equity * RAY);
+        }
     }
 }

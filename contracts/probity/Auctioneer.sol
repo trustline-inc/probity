@@ -80,6 +80,7 @@ contract Auctioneer is Stateful, Eventful {
     /////////////////////////////////////////
 
     event AuctionStarted(bytes32 indexed collId, uint256 indexed auctionId, uint256 lotSize);
+    event AuctionReset(bytes32 indexed collId, uint256 indexed auctionId, uint256 lotSize);
 
     event BidPlaced(
         bytes32 indexed collId,
@@ -161,6 +162,29 @@ contract Auctioneer is Stateful, Eventful {
         );
 
         emit AuctionStarted(collId, auctionId, lotSize);
+    }
+
+    /**
+     * @notice Reset the auction
+     * @param auctionId The ID of the auction to reset
+     */
+    function resetAuction(uint256 auctionId) external {
+        // make sure auction is not simply "over"
+        require(!auctions[auctionId].isOver, "Auctioneer/resetAuction: Auction is over");
+        // check if price is zero and have non-zero startTime
+        Auction storage auction = auctions[auctionId];
+        require(
+            calculatePrice(auctionId) == 0 && auction.startTime != 0,
+            "Auctioneer/resetAuction: auction can not be reset right now"
+        );
+
+        (uint256 currPrice, ) = ftso.getCurrentPrice();
+        uint256 startingPrice = (rdiv(currPrice, 1e5) * priceBuffer) / ONE;
+        // then reset startTime to now, price to original start price,
+        auction.startPrice = startingPrice;
+        auction.startTime = block.timestamp;
+
+        emit AuctionReset(auction.collId, auctionId, auction.lot);
     }
 
     /**
