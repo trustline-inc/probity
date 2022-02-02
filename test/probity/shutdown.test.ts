@@ -5,6 +5,7 @@ import {
   Aurei,
   Liquidator,
   MockAuctioneer,
+  MockBonds,
   MockLiquidator,
   MockPriceFeed,
   MockReservePool,
@@ -50,6 +51,7 @@ let treasury: Treasury;
 let liquidator: MockLiquidator;
 let auctioneer: MockAuctioneer;
 let reservePool: MockReservePool;
+let bonds: MockBonds;
 
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
@@ -65,12 +67,14 @@ describe("Shutdown Unit Tests", function () {
     liquidator = contracts.mockLiquidator;
     reservePool = contracts.mockReserve;
     auctioneer = contracts.mockAuctioneer;
+    bonds = contracts.mockBonds;
 
     contracts = await probity.deployShutdown({
       vaultEngine: vaultEngine.address,
       priceFeed: priceFeed.address,
       liquidator: liquidator.address,
       reservePool: reservePool.address,
+      bonds: bonds.address,
     });
 
     shutdown = contracts.shutdown;
@@ -1108,12 +1112,12 @@ describe("Shutdown Unit Tests", function () {
       await increaseTime(172800 * 2);
       await increaseTime(172800);
       await shutdown.setFinalDebtBalance();
-      await reservePool.setTotalVouchers(RAD);
+      await bonds.setTotalVouchers(RAD);
       await vaultEngine.setStablecoin(reservePool.address, RAD.mul(1000));
     });
 
     it("fails if finalTotalReserve is not set", async () => {
-      await reservePool.setVouchers(owner.address, RAD);
+      await bonds.setVouchers(owner.address, RAD);
       await assertRevert(
         shutdown.redeemVouchers(),
         "shutdown/redeemVouchers: finalTotalReserve must be set first"
@@ -1130,20 +1134,20 @@ describe("Shutdown Unit Tests", function () {
         shutdown.redeemVouchers(),
         "shutdown/redeemVouchers: no vouchers to redeem"
       );
-      await reservePool.setVouchers(owner.address, RAD);
+      await bonds.setVouchers(owner.address, RAD);
       await shutdown.redeemVouchers();
     });
 
     it("fails if total vouchers are zero", async () => {
       await shutdown.setFinalSystemReserve();
-      await reservePool.setVouchers(owner.address, RAD);
-      await reservePool.setTotalVouchers(0);
+      await bonds.setVouchers(owner.address, RAD);
+      await bonds.setTotalVouchers(0);
 
       await assertRevert(
         shutdown.redeemVouchers(),
         "shutdown/redeemVouchers: no vouchers to redeem"
       );
-      await reservePool.setTotalVouchers(RAD);
+      await bonds.setTotalVouchers(RAD);
       await shutdown.redeemVouchers();
     });
 
@@ -1159,12 +1163,12 @@ describe("Shutdown Unit Tests", function () {
         rdiv(USER_IOU, TOTAL_IOU),
         finalTotalReserve
       );
-      await reservePool.setVouchers(owner.address, USER_IOU);
-      await reservePool.setTotalVouchers(TOTAL_IOU);
+      await bonds.setVouchers(owner.address, USER_IOU);
+      await bonds.setTotalVouchers(TOTAL_IOU);
 
       await shutdown.redeemVouchers();
 
-      const lastCall = await reservePool.lastRedemptionCall();
+      const lastCall = await bonds.lastRedemptionCall();
       expect(lastCall.user).to.equal(owner.address);
       expect(lastCall.amount).to.equal(EXPECTED_AMOUNT);
     });
