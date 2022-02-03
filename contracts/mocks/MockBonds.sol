@@ -12,6 +12,7 @@ contract MockBonds {
     uint256 public totalVouchers;
     uint256 public lastReduceAuctionDebtAmount;
     uint256 public lastAddAuctionDebtAmount;
+    uint256 public lastOfferingAmount;
 
     function setVouchers(address user, uint256 amount) external {
         vouchers[user] = amount;
@@ -35,5 +36,9 @@ contract MockBonds {
 
     function addAuctionDebt(uint256 amount) external {
         lastAddAuctionDebtAmount = amount;
+    }
+
+    function newOffering(uint256 amount) external {
+        lastOfferingAmount = amount;
     }
 }

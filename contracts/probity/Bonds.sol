@@ -178,6 +178,7 @@ contract Bonds is Stateful, Eventful {
             vaultEngine.stablecoin(address(reservePoolAddress)) >= amount,
             "ReservePool/processRedemption: The reserve pool doesn't have enough funds"
         );
+
         require(
             vouchers[user] >= amount,
             "ReservePool/processRedemption: User doesn't have enough vouchers to redeem this amount"

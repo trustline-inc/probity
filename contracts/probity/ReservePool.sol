@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 
 import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
+import "hardhat/console.sol";
 
 interface VaultEngineLike {
     function stablecoin(address user) external returns (uint256 balance);
@@ -95,15 +96,17 @@ contract ReservePool is Stateful, Eventful {
             vaultEngine.stablecoin(address(this)) >= amountToSettle,
             "ReservePool/settle: Not enough balance to settle"
         );
+
         vaultEngine.settle(amountToSettle);
     }
 
     /**
+     * todo figure out where this is being used
      * @notice Increases system debt
-     * @param amountToSettle The amount of debt to settle
+     * @param amountToIncrease The amount of debt to settle
      */
-    function increaseSystemDebt(uint256 amountToSettle) external onlyByProbity {
-        vaultEngine.increaseSystemDebt(amountToSettle);
+    function increaseSystemDebt(uint256 amountToIncrease) external onlyByProbity {
+        vaultEngine.increaseSystemDebt(amountToIncrease);
     }
 
     /**
@@ -123,6 +126,7 @@ contract ReservePool is Stateful, Eventful {
             vaultEngine.unbackedDebt(address(this)) - debtOnAuction > debtThreshold,
             "ReservePool/startSale: Debt threshold is not yet crossed"
         );
+
         require(
             vaultEngine.stablecoin(address(this)) == 0,
             "ReservePool/startSale: Stablecoin balance is still positive"

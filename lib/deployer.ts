@@ -77,6 +77,7 @@ import {
   MockBonds__factory,
   VaultEngineSB__factory,
 } from "../typechain";
+import { ADDRESS_ZERO } from "../test/utils/constants";
 
 /**
  * Set native token for the deployment's target network
@@ -1055,7 +1056,10 @@ const deployReservePool = async (param?: {
     contracts.reservePool.address
   );
 
-  if (contracts.bonds !== null) {
+  if (
+    contracts.bonds !== null &&
+    (await contracts.bonds.reservePoolAddress()) === ADDRESS_ZERO
+  ) {
     await contracts.bonds.setReservePoolAddress(contracts.reservePool.address);
   }
 
