@@ -1516,6 +1516,7 @@ const probity = {
   deployReservePool,
   deployLiquidator,
   deployShutdown,
+  deployBonds,
 };
 
 const mock = {
@@ -1526,6 +1527,7 @@ const mock = {
   deployMockFtsoRewardManager,
   deployMockVaultEngine,
   deployMockPriceFeed,
+  deployMockBonds,
 };
 
 export { deployDev, deployProd, deployTest, probity, mock };
