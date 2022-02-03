@@ -101,7 +101,6 @@ contract ReservePool is Stateful, Eventful {
     }
 
     /**
-     * todo figure out where this is being used
      * @notice Increases system debt
      * @param amountToIncrease The amount of debt to settle
      */
