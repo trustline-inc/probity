@@ -64,10 +64,121 @@ describe("Vault Engine Unit Tests", function () {
     await registry.setupAddress(bytes32("whitelisted"), owner.address);
   });
 
+  describe("maxVaultSize Unit Tests", function () {
+    beforeEach(async function () {
+      await owner.sendTransaction({
+        to: user.address,
+        value: ethers.utils.parseEther("1"),
+      });
+      await vaultEngine.connect(gov).initAssetType(ASSET_ID["FLR"]);
+      await vaultEngine
+        .connect(gov)
+        .updateCeiling(ASSET_ID["FLR"], RAD.mul(10_000_000));
+      await registry
+        .connect(gov)
+        .setupAddress(bytes32("assetManager"), assetManager.address);
+    });
+
+    it("updateMaxVaultSize works properly", async () => {
+      const VAULT_MAX_SIZE = RAD.mul(500);
+      expect(await vaultEngine.connect(gov).maxVaultSize()).to.equal(0);
+      await vaultEngine.connect(gov).updateMaxVaultSize(VAULT_MAX_SIZE);
+      expect(await vaultEngine.connect(gov).maxVaultSize()).to.equal(
+        VAULT_MAX_SIZE
+      );
+    });
+
+    it("modifyDebt uses maxVaultSize", async () => {
+      const UNDERLYING_AMOUNT = WAD.mul(10_000);
+      const COLL_AMOUNT = WAD.mul(10_000);
+      const EQUITY_AMOUNT = WAD.mul(500);
+      const VAULT_MAX_SIZE = RAD.mul(500);
+
+      await vaultEngine
+        .connect(assetManager)
+        .modifyStandbyAsset(
+          ASSET_ID["FLR"],
+          owner.address,
+          COLL_AMOUNT.add(UNDERLYING_AMOUNT)
+        );
+      await vaultEngine
+        .connect(gov)
+        .updateAdjustedPrice(ASSET_ID["FLR"], RAY.mul(1));
+
+      await assertRevert(
+        vaultEngine.modifyEquity(
+          ASSET_ID["FLR"],
+          treasury.address,
+          UNDERLYING_AMOUNT,
+          EQUITY_AMOUNT
+        ),
+        "Vault is over the individual vault limit"
+      );
+
+      await vaultEngine.connect(gov).updateMaxVaultSize(VAULT_MAX_SIZE);
+
+      await vaultEngine.modifyEquity(
+        ASSET_ID["FLR"],
+        treasury.address,
+        UNDERLYING_AMOUNT,
+        EQUITY_AMOUNT
+      );
+    });
+
+    it("modifyEquity uses maxVaultSize", async () => {
+      const UNDERLYING_AMOUNT = WAD.mul(10_000);
+      const COLL_AMOUNT = WAD.mul(10_000);
+      const DEBT_AMOUNT = WAD.mul(500);
+      const NEW_INDIVIDUAL_VAULT_LIMIT = RAD.mul(1000);
+
+      await vaultEngine
+        .connect(assetManager)
+        .modifyStandbyAsset(
+          ASSET_ID["FLR"],
+          owner.address,
+          COLL_AMOUNT.add(UNDERLYING_AMOUNT)
+        );
+      await vaultEngine
+        .connect(gov)
+        .updateAdjustedPrice(ASSET_ID["FLR"], RAY.mul(1));
+
+      await vaultEngine.connect(gov).updateMaxVaultSize(RAD.mul(500));
+
+      await vaultEngine.modifyEquity(
+        ASSET_ID["FLR"],
+        treasury.address,
+        UNDERLYING_AMOUNT,
+        DEBT_AMOUNT
+      );
+
+      await assertRevert(
+        vaultEngine.modifyDebt(
+          ASSET_ID["FLR"],
+          treasury.address,
+          UNDERLYING_AMOUNT,
+          DEBT_AMOUNT
+        ),
+        "Vault is over the individual vault limit"
+      );
+
+      await vaultEngine
+        .connect(gov)
+        .updateMaxVaultSize(NEW_INDIVIDUAL_VAULT_LIMIT);
+
+      await vaultEngine.modifyDebt(
+        ASSET_ID["FLR"],
+        treasury.address,
+        UNDERLYING_AMOUNT,
+        DEBT_AMOUNT
+      );
+    });
+  });
+
   describe("modifyEquity Unit Tests", function () {
     const STANDBY_AMOUNT = WAD.mul(10_000);
     const UNDERLYING_AMOUNT = WAD.mul(10_000);
     const EQUITY_AMOUNT = WAD.mul(2000);
+    const VAULT_MAX_SIZE = RAD.mul(100_000);
 
     beforeEach(async function () {
       await owner.sendTransaction({
@@ -78,6 +189,7 @@ describe("Vault Engine Unit Tests", function () {
       await vaultEngine
         .connect(gov)
         .updateCeiling(ASSET_ID["FLR"], RAD.mul(10_000_000));
+      await vaultEngine.connect(gov).updateMaxVaultSize(VAULT_MAX_SIZE);
       await registry
         .connect(gov)
         .setupAddress(bytes32("assetManager"), assetManager.address);
@@ -393,6 +505,7 @@ describe("Vault Engine Unit Tests", function () {
     const ASSET_AMOUNT = WAD.mul(10_000);
     const EQUITY_AMOUNT = WAD.mul(2000);
     const DEBT_AMOUNT = WAD.mul(1000);
+    const VAULT_MAX_SIZE = RAD.mul(100_000);
 
     beforeEach(async function () {
       await owner.sendTransaction({
@@ -403,6 +516,7 @@ describe("Vault Engine Unit Tests", function () {
       await vaultEngine
         .connect(gov)
         .updateCeiling(ASSET_ID["FLR"], RAD.mul(10_000_000));
+      await vaultEngine.connect(gov).updateMaxVaultSize(VAULT_MAX_SIZE);
       await registry
         .connect(gov)
         .setupAddress(bytes32("assetManager"), assetManager.address);
@@ -682,6 +796,7 @@ describe("Vault Engine Unit Tests", function () {
     const DEBT_AMOUNT = WAD.mul(1000);
     const DEBT_TO_RAISE = BigNumber.from("251035088626883475473007");
     const EQUITY_TO_RAISE = BigNumber.from("125509667994754929166541");
+    const VAULT_MAX_SIZE = RAD.mul(100_000);
 
     beforeEach(async function () {
       await owner.sendTransaction({
@@ -691,7 +806,8 @@ describe("Vault Engine Unit Tests", function () {
       await vaultEngine.connect(gov).initAssetType(ASSET_ID["FLR"]);
       await vaultEngine
         .connect(gov)
-        .updateCeiling(ASSET_ID["FLR"], RAD.mul(10000000));
+        .updateCeiling(ASSET_ID["FLR"], RAD.mul(10_000_000));
+      await vaultEngine.connect(gov).updateMaxVaultSize(VAULT_MAX_SIZE);
       await registry
         .connect(gov)
         .setupAddress(bytes32("assetManager"), assetManager.address);
@@ -777,6 +893,7 @@ describe("Vault Engine Unit Tests", function () {
     const ASSET_AMOUNT = WAD.mul(10_000);
     const EQUITY_AMOUNT = WAD.mul(2000);
     const DEBT_AMOUNT = WAD.mul(1000);
+    const VAULT_MAX_SIZE = RAD.mul(100_000);
 
     beforeEach(async function () {
       await owner.sendTransaction({
@@ -787,6 +904,7 @@ describe("Vault Engine Unit Tests", function () {
       await vaultEngine
         .connect(gov)
         .updateCeiling(ASSET_ID["FLR"], RAD.mul(10_000_000));
+      await vaultEngine.connect(gov).updateMaxVaultSize(VAULT_MAX_SIZE);
       await registry
         .connect(gov)
         .setupAddress(bytes32("assetManager"), assetManager.address);
@@ -862,6 +980,7 @@ describe("Vault Engine Unit Tests", function () {
     const ASSET_AMOUNT = WAD.mul(10_000);
     const EQUITY_AMOUNT = WAD.mul(2000);
     const DEBT_AMOUNT = WAD.mul(1000);
+    const VAULT_MAX_SIZE = RAD.mul(100_000);
 
     beforeEach(async function () {
       await owner.sendTransaction({
@@ -872,6 +991,7 @@ describe("Vault Engine Unit Tests", function () {
       await vaultEngine
         .connect(gov)
         .updateCeiling(ASSET_ID["FLR"], RAD.mul(10_000_000));
+      await vaultEngine.connect(gov).updateMaxVaultSize(VAULT_MAX_SIZE);
       await registry
         .connect(gov)
         .setupAddress(bytes32("assetManager"), assetManager.address);

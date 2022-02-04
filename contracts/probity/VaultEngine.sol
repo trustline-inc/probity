@@ -364,7 +364,7 @@ contract VaultEngine is Stateful, Eventful {
      */
     function checkVaultUnderLimit(bytes32 assetId, Vault memory vault) internal view {
         require(
-            (vault.debt * assets[assetId].debtAccumulator) + (vault.initialEquity * RAY) <= maxVaultSize,
+            (vault.debt * assets[assetId].debtAccumulator) + vault.initialEquity <= maxVaultSize,
             "Vault is over the individual vault limit"
         );
     }
