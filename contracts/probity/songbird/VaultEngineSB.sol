@@ -17,11 +17,12 @@ contract VaultEngineSB is Stateful, Eventful {
     // Type Declarations
     /////////////////////////////////////////
     struct Vault {
-        uint256 standby; // assets that are on standby
-        uint256 activeAssetAmount; // assets that are actively covering a position
-        uint256 debt; // Vault's debt balance
-        uint256 equity; // Vault's equity balance
-        uint256 lastEquityAccumulator; // Most recent value of the equity rate accumulator
+        uint256 standby; // Assets that are on standby
+        uint256 underlying; // Amount covering an equity position
+        uint256 collateral; // Amount covering a debt position
+        uint256 debt; // Vault debt balance
+        uint256 equity; // Vault equity balance
+        uint256 initialEquity; // Tracks the amount of equity (less interest)
     }
 
     struct Asset {
@@ -87,7 +88,8 @@ contract VaultEngineSB is Stateful, Eventful {
         external
         view
         returns (
-            uint256 activeAssetAmount,
+            uint256 underlying,
+            uint256 collateral,
             uint256 debt,
             uint256 equity
         )
@@ -95,7 +97,8 @@ contract VaultEngineSB is Stateful, Eventful {
         Vault storage vault = vaults[assetId][user];
         Asset storage asset = assets[assetId];
         return (
-            vault.activeAssetAmount * asset.adjustedPrice,
+            vault.underlying * asset.adjustedPrice,
+            vault.collateral * asset.adjustedPrice,
             vault.debt * asset.debtAccumulator,
             vault.equity * asset.equityAccumulator
         );
@@ -176,19 +179,22 @@ contract VaultEngineSB is Stateful, Eventful {
 
     /**
      * @dev Accrues vault interest and PBT
-     * @param assetId The ID of the vault asset
+     * @param assetId The ID of the vault asset type
      */
     function collectInterest(bytes32 assetId) public {
         Vault memory vault = vaults[assetId][msg.sender];
         Asset memory asset = assets[assetId];
-        pbt[msg.sender] += vault.equity * (asset.equityAccumulator - vault.lastEquityAccumulator);
-        stablecoin[msg.sender] += vault.equity * (asset.equityAccumulator - vault.lastEquityAccumulator);
-        vaults[assetId][msg.sender].lastEquityAccumulator = asset.equityAccumulator;
+        uint256 interestAmount = vault.equity * asset.equityAccumulator - vault.initialEquity;
+        pbt[msg.sender] += interestAmount;
+        stablecoin[msg.sender] += interestAmount;
+
+        // @todo evaluate how loss of precision can impact here
+        vaults[assetId][msg.sender].equity -= interestAmount / asset.equityAccumulator;
     }
 
     /**
      * @notice Adds equity to the caller's vault
-     * @param assetId The ID of the asset being modified
+     * @param assetId The ID of the asset type being modified
      * @param treasuryAddress A registered treasury contract address
      * @param underlyingAmount The amount of asset to add
      * @param equityAmount The amount of equity to add
@@ -209,34 +215,32 @@ contract VaultEngineSB is Stateful, Eventful {
             userExists[msg.sender] = true;
         }
 
-        collectInterest(assetId);
         Vault storage vault = vaults[assetId][msg.sender];
         vault.standby = sub(vault.standby, underlyingAmount);
-        vault.activeAssetAmount = add(vault.activeAssetAmount, underlyingAmount);
-        int256 normalizedEquity = div(equityAmount, assets[assetId].equityAccumulator);
-        vault.equity = add(vault.equity, normalizedEquity);
+        vault.underlying = add(vault.underlying, underlyingAmount);
+        int256 equityCreated = mul(assets[assetId].equityAccumulator, equityAmount);
+        vault.equity = add(vault.equity, equityAmount);
+        vault.initialEquity = add(vault.initialEquity, equityCreated);
 
-        assets[assetId].normEquity = add(assets[assetId].normEquity, normalizedEquity);
+        assets[assetId].normEquity = add(assets[assetId].normEquity, equityAmount);
 
-        totalEquity = add(totalEquity, equityAmount);
+        totalEquity = add(totalEquity, equityCreated);
 
-        require(totalEquity <= assets[assetId].ceiling, "Vault/modifyEquity: Equity ceiling reached");
+        require(totalEquity <= assets[assetId].ceiling, "Vault/modifyEquity: Supply ceiling reached");
         require(
             vault.equity == 0 || (vault.equity * RAY) > assets[assetId].floor,
-            "Vault/modifyEquity: Equity floor reached"
+            "Vault/modifyEquity: Equity smaller than floor"
         );
+        certifyEquityPosition(assetId, vault);
 
-        certify(assetId, vault);
-        checkVaultUnderLimit(assetId, vault);
+        stablecoin[treasuryAddress] = add(stablecoin[treasuryAddress], equityCreated);
 
-        stablecoin[treasuryAddress] = add(stablecoin[treasuryAddress], equityAmount);
-
-        emit EquityModified(msg.sender, underlyingAmount, equityAmount);
+        emit EquityModified(msg.sender, underlyingAmount, equityCreated);
     }
 
     /**
      * @notice Modifies vault debt
-     * @param assetId The ID of the vault asset
+     * @param assetId The ID of the vault asset type
      * @param treasuryAddress The address of the desired treasury contract
      * @param collAmount Amount of asset supplied as loan security
      * @param debtAmount Amount of stablecoin to borrow
@@ -263,64 +267,89 @@ contract VaultEngineSB is Stateful, Eventful {
 
         Vault memory vault = vaults[assetId][msg.sender];
         vault.standby = sub(vault.standby, collAmount);
-        vault.activeAssetAmount = add(vault.activeAssetAmount, collAmount);
-        int256 normalizedDebt = div(debtAmount, assets[assetId].debtAccumulator);
-        vault.debt = add(vault.debt, normalizedDebt);
+        vault.collateral = add(vault.collateral, collAmount);
+        int256 debtCreated = mul(assets[assetId].debtAccumulator, debtAmount);
+        vault.debt = add(vault.debt, debtAmount);
 
-        assets[assetId].normDebt = add(assets[assetId].normDebt, normalizedDebt);
+        assets[assetId].normDebt = add(assets[assetId].normDebt, debtAmount);
 
-        totalDebt = add(totalDebt, debtAmount);
+        totalDebt = add(totalDebt, debtCreated);
 
         require(totalDebt <= assets[assetId].ceiling, "Vault/modifyDebt: Debt ceiling reached");
         require(
             vault.debt == 0 || (vault.debt * RAY) > assets[assetId].floor,
             "Vault/modifyDebt: Debt smaller than floor"
         );
-        certify(assetId, vault);
-        checkVaultUnderLimit(assetId, vault);
+        certifyDebtPosition(assetId, vault);
 
-        stablecoin[msg.sender] = add(stablecoin[msg.sender], debtAmount);
-        stablecoin[treasuryAddress] = sub(stablecoin[treasuryAddress], debtAmount);
+        stablecoin[msg.sender] = add(stablecoin[msg.sender], debtCreated);
+        stablecoin[treasuryAddress] = sub(stablecoin[treasuryAddress], debtCreated);
 
         vaults[assetId][msg.sender] = vault;
 
-        emit DebtModified(msg.sender, collAmount, debtAmount);
+        emit DebtModified(msg.sender, collAmount, debtCreated);
     }
 
     /**
-     * @notice Liquidates an underassetized vault
-     * @param assetId The ID of the vault asset
+     * @notice Liquidates an undercollateralized debt position
+     * @param assetId The ID of the vault asset type
      * @param user The address of the vault to liquidate
      * @param auctioneer The address of the desired auctioneer contract
      * @param reservePool The address of the desired reserve pool contract
-     * @param assetAmount The amount of asset to liquidate
+     * @param collateralAmount The amount of collateral to liquidate
      * @param debtAmount The amount of debt to clear
-     * @param equityAmount The amount of equity to clear
      */
-    function liquidateVault(
+    function liquidateDebtPosition(
         bytes32 assetId,
         address user,
         address auctioneer,
         address reservePool,
+        int256 collateralAmount,
+        int256 debtAmount
+    ) external onlyByProbity {
+        Vault storage vault = vaults[assetId][user];
+        Asset storage asset = assets[assetId];
+
+        vault.collateral = add(vault.collateral, collateralAmount);
+        vault.debt = add(vault.debt, debtAmount);
+        asset.normDebt = add(asset.normDebt, debtAmount);
+        int256 fundraiseTarget = mul(asset.debtAccumulator, debtAmount);
+
+        vaults[assetId][auctioneer].standby = sub(vaults[assetId][auctioneer].standby, collateralAmount);
+        unbackedDebt[reservePool] = sub(unbackedDebt[reservePool], fundraiseTarget);
+        totalUnbackedDebt = sub(totalUnbackedDebt, fundraiseTarget);
+
+        emit Log("vault", "liquidateDebtPosition", msg.sender);
+    }
+
+    /**
+     * @notice Liquidates an undercollateralized equity position
+     * @dev Returns underlying asset to user vault with penalty
+     * @param assetId The ID of the vault asset type
+     * @param user The address of the vault to liquidate
+     * @param assetAmount The amount of asset to liquidate
+     * @param equityAmount The amount of equity to clear
+     */
+    function liquidateEquityPosition(
+        bytes32 assetId,
+        address user,
         int256 assetAmount,
-        int256 debtAmount,
         int256 equityAmount
     ) external onlyByProbity {
         Vault storage vault = vaults[assetId][user];
-        Asset storage coll = assets[assetId];
+        Asset storage asset = assets[assetId];
 
-        vault.activeAssetAmount = add(vault.activeAssetAmount, assetAmount);
-        vault.debt = add(vault.debt, debtAmount);
+        // TODO: Assess penalty
+
+        vault.underlying = add(vault.underlying, assetAmount);
+        vault.standby = add(vault.standby, -assetAmount);
         vault.equity = add(vault.equity, equityAmount);
-        coll.normDebt = add(coll.normDebt, debtAmount);
-        coll.normEquity = add(coll.normEquity, equityAmount);
-        int256 aurToRaise = mul(coll.debtAccumulator, debtAmount) + mul(RAY, equityAmount);
+        vault.initialEquity = add(vault.initialEquity, mul(RAY, equityAmount));
+        asset.normEquity = add(asset.normEquity, equityAmount);
 
-        vaults[assetId][auctioneer].standby = sub(vaults[assetId][auctioneer].standby, assetAmount);
-        unbackedDebt[reservePool] = sub(unbackedDebt[reservePool], aurToRaise);
-        totalUnbackedDebt = sub(totalUnbackedDebt, aurToRaise);
+        totalEquity = add(totalEquity, mul(RAY, equityAmount));
 
-        emit Log("vault", "liquidateVault", msg.sender);
+        emit Log("vault", "liquidateEquityPosition", msg.sender);
     }
 
     /**
@@ -443,14 +472,25 @@ contract VaultEngineSB is Stateful, Eventful {
 
     /**
      * @dev Certifies that the vault meets the asset requirement
-     * @param assetId The asset ID
+     * @param assetId The asset type ID
      * @param vault The vault to certify
      */
-    function certify(bytes32 assetId, Vault memory vault) internal view {
+    function certifyEquityPosition(bytes32 assetId, Vault memory vault) internal view {
         require(
-            (vault.debt * assets[assetId].debtAccumulator) + (vault.equity * RAY) <=
-                vault.activeAssetAmount * assets[assetId].adjustedPrice,
-            "Vault/certify: Not enough asset"
+            vault.initialEquity <= vault.underlying * assets[assetId].adjustedPrice,
+            "Vault/certify: Not enough underlying"
+        );
+    }
+
+    /**
+     * @dev Certifies that the vault meets the asset requirement
+     * @param assetId The asset type ID
+     * @param vault The vault to certify
+     */
+    function certifyDebtPosition(bytes32 assetId, Vault memory vault) internal view {
+        require(
+            (vault.debt * assets[assetId].debtAccumulator) <= vault.collateral * assets[assetId].adjustedPrice,
+            "Vault/certify: Not enough collateral"
         );
     }
 
