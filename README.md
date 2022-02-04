@@ -139,8 +139,8 @@ For example:
 
 ```
 FLARE_DIR=~/Desktop/flare \
-STABLECOIN=PHI \
-NATIVE_TOKEN_LOCAL=SGB \
+STABLECOIN=AUR \
+NATIVE_TOKEN_LOCAL=CFLR \
 npm run deploy:local
 ```
 
@@ -152,8 +152,8 @@ There are currently three remote deployment target networks: `internal` and `cos
 
 ```
 FLARE_DIR=~/Desktop/flare \
-STABLECOIN=PHI \
-NATIVE_TOKEN_LOCAL=SGB \
+STABLECOIN=AUR \
+NATIVE_TOKEN_LOCAL=CFLR \
 npm run deploy:internal
 ```
 
@@ -162,7 +162,7 @@ npm run deploy:internal
 You can use the `initProbity` scripts to initialize the system with a new asset type., E.g.:
 
 ```
-NATIVE_TOKEN=SGB \
+NATIVE_TOKEN=CFLR \
 FLARE_DIR=~/Desktop/flare \
 yarn run initProbity:local
 ```
