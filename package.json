@@ -1,6 +1,6 @@
 {
   "name": "@trustline-inc/probity",
-  "version": "1.0.0-alpha10",
+  "version": "1.0.0-alpha11",
   "license": "MIT",
   "description": "Probity smart contracts",
   "scripts": {
