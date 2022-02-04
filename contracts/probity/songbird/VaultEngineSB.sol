@@ -232,6 +232,7 @@ contract VaultEngineSB is Stateful, Eventful {
             "Vault/modifyEquity: Equity smaller than floor"
         );
         certifyEquityPosition(assetId, vault);
+        checkVaultUnderLimit(assetId, vault);
 
         stablecoin[treasuryAddress] = add(stablecoin[treasuryAddress], equityCreated);
 
@@ -281,6 +282,7 @@ contract VaultEngineSB is Stateful, Eventful {
             "Vault/modifyDebt: Debt smaller than floor"
         );
         certifyDebtPosition(assetId, vault);
+        checkVaultUnderLimit(assetId, vault);
 
         stablecoin[msg.sender] = add(stablecoin[msg.sender], debtCreated);
         stablecoin[treasuryAddress] = sub(stablecoin[treasuryAddress], debtCreated);
