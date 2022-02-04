@@ -18,6 +18,7 @@ import {
   Registry,
   MockERC20Token,
   Shutdown,
+  BondIssuer,
 } from "../typechain";
 import { ethers } from "hardhat";
 import * as chai from "chai";
@@ -53,6 +54,7 @@ let liquidator: Liquidator;
 let reserve: ReservePool;
 let erc20: MockERC20Token;
 let shutdown: Shutdown;
+let bondIssuer: BondIssuer;
 
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
@@ -156,6 +158,7 @@ describe("Shutdown Flow Test", function () {
     registry = contracts.registry;
     erc20 = contracts.mockErc20Token;
     shutdown = contracts.shutdown;
+    bondIssuer = contracts.bondIssuer;
 
     contracts = await mock.deployMockFtso();
     ftsoFxrp = contracts.ftso;
@@ -356,7 +359,8 @@ describe("Shutdown Flow Test", function () {
     // Charlie purchases 5000 * 0.75 = 3750 vouchers
     await reserve.startSale();
     let amountOfVouchers = DEBT_THRESHOLD.mul(3).div(4);
-    await reserve.connect(charlie).purchaseVouchers(amountOfVouchers);
+    await bondIssuer.connect(charlie).purchaseVouchers(amountOfVouchers);
+    await reserve.settle(amountOfVouchers);
     reserveBalances.debtToCover =
       reserveBalances.debtToCover.sub(amountOfVouchers);
     await checkReserveBalances(reserveBalances);
@@ -367,7 +371,8 @@ describe("Shutdown Flow Test", function () {
 
     // Bob purchases 5000 * 0.25 = 1250 vouchers; all bad debt has been covered
     amountOfVouchers = DEBT_THRESHOLD.div(4);
-    await reserve.connect(bob).purchaseVouchers(amountOfVouchers);
+    await bondIssuer.connect(bob).purchaseVouchers(amountOfVouchers);
+    await reserve.settle(amountOfVouchers);
     reserveBalances.debtToCover =
       reserveBalances.debtToCover.sub(amountOfVouchers);
     await checkReserveBalances(reserveBalances);
@@ -566,9 +571,9 @@ describe("Shutdown Flow Test", function () {
     ).to.equal(true);
 
     // Bob redeems his vouchers
-    before = await reserve.vouchers(bob.address);
+    before = await bondIssuer.vouchers(bob.address);
     await shutdown.connect(bob).redeemVouchers();
-    after = await reserve.vouchers(bob.address);
+    after = await bondIssuer.vouchers(bob.address);
     const EXPECTED_IOU_BALANCE_CHANGE = DEBT_THRESHOLD.div(4);
     expect(before.sub(after)).to.equal(EXPECTED_IOU_BALANCE_CHANGE);
   });

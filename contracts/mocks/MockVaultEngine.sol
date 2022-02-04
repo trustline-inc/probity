@@ -160,6 +160,17 @@ contract MockVaultEngine {
         states[bytes32("shutdown")] = true;
     }
 
+    function settle(uint256 amount) external {
+        stablecoin[msg.sender] -= amount;
+        unbackedDebt[msg.sender] -= amount;
+    }
+
+    function increaseSystemDebt(uint256 amount) external {
+        stablecoin[msg.sender] += amount;
+        unbackedDebt[msg.sender] += amount;
+        totalDebt += amount;
+    }
+
     function liquidateDebtPosition(
         bytes32 collId,
         address user,

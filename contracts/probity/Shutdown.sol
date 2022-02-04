@@ -89,12 +89,6 @@ interface VaultLike {
 }
 
 interface ReservePoolLike {
-    function vouchers(address user) external returns (uint256 balance);
-
-    function totalVouchers() external returns (uint256);
-
-    function shutdownRedemption(address user, uint256 amount) external;
-
     function setShutdownState() external;
 }
 
@@ -129,6 +123,16 @@ interface LiquidatorLike {
     function setShutdownState() external;
 }
 
+interface BondIssuerLike {
+    function vouchers(address user) external returns (uint256 balance);
+
+    function totalVouchers() external returns (uint256);
+
+    function shutdownRedemption(address user, uint256 amount) external;
+
+    function setShutdownState() external;
+}
+
 contract Shutdown is Stateful, Eventful {
     /////////////////////////////////////////
     // Type Declaration
@@ -154,6 +158,7 @@ contract Shutdown is Stateful, Eventful {
     TellerLike public teller;
     TreasuryLike public treasury;
     LiquidatorLike public liquidator;
+    BondIssuerLike public bondIssuer;
 
     bool public initiated;
     uint256 public initiatedAt;
@@ -206,7 +211,8 @@ contract Shutdown is Stateful, Eventful {
         ReservePoolLike reservePoolAddress,
         TellerLike tellerAddress,
         TreasuryLike treasuryAddress,
-        LiquidatorLike liquidatorAddress
+        LiquidatorLike liquidatorAddress,
+        BondIssuerLike bondIssuerAddress
     ) Stateful(registryAddress) {
         priceFeed = priceFeedAddress;
         vaultEngine = vaultAddress;
@@ -214,6 +220,7 @@ contract Shutdown is Stateful, Eventful {
         teller = tellerAddress;
         treasury = treasuryAddress;
         liquidator = liquidatorAddress;
+        bondIssuer = bondIssuerAddress;
     }
 
     /////////////////////////////////////////
@@ -238,6 +245,8 @@ contract Shutdown is Stateful, Eventful {
             treasury = TreasuryLike(newAddress);
         } else if (which == "Liquidator") {
             liquidator = LiquidatorLike(newAddress);
+        } else if (which == "bondIssuer") {
+            bondIssuer = BondIssuerLike(newAddress);
         } else {
             revert("shutdown/switchAddress: unknown which");
         }
@@ -273,6 +282,7 @@ contract Shutdown is Stateful, Eventful {
         treasury.setShutdownState();
         reservePool.setShutdownState();
         liquidator.setShutdownState();
+        bondIssuer.setShutdownState();
 
         uint256 totalDebt = vaultEngine.totalDebt();
         uint256 totalEquity = vaultEngine.totalEquity();
@@ -474,8 +484,8 @@ contract Shutdown is Stateful, Eventful {
     function redeemVouchers() external {
         require(finalTotalReserve != 0, "shutdown/redeemVouchers: finalTotalReserve must be set first");
 
-        uint256 userVouchers = reservePool.vouchers(msg.sender);
-        uint256 totalVouchers = reservePool.totalVouchers();
+        uint256 userVouchers = bondIssuer.vouchers(msg.sender);
+        uint256 totalVouchers = bondIssuer.totalVouchers();
 
         require(userVouchers != 0 && totalVouchers != 0, "shutdown/redeemVouchers: no vouchers to redeem");
 
@@ -486,7 +496,7 @@ contract Shutdown is Stateful, Eventful {
             shareOfAur = userVouchers;
         }
 
-        reservePool.shutdownRedemption(msg.sender, shareOfAur);
+        bondIssuer.shutdownRedemption(msg.sender, shareOfAur);
     }
 
     /////////////////////////////////////////
