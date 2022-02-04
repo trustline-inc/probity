@@ -6,12 +6,12 @@ import { artifacts, ethers, web3 } from "hardhat";
 import * as dotenv from "dotenv";
 dotenv.config();
 
-if (!process.env.TOKEN)
-  throw Error("Must sent the TOKEN environment variable.");
-if (!["CFLR", "FLR", "SGB"].includes(process.env.TOKEN.toUpperCase()))
-  throw Error("Invalid token type.");
+if (!process.env.NATIVE_TOKEN)
+  throw Error("Must sent the NATIVE_TOKEN environment variable.");
+if (!["CFLR", "FLR", "SGB"].includes(process.env.NATIVE_TOKEN.toUpperCase()))
+  throw Error("Invalid native token type.");
 
-const token = process.env.TOKEN.toUpperCase();
+const token = process.env.NATIVE_TOKEN.toUpperCase();
 
 const ASSETS = {
   CFLR: web3.utils.keccak256("CFLR"),

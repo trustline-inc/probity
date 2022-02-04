@@ -162,7 +162,7 @@ npm run deploy:internal
 You can use the `initProbity` scripts to initialize the system with a new asset type., E.g.:
 
 ```
-TOKEN=SGB \
+NATIVE_TOKEN=SGB \
 FLARE_DIR=~/Desktop/flare \
 yarn run initProbity:local
 ```
