@@ -37,7 +37,6 @@ const init = async () => {
   const PriceFeedABI = await artifacts.readArtifact("PriceFeed");
   const TellerABI = await artifacts.readArtifact("Teller");
   const VaultEngineABI = await artifacts.readArtifact("VaultEngine");
-  const VaultEngineSBABI = await artifacts.readArtifact("VaultEngineSB");
 
   // Contracts
   const registry = new ethers.Contract(
@@ -57,8 +56,8 @@ const init = async () => {
   );
   const teller = new ethers.Contract(process.env.TELLER, TellerABI.abi, owner);
   const vaultEngine = new ethers.Contract(
-    token === "SGB" ? process.env.VAULT_ENGINE_S_B : process.env.VAULT_ENGINE,
-    token === "SGB" ? VaultEngineSBABI.abi : VaultEngineABI.abi,
+    process.env.VAULT_ENGINE,
+    VaultEngineABI.abi,
     owner
   );
 

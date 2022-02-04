@@ -9,7 +9,7 @@ import {
   ReservePool,
   Teller,
   Treasury,
-  VaultEngineSB,
+  VaultEngine,
 } from "../../../typechain";
 
 import { deployTest } from "../../../lib/deployer";
@@ -27,7 +27,7 @@ let gov: SignerWithAddress;
 let coll: SignerWithAddress;
 
 // Contracts
-let vaultEngine: VaultEngineSB;
+let vaultEngine: VaultEngine;
 let registry: Registry;
 let reservePool: ReservePool;
 let nativeToken: NativeToken;
@@ -45,7 +45,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
     let { contracts, signers } = await deployTest();
     // Set contracts
     registry = contracts.registry;
-    vaultEngine = contracts.vaultEngineSB;
+    vaultEngine = contracts.vaultEngine;
     reservePool = contracts.reservePool;
     nativeToken = contracts.nativeToken;
     teller = contracts.teller;
@@ -85,9 +85,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
       await vaultEngine
         .connect(coll)
         .modifyStandbyAsset(flrAssetId, owner.address, COLL_AMOUNT_EQUITY);
-      await vaultEngine
-        .connect(gov)
-        .updateIndividualVaultLimit(RAD.mul(1000000));
+      await vaultEngine.connect(gov).updateVaultMaxSize(RAD.mul(1000000));
     });
 
     it("tests new user is added to userList", async () => {
@@ -151,9 +149,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
       await vaultEngine
         .connect(gov)
         .updateAdjustedPrice(flrAssetId, RAY.mul(1));
-      await vaultEngine
-        .connect(gov)
-        .updateIndividualVaultLimit(RAD.mul(1000000));
+      await vaultEngine.connect(gov).updateVaultMaxSize(RAD.mul(1000000));
 
       await vaultEngine
         .connect(coll)
@@ -213,7 +209,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
     });
   });
 
-  describe("individualVaultLimit Unit Tests", function () {
+  describe("vaultMaxSize Unit Tests", function () {
     beforeEach(async function () {
       await owner.sendTransaction({
         to: user.address,
@@ -228,18 +224,18 @@ describe("Vault Engine Songbird Unit Tests", function () {
         .setupAddress(bytes32("assetManager"), coll.address);
     });
 
-    it("updateIndividualVaultLimit works properly", async () => {
+    it("updateVaultMaxSize works properly", async () => {
       const NEW_INDIVIDUAL_VAULT_LIMTI = RAD.mul(500);
-      expect(await vaultEngine.connect(gov).individualVaultLimit()).to.equal(0);
+      expect(await vaultEngine.connect(gov).vaultMaxSize()).to.equal(0);
       await vaultEngine
         .connect(gov)
-        .updateIndividualVaultLimit(NEW_INDIVIDUAL_VAULT_LIMTI);
-      expect(await vaultEngine.connect(gov).individualVaultLimit()).to.equal(
+        .updateVaultMaxSize(NEW_INDIVIDUAL_VAULT_LIMTI);
+      expect(await vaultEngine.connect(gov).vaultMaxSize()).to.equal(
         NEW_INDIVIDUAL_VAULT_LIMTI
       );
     });
 
-    it("modifyDebt uses individualVaultLimit", async () => {
+    it("modifyDebt uses vaultMaxSize", async () => {
       const COLL_AMOUNT_EQUITY = WAD.mul(10000);
       const COLL_AMOUNT_DEBT = WAD.mul(10000);
       const EQUITY_AMOUNT = RAD.mul(500);
@@ -268,7 +264,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
 
       await vaultEngine
         .connect(gov)
-        .updateIndividualVaultLimit(NEW_INDIVIDUAL_VAULT_LIMTI);
+        .updateVaultMaxSize(NEW_INDIVIDUAL_VAULT_LIMTI);
 
       await vaultEngine.modifyEquity(
         flrAssetId,
@@ -278,7 +274,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
       );
     });
 
-    it("modifyDebt uses individualVaultLimit", async () => {
+    it("modifyDebt uses vaultMaxSize", async () => {
       const COLL_AMOUNT_EQUITY = WAD.mul(10000);
       const COLL_AMOUNT_DEBT = WAD.mul(10000);
       const DEBT_AMOUNT = RAD.mul(500);
@@ -295,7 +291,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
         .connect(gov)
         .updateAdjustedPrice(flrAssetId, RAY.mul(1));
 
-      await vaultEngine.connect(gov).updateIndividualVaultLimit(RAD.mul(500));
+      await vaultEngine.connect(gov).updateVaultMaxSize(RAD.mul(500));
 
       await vaultEngine.modifyEquity(
         flrAssetId,
@@ -316,7 +312,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
 
       await vaultEngine
         .connect(gov)
-        .updateIndividualVaultLimit(NEW_INDIVIDUAL_VAULT_LIMIT);
+        .updateVaultMaxSize(NEW_INDIVIDUAL_VAULT_LIMIT);
 
       await vaultEngine.modifyDebt(
         flrAssetId,
@@ -345,9 +341,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
       await registry
         .connect(gov)
         .setupAddress(bytes32("assetManager"), coll.address);
-      await vaultEngine
-        .connect(gov)
-        .updateIndividualVaultLimit(RAD.mul(1000000));
+      await vaultEngine.connect(gov).updateVaultMaxSize(RAD.mul(1000000));
       await vaultEngine
         .connect(coll)
         .modifyStandbyAsset(

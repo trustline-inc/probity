@@ -17,7 +17,6 @@ import {
   Registry,
   PbtToken,
   VaultEngine,
-  VaultEngineSB,
   NativeToken,
   ERC20Token,
   Teller,
@@ -71,7 +70,6 @@ import {
   MockPriceFeed__factory,
   MockPriceCalc__factory,
   MockReservePool__factory,
-  VaultEngineSB__factory,
 } from "../typechain";
 
 /**
@@ -98,7 +96,6 @@ interface ContractDict {
   registry: Registry;
   pbtToken: PbtToken;
   vaultEngine: VaultEngine;
-  vaultEngineSB: VaultEngineSB;
   nativeToken: NativeToken;
   erc20Token: ERC20Token;
   ftsoManager: MockFtsoManager;
@@ -131,7 +128,6 @@ const artifactNameMap = {
   registry: "Registry",
   pbtToken: "PbtToken",
   vaultEngine: "VaultEngine",
-  vaultEngineSB: "VaultEngineSB",
   nativeToken: "NativeToken",
   erc20Token: "ERC20Token",
   ftsoManager: "MockFtsoManager",
@@ -164,7 +160,6 @@ const contracts: ContractDict = {
   registry: null,
   pbtToken: null,
   vaultEngine: null,
-  vaultEngineSB: null,
   nativeToken: null,
   erc20Token: null,
   ftsoManager: null,
@@ -426,33 +421,6 @@ const deployVaultEngine = async (param?: { registry?: string }) => {
   return contracts;
 };
 
-const deployVaultEngineSB = async (param?: { registry?: string }) => {
-  if (contracts.vaultEngineSB !== null && process.env.NODE_ENV !== "test") {
-    console.info("vaultEngineSB contract has already been deployed, skipping");
-    return contracts;
-  }
-
-  const registry =
-    param && param.registry ? param.registry : contracts.registry.address;
-  const signers = await getSigners();
-  const vaultEngineFactory = (await ethers.getContractFactory(
-    "VaultEngineSB",
-    signers.owner
-  )) as VaultEngineSB__factory;
-  contracts.vaultEngineSB = await vaultEngineFactory.deploy(registry);
-  await contracts.vaultEngineSB.deployed();
-  if (process.env.NODE_ENV !== "test") {
-    console.info("vaultEngineSB deployed ✓");
-    console.info({ registry });
-  }
-  await contracts.registry.setupAddress(
-    bytes32("vaultEngine"),
-    contracts.vaultEngineSB.address
-  );
-  await checkDeploymentDelay();
-  return contracts;
-};
-
 const deployVPToken = async (param?: {
   registry?: Registry;
   assetId?: string;
@@ -485,8 +453,6 @@ const deployVPToken = async (param?: {
   const vaultEngine =
     param && param.vaultEngine
       ? param.vaultEngine
-      : process.env.STABLECOIN?.toUpperCase() === "PHI"
-      ? contracts.vaultEngineSB.address
       : contracts.vaultEngine.address;
 
   const signers = await getSigners();
@@ -547,8 +513,6 @@ const deployERC20Token = async (param?: {
   const vaultEngine =
     param && param.vaultEngine
       ? param.vaultEngine
-      : process.env.STABLECOIN?.toUpperCase() === "PHI"
-      ? contracts.vaultEngineSB.address
       : contracts.vaultEngine.address;
 
   const signers = await getSigners();
@@ -602,8 +566,6 @@ const deployNativeToken = async (param?: {
   const vaultEngine =
     param && param.vaultEngine
       ? param.vaultEngine
-      : process.env.STABLECOIN?.toUpperCase() === "PHI"
-      ? contracts.vaultEngineSB.address
       : contracts.vaultEngine.address;
 
   const signers = await getSigners();
@@ -656,8 +618,6 @@ const deployShutdown = async (param?: {
   const vaultEngine =
     param && param.vaultEngine
       ? param.vaultEngine
-      : process.env.STABLECOIN?.toUpperCase() === "PHI"
-      ? contracts.vaultEngineSB.address
       : contracts.vaultEngine.address;
   const priceFeed =
     param && param.priceFeed ? param.priceFeed : contracts.priceFeed.address;
@@ -728,8 +688,6 @@ const deployTeller = async (param?: {
   const vaultEngine =
     param && param.vaultEngine
       ? param.vaultEngine
-      : process.env.STABLECOIN?.toUpperCase() === "PHI"
-      ? contracts.vaultEngineSB.address
       : contracts.vaultEngine.address;
   const lowApr =
     param && param.lowApr ? param.lowApr : contracts.lowApr.address;
@@ -790,8 +748,6 @@ const deployTreasury = async (param?: {
   const vaultEngine =
     param && param.vaultEngine
       ? param.vaultEngine
-      : process.env.STABLECOIN?.toUpperCase() === "PHI"
-      ? contracts.vaultEngineSB.address
       : contracts.vaultEngine.address;
   const stablecoin =
     param && param.stablecoin ? param.stablecoin : contracts.aurei.address;
@@ -844,8 +800,6 @@ const deployPriceFeed = async (param?: {
   const vaultEngine =
     param && param.vaultEngine
       ? param.vaultEngine
-      : process.env.STABLECOIN?.toUpperCase() === "PHI"
-      ? contracts.vaultEngineSB.address
       : contracts.vaultEngine.address;
 
   const signers = await getSigners();
@@ -887,8 +841,6 @@ const deployAuctioneer = async (param?: {
   const vaultEngine =
     param && param.vaultEngine
       ? param.vaultEngine
-      : process.env.STABLECOIN?.toUpperCase() === "PHI"
-      ? contracts.vaultEngineSB.address
       : contracts.vaultEngine.address;
   const linearDecrease =
     param && param.priceCalc
@@ -970,8 +922,6 @@ const deployReservePool = async (param?: {
   const vaultEngine =
     param && param.vaultEngine
       ? param.vaultEngine
-      : process.env.STABLECOIN?.toUpperCase() === "PHI"
-      ? contracts.vaultEngineSB.address
       : contracts.vaultEngine.address;
 
   const signers = await getSigners();
@@ -1016,8 +966,6 @@ const deployLiquidator = async (param?: {
   const vaultEngine =
     param && param.vaultEngine
       ? param.vaultEngine
-      : process.env.STABLECOIN?.toUpperCase() === "PHI"
-      ? contracts.vaultEngineSB.address
       : contracts.vaultEngine.address;
   const reservePool =
     param && param.reservePool
@@ -1325,10 +1273,7 @@ const deployProbity = async (stablecoin?: string) => {
     stablecoin === "AUR" ? await deployAurei() : await deployPhi();
   await deployPbt();
   await deployApr();
-  contracts =
-    stablecoin === "AUR"
-      ? await deployVaultEngine()
-      : await deployVaultEngineSB();
+  await deployVaultEngine();
   await deployNativeToken();
   await deployReservePool();
   await deployTeller();
@@ -1379,7 +1324,7 @@ const deployTest = async (stablecoin?: string) => {
   await deployRegistry();
   await deployMocks();
   await deployProbity(stablecoin);
-  await deployVaultEngineSB();
+  await deployVaultEngine();
   await deployAuctioneer();
   await deployERC20Token();
   await deployVPToken();
