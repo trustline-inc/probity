@@ -44,6 +44,7 @@ contract VaultEngine is Stateful, Eventful {
     uint256 public totalEquity;
     uint256 public totalUnbackedDebt;
     address[] public userList;
+    uint256 public maxVaultSize;
     mapping(address => bool) public userExists;
     mapping(address => uint256) public stablecoin;
     mapping(address => uint256) public pbt;
@@ -347,6 +348,23 @@ contract VaultEngine is Stateful, Eventful {
         totalEquity = add(totalEquity, mul(RAY, equityAmount));
 
         emit Log("vault", "liquidateEquityPosition", msg.sender);
+    }
+
+    /**
+     * @notice Updates a vault's max size
+     */
+    function updateMaxVaultSize(uint256 newLimit) external onlyBy("gov") {
+        maxVaultSize = newLimit;
+    }
+
+    /**
+     * @notice Check if the vault is under the individual vault limit
+     */
+    function checkVaultUnderLimit(bytes32 assetId, Vault memory vault) internal view {
+        require(
+            (vault.debt * assets[assetId].debtAccumulator) + (vault.initialEquity * RAY) <= maxVaultSize,
+            "Vault is over the individual vault limit"
+        );
     }
 
     /**
