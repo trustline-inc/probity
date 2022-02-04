@@ -2,7 +2,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import "@nomiclabs/hardhat-ethers";
 
 import {
-  MockBonds,
+  MockBondIssuer,
   MockVaultEngine,
   Registry,
   ReservePool,
@@ -26,7 +26,7 @@ let gov: SignerWithAddress;
 let vaultEngine: MockVaultEngine;
 let registry: Registry;
 let reservePool: ReservePool;
-let bonds: MockBonds;
+let bondIssuer: MockBondIssuer;
 
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
@@ -38,12 +38,12 @@ describe("ReservePool Unit Tests", function () {
 
     contracts = await probity.deployReservePool({
       vaultEngine: contracts.mockVaultEngine.address,
-      bonds: contracts.mockBonds.address,
+      bondIssuer: contracts.mockBondIssuer.address,
     });
 
     vaultEngine = contracts.mockVaultEngine;
     reservePool = contracts.reservePool;
-    bonds = contracts.mockBonds;
+    bondIssuer = contracts.mockBondIssuer;
 
     owner = signers.owner;
     user = signers.alice;
@@ -274,10 +274,10 @@ describe("ReservePool Unit Tests", function () {
     });
 
     it("tests that values are properly set", async () => {
-      const before = await bonds.lastOfferingAmount();
+      const before = await bondIssuer.lastOfferingAmount();
       expect(before).to.equal(0);
       await reservePool.connect(liquidator).startSale();
-      const after = await bonds.lastOfferingAmount();
+      const after = await bondIssuer.lastOfferingAmount();
       expect(after).to.equal(DEBT_THRESHOLD);
     });
   });

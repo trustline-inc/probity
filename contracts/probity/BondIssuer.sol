@@ -20,7 +20,7 @@ interface VaultEngineLike {
     ) external;
 }
 
-contract Bonds is Stateful, Eventful {
+contract BondIssuer is Stateful, Eventful {
     /////////////////////////////////////////
     // Type Declarations
     /////////////////////////////////////////
@@ -84,7 +84,7 @@ contract Bonds is Stateful, Eventful {
      * @param _reservePoolAddress reservePoolAddress
      */
     function setReservePoolAddress(address _reservePoolAddress) external onlyBy("gov") {
-        require(reservePoolAddress == address(0), "Bonds/setReservePoolAddress: reservePool Address already set");
+        require(reservePoolAddress == address(0), "BondIssuer/setReservePoolAddress: reservePool Address already set");
         reservePoolAddress = _reservePoolAddress;
     }
 

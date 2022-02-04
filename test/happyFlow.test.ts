@@ -17,7 +17,7 @@ import {
   ReservePool,
   Registry,
   MockERC20Token,
-  Bonds,
+  BondIssuer,
 } from "../typechain";
 import { deployTest } from "../lib/deployer";
 import { ethers } from "hardhat";
@@ -44,7 +44,7 @@ let auctioneer: Auctioneer;
 let liquidator: Liquidator;
 let reserve: ReservePool;
 let erc20: MockERC20Token;
-let bonds: Bonds;
+let bondIssuer: BondIssuer;
 
 const STANDBY_AMOUNT = WAD.mul(1000);
 const UNDERLYING_AMOUNT = WAD.mul(400);
@@ -76,7 +76,7 @@ describe("Probity happy flow", function () {
     reserve = contracts.reservePool;
     registry = contracts.registry;
     erc20 = contracts.mockErc20Token;
-    bonds = contracts.bonds;
+    bondIssuer = contracts.bondIssuer;
 
     owner = signers.owner;
     user = signers.alice;
@@ -632,10 +632,10 @@ describe("Probity happy flow", function () {
     await ethers.provider.send("evm_mine", []);
 
     // Purchase 10 vouchers
-    await bonds.connect(user).purchaseVouchers(RAD.mul(10));
+    await bondIssuer.connect(user).purchaseVouchers(RAD.mul(10));
 
     // Get the amount of vouchers
-    let vouchers = await bonds.vouchers(user.address);
+    let vouchers = await bondIssuer.vouchers(user.address);
 
     // Expect more than 10 vouchers (?)
     expect(vouchers > RAD.mul(10)).to.equal(true);

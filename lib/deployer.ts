@@ -13,7 +13,7 @@ export type Deployment = {
 // Import contract types
 import {
   Aurei,
-  Bonds,
+  BondIssuer,
   Phi,
   Registry,
   PbtToken,
@@ -43,10 +43,10 @@ import {
   MockAuctioneer,
   MockLiquidator,
   MockReservePool,
-  MockBonds,
+  MockBondIssuer,
   Registry__factory,
   Aurei__factory,
-  Bonds__factory,
+  BondIssuer__factory,
   Phi__factory,
   PbtToken__factory,
   LowAPR__factory,
@@ -74,7 +74,7 @@ import {
   MockPriceFeed__factory,
   MockPriceCalc__factory,
   MockReservePool__factory,
-  MockBonds__factory,
+  MockBondIssuer__factory,
   VaultEngineSB__factory,
 } from "../typechain";
 import { ADDRESS_ZERO } from "../test/utils/constants";
@@ -98,7 +98,7 @@ const NETWORK_NATIVE_TOKEN = NETWORK_NATIVE_TOKENS[network.name];
  */
 interface ContractDict {
   aurei: Aurei;
-  bonds: Bonds;
+  bondIssuer: BondIssuer;
   phi: Phi;
   ftso: MockFtso;
   registry: Registry;
@@ -128,12 +128,12 @@ interface ContractDict {
   mockLiquidator: MockLiquidator;
   mockReserve: MockReservePool;
   mockPriceCalc: MockPriceCalc;
-  mockBonds: MockBonds;
+  mockBondIssuer: MockBondIssuer;
 }
 
 const artifactNameMap = {
   aurei: "Aurei",
-  bonds: "Bonds",
+  bondIssuer: "BondIssuer",
   phi: "Phi",
   ftso: "MockFtso",
   registry: "Registry",
@@ -163,12 +163,12 @@ const artifactNameMap = {
   mockLiquidator: "MockLiquidator",
   mockReserve: "MockReservePool",
   mockPriceCalc: "MockPriceCalc",
-  mockBonds: "MockBonds",
+  mockBondIssuer: "MockBondIssuer",
 };
 
 const contracts: ContractDict = {
   aurei: null,
-  bonds: null,
+  bondIssuer: null,
   phi: null,
   ftso: null,
   registry: null,
@@ -198,7 +198,7 @@ const contracts: ContractDict = {
   mockLiquidator: null,
   mockReserve: null,
   mockPriceCalc: null,
-  mockBonds: null,
+  mockBondIssuer: null,
 };
 
 interface SignerDict {
@@ -656,7 +656,7 @@ const deployShutdown = async (param?: {
   teller?: string;
   treasury?: string;
   liquidator?: string;
-  bonds?: string;
+  bondIssuer?: string;
 }) => {
   if (contracts.shutdown !== null && process.env.NODE_ENV !== "test") {
     console.info("shutdown contract has already been deployed, skipping");
@@ -683,7 +683,8 @@ const deployShutdown = async (param?: {
     param && param.treasury ? param.treasury : contracts.treasury.address;
   const liquidator =
     param && param.liquidator ? param.liquidator : contracts.liquidator.address;
-  const bonds = param && param.bonds ? param.bonds : contracts.bonds.address;
+  const bondIssuer =
+    param && param.bondIssuer ? param.bondIssuer : contracts.bondIssuer.address;
 
   // Set signers
   const signers = await getSigners();
@@ -700,7 +701,7 @@ const deployShutdown = async (param?: {
     teller,
     treasury,
     liquidator,
-    bonds
+    bondIssuer
   );
   await contracts.shutdown.deployed();
   if (process.env.NODE_ENV !== "test") {
@@ -713,7 +714,7 @@ const deployShutdown = async (param?: {
       teller,
       treasury,
       liquidator,
-      bonds,
+      bondIssuer,
     });
   }
 
@@ -971,11 +972,11 @@ const deployPriceCalc = async () => {
   return contracts;
 };
 
-const deployBonds = async (param?: {
+const deployBondIssuer = async (param?: {
   registry?: string;
   vaultEngine?: string;
 }) => {
-  if (contracts.bonds !== null && process.env.NODE_ENV !== "test") {
+  if (contracts.bondIssuer !== null && process.env.NODE_ENV !== "test") {
     console.info("reservePool contract has already been deployed, skipping");
     return contracts;
   }
@@ -990,22 +991,22 @@ const deployBonds = async (param?: {
       : contracts.vaultEngine.address;
 
   const signers = await getSigners();
-  const bondsFactory = (await ethers.getContractFactory(
-    "Bonds",
+  const bondIssuerFactory = (await ethers.getContractFactory(
+    "BondIssuer",
     signers.owner
-  )) as Bonds__factory;
-  contracts.bonds = await bondsFactory.deploy(registry, vaultEngine);
-  await contracts.bonds.deployed();
+  )) as BondIssuer__factory;
+  contracts.bondIssuer = await bondIssuerFactory.deploy(registry, vaultEngine);
+  await contracts.bondIssuer.deployed();
   if (process.env.NODE_ENV !== "test") {
-    console.info("bonds deployed ✓");
+    console.info("bondIssuer deployed ✓");
     console.info({
       registry,
       vaultEngine,
     });
   }
   await contracts.registry.setupAddress(
-    bytes32("bonds"),
-    contracts.bonds.address
+    bytes32("bondIssuer"),
+    contracts.bondIssuer.address
   );
 
   await checkDeploymentDelay();
@@ -1015,7 +1016,7 @@ const deployBonds = async (param?: {
 const deployReservePool = async (param?: {
   registry?: string;
   vaultEngine?: string;
-  bonds?: string;
+  bondIssuer?: string;
 }) => {
   if (contracts.reservePool !== null && process.env.NODE_ENV !== "test") {
     console.info("reservePool contract has already been deployed, skipping");
@@ -1030,7 +1031,8 @@ const deployReservePool = async (param?: {
       : process.env.STABLECOIN?.toUpperCase() === "PHI"
       ? contracts.vaultEngineSB.address
       : contracts.vaultEngine.address;
-  const bonds = param && param.bonds ? param.bonds : contracts.bonds.address;
+  const bondIssuer =
+    param && param.bondIssuer ? param.bondIssuer : contracts.bondIssuer.address;
 
   const signers = await getSigners();
   const reservePoolFactory = (await ethers.getContractFactory(
@@ -1040,7 +1042,7 @@ const deployReservePool = async (param?: {
   contracts.reservePool = await reservePoolFactory.deploy(
     registry,
     vaultEngine,
-    bonds
+    bondIssuer
   );
   await contracts.reservePool.deployed();
   if (process.env.NODE_ENV !== "test") {
@@ -1048,7 +1050,7 @@ const deployReservePool = async (param?: {
     console.info({
       registry,
       vaultEngine,
-      bonds,
+      bondIssuer,
     });
   }
   await contracts.registry.setupAddress(
@@ -1057,10 +1059,12 @@ const deployReservePool = async (param?: {
   );
 
   if (
-    contracts.bonds !== null &&
-    (await contracts.bonds.reservePoolAddress()) === ADDRESS_ZERO
+    contracts.bondIssuer !== null &&
+    (await contracts.bondIssuer.reservePoolAddress()) === ADDRESS_ZERO
   ) {
-    await contracts.bonds.setReservePoolAddress(contracts.reservePool.address);
+    await contracts.bondIssuer.setReservePoolAddress(
+      contracts.reservePool.address
+    );
   }
 
   await checkDeploymentDelay();
@@ -1368,8 +1372,8 @@ const deployMockReservePool = async () => {
   return contracts;
 };
 
-const deployMockBonds = async () => {
-  if (contracts.mockBonds !== null && process.env.NODE_ENV !== "test") {
+const deployMockBondIssuer = async () => {
+  if (contracts.mockBondIssuer !== null && process.env.NODE_ENV !== "test") {
     console.info("mockReserve contract has already been deployed, skipping");
     return contracts;
   }
@@ -1377,17 +1381,18 @@ const deployMockBonds = async () => {
   // Set signers
   const signers = await getSigners();
 
-  const mockBonds = (await ethers.getContractFactory(
-    "MockBonds",
+  const mockBondIssuer = (await ethers.getContractFactory(
+    "MockBondIssuer",
     signers.owner
-  )) as MockBonds__factory;
-  contracts.mockBonds = await mockBonds.deploy();
-  await contracts.mockBonds.deployed();
-  if (process.env.NODE_ENV !== "test") console.info("mockBonds deployed ✓");
+  )) as MockBondIssuer__factory;
+  contracts.mockBondIssuer = await mockBondIssuer.deploy();
+  await contracts.mockBondIssuer.deployed();
+  if (process.env.NODE_ENV !== "test")
+    console.info("mockBondIssuer deployed ✓");
 
   await contracts.registry.setupAddress(
-    bytes32("bonds"),
-    contracts.mockBonds.address
+    bytes32("bondIssuer"),
+    contracts.mockBondIssuer.address
   );
   await checkDeploymentDelay();
   return contracts;
@@ -1404,7 +1409,7 @@ const deployMocks = async () => {
   await deployMockReservePool();
   await deployMockAuctioneer();
   await deployMockLiquidator();
-  await deployMockBonds();
+  await deployMockBondIssuer();
 
   return { contracts, signers };
 };
@@ -1423,7 +1428,7 @@ const deployProbity = async (stablecoin?: string) => {
       ? await deployVaultEngine()
       : await deployVaultEngineSB();
   await deployNativeToken();
-  await deployBonds();
+  await deployBondIssuer();
   await deployReservePool();
   await deployTeller();
   await deployPriceCalc();
@@ -1516,7 +1521,7 @@ const probity = {
   deployReservePool,
   deployLiquidator,
   deployShutdown,
-  deployBonds,
+  deployBondIssuer,
 };
 
 const mock = {
@@ -1527,7 +1532,7 @@ const mock = {
   deployMockFtsoRewardManager,
   deployMockVaultEngine,
   deployMockPriceFeed,
-  deployMockBonds,
+  deployMockBondIssuer,
 };
 
 export { deployDev, deployProd, deployTest, probity, mock };

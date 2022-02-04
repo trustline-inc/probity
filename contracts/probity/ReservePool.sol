@@ -22,7 +22,7 @@ interface VaultEngineLike {
     ) external;
 }
 
-interface BondsLike {
+interface BondIssuerLike {
     function newOffering(uint256 amount) external;
 }
 
@@ -37,7 +37,7 @@ contract ReservePool is Stateful, Eventful {
     /////////////////////////////////////////
     uint256 private constant ONE = 1E18;
     VaultEngineLike public immutable vaultEngine;
-    BondsLike public immutable bondSeller;
+    BondIssuerLike public immutable bondSeller;
 
     uint256 public debtOnAuction;
     uint256 public debtThreshold; // The bad debt threshold, after which to start issuing vouchers
@@ -48,7 +48,7 @@ contract ReservePool is Stateful, Eventful {
     constructor(
         address registryAddress,
         VaultEngineLike vaultEngineAddress,
-        BondsLike bondSellerAdress
+        BondIssuerLike bondSellerAdress
     ) Stateful(registryAddress) {
         vaultEngine = vaultEngineAddress;
         bondSeller = bondSellerAdress;
