@@ -31,12 +31,10 @@ function sleep(ms: number) {
           Authorization: `Apikey ${process.env.CRYPTOCOMPARE_API_KEY}`,
         },
       });
-
-      // TODO: Update this calculation to ensure that it is accurate.
-      const newPrice = ethers.BigNumber.from("1000000000000000000000000000")
-        .mul(Math.floor(response.data.USD * 1000))
-        .div(1000);
-      console.log("New price:", newPrice.toString());
+      const newPrice = String(
+        ethers.utils.parseUnits(response.data.USD.toString(), 5)
+      );
+      console.log("New price:", String(ethers.utils.formatUnits(newPrice, 5)));
       let tx = await ftso.setCurrentPrice(newPrice, {
         gasPrice: web3.utils.toWei("225", "Gwei"),
         gasLimit: 300000,
@@ -45,7 +43,7 @@ function sleep(ms: number) {
 
       tx = await priceFeed
         .connect(owner)
-        .updateAdjustedPrice(web3.utils.keccak256("SGB"), {
+        .updateAdjustedPrice(web3.utils.keccak256("CFLR"), {
           gasLimit: 300000,
         });
       await tx.wait();
