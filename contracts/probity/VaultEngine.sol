@@ -201,7 +201,7 @@ contract VaultEngine is Stateful, Eventful {
         address treasuryAddress,
         int256 underlyingAmount,
         int256 equityAmount
-    ) external onlyByWhiteListed {
+    ) external virtual onlyByWhiteListed {
         require(
             registry.checkValidity("treasury", treasuryAddress),
             "Vault/modifyEquity: Treasury address is not valid"
@@ -247,7 +247,7 @@ contract VaultEngine is Stateful, Eventful {
         address treasuryAddress,
         int256 collAmount,
         int256 debtAmount
-    ) external onlyByWhiteListed {
+    ) external virtual onlyByWhiteListed {
         require(registry.checkValidity("treasury", treasuryAddress), "Vault/modifyDebt: Treasury address is not valid");
 
         if (!userExists[msg.sender]) {
