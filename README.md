@@ -20,6 +20,8 @@ You can view the contract code in the [`contracts`](./contracts) folder. We will
   - [Remote](#remote-deployment)
 - [Initialization](#initialization)
 - [Utility Scripts](#utility-scripts)
+  - [Rate Updater](#rate-updater)
+  - [Price Updater](#price-updater)
 - [Contract Addresses](#contract-addresses)
   - [Coston](#coston-network)
   - [Songbird](#songbird-network)
@@ -173,9 +175,21 @@ yarn run initProbity:local
 
 ## Utility Scripts
 
-Use `yarn run rateUpdater` to call `Teller.updateAccumulators()` every 5 seconds.
+### Rate Updater
 
-Use `yarn run priceUpdater` in the local environment to use the mock FTSO.
+Run this command to call `Teller.updateAccumulators()` every 5 seconds.
+
+```
+yarn run rateUpdater:<network>
+```
+
+### Price Updater
+
+Run this command in the local environment to use the mock FTSO.
+
+```
+yarn run priceUpdater:local
+```
 
 ## Contract Addresses
 
