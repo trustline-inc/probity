@@ -256,7 +256,7 @@ contract Auctioneer is Stateful, Eventful {
         auctions[auctionId].debt = auctions[auctionId].debt - buyableAmount;
         auctions[auctionId].lot = auctions[auctionId].lot - lotToBuy;
 
-        checkIfAuctionEnded(auctionId);
+        endAuction(auctionId);
         emit Sale(auctions[auctionId].collId, auctionId, msg.sender, currentPrice, lotToBuy);
         cancelOldBids(auctionId, 0, 0, index);
     }
@@ -286,7 +286,7 @@ contract Auctioneer is Stateful, Eventful {
             bids[auctionId][msg.sender].price,
             bids[auctionId][msg.sender].lot
         );
-        checkIfAuctionEnded(auctionId);
+        endAuction(auctionId);
     }
 
     /**
@@ -360,7 +360,7 @@ contract Auctioneer is Stateful, Eventful {
      * @notice Ends an auction if it is done
      * @param auctionId The ID of the auction
      */
-    function checkIfAuctionEnded(uint256 auctionId) internal {
+    function endAuction(uint256 auctionId) internal {
         if (auctions[auctionId].debt == 0 || auctions[auctionId].lot == 0) {
             auctions[auctionId].isOver = true;
 
