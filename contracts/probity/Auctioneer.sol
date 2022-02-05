@@ -41,8 +41,8 @@ contract Auctioneer is Stateful, Eventful {
         bytes32 collId;
         uint256 lot;
         uint256 debt;
-        address owner; // left over collateral will go back to this owner
-        address beneficiary; // aurei will go to this address
+        address owner; // leftover collateral will go back to this owner
+        address beneficiary; // stablecoins will go to this address
         uint256 startPrice;
         uint256 startTime;
         bool isOver;
@@ -66,10 +66,10 @@ contract Auctioneer is Stateful, Eventful {
     PriceCalc public immutable priceCalc;
 
     uint256 public auctionCount;
-    // @todo check and fix these values
+    // TODO: check and fix these values
     uint256 public nextBidRatio = 1.05E18;
     uint256 public priceBuffer = 1.20E18;
-    // @todo add smallest possible bid as to avoid tiny amounts
+    // TODO: add smallest possible bid as to avoid tiny amounts
     mapping(uint256 => Auction) public auctions;
     mapping(uint256 => mapping(address => Bid)) public bids;
     // sorted linked list of bidders
@@ -136,9 +136,9 @@ contract Auctioneer is Stateful, Eventful {
      * @notice Starts a collateral auction
      * @param collId The ID of the collateral on auction
      * @param lotSize The size of the lot
-     * @param debtSize TODO
+     * @param debtSize The amount of stablecoins that need to be raised
      * @param owner The owner of the liquidated vault
-     * @param beneficiary TODO
+     * @param beneficiary A ReservePool address
      */
     function startAuction(
         bytes32 collId,
@@ -147,8 +147,8 @@ contract Auctioneer is Stateful, Eventful {
         address owner,
         address beneficiary
     ) external onlyBy("liquidator") {
-        (uint256 currPrice, ) = ftso.getCurrentPrice();
-        uint256 startingPrice = (rdiv(currPrice, 1e5) * priceBuffer) / ONE;
+        (uint256 currentPrice, ) = ftso.getCurrentPrice();
+        uint256 startingPrice = (rdiv(currentPrice, 1e5) * priceBuffer) / ONE;
         uint256 auctionId = auctionCount++;
         auctions[auctionId] = Auction(
             collId,
@@ -178,8 +178,8 @@ contract Auctioneer is Stateful, Eventful {
             "Auctioneer/resetAuction: auction can not be reset right now"
         );
 
-        (uint256 currPrice, ) = ftso.getCurrentPrice();
-        uint256 startingPrice = (rdiv(currPrice, 1e5) * priceBuffer) / ONE;
+        (uint256 currentPrice, ) = ftso.getCurrentPrice();
+        uint256 startingPrice = (rdiv(currentPrice, 1e5) * priceBuffer) / ONE;
         // then reset startTime to now, price to original start price,
         auction.startPrice = startingPrice;
         auction.startTime = block.timestamp;
