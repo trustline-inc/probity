@@ -234,27 +234,29 @@ contract Auctioneer is Stateful, Eventful {
         uint256 currentPrice = calculatePrice(auctionId);
         require(currentPrice <= maxPrice, "Auctioneer/buyItNow: Current price is higher than max price");
         require(currentPrice != 0, "Auctioneer/buyItNow: Current price is now zero");
-        uint256 buyableAmount = lot * currentPrice;
+        uint256 lotValue = lot * currentPrice;
 
-        (uint256 bidValueAtCurrent, uint256 totalBidLot, address index) = totalBidValueAtPrice(auctionId, currentPrice);
+        (uint256 totalBidValue, uint256 totalBidLot, address index) = totalBidValueAtPrice(auctionId, currentPrice);
+
         require(
-            bidValueAtCurrent < auctions[auctionId].debt && totalBidLot < auctions[auctionId].lot,
+            totalBidValue < auctions[auctionId].debt && totalBidLot < auctions[auctionId].lot,
             "Auctioneer/buyItNow: Price has reach a point where BuyItNow is no longer available"
         );
-        if (bidValueAtCurrent + buyableAmount > auctions[auctionId].debt) {
-            buyableAmount = auctions[auctionId].debt - bidValueAtCurrent;
+
+        if (totalBidValue + lotValue > auctions[auctionId].debt) {
+            lotValue = auctions[auctionId].debt - totalBidValue;
         }
 
-        // TODO: lotToBuy could be zero if buyableAmount < currentPrice
-        uint256 lotToBuy = buyableAmount / currentPrice;
+        // TODO: #240 lotToBuy could be zero if lotValue < currentPrice
+        uint256 lotToBuy = lotValue / currentPrice;
 
         lotToBuy = min(lotToBuy, auctions[auctionId].lot);
-        buyableAmount = lotToBuy * currentPrice;
+        lotValue = lotToBuy * currentPrice;
 
-        vaultEngine.moveStablecoin(msg.sender, auctions[auctionId].beneficiary, buyableAmount);
+        vaultEngine.moveStablecoin(msg.sender, auctions[auctionId].beneficiary, lotValue);
         vaultEngine.moveAsset(auctions[auctionId].collId, address(this), msg.sender, lotToBuy);
 
-        auctions[auctionId].debt = auctions[auctionId].debt - buyableAmount;
+        auctions[auctionId].debt = auctions[auctionId].debt - lotValue;
         auctions[auctionId].lot = auctions[auctionId].lot - lotToBuy;
 
         endAuction(auctionId);
