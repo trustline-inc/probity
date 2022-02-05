@@ -221,7 +221,7 @@ contract Auctioneer is Stateful, Eventful {
     /**
      * @notice Allows a user to purchase collateral outright
      * @param auctionId The ID of the auction
-     * @param maxPrice TODO: where is this used?
+     * @param maxPrice TODO: #238 where is this used?
      * @param lot The amount of collateral to purchase
      */
     function buyItNow(
