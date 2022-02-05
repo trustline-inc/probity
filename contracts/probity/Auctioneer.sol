@@ -200,11 +200,11 @@ contract Auctioneer is Stateful, Eventful {
         require(bids[auctionId][msg.sender].price == 0, "Auctioneer/placeBid: This user has already placed a bid");
 
         (uint256 totalBidValue, uint256 totalBidLot, address indexToAdd) = totalBidValueAtPrice(auctionId, bidPrice);
-        uint256 bidAbleAmount = auctions[auctionId].debt - totalBidValue;
-        uint256 bidAbleLot = auctions[auctionId].lot - totalBidLot;
+        uint256 biddableAmount = auctions[auctionId].debt - totalBidValue;
+        uint256 biddableLot = auctions[auctionId].lot - totalBidLot;
         uint256 bidAmount = bidPrice * bidLot;
-        if (bidAbleAmount < bidAmount) {
-            bidLot = min(bidAbleAmount / bidPrice, bidAbleLot);
+        if (biddableAmount < bidAmount) {
+            bidLot = min(biddableAmount / bidPrice, biddableLot);
             bidAmount = bidLot * bidPrice;
         }
 
