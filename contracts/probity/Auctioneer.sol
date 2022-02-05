@@ -317,7 +317,7 @@ contract Auctioneer is Stateful, Eventful {
     }
 
     /**
-     * @notice TODO
+     * @notice Cycles through the linked list to calculate the total value of the bids
      * @param auctionId The ID of the auction
      * @param cutOffPrice TODO
      */
@@ -325,13 +325,13 @@ contract Auctioneer is Stateful, Eventful {
         public
         view
         returns (
-            uint256 totalBidsValue,
+            uint256 totalBidValue,
             uint256 totalLot,
             address prev
         )
     {
         if (nextHighestBidder[auctionId][HEAD] == address(0)) {
-            return (totalBidsValue, totalLot, HEAD);
+            return (totalBidValue, totalLot, HEAD);
         }
         prev = HEAD;
         address index = nextHighestBidder[auctionId][HEAD];
@@ -341,7 +341,7 @@ contract Auctioneer is Stateful, Eventful {
                 break;
             }
             totalLot += bids[auctionId][index].lot;
-            totalBidsValue += (bids[auctionId][index].lot * bids[auctionId][index].price);
+            totalBidValue += (bids[auctionId][index].lot * bids[auctionId][index].price);
             prev = index;
 
             if (nextHighestBidder[auctionId][index] == address(0)) {
@@ -349,7 +349,7 @@ contract Auctioneer is Stateful, Eventful {
             }
             index = nextHighestBidder[auctionId][index];
         }
-        return (totalBidsValue, totalLot, prev);
+        return (totalBidValue, totalLot, prev);
     }
 
     /////////////////////////////////////////
