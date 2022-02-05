@@ -21,7 +21,7 @@ interface VaultEngineLike {
 }
 
 interface PriceCalc {
-    function price(uint256 startingPrice, uint256 timeElapsed) external returns (uint256 calculatedPrice);
+    function price(uint256 startPrice, uint256 timeElapsed) external returns (uint256 calculatedPrice);
 }
 
 interface FtsoLike {
@@ -148,7 +148,7 @@ contract Auctioneer is Stateful, Eventful {
         address beneficiary
     ) external onlyBy("liquidator") {
         (uint256 currentPrice, ) = ftso.getCurrentPrice();
-        uint256 startingPrice = (rdiv(currentPrice, 1e5) * priceBuffer) / ONE;
+        uint256 startPrice = (rdiv(currentPrice, 1e5) * priceBuffer) / ONE;
         uint256 auctionId = auctionCount++;
         auctions[auctionId] = Auction(
             collId,
@@ -156,7 +156,7 @@ contract Auctioneer is Stateful, Eventful {
             debtSize,
             owner,
             beneficiary,
-            startingPrice,
+            startPrice,
             block.timestamp,
             false
         );
@@ -169,19 +169,16 @@ contract Auctioneer is Stateful, Eventful {
      * @param auctionId The ID of the auction to reset
      */
     function resetAuction(uint256 auctionId) external {
-        // make sure auction is not simply "over"
         require(!auctions[auctionId].isOver, "Auctioneer/resetAuction: Auction is over");
-        // check if price is zero and have non-zero startTime
         Auction storage auction = auctions[auctionId];
         require(
             calculatePrice(auctionId) == 0 && auction.startTime != 0,
-            "Auctioneer/resetAuction: auction can not be reset right now"
+            "Auctioneer/resetAuction: This auction isn't expired, or doesn't exist"
         );
 
         (uint256 currentPrice, ) = ftso.getCurrentPrice();
-        uint256 startingPrice = (rdiv(currentPrice, 1e5) * priceBuffer) / ONE;
-        // then reset startTime to now, price to original start price,
-        auction.startPrice = startingPrice;
+        uint256 startPrice = (rdiv(currentPrice, 1e5) * priceBuffer) / ONE;
+        auction.startPrice = startPrice;
         auction.startTime = block.timestamp;
 
         emit AuctionReset(auction.collId, auctionId, auction.lot);
@@ -199,7 +196,7 @@ contract Auctioneer is Stateful, Eventful {
         uint256 bidLot
     ) external {
         require(!auctions[auctionId].isOver, "Auctioneer/placeBid: Auction is over");
-        // TODO: re-evaluate why user shouldn't be able to place two bids
+        // TODO: #235 re-evaluate why user shouldn't be able to place two bids
         require(bids[auctionId][msg.sender].price == 0, "Auctioneer/placeBid: This user has already placed a bid");
 
         (uint256 totalBidValue, uint256 totalBidLot, address indexToAdd) = totalBidValueAtPrice(auctionId, bidPrice);
