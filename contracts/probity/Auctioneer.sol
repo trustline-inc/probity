@@ -200,15 +200,16 @@ contract Auctioneer is Stateful, Eventful {
         require(bids[auctionId][msg.sender].price == 0, "Auctioneer/placeBid: This user has already placed a bid");
 
         (uint256 totalBidValue, uint256 totalBidLot, address indexToAdd) = totalBidValueAtPrice(auctionId, bidPrice);
-        uint256 biddableAmount = auctions[auctionId].debt - totalBidValue;
+        uint256 biddableValue = auctions[auctionId].debt - totalBidValue;
         uint256 biddableLot = auctions[auctionId].lot - totalBidLot;
-        uint256 bidAmount = bidPrice * bidLot;
-        if (biddableAmount < bidAmount) {
-            bidLot = min(biddableAmount / bidPrice, biddableLot);
-            bidAmount = bidLot * bidPrice;
+        uint256 bidValue = bidPrice * bidLot;
+
+        if (biddableValue < bidValue) {
+            bidLot = min(biddableValue / bidPrice, biddableLot);
+            bidValue = bidLot * bidPrice;
         }
 
-        vaultEngine.moveStablecoin(msg.sender, address(this), bidAmount);
+        vaultEngine.moveStablecoin(msg.sender, address(this), bidValue);
 
         nextHighestBidder[auctionId][msg.sender] = nextHighestBidder[auctionId][indexToAdd];
         nextHighestBidder[auctionId][indexToAdd] = msg.sender;
