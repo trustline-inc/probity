@@ -41,13 +41,17 @@ npm install @trustline-inc/probity --save
 Below is a code snippet that shows how to import the contract ABIs and call a contract method using [`ethers`](https://docs.ethers.io/v5/).
 
 ```javascript
-import AureiABI from "@trustline-inc/aurei/artifacts/contracts/Aurei.sol/Aurei.json";
+import AureiABI from "@trustline-inc/probity/artifacts/contracts/tokens/Aurei.sol/Aurei.json";
 import { Contract } from "ethers";
 
-const AUREI_ADDRESS = "<ADDRESS>";
+const AUREI_ADDRESS = "0xBB62591BdEd66c1df6C3e9A912f3eC8c4F234455";
 
-const aurei = new Contract(AUREI_ADDRESS, AureiABI.abi, library.getSigner());
-const totalSupply = await aurei.totalSupply();
+const aureiErc20 = new Contract(
+  AUREI_ADDRESS,
+  AureiABI.abi,
+  library.getSigner()
+);
+const totalSupply = await aureiErc20.totalSupply();
 console.log("Total supply:", totalSupply);
 ```
 
