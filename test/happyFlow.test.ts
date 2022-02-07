@@ -64,8 +64,8 @@ describe("Probity happy flow", function () {
 
     // Set contracts
     vaultEngine = contracts.vaultEngine;
-    flrWallet = contracts.nativeToken;
-    fxrpWallet = contracts.erc20Token;
+    flrWallet = contracts.nativeAssetManager;
+    fxrpWallet = contracts.erc20AssetManager;
     aurei = contracts.aurei;
     teller = contracts.teller;
     treasury = contracts.treasury;

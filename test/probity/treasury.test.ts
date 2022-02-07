@@ -42,7 +42,7 @@ describe("Treasury Unit Tests", function () {
     registry = contracts.registry;
     aurei = contracts.aurei;
     pbt = contracts.pbtToken;
-    flrCollateral = contracts.nativeToken;
+    flrCollateral = contracts.nativeAssetManager;
 
     owner = signers.owner;
     user = signers.alice;

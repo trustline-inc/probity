@@ -23,7 +23,7 @@ let user: SignerWithAddress;
 let gov: SignerWithAddress;
 
 // Contracts
-let vpToken: VPAssetManager;
+let vpAssetManager: VPAssetManager;
 let mockVpToken: MockVPAssetManager;
 let vaultEngine: VaultEngine;
 let registry: Registry;
@@ -40,7 +40,7 @@ describe("VP Token  Unit Test", function () {
     // Set contracts
     vaultEngine = contracts.vaultEngine;
     registry = contracts.registry;
-    vpToken = contracts.vpToken;
+    vpAssetManager = contracts.vpAssetManager;
     mockVpToken = contracts.mockVpToken;
 
     owner = signers.owner;
@@ -55,26 +55,28 @@ describe("VP Token  Unit Test", function () {
 
   it("fails if caller is not a whitelisted user", async () => {
     await mockVpToken.mint(user.address, AMOUNT_TO_MINT);
-    await mockVpToken.connect(user).approve(vpToken.address, AMOUNT_TO_MINT);
+    await mockVpToken
+      .connect(user)
+      .approve(vpAssetManager.address, AMOUNT_TO_MINT);
 
     await assertRevert(
-      vpToken.connect(user).deposit(AMOUNT_TO_MINT),
+      vpAssetManager.connect(user).deposit(AMOUNT_TO_MINT),
       "AccessControl/onlyByWhiteListed: Access forbidden"
     );
 
     await registry
       .connect(gov)
       .setupAddress(bytes32("whitelisted"), user.address);
-    await vpToken.connect(user).deposit(AMOUNT_TO_MINT);
+    await vpAssetManager.connect(user).deposit(AMOUNT_TO_MINT);
   });
 
   it("test DepositVPAssetManager event is emitted properly", async () => {
     await mockVpToken.mint(owner.address, AMOUNT_TO_MINT);
-    await mockVpToken.approve(vpToken.address, AMOUNT_TO_MINT);
+    await mockVpToken.approve(vpAssetManager.address, AMOUNT_TO_MINT);
     let parsedEvents = await parseEvents(
-      vpToken.deposit(AMOUNT_TO_MINT),
+      vpAssetManager.deposit(AMOUNT_TO_MINT),
       "DepositVPAssetManager",
-      vpToken
+      vpAssetManager
     );
 
     expect(parsedEvents[0].args[0]).to.equal(owner.address);
@@ -83,13 +85,13 @@ describe("VP Token  Unit Test", function () {
 
   it("test WithdrawVPAssetManager event is emitted properly", async () => {
     await mockVpToken.mint(owner.address, AMOUNT_TO_MINT);
-    await mockVpToken.approve(vpToken.address, AMOUNT_TO_MINT);
-    await vpToken.deposit(AMOUNT_TO_MINT);
+    await mockVpToken.approve(vpAssetManager.address, AMOUNT_TO_MINT);
+    await vpAssetManager.deposit(AMOUNT_TO_MINT);
 
     let parsedEvents = await parseEvents(
-      vpToken.withdraw(AMOUNT_TO_WITHDRAW),
+      vpAssetManager.withdraw(AMOUNT_TO_WITHDRAW),
       "WithdrawVPAssetManager",
-      vpToken
+      vpAssetManager
     );
     expect(parsedEvents[0].args[0]).to.equal(owner.address);
     expect(parsedEvents[0].args[1]).to.equal(AMOUNT_TO_WITHDRAW);

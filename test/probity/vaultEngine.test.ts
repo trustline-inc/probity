@@ -31,7 +31,7 @@ let assetManager: SignerWithAddress;
 let vaultEngine: VaultEngine;
 let registry: Registry;
 let reservePool: ReservePool;
-let nativeToken: NativeAssetManager;
+let nativeAssetManager: NativeAssetManager;
 let ftso: MockFtso;
 let teller: Teller;
 let priceFeed: PriceFeed;
@@ -47,7 +47,7 @@ describe("Vault Engine Unit Tests", function () {
     registry = contracts.registry;
     vaultEngine = contracts.vaultEngine;
     reservePool = contracts.reservePool;
-    nativeToken = contracts.nativeToken;
+    nativeAssetManager = contracts.nativeAssetManager;
     teller = contracts.teller;
     priceFeed = contracts.priceFeed;
     ftso = contracts.ftso;

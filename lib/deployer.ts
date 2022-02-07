@@ -105,8 +105,8 @@ interface ContractDict {
   pbtToken: PbtToken;
   vaultEngine: VaultEngine;
   vaultEngineSB: VaultEngineSB;
-  nativeToken: NativeAssetManager;
-  erc20Token: ERC20AssetManager;
+  nativeAssetManager: NativeAssetManager;
+  erc20AssetManager: ERC20AssetManager;
   ftsoManager: MockFtsoManager;
   ftsoRewardManager: MockFtsoRewardManager;
   teller: Teller;
@@ -119,7 +119,7 @@ interface ContractDict {
   mockErc20Token: MockERC20AssetManager;
   shutdown: Shutdown;
   mockVpToken: MockVPAssetManager;
-  vpToken: VPAssetManager;
+  vpAssetManager: VPAssetManager;
   lowApr: LowAPR;
   highApr: HighAPR;
   mockVaultEngine: MockVaultEngine;
@@ -140,8 +140,8 @@ const artifactNameMap = {
   pbtToken: "PbtToken",
   vaultEngine: "VaultEngine",
   vaultEngineSB: "VaultEngineSB",
-  nativeToken: "NativeAssetManager",
-  erc20Token: "ERC20AssetManager",
+  nativeAssetManager: "NativeAssetManager",
+  erc20AssetManager: "ERC20AssetManager",
   ftsoManager: "MockFtsoManager",
   ftsoRewardManager: "MockFtsoRewardManager",
   teller: "Teller",
@@ -153,7 +153,7 @@ const artifactNameMap = {
   reservePool: "ReservePool",
   mockErc20Token: "MockERC20AssetManager",
   mockVpToken: "MockVPAssetManager",
-  vpToken: "VPAssetManager",
+  vpAssetManager: "VPAssetManager",
   shutdown: "Shutdown",
   lowApr: "LowAPR",
   highApr: "HighAPR",
@@ -175,8 +175,8 @@ const contracts: ContractDict = {
   pbtToken: null,
   vaultEngine: null,
   vaultEngineSB: null,
-  nativeToken: null,
-  erc20Token: null,
+  nativeAssetManager: null,
+  erc20AssetManager: null,
   ftsoManager: null,
   ftsoRewardManager: null,
   teller: null,
@@ -187,7 +187,7 @@ const contracts: ContractDict = {
   liquidator: null,
   reservePool: null,
   mockErc20Token: null,
-  vpToken: null,
+  vpAssetManager: null,
   mockVpToken: null,
   shutdown: null,
   lowApr: null,
@@ -472,8 +472,8 @@ const deployVPAssetManager = async (param?: {
   mockVpToken?: string;
   vaultEngine?: string;
 }) => {
-  if (contracts.vpToken !== null && process.env.NODE_ENV !== "test") {
-    console.info("vpToken contract has already been deployed, skipping");
+  if (contracts.vpAssetManager !== null && process.env.NODE_ENV !== "test") {
+    console.info("vpAssetManager contract has already been deployed, skipping");
     return contracts;
   }
 
@@ -504,11 +504,11 @@ const deployVPAssetManager = async (param?: {
 
   const signers = await getSigners();
 
-  const vpTokenFactory = (await ethers.getContractFactory(
+  const vpAssetManagerFactory = (await ethers.getContractFactory(
     "VPAssetManager",
     signers.owner
   )) as VPAssetManager__factory;
-  contracts.vpToken = await vpTokenFactory.deploy(
+  contracts.vpAssetManager = await vpAssetManagerFactory.deploy(
     registry,
     assetId,
     ftsoManager,
@@ -516,9 +516,9 @@ const deployVPAssetManager = async (param?: {
     mockVpToken,
     vaultEngine
   );
-  await contracts.vpToken.deployed();
+  await contracts.vpAssetManager.deployed();
   if (process.env.NODE_ENV !== "test") {
-    console.info("vpToken deployed ✓");
+    console.info("vpAssetManager deployed ✓");
     console.info({
       registry: registry,
       assetId,
@@ -531,7 +531,7 @@ const deployVPAssetManager = async (param?: {
 
   await contracts.registry.setupAddress(
     bytes32("assetManager"),
-    contracts.vpToken.address
+    contracts.vpAssetManager.address
   );
 
   await checkDeploymentDelay();
@@ -544,7 +544,7 @@ const deployERC20AssetManager = async (param?: {
   mockErc20Token?: string;
   vaultEngine?: string;
 }) => {
-  if (contracts.erc20Token !== null && process.env.NODE_ENV !== "test") {
+  if (contracts.erc20AssetManager !== null && process.env.NODE_ENV !== "test") {
     console.info("erc20CToken contract has already been deployed, skipping");
     return contracts;
   }
@@ -566,19 +566,19 @@ const deployERC20AssetManager = async (param?: {
 
   const signers = await getSigners();
 
-  const erc20TokenFactory = (await ethers.getContractFactory(
+  const erc20AssetManagerFactory = (await ethers.getContractFactory(
     "ERC20AssetManager",
     signers.owner
   )) as ERC20AssetManager__factory;
-  contracts.erc20Token = await erc20TokenFactory.deploy(
+  contracts.erc20AssetManager = await erc20AssetManagerFactory.deploy(
     registry,
     assetId,
     mockErc20Token,
     vaultEngine
   );
-  await contracts.erc20Token.deployed();
+  await contracts.erc20AssetManager.deployed();
   if (process.env.NODE_ENV !== "test") {
-    console.info("erc20Token deployed ✓");
+    console.info("erc20AssetManager deployed ✓");
     console.info({
       registry: registry,
       assetId,
@@ -589,7 +589,7 @@ const deployERC20AssetManager = async (param?: {
 
   await contracts.registry.setupAddress(
     bytes32("assetManager"),
-    contracts.erc20Token.address
+    contracts.erc20AssetManager.address
   );
 
   await checkDeploymentDelay();
@@ -601,8 +601,13 @@ const deployNativeAssetManager = async (param?: {
   assetId?: string;
   vaultEngine?: string;
 }) => {
-  if (contracts.nativeToken !== null && process.env.NODE_ENV !== "test") {
-    console.info("nativeToken contract has already been deployed, skipping");
+  if (
+    contracts.nativeAssetManager !== null &&
+    process.env.NODE_ENV !== "test"
+  ) {
+    console.info(
+      "nativeAssetManager contract has already been deployed, skipping"
+    );
     return contracts;
   }
 
@@ -621,18 +626,18 @@ const deployNativeAssetManager = async (param?: {
 
   const signers = await getSigners();
 
-  const nativeTokenFactory = (await ethers.getContractFactory(
+  const nativeAssetManagerFactory = (await ethers.getContractFactory(
     "NativeAssetManager",
     signers.owner
   )) as NativeAssetManager__factory;
-  contracts.nativeToken = await nativeTokenFactory.deploy(
+  contracts.nativeAssetManager = await nativeAssetManagerFactory.deploy(
     registry,
     assetId,
     vaultEngine
   );
-  await contracts.nativeToken.deployed();
+  await contracts.nativeAssetManager.deployed();
   if (process.env.NODE_ENV !== "test") {
-    console.info("nativeToken deployed ✓");
+    console.info("nativeAssetManager deployed ✓");
     console.info(`with native Token ${NETWORK_NATIVE_TOKEN}`);
     console.info({
       registry,
@@ -643,7 +648,7 @@ const deployNativeAssetManager = async (param?: {
 
   await contracts.registry.setupAddress(
     bytes32("assetManager"),
-    contracts.nativeToken.address
+    contracts.nativeAssetManager.address
   );
 
   await checkDeploymentDelay();
@@ -1129,7 +1134,7 @@ const deployLiquidator = async (param?: {
 };
 
 const deployMockErc20Token = async () => {
-  if (contracts.erc20Token !== null && process.env.NODE_ENV !== "test") {
+  if (contracts.erc20AssetManager !== null && process.env.NODE_ENV !== "test") {
     console.info("mockErc20Token contract has already been deployed, skipping");
     return contracts;
   }
