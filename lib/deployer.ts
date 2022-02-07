@@ -19,8 +19,8 @@ import {
   PbtToken,
   VaultEngine,
   VaultEngineSB,
-  NativeToken,
-  ERC20Token,
+  NativeAssetManager,
+  ERC20AssetManager,
   Teller,
   Treasury,
   PriceFeed,
@@ -28,15 +28,15 @@ import {
   LinearDecrease,
   Liquidator,
   ReservePool,
-  MockERC20Token,
-  VPToken,
+  MockERC20AssetManager,
+  VPAssetManager,
   LowAPR,
   HighAPR,
   Shutdown,
   MockFtso,
   MockFtsoManager,
   MockFtsoRewardManager,
-  MockVPToken,
+  MockVPAssetManager,
   MockVaultEngine,
   MockPriceFeed,
   MockPriceCalc,
@@ -52,9 +52,9 @@ import {
   LowAPR__factory,
   HighAPR__factory,
   VaultEngine__factory,
-  VPToken__factory,
-  ERC20Token__factory,
-  NativeToken__factory,
+  VPAssetManager__factory,
+  ERC20AssetManager__factory,
+  NativeAssetManager__factory,
   Teller__factory,
   Treasury__factory,
   PriceFeed__factory,
@@ -63,8 +63,8 @@ import {
   ReservePool__factory,
   Shutdown__factory,
   Liquidator__factory,
-  MockERC20Token__factory,
-  MockVPToken__factory,
+  MockERC20AssetManager__factory,
+  MockVPAssetManager__factory,
   MockVaultEngine__factory,
   MockFtso__factory,
   MockFtsoManager__factory,
@@ -105,8 +105,8 @@ interface ContractDict {
   pbtToken: PbtToken;
   vaultEngine: VaultEngine;
   vaultEngineSB: VaultEngineSB;
-  nativeToken: NativeToken;
-  erc20Token: ERC20Token;
+  nativeToken: NativeAssetManager;
+  erc20Token: ERC20AssetManager;
   ftsoManager: MockFtsoManager;
   ftsoRewardManager: MockFtsoRewardManager;
   teller: Teller;
@@ -116,10 +116,10 @@ interface ContractDict {
   linearDecrease: LinearDecrease;
   liquidator: Liquidator;
   reservePool: ReservePool;
-  mockErc20Token: MockERC20Token;
+  mockErc20Token: MockERC20AssetManager;
   shutdown: Shutdown;
-  mockVpToken: MockVPToken;
-  vpToken: VPToken;
+  mockVpToken: MockVPAssetManager;
+  vpToken: VPAssetManager;
   lowApr: LowAPR;
   highApr: HighAPR;
   mockVaultEngine: MockVaultEngine;
@@ -140,8 +140,8 @@ const artifactNameMap = {
   pbtToken: "PbtToken",
   vaultEngine: "VaultEngine",
   vaultEngineSB: "VaultEngineSB",
-  nativeToken: "NativeToken",
-  erc20Token: "ERC20Token",
+  nativeToken: "NativeAssetManager",
+  erc20Token: "ERC20AssetManager",
   ftsoManager: "MockFtsoManager",
   ftsoRewardManager: "MockFtsoRewardManager",
   teller: "Teller",
@@ -151,9 +151,9 @@ const artifactNameMap = {
   linearDecrease: "LinearDecrease",
   liquidator: "Liquidator",
   reservePool: "ReservePool",
-  mockErc20Token: "MockERC20Token",
-  mockVpToken: "MockVPToken",
-  vpToken: "VPToken",
+  mockErc20Token: "MockERC20AssetManager",
+  mockVpToken: "MockVPAssetManager",
+  vpToken: "VPAssetManager",
   shutdown: "Shutdown",
   lowApr: "LowAPR",
   highApr: "HighAPR",
@@ -464,8 +464,8 @@ const deployVaultEngineSB = async (param?: { registry?: string }) => {
   return contracts;
 };
 
-const deployVPToken = async (param?: {
-  registry?: Registry;
+const deployVPAssetManager = async (param?: {
+  registry?: string;
   assetId?: string;
   ftsoManager?: string;
   ftsoRewardManager?: string;
@@ -478,9 +478,11 @@ const deployVPToken = async (param?: {
   }
 
   const registry =
-    param && param.registry ? param.registry : contracts.registry;
+    param && param.registry ? param.registry : contracts.registry.address;
   const assetId =
-    param && param.assetId ? param.assetId : web3.utils.keccak256("VPToken");
+    param && param.assetId
+      ? param.assetId
+      : web3.utils.keccak256("VPAssetManager");
   const ftsoManager =
     param && param.ftsoManager
       ? param.ftsoManager
@@ -503,11 +505,11 @@ const deployVPToken = async (param?: {
   const signers = await getSigners();
 
   const vpTokenFactory = (await ethers.getContractFactory(
-    "VPToken",
+    "VPAssetManager",
     signers.owner
-  )) as VPToken__factory;
+  )) as VPAssetManager__factory;
   contracts.vpToken = await vpTokenFactory.deploy(
-    registry.address,
+    registry,
     assetId,
     ftsoManager,
     ftsoRewardManager,
@@ -518,7 +520,7 @@ const deployVPToken = async (param?: {
   if (process.env.NODE_ENV !== "test") {
     console.info("vpToken deployed ✓");
     console.info({
-      registry: registry.address,
+      registry: registry,
       assetId,
       ftsoManager,
       ftsoRewardManager,
@@ -527,7 +529,7 @@ const deployVPToken = async (param?: {
     });
   }
 
-  await registry.setupAddress(
+  await contracts.registry.setupAddress(
     bytes32("assetManager"),
     contracts.vpToken.address
   );
@@ -536,8 +538,8 @@ const deployVPToken = async (param?: {
   return contracts;
 };
 
-const deployERC20Token = async (param?: {
-  registry?: Registry;
+const deployERC20AssetManager = async (param?: {
+  registry?: string;
   assetId?: string;
   mockErc20Token?: string;
   vaultEngine?: string;
@@ -548,7 +550,7 @@ const deployERC20Token = async (param?: {
   }
 
   const registry =
-    param && param.registry ? param.registry : contracts.registry;
+    param && param.registry ? param.registry : contracts.registry.address;
   const assetId =
     param && param.assetId ? param.assetId : web3.utils.keccak256("FXRP");
   const mockErc20Token =
@@ -565,11 +567,11 @@ const deployERC20Token = async (param?: {
   const signers = await getSigners();
 
   const erc20TokenFactory = (await ethers.getContractFactory(
-    "ERC20Token",
+    "ERC20AssetManager",
     signers.owner
-  )) as ERC20Token__factory;
+  )) as ERC20AssetManager__factory;
   contracts.erc20Token = await erc20TokenFactory.deploy(
-    registry.address,
+    registry,
     assetId,
     mockErc20Token,
     vaultEngine
@@ -578,14 +580,14 @@ const deployERC20Token = async (param?: {
   if (process.env.NODE_ENV !== "test") {
     console.info("erc20Token deployed ✓");
     console.info({
-      registry: registry.address,
+      registry: registry,
       assetId,
       mockErc20Token,
       vaultEngine,
     });
   }
 
-  await registry.setupAddress(
+  await contracts.registry.setupAddress(
     bytes32("assetManager"),
     contracts.erc20Token.address
   );
@@ -594,7 +596,7 @@ const deployERC20Token = async (param?: {
   return contracts;
 };
 
-const deployNativeToken = async (param?: {
+const deployNativeAssetManager = async (param?: {
   registry?: string;
   assetId?: string;
   vaultEngine?: string;
@@ -620,9 +622,9 @@ const deployNativeToken = async (param?: {
   const signers = await getSigners();
 
   const nativeTokenFactory = (await ethers.getContractFactory(
-    "NativeToken",
+    "NativeAssetManager",
     signers.owner
-  )) as NativeToken__factory;
+  )) as NativeAssetManager__factory;
   contracts.nativeToken = await nativeTokenFactory.deploy(
     registry,
     assetId,
@@ -1134,15 +1136,15 @@ const deployMockErc20Token = async () => {
 
   const signers = await getSigners();
   const mockErc20TokenFactory = (await ethers.getContractFactory(
-    "MockERC20Token",
+    "MockERC20AssetManager",
     signers.owner
-  )) as MockERC20Token__factory;
+  )) as MockERC20AssetManager__factory;
   contracts.mockErc20Token = await mockErc20TokenFactory.deploy();
   await contracts.mockErc20Token.deployed();
   return contracts;
 };
 
-const deployMockVPToken = async () => {
+const deployMockVPAssetManager = async () => {
   if (contracts.mockVpToken !== null && process.env.NODE_ENV !== "test") {
     console.info("mockVpToken contract has already been deployed, skipping");
     return;
@@ -1150,9 +1152,9 @@ const deployMockVPToken = async () => {
 
   const signers = await getSigners();
   const mockVpTokenFactory = (await ethers.getContractFactory(
-    "MockVPToken",
+    "MockVPAssetManager",
     signers.owner
-  )) as MockVPToken__factory;
+  )) as MockVPAssetManager__factory;
   contracts.mockVpToken = await mockVpTokenFactory.deploy();
   await contracts.mockVpToken.deployed();
   if (process.env.NODE_ENV !== "test") console.info("mockVpToken deployed ✓");
@@ -1401,7 +1403,7 @@ const deployMockBondIssuer = async () => {
 const deployMocks = async () => {
   const signers = await getSigners();
   await deployMockErc20Token();
-  await deployMockVPToken();
+  await deployMockVPAssetManager();
   await deployMockFtso();
   await deployMockFtsoManager();
   await deployMockFtsoRewardManager();
@@ -1427,7 +1429,7 @@ const deployProbity = async (stablecoin?: string) => {
     stablecoin === "AUR"
       ? await deployVaultEngine()
       : await deployVaultEngineSB();
-  await deployNativeToken();
+  await deployNativeAssetManager();
   await deployBondIssuer();
   await deployReservePool();
   await deployTeller();
@@ -1463,8 +1465,8 @@ const deployDev = async (stablecoin?: string) => {
     await deployMocks();
     await deployProbity(stablecoin);
     await deployAuctioneer();
-    await deployERC20Token();
-    await deployVPToken();
+    await deployERC20AssetManager();
+    await deployVPAssetManager();
   } catch (err) {
     console.error("Error occurred while deploying", err);
     return { contracts, signers };
@@ -1480,8 +1482,8 @@ const deployTest = async (stablecoin?: string) => {
   await deployProbity(stablecoin);
   await deployVaultEngineSB();
   await deployAuctioneer();
-  await deployERC20Token();
-  await deployVPToken();
+  await deployERC20AssetManager();
+  await deployVPAssetManager();
   await deployMockVaultEngine();
   await deployMockPriceCalc();
   return { contracts, signers };
@@ -1495,8 +1497,8 @@ const deployProd = async (stablecoin?: string) => {
     await deployMocks(); // for coston only
     await deployProbity(stablecoin);
     await deployAuctioneer();
-    await deployERC20Token();
-    await deployVPToken();
+    await deployERC20AssetManager();
+    await deployVPAssetManager();
   } catch (err) {
     console.error("Error occurred while deploying", err);
     return { contracts, signers };
@@ -1510,9 +1512,9 @@ const probity = {
   deployPbt,
   deployApr,
   deployVaultEngine,
-  deployNativeToken,
-  deployERC20Token,
-  deployVPToken,
+  deployNativeAssetManager,
+  deployERC20AssetManager,
+  deployVPAssetManager,
   deployTeller,
   deployPriceCalc,
   deployPriceFeed,
@@ -1526,7 +1528,7 @@ const probity = {
 
 const mock = {
   deployMockErc20Token,
-  deployMockVPToken,
+  deployMockVPAssetManager,
   deployMockFtso,
   deployMockFtsoManager,
   deployMockFtsoRewardManager,
@@ -1535,4 +1537,11 @@ const mock = {
   deployMockBondIssuer,
 };
 
-export { deployDev, deployProd, deployTest, probity, mock };
+export {
+  deployDev,
+  deployProd,
+  deployTest,
+  probity,
+  mock,
+  parseExistingContracts,
+};

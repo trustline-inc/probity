@@ -4,8 +4,8 @@ import "@nomiclabs/hardhat-ethers";
 import {
   VaultEngine,
   Registry,
-  MockVPToken,
-  VPToken,
+  MockVPAssetManager,
+  VPAssetManager,
 } from "../../../typechain";
 
 import { deployTest } from "../../../lib/deployer";
@@ -23,8 +23,8 @@ let user: SignerWithAddress;
 let gov: SignerWithAddress;
 
 // Contracts
-let vpToken: VPToken;
-let mockVpToken: MockVPToken;
+let vpToken: VPAssetManager;
+let mockVpToken: MockVPAssetManager;
 let vaultEngine: VaultEngine;
 let registry: Registry;
 
@@ -68,12 +68,12 @@ describe("VP Token  Unit Test", function () {
     await vpToken.connect(user).deposit(AMOUNT_TO_MINT);
   });
 
-  it("test DepositVPToken event is emitted properly", async () => {
+  it("test DepositVPAssetManager event is emitted properly", async () => {
     await mockVpToken.mint(owner.address, AMOUNT_TO_MINT);
     await mockVpToken.approve(vpToken.address, AMOUNT_TO_MINT);
     let parsedEvents = await parseEvents(
       vpToken.deposit(AMOUNT_TO_MINT),
-      "DepositVPToken",
+      "DepositVPAssetManager",
       vpToken
     );
 
@@ -81,14 +81,14 @@ describe("VP Token  Unit Test", function () {
     expect(parsedEvents[0].args[1]).to.equal(AMOUNT_TO_MINT);
   });
 
-  it("test WithdrawVPToken event is emitted properly", async () => {
+  it("test WithdrawVPAssetManager event is emitted properly", async () => {
     await mockVpToken.mint(owner.address, AMOUNT_TO_MINT);
     await mockVpToken.approve(vpToken.address, AMOUNT_TO_MINT);
     await vpToken.deposit(AMOUNT_TO_MINT);
 
     let parsedEvents = await parseEvents(
       vpToken.withdraw(AMOUNT_TO_WITHDRAW),
-      "WithdrawVPToken",
+      "WithdrawVPAssetManager",
       vpToken
     );
     expect(parsedEvents[0].args[0]).to.equal(owner.address);

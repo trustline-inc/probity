@@ -4,8 +4,8 @@ import "@nomiclabs/hardhat-ethers";
 import {
   VaultEngine,
   Registry,
-  ERC20Token,
-  MockERC20Token,
+  ERC20AssetManager,
+  MockERC20AssetManager,
 } from "../../../typechain";
 
 import { deployTest } from "../../../lib/deployer";
@@ -23,8 +23,8 @@ let user: SignerWithAddress;
 let gov: SignerWithAddress;
 
 // Contracts
-let erc20Token: ERC20Token;
-let erc20: MockERC20Token;
+let erc20Token: ERC20AssetManager;
+let erc20: MockERC20AssetManager;
 let vaultEngine: VaultEngine;
 let registry: Registry;
 

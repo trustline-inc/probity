@@ -108,7 +108,7 @@ contract Liquidator is Stateful, Eventful {
     /////////////////////////////////////////
     // External functions
     /////////////////////////////////////////
-    function init(bytes32 collId, AuctioneerLike auctioneer) external onlyBy("gov") {
+    function initAssetType(bytes32 collId, AuctioneerLike auctioneer) external onlyBy("gov") {
         collateralTypes[collId].auctioneer = auctioneer;
         collateralTypes[collId].debtPenaltyFee = 1.17E18;
         collateralTypes[collId].equityPenaltyFee = 1.05E18;

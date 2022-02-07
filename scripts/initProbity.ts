@@ -126,7 +126,7 @@ const init = async () => {
   // Initialize liquidator collateral type
   tx = await liquidator
     .connect(owner)
-    .init(ASSETS[token], process.env.AUCTIONEER, { gasLimit: 300000 });
+    .initAssetType(ASSETS[token], process.env.AUCTIONEER, { gasLimit: 300000 });
   await tx.wait();
   console.log(`Liquidator: ${token} initialized`);
 
@@ -134,7 +134,7 @@ const init = async () => {
   const liqRatio = WAD.mul(15).div(10);
   tx = await priceFeed
     .connect(owner)
-    .init(ASSETS[token], liqRatio, process.env.FTSO, {
+    .initAssetType(ASSETS[token], liqRatio, process.env.FTSO, {
       gasLimit: 300000,
     });
   await tx.wait();
@@ -152,4 +152,4 @@ const init = async () => {
   console.log(`PriceFeed: ${token} price updated`);
 };
 
-init();
+initAssetType();

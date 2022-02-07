@@ -3,7 +3,7 @@ import "@nomiclabs/hardhat-ethers";
 
 import {
   MockFtso,
-  NativeToken,
+  NativeAssetManager,
   PriceFeed,
   Registry,
   ReservePool,
@@ -31,7 +31,7 @@ let assetManager: SignerWithAddress;
 let vaultEngine: VaultEngine;
 let registry: Registry;
 let reservePool: ReservePool;
-let nativeToken: NativeToken;
+let nativeToken: NativeAssetManager;
 let ftso: MockFtso;
 let teller: Teller;
 let priceFeed: PriceFeed;

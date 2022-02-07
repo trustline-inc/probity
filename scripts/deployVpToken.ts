@@ -34,7 +34,7 @@ async function main() {
   };
 
   //@ts-ignore
-  let contracts = await probity.deployVPToken(param);
+  let contracts = await probity.deployVPAssetManager(param);
 
   console.log("Contracts deployed!");
 

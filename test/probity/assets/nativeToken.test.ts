@@ -1,7 +1,7 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import "@nomiclabs/hardhat-ethers";
 
-import { VaultEngine, Registry, NativeToken } from "../../../typechain";
+import { VaultEngine, Registry, NativeAssetManager } from "../../../typechain";
 
 import { deployTest } from "../../../lib/deployer";
 import { ethers } from "hardhat";
@@ -17,7 +17,7 @@ let user: SignerWithAddress;
 let gov: SignerWithAddress;
 
 // Contracts
-let nativeToken: NativeToken;
+let nativeToken: NativeAssetManager;
 let vaultEngine: VaultEngine;
 let registry: Registry;
 

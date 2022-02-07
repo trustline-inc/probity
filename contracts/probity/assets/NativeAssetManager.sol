@@ -12,29 +12,19 @@ interface VaultEngineLike {
     ) external;
 }
 
-interface TokenLike {
-    function transfer(address recipient, uint256 amount) external returns (bool);
-
-    function transferFrom(
-        address sender,
-        address recipient,
-        uint256 amount
-    ) external returns (bool);
-}
-
-contract ERC20Token is Stateful {
+contract NativeAssetManager is Stateful {
     /////////////////////////////////////////
     // State Variables
     /////////////////////////////////////////
-    VaultEngineLike public immutable vaultEngine;
-    TokenLike public immutable token;
     bytes32 public immutable assetId;
+    VaultEngineLike public immutable vaultEngine;
 
     /////////////////////////////////////////
     // Events
     /////////////////////////////////////////
-    event DepositToken(address indexed user, uint256 amount, address indexed token);
-    event WithdrawToken(address indexed user, uint256 amount, address indexed token);
+
+    event DepositNativeCrypto(address indexed user, uint256 amount);
+    event WithdrawNativeCrypto(address indexed user, uint256 amount);
 
     /////////////////////////////////////////
     // Constructor
@@ -42,26 +32,23 @@ contract ERC20Token is Stateful {
     constructor(
         address registryAddress,
         bytes32 id,
-        TokenLike asset,
         VaultEngineLike vaultEngineAddress
     ) Stateful(registryAddress) {
         assetId = id;
         vaultEngine = vaultEngineAddress;
-        token = asset;
     }
 
     /////////////////////////////////////////
     // External Functions
     /////////////////////////////////////////
-    function deposit(uint256 amount) external onlyWhen("paused", false) onlyByWhiteListed {
-        require(token.transferFrom(msg.sender, address(this), amount), "ERC20Token/deposit: transfer failed");
-        vaultEngine.modifyStandbyAsset(assetId, msg.sender, int256(amount));
-        emit DepositToken(msg.sender, amount, address(token));
+    function deposit() external payable onlyWhen("paused", false) onlyByWhiteListed {
+        vaultEngine.modifyStandbyAsset(assetId, msg.sender, int256(msg.value));
+        emit DepositNativeCrypto(msg.sender, msg.value);
     }
 
     function withdraw(uint256 amount) external onlyWhen("paused", false) {
-        require(token.transfer(msg.sender, amount), "ERC20Token/withdraw: transfer failed");
         vaultEngine.modifyStandbyAsset(assetId, msg.sender, -int256(amount));
-        emit WithdrawToken(msg.sender, amount, address(token));
+        require(payable(msg.sender).send(amount), "NativeAssetManager/withdraw: fail to send FLR");
+        emit WithdrawNativeCrypto(msg.sender, amount);
     }
 }

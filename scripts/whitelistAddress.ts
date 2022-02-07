@@ -37,4 +37,4 @@ const init = async () => {
   }
 };
 
-init();
+initAssetType();
