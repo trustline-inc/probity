@@ -210,7 +210,7 @@ describe("Auctioneer Unit Tests", function () {
     it("fails if current price is not zero", async () => {
       await assertRevert(
         auctioneer.resetAuction(0),
-        "Auctioneer/resetAuction: auction can not be reset right now"
+        "Auctioneer/resetAuction: This auction isn't expired, or doesn't exist"
       );
 
       await priceCalc.setPrice(0);
@@ -220,7 +220,7 @@ describe("Auctioneer Unit Tests", function () {
       await priceCalc.setPrice(0);
       await assertRevert(
         auctioneer.resetAuction(1),
-        "Auctioneer/resetAuction: auction can not be reset right now"
+        "Auctioneer/resetAuction: This auction isn't expired, or doesn't exist"
       );
 
       await auctioneer.resetAuction(0);
@@ -695,14 +695,14 @@ describe("Auctioneer Unit Tests", function () {
           reservePool.address
         );
 
-      const startingPriceBefore = await priceCalc.lastStartingPrice();
+      const startingPriceBefore = await priceCalc.lastStartPrice();
       expect(startingPriceBefore).to.equal(0);
       const timeElapsedBefore = await priceCalc.lastTimeElapsed();
       expect(timeElapsedBefore).to.equal(0);
 
       await auctioneer.calculatePrice(0);
 
-      const startingPriceAfter = await priceCalc.lastStartingPrice();
+      const startingPriceAfter = await priceCalc.lastStartPrice();
       expect(startingPriceAfter).to.equal(RAY.mul(12).div(10));
       const startingTime = (await auctioneer.auctions(0)).startTime;
       const timeElapsedAfter = await priceCalc.lastTimeElapsed();
