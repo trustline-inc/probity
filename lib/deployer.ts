@@ -36,7 +36,7 @@ import {
   MockFtso,
   MockFtsoManager,
   MockFtsoRewardManager,
-  MockVPAssetManager,
+  MockVPToken,
   MockVaultEngine,
   MockPriceFeed,
   MockPriceCalc,
@@ -64,7 +64,7 @@ import {
   Shutdown__factory,
   Liquidator__factory,
   MockERC20AssetManager__factory,
-  MockVPAssetManager__factory,
+  MockVPToken__factory,
   MockVaultEngine__factory,
   MockFtso__factory,
   MockFtsoManager__factory,
@@ -118,7 +118,7 @@ interface ContractDict {
   reservePool: ReservePool;
   mockErc20Token: MockERC20AssetManager;
   shutdown: Shutdown;
-  mockVpToken: MockVPAssetManager;
+  mockVpToken: MockVPToken;
   vpAssetManager: VPAssetManager;
   lowApr: LowAPR;
   highApr: HighAPR;
@@ -152,7 +152,7 @@ const artifactNameMap = {
   liquidator: "Liquidator",
   reservePool: "ReservePool",
   mockErc20Token: "MockERC20AssetManager",
-  mockVpToken: "MockVPAssetManager",
+  mockVpToken: "MockVPToken",
   vpAssetManager: "VPAssetManager",
   shutdown: "Shutdown",
   lowApr: "LowAPR",
@@ -1149,7 +1149,7 @@ const deployMockErc20Token = async () => {
   return contracts;
 };
 
-const deployMockVPAssetManager = async () => {
+const deployMockVPToken = async () => {
   if (contracts.mockVpToken !== null && process.env.NODE_ENV !== "test") {
     console.info("mockVpToken contract has already been deployed, skipping");
     return;
@@ -1157,9 +1157,9 @@ const deployMockVPAssetManager = async () => {
 
   const signers = await getSigners();
   const mockVpTokenFactory = (await ethers.getContractFactory(
-    "MockVPAssetManager",
+    "MockVPToken",
     signers.owner
-  )) as MockVPAssetManager__factory;
+  )) as MockVPToken__factory;
   contracts.mockVpToken = await mockVpTokenFactory.deploy();
   await contracts.mockVpToken.deployed();
   if (process.env.NODE_ENV !== "test") console.info("mockVpToken deployed ✓");
@@ -1408,7 +1408,7 @@ const deployMockBondIssuer = async () => {
 const deployMocks = async () => {
   const signers = await getSigners();
   await deployMockErc20Token();
-  await deployMockVPAssetManager();
+  await deployMockVPToken();
   await deployMockFtso();
   await deployMockFtsoManager();
   await deployMockFtsoRewardManager();
@@ -1533,7 +1533,7 @@ const probity = {
 
 const mock = {
   deployMockErc20Token,
-  deployMockVPAssetManager,
+  deployMockVPToken,
   deployMockFtso,
   deployMockFtsoManager,
   deployMockFtsoRewardManager,

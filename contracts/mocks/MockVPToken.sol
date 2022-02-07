@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import "../dependencies/SafeMath.sol";
 import "../interfaces/IAurei.sol";
 
-contract MockVPAssetManager is IAurei {
+contract MockVPToken is IAurei {
     using SafeMath for uint256;
 
     // --- Data ---
