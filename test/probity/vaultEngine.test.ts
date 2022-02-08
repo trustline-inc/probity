@@ -74,7 +74,7 @@ describe("Vault Engine Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.connect(gov).initAssetType(ASSET_ID["FLR"]);
+      await vaultEngine.connect(gov).initAsset(ASSET_ID["FLR"]);
       await vaultEngine
         .connect(gov)
         .updateCeiling(ASSET_ID["FLR"], RAD.mul(10_000_000));
@@ -399,7 +399,7 @@ describe("Vault Engine Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.connect(gov).initAssetType(ASSET_ID["FLR"]);
+      await vaultEngine.connect(gov).initAsset(ASSET_ID["FLR"]);
       await vaultEngine
         .connect(gov)
         .updateCeiling(ASSET_ID["FLR"], RAD.mul(10_000_000));
@@ -688,7 +688,7 @@ describe("Vault Engine Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.connect(gov).initAssetType(ASSET_ID["FLR"]);
+      await vaultEngine.connect(gov).initAsset(ASSET_ID["FLR"]);
       await vaultEngine
         .connect(gov)
         .updateCeiling(ASSET_ID["FLR"], RAD.mul(10000000));
@@ -783,7 +783,7 @@ describe("Vault Engine Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.connect(gov).initAssetType(ASSET_ID["FLR"]);
+      await vaultEngine.connect(gov).initAsset(ASSET_ID["FLR"]);
       await vaultEngine
         .connect(gov)
         .updateCeiling(ASSET_ID["FLR"], RAD.mul(10_000_000));
@@ -868,7 +868,7 @@ describe("Vault Engine Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.connect(gov).initAssetType(ASSET_ID["FLR"]);
+      await vaultEngine.connect(gov).initAsset(ASSET_ID["FLR"]);
       await vaultEngine
         .connect(gov)
         .updateCeiling(ASSET_ID["FLR"], RAD.mul(10_000_000));

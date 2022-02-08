@@ -80,7 +80,7 @@ const init = async () => {
   console.log(`Initializing ${token} asset`);
   tx = await vaultEngine
     .connect(owner)
-    .initAssetType(ASSETS[token], { gasLimit: 400000 });
+    .initAsset(ASSETS[token], { gasLimit: 400000 });
   await tx.wait();
   console.log(`Vault: ${token} initialized`);
 
@@ -119,14 +119,14 @@ const init = async () => {
   // Initialize teller collateral type
   tx = await teller
     .connect(owner)
-    .initCollType(ASSETS[token], 0, { gasLimit: 300000 });
+    .initAsset(ASSETS[token], 0, { gasLimit: 300000 });
   await tx.wait();
   console.log(`Teller: ${token} initialized`);
 
   // Initialize liquidator collateral type
   tx = await liquidator
     .connect(owner)
-    .initAssetType(ASSETS[token], process.env.AUCTIONEER, { gasLimit: 300000 });
+    .initAsset(ASSETS[token], process.env.AUCTIONEER, { gasLimit: 300000 });
   await tx.wait();
   console.log(`Liquidator: ${token} initialized`);
 
@@ -134,7 +134,7 @@ const init = async () => {
   const liqRatio = WAD.mul(15).div(10);
   tx = await priceFeed
     .connect(owner)
-    .initAssetType(ASSETS[token], liqRatio, process.env.FTSO, {
+    .initAsset(ASSETS[token], liqRatio, process.env.FTSO, {
       gasLimit: 300000,
     });
   await tx.wait();
@@ -152,4 +152,4 @@ const init = async () => {
   console.log(`PriceFeed: ${token} price updated`);
 };
 
-initAssetType();
+init();

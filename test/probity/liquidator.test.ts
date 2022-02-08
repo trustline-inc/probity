@@ -80,10 +80,7 @@ describe("Liquidator Unit Tests", function () {
       expect(before.debtPenaltyFee).to.equal(0);
       expect(before.equityPenaltyFee).to.equal(0);
 
-      await liquidator.initAssetType(
-        ASSET_ID["FLR"],
-        EXPECTED_AUCTIONEER_ADDRESS
-      );
+      await liquidator.initAsset(ASSET_ID["FLR"], EXPECTED_AUCTIONEER_ADDRESS);
 
       const after = await liquidator.collateralTypes(ASSET_ID["FLR"]);
       expect(after.auctioneer).to.equal(EXPECTED_AUCTIONEER_ADDRESS);
@@ -96,7 +93,7 @@ describe("Liquidator Unit Tests", function () {
     const DEFAULT_DEBT_PENALTY_FEE = WAD.mul(117).div(100);
     const DEFAULT_SUPP_PENALTY_FEE = WAD.mul(105).div(100);
     beforeEach(async function () {
-      await liquidator.initAssetType(ASSET_ID["FLR"], auctioneer.address);
+      await liquidator.initAsset(ASSET_ID["FLR"], auctioneer.address);
     });
 
     it("tests that penaltyFees are updated correctly", async () => {
@@ -120,7 +117,7 @@ describe("Liquidator Unit Tests", function () {
 
   describe("updateAuctioneer Unit Tests", function () {
     beforeEach(async function () {
-      await liquidator.initAssetType(ASSET_ID["FLR"], auctioneer.address);
+      await liquidator.initAsset(ASSET_ID["FLR"], auctioneer.address);
     });
 
     it("tests that auctioneer address is updated correctly", async () => {
@@ -141,7 +138,7 @@ describe("Liquidator Unit Tests", function () {
 
   describe("reduceAuctionDebt Unit Tests", function () {
     beforeEach(async function () {
-      await liquidator.initAssetType(ASSET_ID["FLR"], auctioneer.address);
+      await liquidator.initAsset(ASSET_ID["FLR"], auctioneer.address);
     });
 
     it("tests that reservePool's reduceAuctionDebt is called with correct parameters", async () => {
@@ -165,7 +162,7 @@ describe("Liquidator Unit Tests", function () {
     const PRICE = RAY;
 
     beforeEach(async function () {
-      await liquidator.initAssetType(ASSET_ID["FLR"], auctioneer.address);
+      await liquidator.initAsset(ASSET_ID["FLR"], auctioneer.address);
       await vaultEngine.updateAsset(
         ASSET_ID["FLR"],
         PRICE,

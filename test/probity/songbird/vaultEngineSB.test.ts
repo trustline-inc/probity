@@ -69,7 +69,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.connect(gov).initAssetType(flrAssetId);
+      await vaultEngine.connect(gov).initAsset(flrAssetId);
       await vaultEngine
         .connect(gov)
         .updateCeiling(flrAssetId, RAD.mul(10000000));

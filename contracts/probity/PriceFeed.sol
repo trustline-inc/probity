@@ -49,7 +49,7 @@ contract PriceFeed is Stateful, Eventful {
     /////////////////////////////////////////
     // External functions
     /////////////////////////////////////////
-    function initAssetType(
+    function initAsset(
         bytes32 assetId,
         uint256 liquidationRatio,
         FtsoLike ftso

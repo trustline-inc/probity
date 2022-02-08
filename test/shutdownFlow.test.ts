@@ -175,26 +175,26 @@ describe("Shutdown Flow Test", function () {
     borrower = signers.borrower;
 
     // Initialize FLR asset
-    await vaultEngine.initAssetType(ASSET_ID["FLR"]);
+    await vaultEngine.initAsset(ASSET_ID["FLR"]);
     await vaultEngine.updateCeiling(ASSET_ID["FLR"], RAD.mul(10_000_000));
-    await teller.initCollType(ASSET_ID["FLR"], 0);
-    await priceFeed.initAssetType(
+    await teller.initAsset(ASSET_ID["FLR"], 0);
+    await priceFeed.initAsset(
       ASSET_ID["FLR"],
       WAD.mul(15).div(10),
       ftsoFlr.address
     );
-    await liquidator.initAssetType(ASSET_ID["FLR"], auctioneerFlr.address);
+    await liquidator.initAsset(ASSET_ID["FLR"], auctioneerFlr.address);
 
     // Initialize FXRP asset
-    await vaultEngine.initAssetType(ASSET_ID["FXRP"]);
+    await vaultEngine.initAsset(ASSET_ID["FXRP"]);
     await vaultEngine.updateCeiling(ASSET_ID["FXRP"], RAD.mul(10_000_000));
-    await teller.initCollType(ASSET_ID["FXRP"], 0);
-    await priceFeed.initAssetType(
+    await teller.initAsset(ASSET_ID["FXRP"], 0);
+    await priceFeed.initAsset(
       ASSET_ID["FXRP"],
       WAD.mul(15).div(10),
       ftsoFxrp.address
     );
-    await liquidator.initAssetType(ASSET_ID["FXRP"], auctioneerFxrp.address);
+    await liquidator.initAsset(ASSET_ID["FXRP"], auctioneerFxrp.address);
     await reserve.updateDebtThreshold(DEBT_THRESHOLD);
 
     balances = {

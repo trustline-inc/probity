@@ -22,6 +22,7 @@ async function main() {
   const assetId = web3.utils.keccak256(process.env.ASSET_NAME);
 
   // deploy the new assetManager Contracts
+  console.info("Deploying Asset Manager");
   switch (process.env.ASSET_TYPE) {
     case "Native":
       contracts = await probity.deployNativeAssetManager({
@@ -53,6 +54,9 @@ async function main() {
         registry: process.env.REGISTRY,
         assetId,
         vaultEngine: process.env.VAULT_ENGINE,
+        mockVpToken: process.env.VP_TOKEN,
+        ftsoManager: process.env.FTSO_MANAGER,
+        ftsoRewardManager: process.env.FTSO_REWARD_MANAGER,
       });
       break;
     default:
@@ -60,35 +64,46 @@ async function main() {
       break;
   }
 
+  let ftso;
   // deploy FTSO - if needed
-  const deployed = await mock.deployMockFtso();
-  const ftso = contracts.ftso ? contracts.ftso.address : deployed.ftso.address;
+  if (process.env.DEPLOY_FTSO) {
+    console.info("Deploying Mock FTSO");
+    const deployed = await mock.deployMockFtso();
+    ftso = deployed.ftso.address;
+  } else {
+    console.info("Skipping Deploying FTSO");
+    ftso = contracts.ftso.address;
+  }
+
   // deploy Auctioneer
+  console.info("Deploying Auctioneer");
   await probity.deployAuctioneer();
 
-  // initialize the assets
-  // initializing in Vault Engine
-  await contracts.vaultEngine.initAssetType(assetId);
-  // initializing in Teller
-  await contracts.teller.initCollType(assetId, process.env.PROTOCOL_FEE);
-  // initializing in Liquidator
-  await contracts.liquidator.initAssetType(
-    assetId,
-    contracts.auctioneer.address
-  );
-  // initializing in PriceFeed
-  // need liquidationRatio + Ftso address
+  console.info("Initializing Asset on VaultEngine");
+  await contracts.vaultEngine.initAsset(assetId);
 
-  await contracts.priceFeed.initAssetType(
+  console.info("Initializing Asset on teller");
+  await contracts.teller.initAsset(
+    assetId,
+    ethers.utils.parseEther(process.env.LIQUIDATION_RATIO)
+  );
+
+  console.info("Initializing Asset on liquidator");
+  await contracts.liquidator.MockVPToken(assetId, contracts.auctioneer.address);
+
+  console.info("Initializing Asset on priceFeed");
+  await contracts.priceFeed.MockVPToken(
     assetId,
     ethers.utils.parseEther(process.env.LIQUIDATION_RATIO),
     ftso
   );
-  // update Price in priceFeed
+
+  console.info("Updating Adjusted Price on priceFeed");
   await contracts.priceFeed.updateAdjustedPrice(assetId);
 }
 
 async function checkContractAddresses(contractNames) {
+  console.info("Checking if necessary contract addresses are present");
   for (let contractName of contractNames) {
     console.log(contractName, process.env[contractName]);
     if (process.env[contractName] === undefined) {
@@ -100,6 +115,7 @@ async function checkContractAddresses(contractNames) {
 }
 
 async function checkSettings() {
+  console.info("Checking if all necessary settings are present");
   const SUPPORTED_ASSET_TYPES = ["Native", "VPToken", "ERC20"];
   const settingsToCheck = [
     "ASSET_NAME",

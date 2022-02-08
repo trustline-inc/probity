@@ -93,7 +93,7 @@ contract MockVaultEngine {
         totalEquity = newTotalEquity;
     }
 
-    function initAssetType(bytes32 assetId) external {
+    function initAsset(bytes32 assetId) external {
         assets[assetId].debtAccumulator = 1e27;
         assets[assetId].equityAccumulator = 1e27;
     }
