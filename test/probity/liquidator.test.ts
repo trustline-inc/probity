@@ -70,7 +70,7 @@ describe("Liquidator Unit Tests", function () {
   });
 
   describe("initAsset Unit Tests", function () {
-    it.only("fails if asset has already been initialized", async () => {
+    it("fails if asset has already been initialized", async () => {
       const EXPECTED_AUCTIONEER_ADDRESS = user.address;
 
       await liquidator.initAsset(ASSET_ID["FLR"], EXPECTED_AUCTIONEER_ADDRESS);
