@@ -379,6 +379,7 @@ contract VaultEngine is Stateful, Eventful {
      * @param assetId The asset type ID
      */
     function initAsset(bytes32 assetId) external onlyBy("gov") {
+        require(assets[assetId].debtAccumulator == 0, "VaultEngine/initAsset: This asset has already been initialized");
         assets[assetId].debtAccumulator = RAY;
         assets[assetId].equityAccumulator = RAY;
     }

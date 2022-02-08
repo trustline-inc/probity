@@ -89,6 +89,7 @@ contract Teller is Stateful {
     // External Functions
     /////////////////////////////////////////
     function initAsset(bytes32 assetId, uint256 protocolFee) external onlyBy("gov") {
+        require(assets[assetId].lastUpdated == 0, "Teller/initAsset: This asset has already been initialized");
         assets[assetId].lastUpdated = block.timestamp;
         assets[assetId].protocolFee = protocolFee;
     }

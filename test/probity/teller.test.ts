@@ -116,6 +116,15 @@ describe("Teller Unit Tests", function () {
       await registry.setupAddress(bytes32("gov"), user.address);
       await teller.connect(user).initAsset(flrAssetId, 0);
     });
+
+    it.only("fails if asset has already been initialized", async () => {
+      const assetId = bytes32("new asset");
+      await teller.initAsset(assetId, 0);
+      await assertRevert(
+        teller.initAsset(assetId, 0),
+        "Teller/initAsset: This asset has already been initialized"
+      );
+    });
   });
 
   describe("updateAccumulator Unit Tests", function () {

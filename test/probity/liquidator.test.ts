@@ -69,7 +69,17 @@ describe("Liquidator Unit Tests", function () {
     user = signers.alice;
   });
 
-  describe("init Unit Tests", function () {
+  describe("initAsset Unit Tests", function () {
+    it.only("fails if asset has already been initialized", async () => {
+      const EXPECTED_AUCTIONEER_ADDRESS = user.address;
+
+      await liquidator.initAsset(ASSET_ID["FLR"], EXPECTED_AUCTIONEER_ADDRESS);
+      await assertRevert(
+        liquidator.initAsset(ASSET_ID["FLR"], EXPECTED_AUCTIONEER_ADDRESS),
+        "Liquidator/initAsset: This asset has already been initialized"
+      );
+    });
+
     it("tests that collateral type is properly initialized", async () => {
       const EXPECTED_AUCTIONEER_ADDRESS = user.address;
       const EXPECTED_DEBT_PENALTY_FEE = WAD.mul(117).div(100);
