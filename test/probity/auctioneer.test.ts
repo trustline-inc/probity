@@ -17,6 +17,7 @@ import {
   Treasury,
   VaultEngine,
   MockPriceCalc,
+  MockLiquidator,
 } from "../../typechain";
 
 import { deployTest, probity } from "../../lib/deployer";
@@ -43,7 +44,7 @@ let registry: Registry;
 let reservePool: ReservePool;
 let auctioneer: Auctioneer;
 let ftso: MockFtso;
-let liquidator: Liquidator;
+let liquidator: MockLiquidator;
 let priceCalc: MockPriceCalc;
 
 let flrAssetId = bytes32("FLR");
@@ -63,7 +64,7 @@ describe("Auctioneer Unit Tests", function () {
     reservePool = contracts.reservePool;
     priceCalc = contracts.mockPriceCalc;
     ftso = contracts.ftso;
-    liquidator = contracts.liquidator;
+    liquidator = contracts.mockLiquidator;
 
     contracts = await probity.deployAuctioneer({
       registry: registry,
@@ -516,6 +517,25 @@ describe("Auctioneer Unit Tests", function () {
       expect(before.standby.add(after.standby)).to.equal(EXPECTED_LOT_SIZE);
     });
 
+    it("tests auctionDebt is reduced when the auction ended with non-zero debt", async () => {
+      let EXPECTED_DEBT_SIZE = DEBT_SIZE.sub(LOT_SIZE.mul(RAY.div(11)));
+      await priceCalc.setPrice(RAY.div(11));
+
+      await auctioneer.buyItNow(0, RAY, LOT_SIZE);
+
+      const after = await liquidator.lastReduceAuctionDebt();
+      expect(after).to.equal(EXPECTED_DEBT_SIZE);
+    });
+
+    it("tests that reduceAuctionDebt is called with correct parameter", async () => {
+      const EXPECTED_LOT_SIZE = LOT_SIZE.div(10);
+      const PRICE = RAY.mul(12).div(10);
+      await auctioneer.buyItNow(0, PRICE, EXPECTED_LOT_SIZE);
+
+      const after = await liquidator.lastReduceAuctionDebt();
+      expect(after).to.equal(EXPECTED_LOT_SIZE.mul(PRICE));
+    });
+
     it("tests that it cancel old bids that are no longer in contention", async () => {
       const AUCTION_ID = 0;
       const before = await auctioneer.nextHighestBidder(AUCTION_ID, HEAD);
@@ -663,6 +683,49 @@ describe("Auctioneer Unit Tests", function () {
       expect(after).to.equal(ADDRESS_ZERO);
     });
 
+    it("tests auctionDebt is reduced when the auction ended with non-zero debt", async () => {
+      let EXPECTED_DEBT_SIZE = DEBT_SIZE.sub(
+        LOT_SIZE.mul(4).div(10).mul(RAY.div(10))
+      );
+      await auctioneer
+        .connect(user1)
+        .placeBid(0, RAY.div(10), LOT_SIZE.mul(4).div(10));
+      EXPECTED_DEBT_SIZE = EXPECTED_DEBT_SIZE.sub(
+        LOT_SIZE.mul(3).div(10).mul(RAY.div(5))
+      );
+      await auctioneer
+        .connect(user2)
+        .placeBid(0, RAY.div(5), LOT_SIZE.mul(3).div(10));
+      EXPECTED_DEBT_SIZE = EXPECTED_DEBT_SIZE.sub(
+        LOT_SIZE.mul(3).div(10).mul(RAY.div(4))
+      );
+      await auctioneer
+        .connect(user3)
+        .placeBid(0, RAY.div(4), LOT_SIZE.mul(3).div(10));
+
+      await priceCalc.setPrice(RAY.div(11));
+
+      await auctioneer.connect(user1).finalizeSale(0);
+      await auctioneer.connect(user2).finalizeSale(0);
+      await auctioneer.connect(user3).finalizeSale(0);
+
+      const after = await liquidator.lastReduceAuctionDebt();
+      expect(after).to.equal(EXPECTED_DEBT_SIZE);
+    });
+
+    it("tests that reduceAuctionDebt is called with correct parameter", async () => {
+      await auctioneer
+        .connect(user1)
+        .placeBid(0, RAY.div(10), LOT_SIZE.mul(4).div(10));
+
+      await priceCalc.setPrice(RAY.div(11));
+
+      await auctioneer.connect(user1).finalizeSale(0);
+
+      const after = await liquidator.lastReduceAuctionDebt();
+      expect(after).to.equal(LOT_SIZE.mul(4).div(10).mul(RAY.div(10)));
+    });
+
     it("tests that Sale Event is emitted correctly", async () => {
       const COLL_OWNER = owner.address;
       const EXPECTED_LOT_SIZE = LOT_SIZE.div(10);
@@ -806,15 +869,12 @@ describe("Auctioneer Unit Tests", function () {
     });
 
     it("tests it reduces auction debt of the reservePool", async () => {
-      const before = await reservePool.debtOnAuction();
-      expect(before).to.equal(DEBT_ON_AUCTION);
-
       await auctioneer
         .connect(liquidatorCaller)
         .cancelAuction(0, owner.address);
 
-      const after = await reservePool.debtOnAuction();
-      expect(after).to.equal(DEBT_ON_AUCTION.sub(DEBT_SIZE));
+      const after = await liquidator.lastReduceAuctionDebt();
+      expect(after).to.equal(DEBT_SIZE);
     });
   });
 });
