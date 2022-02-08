@@ -154,6 +154,10 @@ contract Liquidator is Stateful, Eventful {
         collateralTypes[collId].auctioneer = newAuctioneer;
     }
 
+    /**
+     * TODO: #239 How is reduceAuctionDebt used?
+     * @param amount The amount to reduce the ReservePool debt by
+     */
     function reduceAuctionDebt(uint256 amount) external {
         reserve.reduceAuctionDebt(amount);
     }
