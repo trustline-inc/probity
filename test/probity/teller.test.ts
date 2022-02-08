@@ -75,10 +75,10 @@ describe("Teller Unit Tests", function () {
 
     it("tests that values are properly set", async () => {
       const PROTOCOL_FEE_TO_SET = WAD.div(10);
-      const collBefore = await teller.collateralTypes(flrAssetId);
+      const collBefore = await teller.assets(flrAssetId);
       expect(collBefore.protocolFee).to.equal(0);
       await teller.setProtocolFee(flrAssetId, PROTOCOL_FEE_TO_SET);
-      const collAfter = await teller.collateralTypes(flrAssetId);
+      const collAfter = await teller.assets(flrAssetId);
       expect(collAfter.protocolFee).to.not.equal(0);
     });
 
@@ -99,11 +99,11 @@ describe("Teller Unit Tests", function () {
 
   describe("initAsset Unit Tests", function () {
     it("tests that values are properly initialized", async () => {
-      const collBefore = await teller.collateralTypes(flrAssetId);
+      const collBefore = await teller.assets(flrAssetId);
       expect(collBefore[0]).to.equal(0);
       expect(collBefore[1]).to.equal(0);
       await teller.initAsset(flrAssetId, 0);
-      const collAfter = await teller.collateralTypes(flrAssetId);
+      const collAfter = await teller.assets(flrAssetId);
       expect(collAfter[0]).to.not.equal(0);
       expect(collAfter[1]).to.equal(0);
     });
@@ -130,7 +130,7 @@ describe("Teller Unit Tests", function () {
       const newCollId = bytes32("new coll");
       await assertRevert(
         teller.updateAccumulator(newCollId),
-        "Teller/updateAccumulator: Collateral type not initialized"
+        "Teller/updateAccumulator: Asset type not initialized"
       );
       await teller.initAsset(newCollId, 0);
       await teller.updateAccumulator(newCollId);
@@ -138,12 +138,12 @@ describe("Teller Unit Tests", function () {
 
     it("updates the lastUtilization", async () => {
       const EXPECTED_UTILIAZATION_RATIO = wdiv(DEBT_TO_SET, EQUITY_TO_SET);
-      const before = await teller.collateralTypes(flrAssetId);
+      const before = await teller.assets(flrAssetId);
       expect(before[0]).to.not.equal(0);
       expect(before[1]).to.equal(0);
       await increaseTime(40000);
       await teller.updateAccumulator(flrAssetId);
-      const after = await teller.collateralTypes(flrAssetId);
+      const after = await teller.assets(flrAssetId);
       expect(after[0]).to.gt(before[0]);
       expect(after[1]).to.equal(EXPECTED_UTILIAZATION_RATIO);
     });
@@ -234,13 +234,13 @@ describe("Teller Unit Tests", function () {
       let vaultColl = await vaultEngine.assets(flrAssetId);
       let mpr = await teller.mpr();
 
-      let lastUpdatedBefore = (await teller.collateralTypes(flrAssetId))[0];
+      let lastUpdatedBefore = (await teller.assets(flrAssetId))[0];
       const before = await vaultEngine.assets(flrAssetId);
       expect(before[0]).to.equal(DEFAULT_DEBT_ACCUMULATOR);
 
       await increaseTime(TIME_TO_INCREASE);
       await teller.updateAccumulator(flrAssetId);
-      let lastUpdatedAfter = (await teller.collateralTypes(flrAssetId))[0];
+      let lastUpdatedAfter = (await teller.assets(flrAssetId))[0];
 
       let EXPECTED_DEBT_ACCUMULATOR = rmul(
         rpow(mpr, lastUpdatedAfter.sub(lastUpdatedBefore)),
@@ -258,7 +258,7 @@ describe("Teller Unit Tests", function () {
       await increaseTime(TIME_TO_INCREASE);
       await teller.updateAccumulator(flrAssetId);
 
-      lastUpdatedAfter = (await teller.collateralTypes(flrAssetId))[0];
+      lastUpdatedAfter = (await teller.assets(flrAssetId))[0];
 
       EXPECTED_DEBT_ACCUMULATOR = rmul(
         rpow(mpr, lastUpdatedAfter.sub(lastUpdatedBefore)),
@@ -276,16 +276,15 @@ describe("Teller Unit Tests", function () {
       await teller.updateAccumulator(flrAssetId);
 
       let vaultColl = await vaultEngine.assets(flrAssetId);
-      let lastUpdatedBefore = (await teller.collateralTypes(flrAssetId))[0];
+      let lastUpdatedBefore = (await teller.assets(flrAssetId))[0];
       let before = await vaultEngine.assets(flrAssetId);
       expect(before[1]).to.equal(DEFAULT_SUPP_ACCUMULATOR);
       await increaseTime(TIME_TO_INCREASE);
       await teller.updateAccumulator(flrAssetId);
 
-      let lastUpdatedAfter = (await teller.collateralTypes(flrAssetId))[0];
+      let lastUpdatedAfter = (await teller.assets(flrAssetId))[0];
       let mpr = await teller.mpr();
-      let utilitization = (await teller.collateralTypes(flrAssetId))
-        .lastUtilization;
+      let utilitization = (await teller.assets(flrAssetId)).lastUtilization;
       let multipledByUtilization = rmul(mpr.sub(RAY), utilitization.mul(1e9));
       let exponentiated = rpow(
         multipledByUtilization.add(RAY),
@@ -303,13 +302,12 @@ describe("Teller Unit Tests", function () {
       mpr = await teller.mpr();
       await teller.updateAccumulator(flrAssetId);
       vaultColl = await vaultEngine.assets(flrAssetId);
-      lastUpdatedBefore = (await teller.collateralTypes(flrAssetId))[0];
+      lastUpdatedBefore = (await teller.assets(flrAssetId))[0];
       await increaseTime(TIME_TO_INCREASE);
       await teller.updateAccumulator(flrAssetId);
 
-      lastUpdatedAfter = (await teller.collateralTypes(flrAssetId))[0];
-      utilitization = (await teller.collateralTypes(flrAssetId))
-        .lastUtilization;
+      lastUpdatedAfter = (await teller.assets(flrAssetId))[0];
+      utilitization = (await teller.assets(flrAssetId)).lastUtilization;
       multipledByUtilization = rmul(mpr.sub(RAY), utilitization.mul(1e9));
       exponentiated = rpow(
         multipledByUtilization.add(RAY),
@@ -330,7 +328,7 @@ describe("Teller Unit Tests", function () {
       await teller.updateAccumulator(flrAssetId);
 
       let vaultColl = await vaultEngine.assets(flrAssetId);
-      let lastUpdatedBefore = (await teller.collateralTypes(flrAssetId))[0];
+      let lastUpdatedBefore = (await teller.assets(flrAssetId))[0];
       let captialAccumulatorBefore = (await vaultEngine.assets(flrAssetId))
         .equityAccumulator;
       let before = await vaultEngine.assets(flrAssetId);
@@ -338,10 +336,9 @@ describe("Teller Unit Tests", function () {
       await increaseTime(TIME_TO_INCREASE);
       await teller.updateAccumulator(flrAssetId);
 
-      let lastUpdatedAfter = (await teller.collateralTypes(flrAssetId))[0];
+      let lastUpdatedAfter = (await teller.assets(flrAssetId))[0];
       let mpr = await teller.mpr();
-      let utilitization = (await teller.collateralTypes(flrAssetId))
-        .lastUtilization;
+      let utilitization = (await teller.assets(flrAssetId)).lastUtilization;
       let multipledByUtilization = rmul(mpr.sub(RAY), utilitization.mul(1e9));
       let exponentiated = rpow(
         multipledByUtilization.add(RAY),

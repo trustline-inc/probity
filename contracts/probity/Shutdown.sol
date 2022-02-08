@@ -138,7 +138,7 @@ contract Shutdown is Stateful, Eventful {
     // Type Declaration
     /////////////////////////////////////////
 
-    struct Collateral {
+    struct Asset {
         uint256 finalPrice;
         uint256 normDebt;
         uint256 gap;
@@ -164,7 +164,7 @@ contract Shutdown is Stateful, Eventful {
     uint256 public initiatedAt;
     uint256 public auctionWaitPeriod = 2 days;
     uint256 public supplierWaitPeriod = 2 days;
-    mapping(bytes32 => Collateral) public assets;
+    mapping(bytes32 => Asset) public assets;
     mapping(bytes32 => mapping(address => uint256)) public collRedeemed;
     mapping(address => uint256) public stablecoin;
     uint256 public finalUtilizationRatio;
@@ -336,14 +336,14 @@ contract Shutdown is Stateful, Eventful {
      * @param assetId The ID of the asset to free
      * @param user The address of the user vault
      */
-    function freeExcessCollateral(bytes32 assetId, address user) external onlyIfFinalPriceSet(assetId) {
+    function freeExcessAsset(bytes32 assetId, address user) external onlyIfFinalPriceSet(assetId) {
         (, , uint256 collateral, uint256 debt, , uint256 initialEquity) = vaultEngine.vaults(assetId, user);
-        require(debt == 0, "Shutdown/freeExcessCollateral: User needs to process debt first before calling this");
+        require(debt == 0, "Shutdown/freeExcessAsset: User needs to process debt first before calling this");
 
         // how do we make it so this can be reused
         uint256 hookedAmount = (initialEquity * finalUtilizationRatio);
         uint256 hookedCollAmount = hookedAmount / assets[assetId].finalPrice;
-        require(collateral > hookedCollAmount, "Shutdown/freeExcessCollateral: No collateral to free");
+        require(collateral > hookedCollAmount, "Shutdown/freeExcessAsset: No collateral to free");
 
         uint256 amountToFree = collateral - hookedCollAmount;
 
@@ -447,7 +447,7 @@ contract Shutdown is Stateful, Eventful {
      * @notice TODO
      * @param assetId TODO
      */
-    function redeemCollateral(bytes32 assetId) external {
+    function redeemAsset(bytes32 assetId) external {
         // can withdraw collateral returnedStablecoin * collateralPerAUR for collateral type
         uint256 redeemAmount = ((stablecoin[msg.sender] / 1e9) * assets[assetId].redemptionRatio) /
             WAD /

@@ -7,7 +7,7 @@ import "../dependencies/Eventful.sol";
 import "hardhat/console.sol";
 
 interface VaultEngineLike {
-    function vaults(bytes32 collId, address user)
+    function vaults(bytes32 assetId, address user)
         external
         returns (
             uint256 standby,
@@ -17,7 +17,7 @@ interface VaultEngineLike {
             uint256 equity
         );
 
-    function assets(bytes32 collId)
+    function assets(bytes32 assetId)
         external
         returns (
             uint256 debtAccumulator,
@@ -30,7 +30,7 @@ interface VaultEngineLike {
     function removeStablecoin(address user, uint256 amount) external;
 
     function liquidateDebtPosition(
-        bytes32 collId,
+        bytes32 assetId,
         address user,
         address auctioneer,
         address reservePool,
@@ -39,7 +39,7 @@ interface VaultEngineLike {
     ) external;
 
     function liquidateEquityPosition(
-        bytes32 collId,
+        bytes32 assetId,
         address user,
         int256 underlyingAmount,
         int256 equityAmount
@@ -48,7 +48,7 @@ interface VaultEngineLike {
 
 interface AuctioneerLike {
     function startAuction(
-        bytes32 collId,
+        bytes32 assetId,
         uint256 lotSize,
         uint256 debtSize,
         address owner,
@@ -73,7 +73,7 @@ contract Liquidator is Stateful, Eventful {
     /////////////////////////////////////////
     // Type Declaration
     /////////////////////////////////////////
-    struct Collateral {
+    struct Asset {
         AuctioneerLike auctioneer;
         uint256 debtPenaltyFee;
         uint256 equityPenaltyFee;
@@ -89,7 +89,7 @@ contract Liquidator is Stateful, Eventful {
     ReservePoolLike public immutable reserve;
     address public immutable treasuryAddress;
 
-    mapping(bytes32 => Collateral) public collateralTypes;
+    mapping(bytes32 => Asset) public assets;
 
     /////////////////////////////////////////
     // Constructor
@@ -108,50 +108,44 @@ contract Liquidator is Stateful, Eventful {
     /////////////////////////////////////////
     // External functions
     /////////////////////////////////////////
-    function initAsset(bytes32 collId, AuctioneerLike auctioneer) external onlyBy("gov") {
-        collateralTypes[collId].auctioneer = auctioneer;
-        collateralTypes[collId].debtPenaltyFee = 1.17E18;
-        collateralTypes[collId].equityPenaltyFee = 1.05E18;
+    function initAsset(bytes32 assetId, AuctioneerLike auctioneer) external onlyBy("gov") {
+        assets[assetId].auctioneer = auctioneer;
+        assets[assetId].debtPenaltyFee = 1.17E18;
+        assets[assetId].equityPenaltyFee = 1.05E18;
     }
 
     /**
      * @notice Updates liquidation penalties
-     * @param collId The ID of the collateral type
+     * @param assetId The ID of the collateral type
      * @param debtPenalty The new debt position penalty
      * @param equityPenalty The new equity position penalty
      */
     function updatePenalties(
-        bytes32 collId,
+        bytes32 assetId,
         uint256 debtPenalty,
         uint256 equityPenalty
     ) external onlyBy("gov") {
-        emit LogVarUpdate("liquidator", collId, "debtPenaltyFee", collateralTypes[collId].debtPenaltyFee, debtPenalty);
-        emit LogVarUpdate(
-            "liquidator",
-            collId,
-            "equityPenaltyFee",
-            collateralTypes[collId].equityPenaltyFee,
-            equityPenalty
-        );
+        emit LogVarUpdate("liquidator", assetId, "debtPenaltyFee", assets[assetId].debtPenaltyFee, debtPenalty);
+        emit LogVarUpdate("liquidator", assetId, "equityPenaltyFee", assets[assetId].equityPenaltyFee, equityPenalty);
 
-        collateralTypes[collId].debtPenaltyFee = debtPenalty;
-        collateralTypes[collId].equityPenaltyFee = equityPenalty;
+        assets[assetId].debtPenaltyFee = debtPenalty;
+        assets[assetId].equityPenaltyFee = equityPenalty;
     }
 
     /**
      * @notice Updates the address of the auctioneer contract used by Liquidator
-     * @param collId The ID of the collateral type
+     * @param assetId The ID of the collateral type
      * @param newAuctioneer The address of the new auctioneer
      */
-    function updateAuctioneer(bytes32 collId, AuctioneerLike newAuctioneer) external onlyBy("gov") {
+    function updateAuctioneer(bytes32 assetId, AuctioneerLike newAuctioneer) external onlyBy("gov") {
         emit LogVarUpdate(
             "adjustedPriceFeed",
-            collId,
+            assetId,
             "auctioneer",
-            address(collateralTypes[collId].auctioneer),
+            address(assets[assetId].auctioneer),
             address(newAuctioneer)
         );
-        collateralTypes[collId].auctioneer = newAuctioneer;
+        assets[assetId].auctioneer = newAuctioneer;
     }
 
     /**
@@ -164,12 +158,12 @@ contract Liquidator is Stateful, Eventful {
 
     /**
      * @notice Liquidates an undercollateralized vault
-     * @param collId The ID of the collateral type
+     * @param assetId The ID of the collateral type
      * @param user The address of the vault to liquidate
      */
-    function liquidateVault(bytes32 collId, address user) external {
-        (uint256 debtAccumulator, , uint256 adjustedPrice) = vaultEngine.assets(collId);
-        (, uint256 underlying, uint256 collateral, uint256 debt, uint256 equity) = vaultEngine.vaults(collId, user);
+    function liquidateVault(bytes32 assetId, address user) external {
+        (uint256 debtAccumulator, , uint256 adjustedPrice) = vaultEngine.assets(assetId);
+        (, uint256 underlying, uint256 collateral, uint256 debt, uint256 equity) = vaultEngine.vaults(assetId, user);
 
         require((underlying + collateral) != 0 && (debt + equity != 0), "Lidquidator: Nothing to liquidate");
 
@@ -183,22 +177,16 @@ contract Liquidator is Stateful, Eventful {
             // Transfer the debt to reserve pool
             reserve.addAuctionDebt(debt * RAY);
             vaultEngine.liquidateDebtPosition(
-                collId,
+                assetId,
                 user,
-                address(collateralTypes[collId].auctioneer),
+                address(assets[assetId].auctioneer),
                 address(reserve),
                 -int256(collateral),
                 -int256(debt)
             );
 
-            uint256 fundraiseTarget = (debt * debtAccumulator * collateralTypes[collId].debtPenaltyFee) / WAD;
-            collateralTypes[collId].auctioneer.startAuction(
-                collId,
-                collateral,
-                fundraiseTarget,
-                user,
-                address(reserve)
-            );
+            uint256 fundraiseTarget = (debt * debtAccumulator * assets[assetId].debtPenaltyFee) / WAD;
+            assets[assetId].auctioneer.startAuction(assetId, collateral, fundraiseTarget, user, address(reserve));
         }
 
         if (underlying * adjustedPrice < equity * RAY) {
@@ -207,7 +195,7 @@ contract Liquidator is Stateful, Eventful {
                 "VaultEngine/liquidateEquityPosition: Not enough treasury funds"
             );
 
-            vaultEngine.liquidateEquityPosition(collId, user, -int256(underlying), -int256(equity));
+            vaultEngine.liquidateEquityPosition(assetId, user, -int256(underlying), -int256(equity));
             vaultEngine.removeStablecoin(treasuryAddress, equity * RAY);
         }
     }

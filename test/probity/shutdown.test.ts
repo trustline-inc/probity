@@ -81,7 +81,7 @@ describe("Shutdown Unit Tests", function () {
 
     owner = signers.owner;
     user = signers.alice;
-    await liquidator.setCollateralType(ASSET_ID["FLR"], auctioneer.address);
+    await liquidator.setAssetType(ASSET_ID["FLR"], auctioneer.address);
   });
 
   describe("switchAddress Unit Tests", function () {
@@ -450,7 +450,7 @@ describe("Shutdown Unit Tests", function () {
 
       let lastLiquidateDebtPositionCall =
         await vaultEngine.lastLiquidateDebtPositionCall();
-      expect(lastLiquidateDebtPositionCall.collId).to.equal(BYTES32_ZERO);
+      expect(lastLiquidateDebtPositionCall.assetId).to.equal(BYTES32_ZERO);
       expect(lastLiquidateDebtPositionCall.user).to.equal(ADDRESS_ZERO);
       expect(lastLiquidateDebtPositionCall.auctioneer).to.equal(ADDRESS_ZERO);
       expect(lastLiquidateDebtPositionCall.reservePool).to.equal(ADDRESS_ZERO);
@@ -461,7 +461,7 @@ describe("Shutdown Unit Tests", function () {
 
       lastLiquidateDebtPositionCall =
         await vaultEngine.lastLiquidateDebtPositionCall();
-      expect(lastLiquidateDebtPositionCall.collId).to.equal(ASSET_ID["FLR"]);
+      expect(lastLiquidateDebtPositionCall.assetId).to.equal(ASSET_ID["FLR"]);
       expect(lastLiquidateDebtPositionCall.user).to.equal(user.address);
       expect(lastLiquidateDebtPositionCall.auctioneer).to.equal(
         shutdown.address
@@ -487,7 +487,7 @@ describe("Shutdown Unit Tests", function () {
     });
   });
 
-  describe("freeExcessCollateral Unit Tests", function () {
+  describe("freeExcessAsset Unit Tests", function () {
     const PRICE_TO_SET = RAY.mul(1);
     const COLL_TO_SET = WAD.mul(100);
     const DEBT_TO_SET = WAD.mul(50);
@@ -525,11 +525,11 @@ describe("Shutdown Unit Tests", function () {
     it("tests that values are properly updated", async () => {
       await shutdown.setFinalPrice(ASSET_ID["FLR"]);
 
-      await shutdown.freeExcessCollateral(ASSET_ID["FLR"], owner.address);
+      await shutdown.freeExcessAsset(ASSET_ID["FLR"], owner.address);
 
       let lastLiquidateVaultCall =
         await vaultEngine.lastLiquidateDebtPositionCall();
-      expect(lastLiquidateVaultCall.collId).to.equal(ASSET_ID["FLR"]);
+      expect(lastLiquidateVaultCall.assetId).to.equal(ASSET_ID["FLR"]);
       expect(lastLiquidateVaultCall.user).to.equal(owner.address);
       expect(lastLiquidateVaultCall.auctioneer).to.equal(owner.address);
       expect(lastLiquidateVaultCall.reservePool).to.equal(shutdown.address);
@@ -543,18 +543,18 @@ describe("Shutdown Unit Tests", function () {
 
     it("fail if final price is not set", async () => {
       await assertRevert(
-        shutdown.freeExcessCollateral(ASSET_ID["FLR"], owner.address),
+        shutdown.freeExcessAsset(ASSET_ID["FLR"], owner.address),
         "Shutdown/onlyIfFinalPriceSet: Final Price has not been set for this assetId"
       );
       await shutdown.setFinalPrice(ASSET_ID["FLR"]);
-      await shutdown.freeExcessCollateral(ASSET_ID["FLR"], owner.address);
+      await shutdown.freeExcessAsset(ASSET_ID["FLR"], owner.address);
     });
 
     it("fail if userDebt is NOT zero", async () => {
       await shutdown.setFinalPrice(ASSET_ID["FLR"]);
       await assertRevert(
-        shutdown.freeExcessCollateral(ASSET_ID["FLR"], user.address),
-        "Shutdown/freeExcessCollateral: User needs to process debt first before calling this"
+        shutdown.freeExcessAsset(ASSET_ID["FLR"], user.address),
+        "Shutdown/freeExcessAsset: User needs to process debt first before calling this"
       );
       await vaultEngine.updateVault(
         ASSET_ID["FLR"],
@@ -566,7 +566,7 @@ describe("Shutdown Unit Tests", function () {
         0,
         0
       );
-      await shutdown.freeExcessCollateral(ASSET_ID["FLR"], user.address);
+      await shutdown.freeExcessAsset(ASSET_ID["FLR"], user.address);
     });
 
     it("fail if no excess collateral to free", async () => {
@@ -583,8 +583,8 @@ describe("Shutdown Unit Tests", function () {
 
       await shutdown.setFinalPrice(ASSET_ID["FLR"]);
       await assertRevert(
-        shutdown.freeExcessCollateral(ASSET_ID["FLR"], owner.address),
-        "Shutdown/freeExcessCollateral: No collateral to free"
+        shutdown.freeExcessAsset(ASSET_ID["FLR"], owner.address),
+        "Shutdown/freeExcessAsset: No collateral to free"
       );
       await vaultEngine.updateVault(
         ASSET_ID["FLR"],
@@ -596,7 +596,7 @@ describe("Shutdown Unit Tests", function () {
         0,
         0
       );
-      await shutdown.freeExcessCollateral(ASSET_ID["FLR"], owner.address);
+      await shutdown.freeExcessAsset(ASSET_ID["FLR"], owner.address);
     });
   });
 
@@ -809,7 +809,7 @@ describe("Shutdown Unit Tests", function () {
 
       const lastLiquidateEquityPositionCall =
         await vaultEngine.lastLiquidateEquityPositionCall();
-      expect(lastLiquidateEquityPositionCall.collId).to.equal(ASSET_ID["FLR"]);
+      expect(lastLiquidateEquityPositionCall.assetId).to.equal(ASSET_ID["FLR"]);
       expect(lastLiquidateEquityPositionCall.user).to.equal(owner.address);
       expect(lastLiquidateEquityPositionCall.underlying).to.equal(
         BigNumber.from(0).sub(COLL_TO_SET)
@@ -995,7 +995,7 @@ describe("Shutdown Unit Tests", function () {
     });
   });
 
-  describe("redeemCollateral Unit Tests", function () {
+  describe("redeemAsset Unit Tests", function () {
     const PRICE_TO_SET = RAY.mul(1);
     const COLL_TO_SET = WAD.mul(100);
     const DEBT_TO_SET = WAD.mul(150);
@@ -1067,7 +1067,7 @@ describe("Shutdown Unit Tests", function () {
         ASSET_ID["FLR"],
         owner.address
       );
-      await shutdown.redeemCollateral(ASSET_ID["FLR"]);
+      await shutdown.redeemAsset(ASSET_ID["FLR"]);
       const after = await shutdown.collRedeemed(ASSET_ID["FLR"], owner.address);
       expect(after.sub(before)).to.equal(DEBT_TO_SET);
     });
@@ -1077,7 +1077,7 @@ describe("Shutdown Unit Tests", function () {
 
       let before = await shutdown.collRedeemed(ASSET_ID["FLR"], owner.address);
 
-      await shutdown.redeemCollateral(ASSET_ID["FLR"]);
+      await shutdown.redeemAsset(ASSET_ID["FLR"]);
 
       let after = await shutdown.collRedeemed(ASSET_ID["FLR"], owner.address);
       expect(after.sub(before)).to.equal(DEBT_TO_SET.mul(2).div(3));
@@ -1085,7 +1085,7 @@ describe("Shutdown Unit Tests", function () {
       await shutdown.returnStablecoin(AUREI_AMOUNT_TO_SET.div(3));
       before = await shutdown.collRedeemed(ASSET_ID["FLR"], owner.address);
 
-      await shutdown.redeemCollateral(ASSET_ID["FLR"]);
+      await shutdown.redeemAsset(ASSET_ID["FLR"]);
 
       after = await shutdown.collRedeemed(ASSET_ID["FLR"], owner.address);
       expect(after.sub(before)).to.equal(DEBT_TO_SET.div(3));
@@ -1095,7 +1095,7 @@ describe("Shutdown Unit Tests", function () {
       await shutdown.returnStablecoin(AUREI_AMOUNT_TO_SET);
 
       const before = await vaultEngine.vaults(ASSET_ID["FLR"], owner.address);
-      await shutdown.redeemCollateral(ASSET_ID["FLR"]);
+      await shutdown.redeemAsset(ASSET_ID["FLR"]);
       const after = await vaultEngine.vaults(ASSET_ID["FLR"], owner.address);
 
       expect(after.standby.sub(before.standby)).to.equal(DEBT_TO_SET);

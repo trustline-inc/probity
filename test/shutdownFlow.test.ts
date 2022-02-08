@@ -541,7 +541,7 @@ describe("Shutdown Flow Test", function () {
     // Redeem collateral
     let before = (await vaultEngine.vaults(ASSET_ID["FLR"], bob.address))
       .standby;
-    await shutdown.connect(bob).redeemCollateral(ASSET_ID["FLR"]);
+    await shutdown.connect(bob).redeemAsset(ASSET_ID["FLR"]);
     let after = (await vaultEngine.vaults(ASSET_ID["FLR"], bob.address))
       .standby;
     // Redemption ratio * stablecoin returned
@@ -553,7 +553,7 @@ describe("Shutdown Flow Test", function () {
     ).to.equal(true);
 
     before = (await vaultEngine.vaults(ASSET_ID["FXRP"], bob.address)).standby;
-    await shutdown.connect(bob).redeemCollateral(ASSET_ID["FXRP"]);
+    await shutdown.connect(bob).redeemAsset(ASSET_ID["FXRP"]);
     after = (await vaultEngine.vaults(ASSET_ID["FXRP"], bob.address)).standby;
 
     // Redemption ratio * stablecoins returned
@@ -1091,11 +1091,11 @@ describe("Shutdown Flow Test", function () {
     // redeem collateral
     let before = (await vaultEngine.vaults(ASSET_ID["FLR"], bob.address))
       .standby;
-    await shutdown.connect(bob).redeemCollateral(ASSET_ID["FLR"]);
+    await shutdown.connect(bob).redeemAsset(ASSET_ID["FLR"]);
     let after = (await vaultEngine.vaults(ASSET_ID["FLR"], bob.address))
       .standby;
     // bob["AUR"] balance: 1099000
-    //["AUR"] balance * flr Redeemed Collateral
+    //["AUR"] balance * flr Redeemed Asset
     // 1099000 * 0.00265023329 = 2912.60638571
     const EXPECTED_FLR_COLL_REDEEMED = WAD.mul("291260638571").div(1e8);
     expect(
@@ -1103,10 +1103,10 @@ describe("Shutdown Flow Test", function () {
     ).to.equal(true);
 
     before = (await vaultEngine.vaults(ASSET_ID["FXRP"], bob.address)).standby;
-    await shutdown.connect(bob).redeemCollateral(ASSET_ID["FXRP"]);
+    await shutdown.connect(bob).redeemAsset(ASSET_ID["FXRP"]);
     after = (await vaultEngine.vaults(ASSET_ID["FXRP"], bob.address)).standby;
     // bob["AUR"] balance: 1099000
-    //["AUR"] balance * flr Redeemed Collateral
+    //["AUR"] balance * flr Redeemed Asset
     // 1099000 * 0.333000333 = 365967.365967
     const EXPECTED_FXRP_COLL_REDEEMED = WAD.mul("365967365967").div(1e6);
     expect(

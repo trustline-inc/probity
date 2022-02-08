@@ -1,7 +1,7 @@
 pragma solidity ^0.8.0;
 
 contract MockLiquidator {
-    struct Collateral {
+    struct Asset {
         address auctioneer;
         uint256 debtPenaltyFee;
         uint256 equityPenaltyFee;
@@ -12,11 +12,11 @@ contract MockLiquidator {
     /////////////////////////////////////////
     uint256 private constant RAY = 10**27;
 
-    mapping(bytes32 => Collateral) public collateralTypes;
+    mapping(bytes32 => Asset) public assets;
     mapping(bytes32 => bool) public states;
 
-    function setCollateralType(bytes32 collId, address auctioneer) external {
-        collateralTypes[collId].auctioneer = auctioneer;
+    function setAssetType(bytes32 assetId, address auctioneer) external {
+        assets[assetId].auctioneer = auctioneer;
     }
 
     function setShutdownState() external {

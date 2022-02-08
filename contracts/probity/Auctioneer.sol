@@ -38,7 +38,7 @@ contract Auctioneer is Stateful, Eventful {
     /////////////////////////////////////////
 
     struct Auction {
-        bytes32 collId;
+        bytes32 assetId;
         uint256 lot;
         uint256 debt;
         address owner; // leftover collateral will go back to this owner
@@ -79,21 +79,27 @@ contract Auctioneer is Stateful, Eventful {
     // Events
     /////////////////////////////////////////
 
-    event AuctionStarted(bytes32 indexed collId, uint256 indexed auctionId, uint256 lotSize);
-    event AuctionReset(bytes32 indexed collId, uint256 indexed auctionId, uint256 lotSize);
+    event AuctionStarted(bytes32 indexed assetId, uint256 indexed auctionId, uint256 lotSize);
+    event AuctionReset(bytes32 indexed assetId, uint256 indexed auctionId, uint256 lotSize);
 
     event BidPlaced(
-        bytes32 indexed collId,
+        bytes32 indexed assetId,
         uint256 indexed auctionId,
         address indexed user,
         uint256 price,
         uint256 lotSize
     );
 
-    event Sale(bytes32 indexed collId, uint256 indexed auctionId, address indexed user, uint256 price, uint256 lotSize);
+    event Sale(
+        bytes32 indexed assetId,
+        uint256 indexed auctionId,
+        address indexed user,
+        uint256 price,
+        uint256 lotSize
+    );
 
     event BidRemoved(
-        bytes32 indexed collId,
+        bytes32 indexed assetId,
         uint256 indexed auctionId,
         address indexed user,
         uint256 price,
@@ -101,7 +107,7 @@ contract Auctioneer is Stateful, Eventful {
     );
 
     event BidModified(
-        bytes32 indexed collId,
+        bytes32 indexed assetId,
         uint256 indexed auctionId,
         address indexed user,
         uint256 price,
@@ -109,7 +115,7 @@ contract Auctioneer is Stateful, Eventful {
         uint256 newLotSize
     );
 
-    event AuctionEnded(bytes32 indexed collId, uint256 indexed auctionId);
+    event AuctionEnded(bytes32 indexed assetId, uint256 indexed auctionId);
 
     /////////////////////////////////////////
     // Constructor
@@ -134,14 +140,14 @@ contract Auctioneer is Stateful, Eventful {
 
     /**
      * @notice Starts a collateral auction
-     * @param collId The ID of the collateral on auction
+     * @param assetId The ID of the collateral on auction
      * @param lotSize The size of the lot
      * @param debtSize The amount of stablecoins that need to be raised
      * @param owner The owner of the liquidated vault
      * @param beneficiary A ReservePool address
      */
     function startAuction(
-        bytes32 collId,
+        bytes32 assetId,
         uint256 lotSize,
         uint256 debtSize,
         address owner,
@@ -151,7 +157,7 @@ contract Auctioneer is Stateful, Eventful {
         uint256 startPrice = (rdiv(currentPrice, 1e5) * priceBuffer) / ONE;
         uint256 auctionId = auctionCount++;
         auctions[auctionId] = Auction(
-            collId,
+            assetId,
             lotSize,
             debtSize,
             owner,
@@ -161,7 +167,7 @@ contract Auctioneer is Stateful, Eventful {
             false
         );
 
-        emit AuctionStarted(collId, auctionId, lotSize);
+        emit AuctionStarted(assetId, auctionId, lotSize);
     }
 
     /**
@@ -181,7 +187,7 @@ contract Auctioneer is Stateful, Eventful {
         auction.startPrice = startPrice;
         auction.startTime = block.timestamp;
 
-        emit AuctionReset(auction.collId, auctionId, auction.lot);
+        emit AuctionReset(auction.assetId, auctionId, auction.lot);
     }
 
     /**
@@ -215,7 +221,7 @@ contract Auctioneer is Stateful, Eventful {
         nextHighestBidder[auctionId][indexToAdd] = msg.sender;
         bids[auctionId][msg.sender] = Bid(bidPrice, bidLot);
 
-        emit BidPlaced(auctions[auctionId].collId, auctionId, msg.sender, bidPrice, bidLot);
+        emit BidPlaced(auctions[auctionId].assetId, auctionId, msg.sender, bidPrice, bidLot);
         cancelOldBids(auctionId, totalBidValue, totalBidLot, indexToAdd);
     }
 
@@ -254,13 +260,13 @@ contract Auctioneer is Stateful, Eventful {
         lotValue = lotToBuy * currentPrice;
 
         vaultEngine.moveStablecoin(msg.sender, auctions[auctionId].beneficiary, lotValue);
-        vaultEngine.moveAsset(auctions[auctionId].collId, address(this), msg.sender, lotToBuy);
+        vaultEngine.moveAsset(auctions[auctionId].assetId, address(this), msg.sender, lotToBuy);
 
         auctions[auctionId].debt = auctions[auctionId].debt - lotValue;
         auctions[auctionId].lot = auctions[auctionId].lot - lotToBuy;
 
         endAuction(auctionId);
-        emit Sale(auctions[auctionId].collId, auctionId, msg.sender, currentPrice, lotToBuy);
+        emit Sale(auctions[auctionId].assetId, auctionId, msg.sender, currentPrice, lotToBuy);
         cancelOldBids(auctionId, 0, 0, index);
     }
 
@@ -276,14 +282,14 @@ contract Auctioneer is Stateful, Eventful {
         );
         uint256 buyAmount = bids[auctionId][msg.sender].price * bids[auctionId][msg.sender].lot;
 
-        vaultEngine.moveAsset(auctions[auctionId].collId, address(this), msg.sender, bids[auctionId][msg.sender].lot);
+        vaultEngine.moveAsset(auctions[auctionId].assetId, address(this), msg.sender, bids[auctionId][msg.sender].lot);
 
         auctions[auctionId].debt -= buyAmount;
         auctions[auctionId].lot -= bids[auctionId][msg.sender].lot;
 
         removeIndex(auctionId, msg.sender);
         emit Sale(
-            auctions[auctionId].collId,
+            auctions[auctionId].assetId,
             auctionId,
             msg.sender,
             bids[auctionId][msg.sender].price,
@@ -313,7 +319,7 @@ contract Auctioneer is Stateful, Eventful {
         cancelOldBids(auctionId, auction.debt, auction.lot, HEAD);
         // accept the debt?
         liquidator.reduceAuctionDebt(auction.debt);
-        vaultEngine.moveAsset(auction.collId, address(this), recipient, auction.lot);
+        vaultEngine.moveAsset(auction.assetId, address(this), recipient, auction.lot);
 
         auction.debt = 0;
         auction.lot = 0;
@@ -370,13 +376,13 @@ contract Auctioneer is Stateful, Eventful {
             auctions[auctionId].lot = 0;
 
             vaultEngine.moveAsset(
-                auctions[auctionId].collId,
+                auctions[auctionId].assetId,
                 address(this),
                 auctions[auctionId].owner,
                 auctions[auctionId].lot
             );
 
-            emit AuctionEnded(auctions[auctionId].collId, auctionId);
+            emit AuctionEnded(auctions[auctionId].assetId, auctionId);
             return;
         }
     }
@@ -419,7 +425,7 @@ contract Auctioneer is Stateful, Eventful {
                 }
 
                 emit BidModified(
-                    auctions[auctionId].collId,
+                    auctions[auctionId].assetId,
                     auctionId,
                     msg.sender,
                     bidPrice,
@@ -434,7 +440,7 @@ contract Auctioneer is Stateful, Eventful {
                 vaultEngine.moveStablecoin(address(this), index, bidLot * bidPrice);
                 // remove the index from the nextHighestBidder and reset the bids to zero
                 emit BidRemoved(
-                    auctions[auctionId].collId,
+                    auctions[auctionId].assetId,
                     auctionId,
                     msg.sender,
                     bids[auctionId][index].price,
