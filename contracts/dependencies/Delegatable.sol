@@ -17,7 +17,7 @@ interface FtsoManagerLike {
     function getCurrentRewardEpoch() external view returns (uint256);
 }
 
-interface VPTokenLike {
+interface VPAssetManagerLike {
     function transfer(address recipient, uint256 amount) external returns (bool);
 
     function transferFrom(
@@ -55,7 +55,7 @@ contract Delegatable is Stateful {
     FtsoManagerLike public immutable ftsoManager;
     FtsoRewardManagerLike public immutable ftsoRewardManager;
     VaultEngineLike public immutable vaultEngine;
-    VPTokenLike public immutable token;
+    VPAssetManagerLike public immutable token;
     bytes32 public immutable collId;
 
     address[] public dataProviders;
@@ -75,7 +75,7 @@ contract Delegatable is Stateful {
         bytes32 collateralId,
         FtsoManagerLike ftsoManagerAddress,
         FtsoRewardManagerLike rewardManagerAddress,
-        VPTokenLike tokenAddress,
+        VPAssetManagerLike tokenAddress,
         VaultEngineLike vaultEngineAddress
     ) Stateful(registryAddress) {
         collId = collateralId;

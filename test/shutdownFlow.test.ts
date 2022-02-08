@@ -5,9 +5,9 @@ import "@nomiclabs/hardhat-web3";
 
 import {
   Aurei,
-  ERC20Token,
+  ERC20AssetManager,
   VaultEngine,
-  NativeToken,
+  NativeAssetManager,
   Teller,
   Treasury,
   MockFtso,
@@ -16,7 +16,7 @@ import {
   Liquidator,
   ReservePool,
   Registry,
-  MockERC20Token,
+  MockERC20AssetManager,
   Shutdown,
   BondIssuer,
 } from "../typechain";
@@ -41,8 +41,8 @@ let borrower: SignerWithAddress;
 let aurei: Aurei;
 let vaultEngine: VaultEngine;
 let registry: Registry;
-let flrWallet: NativeToken;
-let fxrpWallet: ERC20Token;
+let flrWallet: NativeAssetManager;
+let fxrpWallet: ERC20AssetManager;
 let teller: Teller;
 let treasury: Treasury;
 let ftsoFlr: MockFtso;
@@ -52,7 +52,7 @@ let auctioneerFlr: Auctioneer;
 let auctioneerFxrp: Auctioneer;
 let liquidator: Liquidator;
 let reserve: ReservePool;
-let erc20: MockERC20Token;
+let erc20: MockERC20AssetManager;
 let shutdown: Shutdown;
 let bondIssuer: BondIssuer;
 
@@ -145,8 +145,8 @@ describe("Shutdown Flow Test", function () {
 
     // Set contracts
     vaultEngine = contracts.vaultEngine;
-    flrWallet = contracts.nativeToken;
-    fxrpWallet = contracts.erc20Token;
+    flrWallet = contracts.nativeAssetManager;
+    fxrpWallet = contracts.erc20AssetManager;
     aurei = contracts.aurei;
     teller = contracts.teller;
     treasury = contracts.treasury;
@@ -175,22 +175,26 @@ describe("Shutdown Flow Test", function () {
     borrower = signers.borrower;
 
     // Initialize FLR asset
-    await vaultEngine.initAssetType(ASSET_ID["FLR"]);
+    await vaultEngine.initAsset(ASSET_ID["FLR"]);
     await vaultEngine.updateCeiling(ASSET_ID["FLR"], RAD.mul(10_000_000));
-    await teller.initCollType(ASSET_ID["FLR"], 0);
-    await priceFeed.init(ASSET_ID["FLR"], WAD.mul(15).div(10), ftsoFlr.address);
-    await liquidator.init(ASSET_ID["FLR"], auctioneerFlr.address);
+    await teller.initAsset(ASSET_ID["FLR"], 0);
+    await priceFeed.initAsset(
+      ASSET_ID["FLR"],
+      WAD.mul(15).div(10),
+      ftsoFlr.address
+    );
+    await liquidator.initAsset(ASSET_ID["FLR"], auctioneerFlr.address);
 
     // Initialize FXRP asset
-    await vaultEngine.initAssetType(ASSET_ID["FXRP"]);
+    await vaultEngine.initAsset(ASSET_ID["FXRP"]);
     await vaultEngine.updateCeiling(ASSET_ID["FXRP"], RAD.mul(10_000_000));
-    await teller.initCollType(ASSET_ID["FXRP"], 0);
-    await priceFeed.init(
+    await teller.initAsset(ASSET_ID["FXRP"], 0);
+    await priceFeed.initAsset(
       ASSET_ID["FXRP"],
       WAD.mul(15).div(10),
       ftsoFxrp.address
     );
-    await liquidator.init(ASSET_ID["FXRP"], auctioneerFxrp.address);
+    await liquidator.initAsset(ASSET_ID["FXRP"], auctioneerFxrp.address);
     await reserve.updateDebtThreshold(DEBT_THRESHOLD);
 
     balances = {

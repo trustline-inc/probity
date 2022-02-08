@@ -5,9 +5,9 @@ import "@nomiclabs/hardhat-web3";
 
 import {
   Aurei,
-  ERC20Token,
+  ERC20AssetManager,
   VaultEngine,
-  NativeToken,
+  NativeAssetManager,
   Teller,
   Treasury,
   MockFtso,
@@ -16,7 +16,7 @@ import {
   Liquidator,
   ReservePool,
   Registry,
-  MockERC20Token,
+  MockERC20AssetManager,
   BondIssuer,
 } from "../typechain";
 import { deployTest } from "../lib/deployer";
@@ -34,8 +34,8 @@ let gov: SignerWithAddress;
 let aurei: Aurei;
 let vaultEngine: VaultEngine;
 let registry: Registry;
-let flrWallet: NativeToken;
-let fxrpWallet: ERC20Token;
+let flrWallet: NativeAssetManager;
+let fxrpWallet: ERC20AssetManager;
 let teller: Teller;
 let treasury: Treasury;
 let ftso: MockFtso;
@@ -43,7 +43,7 @@ let priceFeed: PriceFeed;
 let auctioneer: Auctioneer;
 let liquidator: Liquidator;
 let reserve: ReservePool;
-let erc20: MockERC20Token;
+let erc20: MockERC20AssetManager;
 let bondIssuer: BondIssuer;
 
 const STANDBY_AMOUNT = WAD.mul(1000);
@@ -64,8 +64,8 @@ describe("Probity happy flow", function () {
 
     // Set contracts
     vaultEngine = contracts.vaultEngine;
-    flrWallet = contracts.nativeToken;
-    fxrpWallet = contracts.erc20Token;
+    flrWallet = contracts.nativeAssetManager;
+    fxrpWallet = contracts.erc20AssetManager;
     aurei = contracts.aurei;
     teller = contracts.teller;
     treasury = contracts.treasury;
@@ -160,14 +160,14 @@ describe("Probity happy flow", function () {
     await flrWallet.deposit({ value: STANDBY_AMOUNT });
 
     // Initialize the FLR asset
-    await vaultEngine.connect(gov).initAssetType(ASSET_ID["FLR"]);
+    await vaultEngine.connect(gov).initAsset(ASSET_ID["FLR"]);
     await vaultEngine
       .connect(gov)
       .updateCeiling(ASSET_ID["FLR"], RAD.mul(10_000_000));
-    await teller.connect(gov).initCollType(ASSET_ID["FLR"], 0);
+    await teller.connect(gov).initAsset(ASSET_ID["FLR"], 0);
     await priceFeed
       .connect(gov)
-      .init(ASSET_ID["FLR"], WAD.mul(15).div(10), ftso.address);
+      .initAsset(ASSET_ID["FLR"], WAD.mul(15).div(10), ftso.address);
     await priceFeed.updateAdjustedPrice(ASSET_ID["FLR"]);
 
     // Get balance before minting
@@ -232,14 +232,14 @@ describe("Probity happy flow", function () {
     await flrWallet.deposit({ value: STANDBY_AMOUNT });
 
     // Initialize the FLR asset
-    await vaultEngine.connect(gov).initAssetType(ASSET_ID["FLR"]);
+    await vaultEngine.connect(gov).initAsset(ASSET_ID["FLR"]);
     await vaultEngine
       .connect(gov)
       .updateCeiling(ASSET_ID["FLR"], RAD.mul(10_000_000));
-    await teller.connect(gov).initCollType(ASSET_ID["FLR"], 0);
+    await teller.connect(gov).initAsset(ASSET_ID["FLR"], 0);
     await priceFeed
       .connect(gov)
-      .init(ASSET_ID["FLR"], WAD.mul(15).div(10), ftso.address);
+      .initAsset(ASSET_ID["FLR"], WAD.mul(15).div(10), ftso.address);
     await priceFeed.updateAdjustedPrice(ASSET_ID["FLR"]);
 
     // Increase equity
@@ -304,14 +304,14 @@ describe("Probity happy flow", function () {
     await flrWallet.deposit({ value: STANDBY_AMOUNT });
 
     // Initialize the FLR asset
-    await vaultEngine.connect(gov).initAssetType(ASSET_ID["FLR"]);
+    await vaultEngine.connect(gov).initAsset(ASSET_ID["FLR"]);
     await vaultEngine
       .connect(gov)
       .updateCeiling(ASSET_ID["FLR"], RAD.mul(10_000_000));
-    await teller.connect(gov).initCollType(ASSET_ID["FLR"], 0);
+    await teller.connect(gov).initAsset(ASSET_ID["FLR"], 0);
     await priceFeed
       .connect(gov)
-      .init(ASSET_ID["FLR"], WAD.mul(15).div(10), ftso.address);
+      .initAsset(ASSET_ID["FLR"], WAD.mul(15).div(10), ftso.address);
     await priceFeed.updateAdjustedPrice(ASSET_ID["FLR"]);
 
     // Get balances before increasing equity
@@ -364,14 +364,14 @@ describe("Probity happy flow", function () {
     await flrWallet.deposit({ value: STANDBY_AMOUNT });
 
     // Initialize the FLR asset
-    await vaultEngine.connect(gov).initAssetType(ASSET_ID["FLR"]);
+    await vaultEngine.connect(gov).initAsset(ASSET_ID["FLR"]);
     await vaultEngine
       .connect(gov)
       .updateCeiling(ASSET_ID["FLR"], RAD.mul(10_000_000));
-    await teller.connect(gov).initCollType(ASSET_ID["FLR"], 0);
+    await teller.connect(gov).initAsset(ASSET_ID["FLR"], 0);
     await priceFeed
       .connect(gov)
-      .init(ASSET_ID["FLR"], WAD.mul(15).div(10), ftso.address);
+      .initAsset(ASSET_ID["FLR"], WAD.mul(15).div(10), ftso.address);
     await priceFeed.updateAdjustedPrice(ASSET_ID["FLR"]);
 
     let [, , adjustedPrice] = await vaultEngine.assets(ASSET_ID["FLR"]);
@@ -385,13 +385,15 @@ describe("Probity happy flow", function () {
     await flrWallet.deposit({ value: STANDBY_AMOUNT.mul(2) });
 
     // Initialize the FLR asset
-    await vaultEngine.connect(gov).initAssetType(ASSET_ID["FLR"]);
+    await vaultEngine.connect(gov).initAsset(ASSET_ID["FLR"]);
     await vaultEngine
       .connect(gov)
       .updateCeiling(ASSET_ID["FLR"], RAD.mul(10_000_000));
-    await teller.connect(gov).initCollType(ASSET_ID["FLR"], 0);
-    await liquidator.connect(gov).init(ASSET_ID["FLR"], auctioneer.address);
-    await priceFeed.connect(gov).init(ASSET_ID["FLR"], WAD, ftso.address);
+    await teller.connect(gov).initAsset(ASSET_ID["FLR"], 0);
+    await liquidator
+      .connect(gov)
+      .initAsset(ASSET_ID["FLR"], auctioneer.address);
+    await priceFeed.connect(gov).initAsset(ASSET_ID["FLR"], WAD, ftso.address);
     await priceFeed.updateAdjustedPrice(ASSET_ID["FLR"]);
 
     // Increase equity
@@ -443,13 +445,15 @@ describe("Probity happy flow", function () {
     await flrWallet.deposit({ value: STANDBY_AMOUNT.mul(2) });
 
     // Initialize the FLR asset
-    await vaultEngine.connect(gov).initAssetType(ASSET_ID["FLR"]);
+    await vaultEngine.connect(gov).initAsset(ASSET_ID["FLR"]);
     await vaultEngine
       .connect(gov)
       .updateCeiling(ASSET_ID["FLR"], RAD.mul(10_000_000));
-    await teller.connect(gov).initCollType(ASSET_ID["FLR"], 0);
-    await liquidator.connect(gov).init(ASSET_ID["FLR"], auctioneer.address);
-    await priceFeed.connect(gov).init(ASSET_ID["FLR"], WAD, ftso.address);
+    await teller.connect(gov).initAsset(ASSET_ID["FLR"], 0);
+    await liquidator
+      .connect(gov)
+      .initAsset(ASSET_ID["FLR"], auctioneer.address);
+    await priceFeed.connect(gov).initAsset(ASSET_ID["FLR"], WAD, ftso.address);
     await priceFeed.updateAdjustedPrice(ASSET_ID["FLR"]);
 
     // Increase equity
@@ -542,13 +546,15 @@ describe("Probity happy flow", function () {
     await flrWallet.deposit({ value: STANDBY_AMOUNT.mul(2) });
 
     // Initialize the FLR asset
-    await vaultEngine.connect(gov).initAssetType(ASSET_ID["FLR"]);
+    await vaultEngine.connect(gov).initAsset(ASSET_ID["FLR"]);
     await vaultEngine
       .connect(gov)
       .updateCeiling(ASSET_ID["FLR"], RAD.mul(10_000_000));
-    await teller.connect(gov).initCollType(ASSET_ID["FLR"], 0);
-    await liquidator.connect(gov).init(ASSET_ID["FLR"], auctioneer.address);
-    await priceFeed.connect(gov).init(ASSET_ID["FLR"], WAD, ftso.address);
+    await teller.connect(gov).initAsset(ASSET_ID["FLR"], 0);
+    await liquidator
+      .connect(gov)
+      .initAsset(ASSET_ID["FLR"], auctioneer.address);
+    await priceFeed.connect(gov).initAsset(ASSET_ID["FLR"], WAD, ftso.address);
     await priceFeed.updateAdjustedPrice(ASSET_ID["FLR"]);
 
     // Increase equity

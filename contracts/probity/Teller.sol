@@ -88,7 +88,7 @@ contract Teller is Stateful {
     /////////////////////////////////////////
     // External Functions
     /////////////////////////////////////////
-    function initCollType(bytes32 assetId, uint256 protocolFee) external onlyBy("gov") {
+    function initAsset(bytes32 assetId, uint256 protocolFee) external onlyBy("gov") {
         collateralTypes[assetId].lastUpdated = block.timestamp;
         collateralTypes[assetId].protocolFee = protocolFee;
     }

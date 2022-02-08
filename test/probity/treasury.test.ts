@@ -6,7 +6,7 @@ import {
   Aurei,
   PbtToken,
   Treasury,
-  NativeToken,
+  NativeAssetManager,
   MockVaultEngine,
 } from "../../typechain";
 
@@ -28,7 +28,7 @@ let pbt: PbtToken;
 let vaultEngine: MockVaultEngine;
 let treasury: Treasury;
 let registry: Registry;
-let flrCollateral: NativeToken;
+let flrCollateral: NativeAssetManager;
 
 const AMOUNT_TO_MINT = WAD.mul(100);
 const AMOUNT_TO_WITHDRAW = WAD.mul(50);
@@ -42,7 +42,7 @@ describe("Treasury Unit Tests", function () {
     registry = contracts.registry;
     aurei = contracts.aurei;
     pbt = contracts.pbtToken;
-    flrCollateral = contracts.nativeToken;
+    flrCollateral = contracts.nativeAssetManager;
 
     owner = signers.owner;
     user = signers.alice;

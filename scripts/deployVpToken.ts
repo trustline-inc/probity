@@ -28,13 +28,13 @@ async function main() {
   const param = {
     registry,
     vaultEngine: process.env.VAULT_ENGINE,
-    vpToken: process.env.VP_TOKEN,
+    vpAssetManager: process.env.VP_TOKEN,
     ftsoManager: process.env.FTSO_MANAGER,
     ftsoRewardManager: process.env.FTSO_REWARD_MANAGER,
   };
 
   //@ts-ignore
-  let contracts = await probity.deployVPToken(param);
+  let contracts = await probity.deployVPAssetManager(param);
 
   console.log("Contracts deployed!");
 

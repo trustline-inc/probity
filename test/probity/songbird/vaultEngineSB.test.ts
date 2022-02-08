@@ -3,7 +3,7 @@ import "@nomiclabs/hardhat-ethers";
 
 import {
   MockFtso,
-  NativeToken,
+  NativeAssetManager,
   PriceFeed,
   Registry,
   ReservePool,
@@ -30,7 +30,7 @@ let coll: SignerWithAddress;
 let vaultEngine: VaultEngineSB;
 let registry: Registry;
 let reservePool: ReservePool;
-let nativeToken: NativeToken;
+let nativeAssetManager: NativeAssetManager;
 let ftso: MockFtso;
 let teller: Teller;
 let priceFeed: PriceFeed;
@@ -47,7 +47,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
     registry = contracts.registry;
     vaultEngine = contracts.vaultEngineSB;
     reservePool = contracts.reservePool;
-    nativeToken = contracts.nativeToken;
+    nativeAssetManager = contracts.nativeAssetManager;
     teller = contracts.teller;
     priceFeed = contracts.priceFeed;
     ftso = contracts.ftso;
@@ -69,7 +69,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.connect(gov).initAssetType(flrAssetId);
+      await vaultEngine.connect(gov).initAsset(flrAssetId);
       await vaultEngine
         .connect(gov)
         .updateCeiling(flrAssetId, RAD.mul(10000000));

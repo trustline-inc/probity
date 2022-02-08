@@ -70,7 +70,7 @@ describe("Teller Unit Tests", function () {
 
   describe("setProtocolFee Unit Tests", function () {
     beforeEach(async function () {
-      await teller.initCollType(flrAssetId, 0);
+      await teller.initAsset(flrAssetId, 0);
     });
 
     it("tests that values are properly set", async () => {
@@ -97,12 +97,12 @@ describe("Teller Unit Tests", function () {
     });
   });
 
-  describe("initCollType Unit Tests", function () {
+  describe("initAsset Unit Tests", function () {
     it("tests that values are properly initialized", async () => {
       const collBefore = await teller.collateralTypes(flrAssetId);
       expect(collBefore[0]).to.equal(0);
       expect(collBefore[1]).to.equal(0);
-      await teller.initCollType(flrAssetId, 0);
+      await teller.initAsset(flrAssetId, 0);
       const collAfter = await teller.collateralTypes(flrAssetId);
       expect(collAfter[0]).to.not.equal(0);
       expect(collAfter[1]).to.equal(0);
@@ -110,18 +110,18 @@ describe("Teller Unit Tests", function () {
 
     it("can only be called by gov address", async () => {
       await assertRevert(
-        teller.connect(user).initCollType(bytes32("new coll"), 0),
+        teller.connect(user).initAsset(bytes32("new coll"), 0),
         "AccessControl/onlyBy: Caller does not have permission"
       );
       await registry.setupAddress(bytes32("gov"), user.address);
-      await teller.connect(user).initCollType(flrAssetId, 0);
+      await teller.connect(user).initAsset(flrAssetId, 0);
     });
   });
 
   describe("updateAccumulator Unit Tests", function () {
     beforeEach(async function () {
-      await teller.initCollType(flrAssetId, 0);
-      await vaultEngine.initAssetType(flrAssetId);
+      await teller.initAsset(flrAssetId, 0);
+      await vaultEngine.initAsset(flrAssetId);
       await vaultEngine.setTotalDebt(DEBT_TO_SET);
       await vaultEngine.setTotalEquity(EQUITY_TO_SET);
     });
@@ -132,7 +132,7 @@ describe("Teller Unit Tests", function () {
         teller.updateAccumulator(newCollId),
         "Teller/updateAccumulator: Collateral type not initialized"
       );
-      await teller.initCollType(newCollId, 0);
+      await teller.initAsset(newCollId, 0);
       await teller.updateAccumulator(newCollId);
     });
 

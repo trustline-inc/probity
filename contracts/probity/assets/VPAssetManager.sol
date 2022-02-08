@@ -4,13 +4,13 @@ pragma solidity ^0.8.0;
 
 import "../../dependencies/Delegatable.sol";
 
-contract VPToken is Delegatable {
+contract VPAssetManager is Delegatable {
     /////////////////////////////////////////
     // Events
     /////////////////////////////////////////
 
-    event DepositVPToken(address indexed user, uint256 amount, address indexed token);
-    event WithdrawVPToken(address indexed user, uint256 amount, address indexed token);
+    event DepositVPAssetManager(address indexed user, uint256 amount, address indexed token);
+    event WithdrawVPAssetManager(address indexed user, uint256 amount, address indexed token);
 
     /////////////////////////////////////////
     // Constructor
@@ -20,7 +20,7 @@ contract VPToken is Delegatable {
         bytes32 collateralHash,
         FtsoManagerLike ftsoManagerAddress,
         FtsoRewardManagerLike rewardManagerAddress,
-        VPTokenLike tokenAddress,
+        VPAssetManagerLike tokenAddress,
         VaultEngineLike vaultEngineAddress
     )
         Delegatable(
@@ -41,16 +41,16 @@ contract VPToken is Delegatable {
     /////////////////////////////////////////
 
     function deposit(uint256 amount) external onlyWhen("paused", false) onlyByWhiteListed {
-        require(token.transferFrom(msg.sender, address(this), amount), "VPToken/deposit: transfer failed");
+        require(token.transferFrom(msg.sender, address(this), amount), "VPAssetManager/deposit: transfer failed");
         vaultEngine.modifyStandbyAsset(collId, msg.sender, int256(amount));
         recentDeposits[msg.sender][ftsoManager.getCurrentRewardEpoch()] += amount;
         recentTotalDeposit[msg.sender] += amount;
 
-        emit DepositVPToken(msg.sender, amount, address(token));
+        emit DepositVPAssetManager(msg.sender, amount, address(token));
     }
 
     function withdraw(uint256 amount) external onlyWhen("paused", false) {
-        require(token.transfer(msg.sender, amount), "VPToken/withdraw: transfer failed");
+        require(token.transfer(msg.sender, amount), "VPAssetManager/withdraw: transfer failed");
 
         vaultEngine.modifyStandbyAsset(collId, msg.sender, -int256(amount));
         // only reduce recentDeposits if it exists
@@ -62,6 +62,6 @@ contract VPToken is Delegatable {
             recentDeposits[msg.sender][ftsoManager.getCurrentRewardEpoch()] -= 0;
         }
 
-        emit WithdrawVPToken(msg.sender, amount, address(token));
+        emit WithdrawVPAssetManager(msg.sender, amount, address(token));
     }
 }

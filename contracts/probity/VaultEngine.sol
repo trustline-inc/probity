@@ -378,7 +378,7 @@ contract VaultEngine is Stateful, Eventful {
      * @dev Initializes a new asset type
      * @param assetId The asset type ID
      */
-    function initAssetType(bytes32 assetId) external onlyBy("gov") {
+    function initAsset(bytes32 assetId) external onlyBy("gov") {
         assets[assetId].debtAccumulator = RAY;
         assets[assetId].equityAccumulator = RAY;
     }

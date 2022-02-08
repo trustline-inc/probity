@@ -387,7 +387,7 @@ describe("Shutdown Unit Tests", function () {
       // Final price = $0.987
       await priceFeed.setPrice(ASSET_ID["FLR"], PRICE_TO_SET);
 
-      await vaultEngine.initAssetType(ASSET_ID["FLR"]);
+      await vaultEngine.initAsset(ASSET_ID["FLR"]);
 
       // User vault is overcollateralized
       await vaultEngine.updateVault(
@@ -496,7 +496,7 @@ describe("Shutdown Unit Tests", function () {
       await shutdown.initiateShutdown();
       await priceFeed.setPrice(ASSET_ID["FLR"], PRICE_TO_SET);
 
-      await vaultEngine.initAssetType(ASSET_ID["FLR"]);
+      await vaultEngine.initAsset(ASSET_ID["FLR"]);
 
       // Overcollateralized
       await vaultEngine.updateVault(
@@ -613,7 +613,7 @@ describe("Shutdown Unit Tests", function () {
     beforeEach(async function () {
       await shutdown.initiateShutdown();
       await priceFeed.setPrice(ASSET_ID["FLR"], PRICE_TO_SET);
-      await vaultEngine.initAssetType(ASSET_ID["FLR"]);
+      await vaultEngine.initAsset(ASSET_ID["FLR"]);
       await shutdown.setFinalPrice(ASSET_ID["FLR"]);
 
       await vaultEngine.updateVault(
@@ -754,7 +754,7 @@ describe("Shutdown Unit Tests", function () {
 
       await shutdown.initiateShutdown();
       await priceFeed.setPrice(ASSET_ID["FLR"], PRICE_TO_SET);
-      await vaultEngine.initAssetType(ASSET_ID["FLR"]);
+      await vaultEngine.initAsset(ASSET_ID["FLR"]);
       await shutdown.setFinalPrice(ASSET_ID["FLR"]);
 
       await vaultEngine.updateVault(
@@ -921,7 +921,7 @@ describe("Shutdown Unit Tests", function () {
 
       await shutdown.initiateShutdown();
       await priceFeed.setPrice(ASSET_ID["FLR"], PRICE_TO_SET);
-      await vaultEngine.initAssetType(ASSET_ID["FLR"]);
+      await vaultEngine.initAsset(ASSET_ID["FLR"]);
       await shutdown.setFinalPrice(ASSET_ID["FLR"]);
 
       await increaseTime(172800);
@@ -1039,7 +1039,7 @@ describe("Shutdown Unit Tests", function () {
 
       await shutdown.initiateShutdown();
       await priceFeed.setPrice(ASSET_ID["FLR"], PRICE_TO_SET);
-      await vaultEngine.initAssetType(ASSET_ID["FLR"]);
+      await vaultEngine.initAsset(ASSET_ID["FLR"]);
       await shutdown.setFinalPrice(ASSET_ID["FLR"]);
 
       await increaseTime(172800);

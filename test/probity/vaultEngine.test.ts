@@ -3,7 +3,7 @@ import "@nomiclabs/hardhat-ethers";
 
 import {
   MockFtso,
-  NativeToken,
+  NativeAssetManager,
   PriceFeed,
   Registry,
   ReservePool,
@@ -31,7 +31,7 @@ let assetManager: SignerWithAddress;
 let vaultEngine: VaultEngine;
 let registry: Registry;
 let reservePool: ReservePool;
-let nativeToken: NativeToken;
+let nativeAssetManager: NativeAssetManager;
 let ftso: MockFtso;
 let teller: Teller;
 let priceFeed: PriceFeed;
@@ -47,7 +47,7 @@ describe("Vault Engine Unit Tests", function () {
     registry = contracts.registry;
     vaultEngine = contracts.vaultEngine;
     reservePool = contracts.reservePool;
-    nativeToken = contracts.nativeToken;
+    nativeAssetManager = contracts.nativeAssetManager;
     teller = contracts.teller;
     priceFeed = contracts.priceFeed;
     ftso = contracts.ftso;
@@ -74,7 +74,7 @@ describe("Vault Engine Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.connect(gov).initAssetType(ASSET_ID["FLR"]);
+      await vaultEngine.connect(gov).initAsset(ASSET_ID["FLR"]);
       await vaultEngine
         .connect(gov)
         .updateCeiling(ASSET_ID["FLR"], RAD.mul(10_000_000));
@@ -399,7 +399,7 @@ describe("Vault Engine Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.connect(gov).initAssetType(ASSET_ID["FLR"]);
+      await vaultEngine.connect(gov).initAsset(ASSET_ID["FLR"]);
       await vaultEngine
         .connect(gov)
         .updateCeiling(ASSET_ID["FLR"], RAD.mul(10_000_000));
@@ -688,7 +688,7 @@ describe("Vault Engine Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.connect(gov).initAssetType(ASSET_ID["FLR"]);
+      await vaultEngine.connect(gov).initAsset(ASSET_ID["FLR"]);
       await vaultEngine
         .connect(gov)
         .updateCeiling(ASSET_ID["FLR"], RAD.mul(10000000));
@@ -783,7 +783,7 @@ describe("Vault Engine Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.connect(gov).initAssetType(ASSET_ID["FLR"]);
+      await vaultEngine.connect(gov).initAsset(ASSET_ID["FLR"]);
       await vaultEngine
         .connect(gov)
         .updateCeiling(ASSET_ID["FLR"], RAD.mul(10_000_000));
@@ -868,7 +868,7 @@ describe("Vault Engine Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.connect(gov).initAssetType(ASSET_ID["FLR"]);
+      await vaultEngine.connect(gov).initAsset(ASSET_ID["FLR"]);
       await vaultEngine
         .connect(gov)
         .updateCeiling(ASSET_ID["FLR"], RAD.mul(10_000_000));

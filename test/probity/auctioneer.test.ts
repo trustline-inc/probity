@@ -7,7 +7,7 @@ import {
   MockFtso,
   MockReservePool,
   MockVaultEngine,
-  NativeToken,
+  NativeAssetManager,
   PriceFeed,
   Auctioneer,
   Registry,
