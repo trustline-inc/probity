@@ -247,8 +247,8 @@ contract Auctioneer is Stateful, Eventful {
             lotValue = auctions[auctionId].debt - totalBidValue;
         }
 
-        // TODO: #240 lotToBuy could be zero if lotValue < currentPrice
         uint256 lotToBuy = lotValue / currentPrice;
+        require(lotToBuy > 0, "Auctioneer/buyItNow: Price has reach a point where BuyItNow is no longer available");
 
         lotToBuy = min(lotToBuy, auctions[auctionId].lot);
         lotValue = lotToBuy * currentPrice;
