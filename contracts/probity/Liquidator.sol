@@ -109,6 +109,10 @@ contract Liquidator is Stateful, Eventful {
     // External functions
     /////////////////////////////////////////
     function initAsset(bytes32 assetId, AuctioneerLike auctioneer) external onlyBy("gov") {
+        require(
+            address(assets[assetId].auctioneer) == address(0),
+            "Liquidator/initAsset: This asset has already been initialized"
+        );
         assets[assetId].auctioneer = auctioneer;
         assets[assetId].debtPenaltyFee = 1.17E18;
         assets[assetId].equityPenaltyFee = 1.05E18;

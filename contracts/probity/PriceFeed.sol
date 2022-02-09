@@ -54,6 +54,10 @@ contract PriceFeed is Stateful, Eventful {
         uint256 liquidationRatio,
         FtsoLike ftso
     ) external onlyBy("gov") {
+        require(
+            address(assets[assetId].ftso) == address(0),
+            "PriceFeed/initAsset: This asset has already been initialized"
+        );
         assets[assetId].liquidationRatio = liquidationRatio;
         assets[assetId].ftso = ftso;
     }
