@@ -1,8 +1,37 @@
+/**
+ * Deploy New Asset script
+ * This will deploy new asset manager contract and initialize them in relevant contracts
+ * Usage:
+ *  All Settings and necessary Info should be set through env variables
+ *
+ *
+ *  Required Variables:
+ *    contract addresses:
+ *      - REGISTRY
+ *      - VAULT_ENGINE
+ *      - PRICE_FEED
+ *      - TELLER
+ *      - LIQUIDATOR
+ *      - FTSO (if DEPLOY_FTSO=false)
+ *       - ERC20 (if ASSET_TYPE=ERC20)
+ *      - FTSO_MANAGER (if ASSET_TYPE=VPToken)
+ *      - FTSO_REWARD_MANAGER (if ASSET_TYPE=VPToken)
+ *      - VP_TOKEN (if ASSET_TYPE=VPToken)
+ *    Settings:
+ *      - ASSET_NAME (String)
+ *      - ASSET_TYPE (Native, VPToken, ERC20)
+ *      - DEPLOY_FTSO (boolean)
+ *      - LIQUIDATION_RATIO (float, 1.5 = 150%)
+ *      - PROTOCOL_FEE (float, 0.01 = 1%)
+ *      - DEPLOYMENT_DELAY (int) : Adds delay between deployment of contracts
+ *      - DELAY (int) : Adds delay between contract calls
+ */
+
 import "@nomiclabs/hardhat-ethers";
 import { probity, mock, parseExistingContracts } from "../lib/deployer";
-import * as fs from "fs";
-import * as hre from "hardhat";
 import { ethers, web3 } from "hardhat";
+
+ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
 async function main() {
   let contracts;
@@ -79,39 +108,61 @@ async function main() {
   console.info("Deploying Auctioneer");
   await probity.deployAuctioneer();
 
-  console.info("Initializing Asset on VaultEngine");
-  await contracts.vaultEngine.initAsset(assetId);
-
-  console.info("Initializing Asset on teller");
-  await contracts.teller.initAsset(
-    assetId,
-    ethers.utils.parseEther(process.env.LIQUIDATION_RATIO)
+  await execute(
+    contracts.vaultEngine.initAsset(assetId),
+    "Initializing Asset on VaultEngine"
   );
 
-  console.info("Initializing Asset on liquidator");
-  await contracts.liquidator.MockVPToken(assetId, contracts.auctioneer.address);
-
-  console.info("Initializing Asset on priceFeed");
-  await contracts.priceFeed.MockVPToken(
-    assetId,
-    ethers.utils.parseEther(process.env.LIQUIDATION_RATIO),
-    ftso
+  await execute(
+    contracts.teller.initAsset(
+      assetId,
+      ethers.utils.parseEther(process.env.LIQUIDATION_RATIO)
+    ),
+    "Initializing Asset on teller"
   );
 
-  console.info("Updating Adjusted Price on priceFeed");
-  await contracts.priceFeed.updateAdjustedPrice(assetId);
+  await execute(
+    contracts.liquidator.initAsset(assetId, contracts.auctioneer.address),
+    "Initializing Asset on liquidator"
+  );
+
+  await execute(
+    contracts.priceFeed.initAsset(
+      assetId,
+      ethers.utils.parseEther(process.env.LIQUIDATION_RATIO),
+      ftso
+    ),
+    "Initializing Asset on priceFeed"
+  );
+
+  await execute(
+    contracts.priceFeed.updateAdjustedPrice(assetId),
+    "Updating Adjusted Price on priceFeed"
+  );
 }
 
 async function checkContractAddresses(contractNames) {
   console.info("Checking if necessary contract addresses are present");
   for (let contractName of contractNames) {
-    console.log(contractName, process.env[contractName]);
     if (process.env[contractName] === undefined) {
       logErrorAndExit(
         `Missing contract Address for ${contractName}, please set it in env variable`
       );
     }
   }
+}
+
+async function execute(promise, message) {
+  console.info(message);
+  await promise;
+  await checkDelay();
+}
+
+async function checkDelay() {
+  if (process.env.DELAY === undefined) return;
+  const delayTime = parseInt(process.env.DELAY);
+  console.log(`sleeping for ${delayTime} ms`);
+  return new Promise((resolve) => setTimeout(resolve, delayTime));
 }
 
 async function checkSettings() {
