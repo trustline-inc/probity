@@ -265,6 +265,7 @@ contract Auctioneer is Stateful, Eventful {
         auctions[auctionId].debt = auctions[auctionId].debt - lotValue;
         auctions[auctionId].lot = auctions[auctionId].lot - lotToBuy;
 
+        liquidator.reduceAuctionDebt(lotValue);
         endAuction(auctionId);
         emit Sale(auctions[auctionId].assetId, auctionId, msg.sender, currentPrice, lotToBuy);
         cancelOldBids(auctionId, 0, 0, index);
@@ -295,6 +296,7 @@ contract Auctioneer is Stateful, Eventful {
             bids[auctionId][msg.sender].price,
             bids[auctionId][msg.sender].lot
         );
+        liquidator.reduceAuctionDebt(buyAmount);
         endAuction(auctionId);
     }
 
@@ -374,6 +376,12 @@ contract Auctioneer is Stateful, Eventful {
             auctions[auctionId].isOver = true;
 
             auctions[auctionId].lot = 0;
+
+            if (auctions[auctionId].debt != 0) {
+                // since there are no more lot, the rest of the debt is no longer on Auction
+                liquidator.reduceAuctionDebt(auctions[auctionId].debt);
+                auctions[auctionId].debt = 0;
+            }
 
             vaultEngine.moveAsset(
                 auctions[auctionId].assetId,

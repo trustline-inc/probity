@@ -14,6 +14,7 @@ contract MockLiquidator {
 
     mapping(bytes32 => Asset) public assets;
     mapping(bytes32 => bool) public states;
+    uint256 public lastReduceAuctionDebt;
 
     function setAssetType(bytes32 assetId, address auctioneer) external {
         assets[assetId].auctioneer = auctioneer;
@@ -21,5 +22,9 @@ contract MockLiquidator {
 
     function setShutdownState() external {
         states["shutdown"] = true;
+    }
+
+    function reduceAuctionDebt(uint256 amount) external {
+        lastReduceAuctionDebt = amount;
     }
 }
