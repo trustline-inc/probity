@@ -117,7 +117,7 @@ describe("Auctioneer Unit Tests", function () {
       const EXPECTED_START_PRICE = DEFUALT_PRICE_BUFFER.mul(1e9);
 
       const before = await auctioneer.auctions(0);
-      expect(before.collId).to.equal(bytes32(""));
+      expect(before.assetId).to.equal(bytes32(""));
       expect(before.lot).to.equal(0);
       expect(before.debt).to.equal(0);
       expect(before.owner).to.equal(ADDRESS_ZERO);
@@ -131,7 +131,7 @@ describe("Auctioneer Unit Tests", function () {
         .startAuction(flrAssetId, LOT_SIZE, DEBT_SIZE, COLL_OWNER, BENEFICIARY);
 
       const after = await auctioneer.auctions(0);
-      expect(after.collId).to.equal(flrAssetId);
+      expect(after.assetId).to.equal(flrAssetId);
       expect(after.lot).to.equal(LOT_SIZE);
       expect(after.debt).to.equal(DEBT_SIZE);
       expect(after.owner).to.equal(COLL_OWNER);
@@ -163,7 +163,7 @@ describe("Auctioneer Unit Tests", function () {
         auctioneer
       );
 
-      expect(parsedEvents[0].args.collId).to.equal(flrAssetId);
+      expect(parsedEvents[0].args.assetId).to.equal(flrAssetId);
       expect(parsedEvents[0].args.auctionId).to.equal(0);
       expect(parsedEvents[0].args.lotSize).to.equal(LOT_SIZE);
     });
@@ -261,7 +261,7 @@ describe("Auctioneer Unit Tests", function () {
         auctioneer
       );
 
-      expect(parsedEvents[0].args.collId).to.equal(flrAssetId);
+      expect(parsedEvents[0].args.assetId).to.equal(flrAssetId);
       expect(parsedEvents[0].args.auctionId).to.equal(0);
       expect(parsedEvents[0].args.lotSize).to.equal(EXPECTED_LOT_SIZE);
     });
@@ -675,7 +675,7 @@ describe("Auctioneer Unit Tests", function () {
         auctioneer
       );
 
-      expect(parsedEvents[0].args.collId).to.equal(flrAssetId);
+      expect(parsedEvents[0].args.assetId).to.equal(flrAssetId);
       expect(parsedEvents[0].args.auctionId).to.equal(0);
       expect(parsedEvents[0].args.user).to.equal(COLL_OWNER);
       expect(parsedEvents[0].args.price).to.equal(RAY);

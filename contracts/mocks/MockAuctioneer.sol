@@ -7,7 +7,7 @@ contract MockAuctioneer {
     }
 
     struct LastStartAuctionCall {
-        bytes32 collId;
+        bytes32 assetId;
         uint256 lotSize;
         uint256 debtSize;
         address owner;
@@ -23,13 +23,13 @@ contract MockAuctioneer {
     }
 
     function startAuction(
-        bytes32 collId,
+        bytes32 assetId,
         uint256 lotSize,
         uint256 debtSize,
         address owner,
         address beneficiary
     ) external {
-        lastStartAuctionCall.collId = collId;
+        lastStartAuctionCall.assetId = assetId;
         lastStartAuctionCall.lotSize = lotSize;
         lastStartAuctionCall.debtSize = debtSize;
         lastStartAuctionCall.owner = owner;

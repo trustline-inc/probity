@@ -33,7 +33,7 @@ const AMOUNT_TO_WITHDRAW = WAD.mul(50);
 
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
-describe("ERC20 Collateral Unit Test", function () {
+describe("ERC20 Asset Unit Test", function () {
   beforeEach(async function () {
     const { contracts, signers } = await deployTest();
 

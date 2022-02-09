@@ -56,7 +56,7 @@ contract Delegatable is Stateful {
     FtsoRewardManagerLike public immutable ftsoRewardManager;
     VaultEngineLike public immutable vaultEngine;
     VPAssetManagerLike public immutable token;
-    bytes32 public immutable collId;
+    bytes32 public immutable assetId;
 
     address[] public dataProviders;
     uint256 public lastClaimedEpoch;
@@ -78,7 +78,7 @@ contract Delegatable is Stateful {
         VPAssetManagerLike tokenAddress,
         VaultEngineLike vaultEngineAddress
     ) Stateful(registryAddress) {
-        collId = collateralId;
+        assetId = collateralId;
         ftsoManager = ftsoManagerAddress;
         ftsoRewardManager = rewardManagerAddress;
         vaultEngine = vaultEngineAddress;
@@ -116,7 +116,7 @@ contract Delegatable is Stateful {
             lastClaimedEpoch > userLastClaimedEpoch[msg.sender],
             "Delegatable/userCollectReward: No new epoch to claim"
         );
-        (uint256 underlying, uint256 collateral, uint256 standby) = vaultEngine.vaults(collId, msg.sender);
+        (uint256 underlying, uint256 collateral, uint256 standby) = vaultEngine.vaults(assetId, msg.sender);
         uint256 currentBalance = standby + underlying + collateral;
         uint256 rewardBalance = 0;
 
