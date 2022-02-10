@@ -23,6 +23,7 @@ import { deployTest } from "../lib/deployer";
 import { ethers } from "hardhat";
 import * as chai from "chai";
 import { ASSET_ID, bytes32, WAD, RAY, RAD } from "./utils/constants";
+import increaseTime from "./utils/increaseTime";
 const expect = chai.expect;
 
 // Wallets
@@ -378,6 +379,84 @@ describe("Probity happy flow", function () {
     let expectedPrice = RAY.div(3).mul(2);
     // As long as the expected price is within a buffer, call it success
     expect(adjustedPrice.sub(expectedPrice).toNumber() <= 10).to.equal(true);
+  });
+
+  it("updates the accumulators + protocol fees", async () => {
+    // Deposit native token (FLR)
+    await flrWallet.deposit({ value: STANDBY_AMOUNT });
+
+    // Initialize the FLR asset
+    await vaultEngine.connect(gov).initAsset(ASSET_ID["FLR"]);
+    await vaultEngine
+      .connect(gov)
+      .updateCeiling(ASSET_ID["FLR"], RAD.mul(10_000_000));
+    await teller.connect(gov).initAsset(ASSET_ID["FLR"], 0);
+    await priceFeed
+      .connect(gov)
+      .initAsset(ASSET_ID["FLR"], WAD.mul(15).div(10), ftso.address);
+    await priceFeed.updateAdjustedPrice(ASSET_ID["FLR"]);
+
+    // update protocol Fee
+    await teller
+      .connect(gov)
+      .setProtocolFee(ASSET_ID.FLR, ethers.utils.parseEther("0.02"));
+
+    // increase equity
+    await vaultEngine.modifyEquity(
+      ASSET_ID["FLR"],
+      treasury.address,
+      UNDERLYING_AMOUNT,
+      EQUITY_AMOUNT
+    );
+
+    // increase debt
+    await vaultEngine.modifyDebt(
+      ASSET_ID["FLR"],
+      treasury.address,
+      COLL_AMOUNT,
+      LOAN_AMOUNT
+    );
+
+    await teller.updateAccumulator(ASSET_ID.FLR);
+
+    // increase time
+    await increaseTime(5000);
+
+    const assetBefore = await vaultEngine.assets(ASSET_ID.FLR);
+    const reserveBalBefore = await vaultEngine.stablecoin(reserve.address);
+    const totalDebtBefore = await vaultEngine.totalDebt();
+    const totalEquityBefore = await vaultEngine.totalEquity();
+
+    // call teller.updateAccumulator
+    await teller.updateAccumulator(ASSET_ID["FLR"]);
+
+    const assetAfter = await vaultEngine.assets(ASSET_ID.FLR);
+    const reserveBalAfter = await vaultEngine.stablecoin(reserve.address);
+    const totalDebtAfter = await vaultEngine.totalDebt();
+    const totalEquityAfter = await vaultEngine.totalEquity();
+
+    // check the debt's accumulator update
+    const debtAccumulatorDiff = assetAfter.debtAccumulator.sub(
+      assetBefore.debtAccumulator
+    );
+    expect(debtAccumulatorDiff.gt(0)).to.equal(true);
+
+    // check the equity's accumulator update
+    const equityAccumulatorDiff = assetAfter.equityAccumulator.sub(
+      assetBefore.equityAccumulator
+    );
+    expect(equityAccumulatorDiff.gt(0)).to.equal(true);
+
+    // check reserveBal increase
+    const reserveBalDiff = reserveBalAfter.sub(reserveBalBefore);
+    expect(reserveBalDiff.gt(0)).to.equal(true);
+
+    // check new debt created vs new equity + protocolFee
+    const totalDebtDiff = totalDebtAfter.sub(totalDebtBefore);
+    const totalEquityDiff = totalEquityAfter.sub(totalEquityBefore);
+    expect(totalDebtDiff.gte(totalEquityDiff.add(reserveBalDiff))).to.equal(
+      true
+    );
   });
 
   it("liquidates unhealthy vaults", async () => {
