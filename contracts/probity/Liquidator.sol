@@ -14,7 +14,8 @@ interface VaultEngineLike {
             uint256 underlying,
             uint256 collateral,
             uint256 debt,
-            uint256 equity
+            uint256 equity,
+            uint256 initialEquity
         );
 
     function assets(bytes32 assetId)
@@ -153,7 +154,6 @@ contract Liquidator is Stateful, Eventful {
     }
 
     /**
-     * TODO: #239 How is reduceAuctionDebt used?
      * @param amount The amount to reduce the ReservePool debt by
      */
     function reduceAuctionDebt(uint256 amount) external {
@@ -167,13 +167,13 @@ contract Liquidator is Stateful, Eventful {
      */
     function liquidateVault(bytes32 assetId, address user) external {
         (uint256 debtAccumulator, , uint256 adjustedPrice) = vaultEngine.assets(assetId);
-        (, uint256 underlying, uint256 collateral, uint256 debt, uint256 equity) = vaultEngine.vaults(assetId, user);
+        (, uint256 underlying, uint256 collateral, uint256 debt, uint256 equity, uint256 initialEquity) = vaultEngine
+            .vaults(assetId, user);
 
         require((underlying + collateral) != 0 && (debt + equity != 0), "Lidquidator: Nothing to liquidate");
 
-        // TODO: Should equity be initialEquity below?
         require(
-            collateral * adjustedPrice < debt * debtAccumulator || underlying * adjustedPrice < equity * RAY,
+            collateral * adjustedPrice < debt * debtAccumulator || underlying * adjustedPrice < initialEquity,
             "Liquidator: Vault collateral/underlying is above the liquidation ratio"
         );
 

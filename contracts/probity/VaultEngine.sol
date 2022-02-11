@@ -330,16 +330,16 @@ contract VaultEngine is Stateful, Eventful {
     function liquidateEquityPosition(
         bytes32 assetId,
         address user,
-        int256 assetAmount,
+        address auctioneer,
+        int256 assetToAuction,
+        int256 assetToReturn,
         int256 equityAmount
     ) external onlyByProbity {
         Vault storage vault = vaults[assetId][user];
         Asset storage asset = assets[assetId];
 
-        // TODO: Assess penalty
-
-        vault.underlying = add(vault.underlying, assetAmount);
-        vault.standby = add(vault.standby, -assetAmount);
+        vault.underlying = add(vault.underlying, assetToReturn);
+        vault.standby = sub(vault.standby, assetToReturn);
         vault.equity = add(vault.equity, equityAmount);
         vault.initialEquity = add(vault.initialEquity, mul(RAY, equityAmount));
         asset.normEquity = add(asset.normEquity, equityAmount);
