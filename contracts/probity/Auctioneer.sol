@@ -24,8 +24,8 @@ interface PriceCalc {
     function price(uint256 startPrice, uint256 timeElapsed) external returns (uint256 calculatedPrice);
 }
 
-interface FtsoLike {
-    function getCurrentPrice() external returns (uint256 _price, uint256 _timestamp);
+interface PriceFeedLike {
+    function getPrice(bytes32 assetId) external returns (uint256 _price);
 }
 
 interface LiquidatorLike {
@@ -61,7 +61,7 @@ contract Auctioneer is Stateful, Eventful {
     address public constant HEAD = address(1);
 
     VaultEngineLike public immutable vaultEngine;
-    FtsoLike public immutable ftso;
+    PriceFeedLike public immutable priceFeed;
     LiquidatorLike public liquidator;
     PriceCalc public immutable priceCalc;
 
@@ -125,12 +125,12 @@ contract Auctioneer is Stateful, Eventful {
         address registryAddress,
         VaultEngineLike vaultEngineAddress,
         PriceCalc priceCalcAddress,
-        FtsoLike ftsoAddress,
+        PriceFeedLike priceFeedAddress,
         LiquidatorLike liquidatorAddress
     ) Stateful(registryAddress) {
         vaultEngine = vaultEngineAddress;
         priceCalc = priceCalcAddress;
-        ftso = ftsoAddress;
+        priceFeed = priceFeedAddress;
         liquidator = liquidatorAddress;
     }
 
@@ -153,8 +153,8 @@ contract Auctioneer is Stateful, Eventful {
         address owner,
         address beneficiary
     ) external onlyBy("liquidator") {
-        (uint256 currentPrice, ) = ftso.getCurrentPrice();
-        uint256 startPrice = (rdiv(currentPrice, 1e5) * priceBuffer) / ONE;
+        uint256 currentPrice = priceFeed.getPrice(assetId);
+        uint256 startPrice = (currentPrice * priceBuffer) / ONE;
         uint256 auctionId = auctionCount++;
         auctions[auctionId] = Auction(
             assetId,
@@ -182,7 +182,7 @@ contract Auctioneer is Stateful, Eventful {
             "Auctioneer/resetAuction: This auction isn't expired, or doesn't exist"
         );
 
-        (uint256 currentPrice, ) = ftso.getCurrentPrice();
+        uint256 currentPrice = priceFeed.getPrice(auctions[auctionId].assetId);
         uint256 startPrice = (rdiv(currentPrice, 1e5) * priceBuffer) / ONE;
         auction.startPrice = startPrice;
         auction.startTime = block.timestamp;

@@ -4,7 +4,6 @@ import "@nomiclabs/hardhat-ethers";
 import {
   Liquidator,
   MockAuctioneer,
-  MockFtso,
   MockReservePool,
   MockVaultEngine,
   NativeAssetManager,
@@ -18,12 +17,20 @@ import {
   VaultEngine,
   MockPriceCalc,
   MockLiquidator,
+  MockPriceFeed,
 } from "../../typechain";
 
 import { deployTest, probity } from "../../lib/deployer";
 import { ethers } from "hardhat";
 import * as chai from "chai";
-import { ADDRESS_ZERO, bytes32, RAD, WAD, RAY } from "../utils/constants";
+import {
+  ADDRESS_ZERO,
+  bytes32,
+  RAD,
+  WAD,
+  RAY,
+  ASSET_ID,
+} from "../utils/constants";
 import { BigNumber } from "ethers";
 import assertRevert from "../utils/assertRevert";
 import { sign } from "crypto";
@@ -43,7 +50,7 @@ let vaultEngine: MockVaultEngine;
 let registry: Registry;
 let reservePool: ReservePool;
 let auctioneer: Auctioneer;
-let ftso: MockFtso;
+let priceFeed: MockPriceFeed;
 let liquidator: MockLiquidator;
 let priceCalc: MockPriceCalc;
 
@@ -63,14 +70,14 @@ describe("Auctioneer Unit Tests", function () {
     vaultEngine = contracts.mockVaultEngine;
     reservePool = contracts.reservePool;
     priceCalc = contracts.mockPriceCalc;
-    ftso = contracts.ftso;
+    priceFeed = contracts.mockPriceFeed;
     liquidator = contracts.mockLiquidator;
 
     contracts = await probity.deployAuctioneer({
       registry: registry,
       vaultEngine: vaultEngine.address,
       priceCalc: priceCalc.address,
-      ftso: ftso.address,
+      priceFeed: priceFeed.address,
       liquidator: liquidator.address,
     });
 
@@ -87,6 +94,7 @@ describe("Auctioneer Unit Tests", function () {
       liquidatorCaller.address
     );
     await priceCalc.setPrice(RAY.mul(12).div(10));
+    await priceFeed.setPrice(flrAssetId, RAY);
   });
 
   describe("startAuction Unit Test", function () {
@@ -232,7 +240,7 @@ describe("Auctioneer Unit Tests", function () {
       const NEW_PRICE = 1.2e5;
 
       await priceCalc.setPrice(0);
-      await ftso.setCurrentPrice(NEW_PRICE);
+      await priceFeed.setPrice(flrAssetId, NEW_PRICE);
 
       const before = await auctioneer.auctions(0);
       expect(before.startPrice).to.equal(OLD_PRICE);

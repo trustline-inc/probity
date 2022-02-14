@@ -929,7 +929,7 @@ const deployAuctioneer = async (param?: {
   registry?: Registry;
   vaultEngine?: string;
   priceCalc?: string;
-  ftso?: string;
+  priceFeed?: string;
   liquidator?: string;
 }) => {
   if (contracts.auctioneer !== null && process.env.NODE_ENV !== "test") {
@@ -949,7 +949,8 @@ const deployAuctioneer = async (param?: {
     param && param.priceCalc
       ? param.priceCalc
       : contracts.linearDecrease.address;
-  const ftso = param && param.ftso ? param.ftso : contracts.ftso.address;
+  const priceFeed =
+    param && param.priceFeed ? param.priceFeed : contracts.priceFeed.address;
   const liquidator =
     param && param.liquidator ? param.liquidator : contracts.liquidator.address;
   const signers = await getSigners();
@@ -962,7 +963,7 @@ const deployAuctioneer = async (param?: {
     registry.address,
     vaultEngine,
     linearDecrease,
-    ftso,
+    priceFeed,
     liquidator
   );
 
@@ -973,7 +974,7 @@ const deployAuctioneer = async (param?: {
       registry: registry.address,
       vaultEngine,
       linearDecrease,
-      ftso,
+      priceFeed,
       liquidator,
     });
   }
