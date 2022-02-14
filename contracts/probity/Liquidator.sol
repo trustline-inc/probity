@@ -42,7 +42,9 @@ interface VaultEngineLike {
     function liquidateEquityPosition(
         bytes32 assetId,
         address user,
-        int256 underlyingAmount,
+        address auctioneer,
+        int256 assetToAuction,
+        int256 assetToReturn,
         int256 equityAmount
     ) external;
 }
@@ -53,7 +55,8 @@ interface AuctioneerLike {
         uint256 lotSize,
         uint256 debtSize,
         address owner,
-        address beneficiary
+        address beneficiary,
+        bool sellAllLot
     ) external;
 }
 
@@ -61,6 +64,10 @@ interface ReservePoolLike {
     function addAuctionDebt(uint256 newDebt) external;
 
     function reduceAuctionDebt(uint256 debtToReduce) external;
+}
+
+interface FtsoLike {
+    function getCurrentPrice() external returns (uint256 _price, uint256 _timestamp);
 }
 
 // When a vault is liquidated, the reserve pool will take the on the debt and
@@ -76,6 +83,7 @@ contract Liquidator is Stateful, Eventful {
     /////////////////////////////////////////
     struct Asset {
         AuctioneerLike auctioneer;
+        FtsoLike ftso;
         uint256 debtPenaltyFee;
         uint256 equityPenaltyFee;
     }
@@ -88,6 +96,7 @@ contract Liquidator is Stateful, Eventful {
 
     VaultEngineLike public immutable vaultEngine;
     ReservePoolLike public immutable reserve;
+
     address public immutable treasuryAddress;
 
     mapping(bytes32 => Asset) public assets;
@@ -109,14 +118,19 @@ contract Liquidator is Stateful, Eventful {
     /////////////////////////////////////////
     // External functions
     /////////////////////////////////////////
-    function initAsset(bytes32 assetId, AuctioneerLike auctioneer) external onlyBy("gov") {
+    function initAsset(
+        bytes32 assetId,
+        AuctioneerLike auctioneer,
+        FtsoLike ftso
+    ) external onlyBy("gov") {
         require(
             address(assets[assetId].auctioneer) == address(0),
             "Liquidator/initAsset: This asset has already been initialized"
         );
         assets[assetId].auctioneer = auctioneer;
+        assets[assetId].ftso = ftso;
         assets[assetId].debtPenaltyFee = 1.17E18;
-        assets[assetId].equityPenaltyFee = 1.05E18;
+        assets[assetId].equityPenaltyFee = 5E16;
     }
 
     /**
@@ -177,20 +191,29 @@ contract Liquidator is Stateful, Eventful {
             "Liquidator: Vault collateral/underlying is above the liquidation ratio"
         );
 
+        Asset memory asset = assets[assetId];
+
         if (collateral * adjustedPrice < debt * debtAccumulator) {
             // Transfer the debt to reserve pool
             reserve.addAuctionDebt(debt * RAY);
             vaultEngine.liquidateDebtPosition(
                 assetId,
                 user,
-                address(assets[assetId].auctioneer),
+                address(asset.auctioneer),
                 address(reserve),
                 -int256(collateral),
                 -int256(debt)
             );
 
-            uint256 fundraiseTarget = (debt * debtAccumulator * assets[assetId].debtPenaltyFee) / WAD;
-            assets[assetId].auctioneer.startAuction(assetId, collateral, fundraiseTarget, user, address(reserve));
+            uint256 fundraiseTarget = (debt * debtAccumulator * asset.debtPenaltyFee) / WAD;
+            assets[assetId].auctioneer.startAuction(
+                assetId,
+                collateral,
+                fundraiseTarget,
+                user,
+                address(reserve),
+                false
+            );
         }
 
         if (underlying * adjustedPrice < equity * RAY) {
@@ -199,8 +222,25 @@ contract Liquidator is Stateful, Eventful {
                 "VaultEngine/liquidateEquityPosition: Not enough treasury funds"
             );
 
-            vaultEngine.liquidateEquityPosition(assetId, user, -int256(underlying), -int256(equity));
-            vaultEngine.removeStablecoin(treasuryAddress, equity * RAY);
+            uint256 penaltyAmount = (initialEquity * assets[assetId].equityPenaltyFee) / WAD;
+            (uint256 currPrice, ) = asset.ftso.getCurrentPrice();
+            uint256 assetToAuction = penaltyAmount / currPrice;
+            vaultEngine.liquidateEquityPosition(
+                assetId,
+                user,
+                address(asset.auctioneer),
+                -int256(assetToAuction),
+                -int256(underlying - assetToAuction),
+                -int256(equity)
+            );
+            assets[assetId].auctioneer.startAuction(
+                assetId,
+                collateral,
+                penaltyAmount,
+                address(reserve),
+                address(reserve),
+                true
+            );
         }
     }
 }

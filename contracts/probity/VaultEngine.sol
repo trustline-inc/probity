@@ -324,7 +324,9 @@ contract VaultEngine is Stateful, Eventful {
      * @dev Returns underlying asset to user vault with penalty
      * @param assetId The ID of the vault asset type
      * @param user The address of the vault to liquidate
-     * @param assetAmount The amount of asset to liquidate
+     * @param auctioneer The address of the auctioneer to auction the asset
+     * @param assetToAuction The amount of asset sent to auctioneer to be auctioned
+     * @param assetToReturn The amount of asset to sent back to owner
      * @param equityAmount The amount of equity to clear
      */
     function liquidateEquityPosition(
@@ -344,6 +346,7 @@ contract VaultEngine is Stateful, Eventful {
         vault.initialEquity = add(vault.initialEquity, mul(RAY, equityAmount));
         asset.normEquity = add(asset.normEquity, equityAmount);
 
+        vaults[assetId][auctioneer].standby = sub(vaults[assetId][auctioneer].standby, assetToAuction);
         totalEquity = add(totalEquity, mul(RAY, equityAmount));
 
         emit Log("vault", "liquidateEquityPosition", msg.sender);

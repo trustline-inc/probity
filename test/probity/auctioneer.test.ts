@@ -108,7 +108,8 @@ describe("Auctioneer Unit Tests", function () {
           LOT_SIZE,
           DEBT_SIZE,
           COLL_OWNER,
-          BENEFICIARY
+          BENEFICIARY,
+          false
         ),
         "AccessControl/onlyBy: Caller does not have permission"
       );
@@ -117,7 +118,14 @@ describe("Auctioneer Unit Tests", function () {
 
       await auctioneer
         .connect(user1)
-        .startAuction(flrAssetId, LOT_SIZE, DEBT_SIZE, COLL_OWNER, BENEFICIARY);
+        .startAuction(
+          flrAssetId,
+          LOT_SIZE,
+          DEBT_SIZE,
+          COLL_OWNER,
+          BENEFICIARY,
+          false
+        );
     });
 
     it("tests that auction object is created properly", async () => {
@@ -137,7 +145,14 @@ describe("Auctioneer Unit Tests", function () {
 
       await auctioneer
         .connect(liquidatorCaller)
-        .startAuction(flrAssetId, LOT_SIZE, DEBT_SIZE, COLL_OWNER, BENEFICIARY);
+        .startAuction(
+          flrAssetId,
+          LOT_SIZE,
+          DEBT_SIZE,
+          COLL_OWNER,
+          BENEFICIARY,
+          false
+        );
 
       const after = await auctioneer.auctions(0);
       expect(after.assetId).to.equal(flrAssetId);
@@ -166,7 +181,8 @@ describe("Auctioneer Unit Tests", function () {
             LOT_SIZE,
             DEBT_SIZE,
             COLL_OWNER,
-            BENEFICIARY
+            BENEFICIARY,
+            false
           ),
         "AuctionStarted",
         auctioneer
@@ -188,7 +204,8 @@ describe("Auctioneer Unit Tests", function () {
           LOT_SIZE,
           DEBT_SIZE,
           user1.address,
-          reservePool.address
+          reservePool.address,
+          false
         );
 
       await vaultEngine.updateVault(
@@ -285,7 +302,8 @@ describe("Auctioneer Unit Tests", function () {
           LOT_SIZE,
           DEBT_SIZE,
           user1.address,
-          reservePool.address
+          reservePool.address,
+          false
         );
 
       await vaultEngine.updateVault(
@@ -442,7 +460,8 @@ describe("Auctioneer Unit Tests", function () {
           LOT_SIZE,
           DEBT_SIZE,
           user1.address,
-          reservePool.address
+          reservePool.address,
+          false
         );
 
       await vaultEngine.updateVault(
@@ -597,7 +616,8 @@ describe("Auctioneer Unit Tests", function () {
           LOT_SIZE,
           DEBT_SIZE,
           user1.address,
-          reservePool.address
+          reservePool.address,
+          false
         );
 
       await vaultEngine.updateVault(
@@ -763,7 +783,8 @@ describe("Auctioneer Unit Tests", function () {
           LOT_SIZE,
           DEBT_SIZE,
           user1.address,
-          reservePool.address
+          reservePool.address,
+          false
         );
 
       const startingPriceBefore = await priceCalc.lastStartPrice();
@@ -796,7 +817,8 @@ describe("Auctioneer Unit Tests", function () {
           LOT_SIZE,
           DEBT_SIZE,
           user1.address,
-          reservePool.address
+          reservePool.address,
+          false
         );
 
       await reservePool

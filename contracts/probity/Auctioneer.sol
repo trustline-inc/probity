@@ -45,6 +45,7 @@ contract Auctioneer is Stateful, Eventful {
         address beneficiary; // stablecoins will go to this address
         uint256 startPrice;
         uint256 startTime;
+        bool sellAllLot; // if true, debt amount doesn't matter, auction will attempt to sell until lot is zero
         bool isOver;
     }
 
@@ -151,7 +152,8 @@ contract Auctioneer is Stateful, Eventful {
         uint256 lotSize,
         uint256 debtSize,
         address owner,
-        address beneficiary
+        address beneficiary,
+        bool sellAllLot
     ) external onlyBy("liquidator") {
         uint256 currentPrice = priceFeed.getPrice(assetId);
         uint256 startPrice = (currentPrice * priceBuffer) / ONE;
@@ -164,6 +166,7 @@ contract Auctioneer is Stateful, Eventful {
             beneficiary,
             startPrice,
             block.timestamp,
+            sellAllLot,
             false
         );
 
@@ -496,6 +499,12 @@ contract Auctioneer is Stateful, Eventful {
     /////////////////////////////////////////
     // Internal functions
     /////////////////////////////////////////
+
+    function getBiddableLot(uint256 auctionId, uint256 bidPrice) internal view returns (uint256 bidLot) {
+        (uint256 totalBidValue, uint256 totalBidLot, address indexToAdd) = totalBidValueAtPrice(auctionId, bidPrice);
+
+        return bidLot;
+    }
 
     function min(uint256 a, uint256 b) internal pure returns (uint256 c) {
         if (a > b) {
