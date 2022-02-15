@@ -237,7 +237,7 @@ describe("Auctioneer Unit Tests", function () {
 
     it("tests that startPrice is properly updated", async () => {
       const OLD_PRICE = RAY.mul(12).div(10);
-      const NEW_PRICE = 1.2e5;
+      const NEW_PRICE = RAY.mul(10).div(10);
 
       await priceCalc.setPrice(0);
       await priceFeed.setPrice(flrAssetId, NEW_PRICE);
@@ -247,7 +247,7 @@ describe("Auctioneer Unit Tests", function () {
       await auctioneer.resetAuction(0);
 
       const after = await auctioneer.auctions(0);
-      expect(after.startPrice).to.equal(RAY.mul(144).div(100));
+      expect(after.startPrice).to.equal(RAY.mul(12).div(10));
     });
 
     it("tests that startTime is properly updated", async () => {
