@@ -230,14 +230,17 @@ contract Liquidator is Stateful, Eventful {
                 -int256(underlying - assetToAuction),
                 -int256(equity)
             );
+
             assets[assetId].auctioneer.startAuction(
                 assetId,
-                collateral,
+                assetToAuction,
                 penaltyAmount,
                 address(reserve),
                 address(reserve),
                 true
             );
+
+            vaultEngine.removeStablecoin(treasuryAddress, initialEquity);
         }
     }
 }

@@ -83,7 +83,9 @@ interface VaultLike {
     function liquidateEquityPosition(
         bytes32 assetId,
         address user,
-        int256 collAmount,
+        address treasury,
+        int256 assetToAuction,
+        int256 assetToReturn,
         int256 equity
     ) external;
 }
@@ -389,7 +391,7 @@ contract Shutdown is Stateful, Eventful {
     function processUserEquity(bytes32 assetId, address user) external {
         require(investorObligationRatio != 0, "Shutdown/processUserEquity: Investor has no obligation");
 
-        (, uint256 underlying, , , , uint256 initialEquity) = vaultEngine.vaults(assetId, user);
+        (, uint256 underlying, , , uint256 equity, uint256 initialEquity) = vaultEngine.vaults(assetId, user);
         uint256 hookedSuppliedAmount = (initialEquity * finalUtilizationRatio) / WAD;
         uint256 investorObligation = ((hookedSuppliedAmount * investorObligationRatio) / WAD) /
             assets[assetId].finalPrice;
@@ -402,7 +404,7 @@ contract Shutdown is Stateful, Eventful {
         assets[assetId].gap -= amountToGrab;
         stablecoinGap -= amountToGrab * assets[assetId].finalPrice;
 
-        vaultEngine.liquidateEquityPosition(assetId, user, -int256(underlying), -int256(initialEquity / RAY));
+        vaultEngine.liquidateEquityPosition(assetId, user, address(treasury), 0, -int256(underlying), -int256(equity));
     }
 
     /**
