@@ -139,7 +139,7 @@ describe("Teller Unit Tests", function () {
       const newCollId = bytes32("new coll");
       await assertRevert(
         teller.updateAccumulator(newCollId),
-        "Teller/updateAccumulator: Asset type not initialized"
+        "Teller/updateAccumulator: Asset not initialized"
       );
       await teller.initAsset(newCollId, 0);
       await teller.updateAccumulator(newCollId);
@@ -161,7 +161,7 @@ describe("Teller Unit Tests", function () {
       await vaultEngine.setTotalEquity(0);
       await assertRevert(
         teller.updateAccumulator(flrAssetId),
-        "Teller/UpdateAccumulator: Total equity can not be zero"
+        "Teller/UpdateAccumulator: Total equity cannot be zero"
       );
       await vaultEngine.setTotalEquity(EQUITY_TO_SET);
 
