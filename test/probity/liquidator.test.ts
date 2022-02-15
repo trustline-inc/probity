@@ -5,6 +5,7 @@ import {
   Liquidator,
   MockAuctioneer,
   MockFtso,
+  MockPriceFeed,
   MockReservePool,
   MockVaultEngine,
   NativeAssetManager,
@@ -42,10 +43,11 @@ let reservePool: MockReservePool;
 let auctioneer: MockAuctioneer;
 let liquidator: Liquidator;
 let treasury: Treasury;
+let priceFeed: MockPriceFeed;
 
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
-describe("Liquidator Unit Tests", function () {
+describe.only("Liquidator Unit Tests", function () {
   beforeEach(async function () {
     let { contracts, signers } = await deployTest();
 
@@ -55,11 +57,13 @@ describe("Liquidator Unit Tests", function () {
     reservePool = contracts.mockReserve;
     auctioneer = contracts.mockAuctioneer;
     treasury = contracts.treasury;
+    priceFeed = contracts.mockPriceFeed;
 
     contracts = await probity.deployLiquidator({
       registry: registry.address,
       vaultEngine: vaultEngine.address,
       reservePool: reservePool.address,
+      priceFeed: priceFeed.address,
       treasury: treasury.address,
     });
 
@@ -83,7 +87,7 @@ describe("Liquidator Unit Tests", function () {
     it("tests that collateral type is properly initialized", async () => {
       const EXPECTED_AUCTIONEER_ADDRESS = user.address;
       const EXPECTED_DEBT_PENALTY_FEE = WAD.mul(117).div(100);
-      const EXPECTED_SUPP_PENALTY_FEE = WAD.mul(105).div(100);
+      const EXPECTED_SUPP_PENALTY_FEE = WAD.mul(5).div(100);
 
       const before = await liquidator.assets(ASSET_ID["FLR"]);
       expect(before.auctioneer).to.equal(ADDRESS_ZERO);
@@ -101,7 +105,7 @@ describe("Liquidator Unit Tests", function () {
 
   describe("updatePenalties Unit Tests", function () {
     const DEFAULT_DEBT_PENALTY_FEE = WAD.mul(117).div(100);
-    const DEFAULT_SUPP_PENALTY_FEE = WAD.mul(105).div(100);
+    const DEFAULT_SUPP_PENALTY_FEE = WAD.mul(5).div(100);
     beforeEach(async function () {
       await liquidator.initAsset(ASSET_ID["FLR"], auctioneer.address);
     });
@@ -162,7 +166,7 @@ describe("Liquidator Unit Tests", function () {
     });
   });
 
-  describe("liquidateVault Unit Tests", function () {
+  describe.only("liquidateVault Unit Tests", function () {
     const UNDERLYING = WAD.mul(499);
     const COLLATERAL = WAD.mul(499);
     const DEBT = WAD.mul(500);
@@ -200,6 +204,7 @@ describe("Liquidator Unit Tests", function () {
       );
 
       await vaultEngine.setStablecoin(treasury.address, EQUITY.mul(RAY));
+      await priceFeed.setPrice(ASSET_ID.FLR, RAY);
     });
 
     it("fails if vault has nothing to liquidate", async () => {

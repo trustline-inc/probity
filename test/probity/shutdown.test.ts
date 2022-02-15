@@ -811,7 +811,7 @@ describe("Shutdown Unit Tests", function () {
         await vaultEngine.lastLiquidateEquityPositionCall();
       expect(lastLiquidateEquityPositionCall.assetId).to.equal(ASSET_ID["FLR"]);
       expect(lastLiquidateEquityPositionCall.user).to.equal(owner.address);
-      expect(lastLiquidateEquityPositionCall.underlying).to.equal(
+      expect(lastLiquidateEquityPositionCall.assetToReturn).to.equal(
         BigNumber.from(0).sub(COLL_TO_SET)
       );
       expect(lastLiquidateEquityPositionCall.equity).to.equal(

@@ -66,8 +66,8 @@ interface ReservePoolLike {
     function reduceAuctionDebt(uint256 debtToReduce) external;
 }
 
-interface FtsoLike {
-    function getCurrentPrice() external returns (uint256 _price, uint256 _timestamp);
+interface PriceFeedLike {
+    function getPrice(bytes32 assetId) external returns (uint256 price);
 }
 
 // When a vault is liquidated, the reserve pool will take the on the debt and
@@ -83,7 +83,6 @@ contract Liquidator is Stateful, Eventful {
     /////////////////////////////////////////
     struct Asset {
         AuctioneerLike auctioneer;
-        FtsoLike ftso;
         uint256 debtPenaltyFee;
         uint256 equityPenaltyFee;
     }
@@ -96,6 +95,7 @@ contract Liquidator is Stateful, Eventful {
 
     VaultEngineLike public immutable vaultEngine;
     ReservePoolLike public immutable reserve;
+    PriceFeedLike public immutable priceFeed;
 
     address public immutable treasuryAddress;
 
@@ -108,27 +108,24 @@ contract Liquidator is Stateful, Eventful {
         address registryAddress,
         VaultEngineLike vaultEngineAddress,
         ReservePoolLike reservePoolAddress,
+        PriceFeedLike priceFeedAddress,
         address _treasuryAddress
     ) Stateful(registryAddress) {
         vaultEngine = vaultEngineAddress;
         reserve = reservePoolAddress;
+        priceFeed = priceFeedAddress;
         treasuryAddress = _treasuryAddress;
     }
 
     /////////////////////////////////////////
     // External functions
     /////////////////////////////////////////
-    function initAsset(
-        bytes32 assetId,
-        AuctioneerLike auctioneer,
-        FtsoLike ftso
-    ) external onlyBy("gov") {
+    function initAsset(bytes32 assetId, AuctioneerLike auctioneer) external onlyBy("gov") {
         require(
             address(assets[assetId].auctioneer) == address(0),
             "Liquidator/initAsset: This asset has already been initialized"
         );
         assets[assetId].auctioneer = auctioneer;
-        assets[assetId].ftso = ftso;
         assets[assetId].debtPenaltyFee = 1.17E18;
         assets[assetId].equityPenaltyFee = 5E16;
     }
@@ -222,8 +219,8 @@ contract Liquidator is Stateful, Eventful {
                 "VaultEngine/liquidateEquityPosition: Not enough treasury funds"
             );
 
-            uint256 penaltyAmount = (initialEquity * assets[assetId].equityPenaltyFee) / WAD;
-            (uint256 currPrice, ) = asset.ftso.getCurrentPrice();
+            uint256 penaltyAmount = (initialEquity * asset.equityPenaltyFee) / WAD;
+            uint256 currPrice = priceFeed.getPrice(assetId);
             uint256 assetToAuction = penaltyAmount / currPrice;
             vaultEngine.liquidateEquityPosition(
                 assetId,

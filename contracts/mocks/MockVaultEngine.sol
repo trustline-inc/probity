@@ -32,7 +32,9 @@ contract MockVaultEngine {
     struct LiquidateEquityPositionCall {
         bytes32 assetId;
         address user;
-        int256 underlying;
+        address auctioneer;
+        int256 assetToAuction;
+        int256 assetToReturn;
         int256 equity;
     }
 
@@ -192,10 +194,19 @@ contract MockVaultEngine {
     function liquidateEquityPosition(
         bytes32 assetId,
         address user,
-        int256 underlyingAmount,
+        address auctioneer,
+        int256 assetToAuction,
+        int256 assetToReturn,
         int256 equityAmount
     ) external {
-        lastLiquidateEquityPositionCall = LiquidateEquityPositionCall(assetId, user, underlyingAmount, equityAmount);
+        lastLiquidateEquityPositionCall = LiquidateEquityPositionCall(
+            assetId,
+            user,
+            auctioneer,
+            assetToAuction,
+            assetToReturn,
+            equityAmount
+        );
     }
 
     function moveAsset(
