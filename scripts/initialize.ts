@@ -4,14 +4,17 @@ import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-web3";
 import { artifacts, ethers, web3 } from "hardhat";
 import * as dotenv from "dotenv";
+import hre from "hardhat";
 dotenv.config();
 
-if (!process.env.NATIVE_TOKEN)
+const networkName = hre.network.name;
+
+if (["local", "internal"].includes(networkName) && !process.env.NATIVE_TOKEN)
   throw Error("Must sent the NATIVE_TOKEN environment variable.");
 if (!["CFLR", "FLR", "SGB"].includes(process.env.NATIVE_TOKEN.toUpperCase()))
   throw Error("Invalid native token type.");
 
-const token = process.env.NATIVE_TOKEN.toUpperCase();
+const nativeToken = process.env.NATIVE_TOKEN.toUpperCase();
 
 const ASSETS = {
   CFLR: web3.utils.keccak256("CFLR"),
@@ -20,16 +23,17 @@ const ASSETS = {
 };
 
 const WAD = ethers.BigNumber.from("1000000000000000000");
-const RAD = ethers.BigNumber.from(
-  "1000000000000000000000000000000000000000000000"
-);
+const RAD = WAD.pow(2).mul(1e9);
 
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
+/**
+ * Initialize the system into a ready state
+ */
 const init = async () => {
   // Wallets
   const [owner]: SignerWithAddress[] = await ethers.getSigners();
-  const trustlineAddress = "0x6310B7E8bDFD25EFbeDfB17987Ba69D9191a45bD";
+  const TRUSTLINE_INC = "0x6310B7E8bDFD25EFbeDfB17987Ba69D9191a45bD";
 
   // ABIs
   const RegistryABI = await artifacts.readArtifact("Registry");
@@ -57,35 +61,37 @@ const init = async () => {
   );
   const teller = new ethers.Contract(process.env.TELLER, TellerABI.abi, owner);
   const vaultEngine = new ethers.Contract(
-    token === "SGB" ? process.env.VAULT_ENGINE_S_B : process.env.VAULT_ENGINE,
-    token === "SGB" ? VaultEngineSBABI.abi : VaultEngineABI.abi,
+    nativeToken === "SGB"
+      ? process.env.VAULT_ENGINE_S_B
+      : process.env.VAULT_ENGINE,
+    nativeToken === "SGB" ? VaultEngineSBABI.abi : VaultEngineABI.abi,
     owner
   );
 
-  // One address can only have one role
-  // Note: governance address is set at deployment
-  console.log(`Whitelisting address: ${trustlineAddress}`);
+  // Allows Trustline. An address can only have one role at a time.
+  // Note: governance address was set at deployment
+  console.log(`Allowing address: ${TRUSTLINE_INC}`);
   let tx = await registry
     .connect(owner)
     .setupAddress(
       ethers.utils.formatBytes32String("whitelisted"),
-      trustlineAddress,
+      TRUSTLINE_INC,
       {
         gasLimit: 300000,
       }
     );
   await tx.wait();
 
-  // Initialize vault asset for token
-  console.log(`Initializing ${token} asset`);
+  // Initialize the native token in VaultEngine
+  console.log(`Initializing ${nativeToken} asset`);
   tx = await vaultEngine
     .connect(owner)
-    .initAsset(ASSETS[token], { gasLimit: 400000 });
+    .initAsset(ASSETS[nativeToken], { gasLimit: 400000 });
   await tx.wait();
-  console.log(`Vault: ${token} initialized`);
+  console.log(`Vault: ${nativeToken} initialized`);
 
-  // Set individual vault limit
-  if (token === "SGB") {
+  // Limit songbird vault to 1000 AUR
+  if (networkName === "songbird") {
     const limit = 1000;
     tx = await vaultEngine
       .connect(owner)
@@ -93,63 +99,65 @@ const init = async () => {
         gasLimit: 300000,
       });
     await tx.wait();
-    console.log(`Vault: individual limit set to ${limit} ${token}`);
+    console.log(`Vault: individual limit set to ${limit} ${nativeToken}`);
   }
 
-  // Update debt ceiling
-  const ceiling = 10000000;
+  // Update vault debt ceiling to 10M AUR
+  const ceiling = 10_000_000;
   tx = await vaultEngine
     .connect(owner)
-    .updateCeiling(ASSETS[token], RAD.mul(ceiling), {
+    .updateCeiling(ASSETS[nativeToken], RAD.mul(ceiling), {
       gasLimit: 300000,
     });
   await tx.wait();
-  console.log(`Vault: ceiling updated to ${ceiling} ${token}`);
+  console.log(`Vault: ceiling updated to ${ceiling} ${nativeToken}`);
 
-  // Update debt floor
+  // Update vault debt floor to 1 AUR
   const floor = 1;
   tx = await vaultEngine
     .connect(owner)
-    .updateFloor(ASSETS[token], WAD.mul(floor), {
+    .updateFloor(ASSETS[nativeToken], WAD.mul(floor), {
       gasLimit: 300000,
     });
   await tx.wait();
-  console.log(`Vault: floor updated to ${floor} ${token}`);
+  console.log(`Vault: floor updated to ${floor} ${nativeToken}`);
 
-  // Initialize teller collateral type
+  // Initialize native token in Teller (sets default protocol fee)
   tx = await teller
     .connect(owner)
-    .initAsset(ASSETS[token], 0, { gasLimit: 300000 });
+    .initAsset(ASSETS[nativeToken], 0, { gasLimit: 300000 });
   await tx.wait();
-  console.log(`Teller: ${token} initialized`);
+  console.log(`Teller: ${nativeToken} initialized`);
 
-  // Initialize liquidator collateral type
+  // Initialize native token in Liquidator (sets default penalty fees)
   tx = await liquidator
     .connect(owner)
-    .initAsset(ASSETS[token], process.env.AUCTIONEER, { gasLimit: 300000 });
+    .initAsset(ASSETS[nativeToken], process.env.AUCTIONEER, {
+      gasLimit: 300000,
+    });
   await tx.wait();
-  console.log(`Liquidator: ${token} initialized`);
+  console.log(`Liquidator: ${nativeToken} initialized`);
 
-  // Initialize price feed asset type
+  // Initialize native token price feed
   const liqRatio = WAD.mul(15).div(10);
   tx = await priceFeed
     .connect(owner)
-    .initAsset(ASSETS[token], liqRatio, process.env.FTSO, {
+    .initAsset(ASSETS[nativeToken], liqRatio, process.env.FTSO, {
       gasLimit: 300000,
     });
   await tx.wait();
   console.log(
-    `PriceFeed: ${token} price initialized with ${ethers.utils
+    `PriceFeed: ${nativeToken} price initialized with ${ethers.utils
       .formatEther(liqRatio)
       .toString()} liq. ratio`
   );
 
-  // Update asset price
+  // Fetch native token price
   tx = await priceFeed
     .connect(owner)
-    .updateAdjustedPrice(ASSETS[token], { gasLimit: 300000 });
+    .updateAdjustedPrice(ASSETS[nativeToken], { gasLimit: 300000 });
   await tx.wait();
-  console.log(`PriceFeed: ${token} price updated`);
+  console.log(`PriceFeed: ${nativeToken} price updated`);
 };
 
 init();

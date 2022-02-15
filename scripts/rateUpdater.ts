@@ -24,5 +24,5 @@ import { Contract } from "ethers";
     } catch (error) {
       console.log(error);
     }
-  }, 5000);
+  }, 60000);
 })();

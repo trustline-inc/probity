@@ -18,7 +18,7 @@ contract VaultEngineSB is VaultEngine {
     /////////////////////////////////////////
     uint256 private constant RAY = 10**27;
 
-    // For SongBird Purposes only
+    // For Songbird purposes only
     uint256 public individualVaultLimit;
 
     /////////////////////////////////////////
@@ -61,7 +61,7 @@ contract VaultEngineSB is VaultEngine {
             "Vault/modifyEquity: Equity smaller than floor"
         );
         certifyEquityPosition(assetId, vault);
-        checkVaultUnderLimit(assetId, vault);
+        assertAssetIsUnderLimit(assetId, vault);
 
         stablecoin[treasuryAddress] = add(stablecoin[treasuryAddress], equityCreated);
 
@@ -111,7 +111,7 @@ contract VaultEngineSB is VaultEngine {
             "Vault/modifyDebt: Debt smaller than floor"
         );
         certifyDebtPosition(assetId, vault);
-        checkVaultUnderLimit(assetId, vault);
+        assertAssetIsUnderLimit(assetId, vault);
 
         stablecoin[msg.sender] = add(stablecoin[msg.sender], debtCreated);
         stablecoin[treasuryAddress] = sub(stablecoin[treasuryAddress], debtCreated);
@@ -133,7 +133,7 @@ contract VaultEngineSB is VaultEngine {
      * @notice Check if user's vault is under individual vault limit
      * For Songbird purposes only
      */
-    function checkVaultUnderLimit(bytes32 assetId, Vault memory vault) internal view {
+    function assertAssetIsUnderLimit(bytes32 assetId, Vault memory vault) internal view {
         require(
             (vault.debt * assets[assetId].debtAccumulator) + vault.initialEquity <= individualVaultLimit,
             "Vault is over the individual vault limit"
