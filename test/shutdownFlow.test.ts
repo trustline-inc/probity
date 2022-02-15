@@ -420,8 +420,8 @@ describe("Shutdown Flow Test", function () {
     expect(await shutdown.initiated()).to.equal(true);
 
     // Drop prices - FLR: ($60 => $0.42), FXRP: ($1.23 => $1.03)
-    await ftsoFlr.setCurrentPrice(RAY.mul(42).div(100));
-    await ftsoFxrp.setCurrentPrice(RAY.mul(103).div(100));
+    await ftsoFlr.setCurrentPrice(BigNumber.from(1e5).mul(42).div(100));
+    await ftsoFxrp.setCurrentPrice(BigNumber.from(1e5).mul(103).div(100));
 
     // Set final prices and expect them to be updated
     await shutdown.setFinalPrice(ASSET_ID["FLR"]);
@@ -771,9 +771,9 @@ describe("Shutdown Flow Test", function () {
       ASSET_ID["FXRP"],
       WAD.mul(175).div(100)
     );
-    await ftsoFlr.setCurrentPrice(RAY.div(RAY).mul(1e5).mul(360).div(100));
+    await ftsoFlr.setCurrentPrice(BigNumber.from(1e5).mul(360).div(100));
     await priceFeed.updateAdjustedPrice(ASSET_ID["FLR"]);
-    await ftsoFxrp.setCurrentPrice(RAY.div(RAY).mul(1e5).mul(448).div(100));
+    await ftsoFxrp.setCurrentPrice(BigNumber.from(1e5).mul(448).div(100));
     await priceFeed.updateAdjustedPrice(ASSET_ID["FXRP"]);
 
     // Start 2 auctions, 1 of each collateral
@@ -820,8 +820,8 @@ describe("Shutdown Flow Test", function () {
     expect(await shutdown.initiated()).to.equal(true);
 
     // Drop prices: (FLR => $2.23, FXRP => $2.20)
-    await ftsoFlr.setCurrentPrice(RAY.mul(223).div(100));
-    await ftsoFxrp.setCurrentPrice(RAY.mul(220).div(100));
+    await ftsoFlr.setCurrentPrice(BigNumber.from(1e5).mul(223).div(100));
+    await ftsoFxrp.setCurrentPrice(BigNumber.from(1e5).mul(220).div(100));
 
     // Set final prices
     await shutdown.setFinalPrice(ASSET_ID["FLR"]);

@@ -89,6 +89,7 @@ contract PriceFeed is Stateful, Eventful {
      */
     function getPrice(bytes32 assetId) public collateralExists(assetId) returns (uint256 price) {
         (price, ) = assets[assetId].ftso.getCurrentPrice();
+        price = rdiv(price, 1e5);
     }
 
     /**
