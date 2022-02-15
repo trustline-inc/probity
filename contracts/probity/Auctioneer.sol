@@ -183,7 +183,7 @@ contract Auctioneer is Stateful, Eventful {
         );
 
         uint256 currentPrice = priceFeed.getPrice(auctions[auctionId].assetId);
-        uint256 startPrice = (rdiv(currentPrice, 1e5) * priceBuffer) / ONE;
+        uint256 startPrice = (currentPrice * priceBuffer) / ONE;
         auction.startPrice = startPrice;
         auction.startTime = block.timestamp;
 
