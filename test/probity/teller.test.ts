@@ -161,7 +161,7 @@ describe("Teller Unit Tests", function () {
       await vaultEngine.setTotalEquity(0);
       await assertRevert(
         teller.updateAccumulators(flrAssetId),
-        "Teller/UpdateAccumulator: Total equity cannot be zero"
+        "Teller/updateAccumulators: Total equity cannot be zero"
       );
       await vaultEngine.setTotalEquity(EQUITY_TO_SET);
 

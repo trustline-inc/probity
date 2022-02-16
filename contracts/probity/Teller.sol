@@ -101,7 +101,7 @@ contract Teller is Stateful {
     /**
      * @dev Updates the debt and equity rate accumulators
      */
-    function updateAccumulator(bytes32 assetId) external {
+    function updateAccumulators(bytes32 assetId) external {
         require(assets[assetId].lastUpdated != 0, "Teller/updateAccumulators: Asset not initialized");
 
         Asset memory asset = assets[assetId];
@@ -109,7 +109,7 @@ contract Teller is Stateful {
         uint256 totalDebt = vaultEngine.totalDebt();
         uint256 totalEquity = vaultEngine.totalEquity();
 
-        require(totalEquity > 0, "Teller/UpdateAccumulator: Total equity cannot be zero");
+        require(totalEquity > 0, "Teller/updateAccumulators: Total equity cannot be zero");
 
         // Update debt accumulator
         uint256 debtRateIncrease = rmul(rpow(mpr, (block.timestamp - asset.lastUpdated)), debtAccumulator) -
