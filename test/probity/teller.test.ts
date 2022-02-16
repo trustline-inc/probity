@@ -139,7 +139,7 @@ describe("Teller Unit Tests", function () {
       const newCollId = bytes32("new coll");
       await assertRevert(
         teller.updateAccumulator(newCollId),
-        "Teller/updateAccumulator: Asset not initialized"
+        "Teller/updateAccumulators: Asset not initialized"
       );
       await teller.initAsset(newCollId, 0);
       await teller.updateAccumulator(newCollId);
