@@ -15,7 +15,7 @@ import { Contract } from "ethers";
     console.log("Updating rates...");
 
     try {
-      const tx = await teller.updateAccumulator(web3.utils.keccak256("CFLR"), {
+      const tx = await teller.updateAccumulators(web3.utils.keccak256("CFLR"), {
         gasLimit: 300000,
       });
       console.log(tx);
