@@ -178,7 +178,7 @@ contract VaultEngine is Stateful, Eventful {
      * @dev Accrues vault interest and PBT
      * @param assetId The ID of the vault asset type
      */
-    function collectInterest(bytes32 assetId) public {
+    function accrueInterest(bytes32 assetId) public {
         Vault memory vault = vaults[assetId][msg.sender];
         Asset memory asset = assets[assetId];
         uint256 interestAmount = vault.equity * asset.equityAccumulator - vault.initialEquity;
