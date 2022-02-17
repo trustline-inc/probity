@@ -675,7 +675,7 @@ describe("Vault Engine Unit Tests", function () {
     });
   });
 
-  describe("accrueInterest Unit Tests", function () {
+  describe("collectInterest Unit Tests", function () {
     const UNDERLYING_AMOUNT = WAD.mul(10000);
     const COLL_AMOUNT = WAD.mul(10000);
     const EQUITY_AMOUNT = WAD.mul(2000);
@@ -740,7 +740,7 @@ describe("Vault Engine Unit Tests", function () {
 
       const before = await vaultEngine.pbt(owner.address);
       expect(before).to.equal(0);
-      await vaultEngine.accrueInterest(ASSET_ID["FLR"]);
+      await vaultEngine.collectInterest(ASSET_ID["FLR"]);
 
       const after = await vaultEngine.pbt(owner.address);
       expect(after).to.equal(EXPECTED_VALUE);
@@ -751,7 +751,7 @@ describe("Vault Engine Unit Tests", function () {
 
       const before = await vaultEngine.stablecoin(owner.address);
       expect(before).to.equal(0);
-      await vaultEngine.accrueInterest(ASSET_ID["FLR"]);
+      await vaultEngine.collectInterest(ASSET_ID["FLR"]);
 
       const after = await vaultEngine.stablecoin(owner.address);
       expect(after).to.equal(EXPECTED_VALUE);
@@ -765,7 +765,7 @@ describe("Vault Engine Unit Tests", function () {
 
       const before = await vaultEngine.vaults(ASSET_ID["FLR"], owner.address);
       expect(before.equity).to.equal(EQUITY_AMOUNT);
-      await vaultEngine.accrueInterest(ASSET_ID["FLR"]);
+      await vaultEngine.collectInterest(ASSET_ID["FLR"]);
 
       const after = await vaultEngine.vaults(ASSET_ID["FLR"], owner.address);
       expect(after.equity).to.equal(EXPECTED_VALUE);

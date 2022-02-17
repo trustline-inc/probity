@@ -57,7 +57,7 @@ contract VaultEngine is Stateful, Eventful {
 
     event EquityModified(address indexed user, int256 underlyingAmount, int256 equityAmount);
     event DebtModified(address indexed user, int256 collAmount, int256 debtAmount);
-    event InterestAccrued(address indexed user, bytes32 asset, uint256 interestAmount);
+    event InterestCollected(address indexed user, bytes32 asset, uint256 interestAmount);
 
     /////////////////////////////////////////
     // Constructor
@@ -179,7 +179,7 @@ contract VaultEngine is Stateful, Eventful {
      * @dev Accrues vault interest and PBT
      * @param assetId The ID of the vault asset type
      */
-    function accrueInterest(bytes32 assetId) public {
+    function collectInterest(bytes32 assetId) public {
         Vault memory vault = vaults[assetId][msg.sender];
         Asset memory asset = assets[assetId];
         uint256 interestAmount = vault.equity * asset.equityAccumulator - vault.initialEquity;
@@ -189,7 +189,7 @@ contract VaultEngine is Stateful, Eventful {
         // @todo evaluate how loss of precision can impact here
         vaults[assetId][msg.sender].equity -= interestAmount / asset.equityAccumulator;
 
-        emit InterestAccrued(msg.sender, assetId, interestAmount);
+        emit InterestCollected(msg.sender, assetId, interestAmount);
     }
 
     /**
