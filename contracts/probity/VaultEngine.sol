@@ -57,6 +57,7 @@ contract VaultEngine is Stateful, Eventful {
 
     event EquityModified(address indexed user, int256 underlyingAmount, int256 equityAmount);
     event DebtModified(address indexed user, int256 collAmount, int256 debtAmount);
+    event InterestAccrued(address indexed user, bytes32 asset, uint256 interestAmount);
 
     /////////////////////////////////////////
     // Constructor
@@ -187,6 +188,8 @@ contract VaultEngine is Stateful, Eventful {
 
         // @todo evaluate how loss of precision can impact here
         vaults[assetId][msg.sender].equity -= interestAmount / asset.equityAccumulator;
+
+        emit InterestAccrued(msg.sender, assetId, interestAmount);
     }
 
     /**
