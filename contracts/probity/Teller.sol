@@ -159,8 +159,7 @@ contract Teller is Stateful {
         asset.lastUpdated = block.timestamp;
         vaultEngine.updateAccumulators(assetId, reservePool, debtRateIncrease, equityRateIncrease, protocolFeeRate);
 
-        // TODO?: collect fees by adding AUR to reserve pool
-
+        // Update asset info
         assets[assetId] = asset;
     }
 
