@@ -101,27 +101,27 @@ contract Teller is Stateful {
     /**
      * @dev Updates the debt and equity rate accumulators
      */
-    function updateAccumulator(bytes32 assetId) external {
-        require(assets[assetId].lastUpdated != 0, "Teller/updateAccumulator: Asset type not initialized");
+    function updateAccumulators(bytes32 assetId) external {
+        require(assets[assetId].lastUpdated != 0, "Teller/updateAccumulators: Asset not initialized");
 
-        Asset memory coll = assets[assetId];
+        Asset memory asset = assets[assetId];
         (uint256 debtAccumulator, uint256 equityAccumulator) = vaultEngine.assets(assetId);
         uint256 totalDebt = vaultEngine.totalDebt();
         uint256 totalEquity = vaultEngine.totalEquity();
 
-        require(totalEquity > 0, "Teller/UpdateAccumulator: Total equity can not be zero");
+        require(totalEquity > 0, "Teller/updateAccumulators: Total equity cannot be zero");
 
         // Update debt accumulator
-        uint256 debtRateIncrease = rmul(rpow(mpr, (block.timestamp - coll.lastUpdated)), debtAccumulator) -
+        uint256 debtRateIncrease = rmul(rpow(mpr, (block.timestamp - asset.lastUpdated)), debtAccumulator) -
             debtAccumulator;
 
         uint256 exponentiated;
         {
             // Update equity accumulator
-            uint256 multipliedByUtilization = rmul(mpr - RAY, coll.lastUtilization * 1e9);
+            uint256 multipliedByUtilization = rmul(mpr - RAY, asset.lastUtilization * 1e9);
             uint256 multipliedByUtilizationPlusOne = multipliedByUtilization + RAY;
 
-            exponentiated = rpow(multipliedByUtilizationPlusOne, (block.timestamp - coll.lastUpdated));
+            exponentiated = rpow(multipliedByUtilizationPlusOne, (block.timestamp - asset.lastUpdated));
         }
 
         uint256 equityAccumulatorDiff = rmul(exponentiated, equityAccumulator) - equityAccumulator;
@@ -133,11 +133,11 @@ contract Teller is Stateful {
         uint256 equityRateIncrease = equityAccumulatorDiff - protocolFeeRate;
 
         // Set new APR (round to nearest 0.25%)
-        coll.lastUtilization = wdiv(totalDebt, totalEquity);
-        if (coll.lastUtilization >= 1e18) {
+        asset.lastUtilization = wdiv(totalDebt, totalEquity);
+        if (asset.lastUtilization >= 1e18) {
             apr = MAX_APR;
         } else {
-            uint256 oneMinusUtilization = RAY - (coll.lastUtilization * 1e9);
+            uint256 oneMinusUtilization = RAY - (asset.lastUtilization * 1e9);
             uint256 oneDividedByOneMinusUtilization = rdiv(10**27 * 0.01, oneMinusUtilization);
 
             uint256 round = 0.0025 * 10**27;
@@ -156,12 +156,11 @@ contract Teller is Stateful {
         }
 
         // Update time index
-        coll.lastUpdated = block.timestamp;
+        asset.lastUpdated = block.timestamp;
         vaultEngine.updateAccumulators(assetId, reservePool, debtRateIncrease, equityRateIncrease, protocolFeeRate);
 
-        // collect Fees by adding AUR to reserve pool
-
-        assets[assetId] = coll;
+        // Update asset info
+        assets[assetId] = asset;
     }
 
     /////////////////////////////////////////

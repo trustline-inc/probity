@@ -417,7 +417,7 @@ describe("Probity happy flow", function () {
       LOAN_AMOUNT
     );
 
-    await teller.updateAccumulator(ASSET_ID.FLR);
+    await teller.updateAccumulators(ASSET_ID.FLR);
 
     // increase time
     await increaseTime(5000);
@@ -427,8 +427,8 @@ describe("Probity happy flow", function () {
     const totalDebtBefore = await vaultEngine.totalDebt();
     const totalEquityBefore = await vaultEngine.totalEquity();
 
-    // call teller.updateAccumulator
-    await teller.updateAccumulator(ASSET_ID["FLR"]);
+    // call teller.updateAccumulators
+    await teller.updateAccumulators(ASSET_ID["FLR"]);
 
     const assetAfter = await vaultEngine.assets(ASSET_ID.FLR);
     const reserveBalAfter = await vaultEngine.stablecoin(reserve.address);

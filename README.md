@@ -165,13 +165,14 @@ npm run deploy:internal
 
 ## Initialization
 
-You can use the `initProbity` scripts to initialize the system with a new asset type., E.g.:
+You can use a script to initialize the system with a new asset type.
 
 ```
-NATIVE_TOKEN=CFLR \
 FLARE_DIR=~/Desktop/flare \
-yarn run initProbity:local
+yarn run initialize:songbird
 ```
+
+You can override the native token in the `local` or `internal` networks with `NATIVE_TOKEN=<CFLR|SGB|FLR>`.
 
 ## Utility Scripts
 
