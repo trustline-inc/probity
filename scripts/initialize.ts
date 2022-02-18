@@ -4,7 +4,7 @@ import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-web3";
 import { artifacts, ethers, web3 } from "hardhat";
 import * as dotenv from "dotenv";
-import hre from "hardhat";
+import * as hre from "hardhat";
 dotenv.config();
 
 const networkName = hre.network.name;
