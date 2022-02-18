@@ -1,4 +1,6 @@
 import { Contract } from "ethers";
+import "@nomiclabs/hardhat-ethers";
+import "@nomiclabs/hardhat-web3";
 import { artifacts, ethers, web3 } from "hardhat";
 import axios from "axios";
 
