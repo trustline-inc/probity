@@ -2,7 +2,6 @@ pragma solidity ^0.8.0;
 
 import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
-import "hardhat/console.sol";
 
 interface VaultEngineLike {
     function stablecoin(address user) external returns (uint256 balance);

@@ -620,6 +620,103 @@ describe("Probity happy flow", function () {
     ).to.equal(true);
   });
 
+  it("creates an auction by liquidating equity position and allows a users to buy collateral", async () => {
+    // Deposit native token (FLR)
+    await flrWallet.deposit({ value: STANDBY_AMOUNT.mul(2) });
+
+    // Initialize the FLR asset
+    await vaultEngine.connect(gov).initAsset(ASSET_ID["FLR"]);
+    await vaultEngine
+      .connect(gov)
+      .updateCeiling(ASSET_ID["FLR"], RAD.mul(10_000_000));
+    await teller.connect(gov).initAsset(ASSET_ID["FLR"], 0);
+    await liquidator
+      .connect(gov)
+      .initAsset(ASSET_ID["FLR"], auctioneer.address);
+    await priceFeed.connect(gov).initAsset(ASSET_ID["FLR"], WAD, ftso.address);
+    await priceFeed.updateAdjustedPrice(ASSET_ID["FLR"]);
+
+    // Increase equity
+    await vaultEngine.modifyEquity(
+      ASSET_ID["FLR"],
+      treasury.address,
+      UNDERLYING_AMOUNT,
+      EQUITY_AMOUNT
+    );
+
+    // Set liquidation ratio to 220%
+    await priceFeed
+      .connect(gov)
+      .updateLiquidationRatio(ASSET_ID["FLR"], WAD.mul(22).div(10));
+    await priceFeed.updateAdjustedPrice(ASSET_ID["FLR"]);
+
+    // Liquidate the vault
+    await liquidator.liquidateVault(ASSET_ID["FLR"], owner.address);
+    // Deposit FLR as a secondary user
+    await flrWallet.connect(user).deposit({ value: WAD.mul(50_000) });
+
+    // Increase equity as user
+    await vaultEngine
+      .connect(user)
+      .modifyEquity(
+        ASSET_ID["FLR"],
+        treasury.address,
+        WAD.mul(20_000),
+        WAD.mul(1000)
+      );
+
+    // Take out a loan as user
+    await vaultEngine
+      .connect(user)
+      .modifyDebt(
+        ASSET_ID["FLR"],
+        treasury.address,
+        WAD.mul(20000),
+        WAD.mul(600)
+      );
+
+    // Place a bid on the collateral auction as user
+    const auctionId = 0,
+      price0 = RAY.mul(10).div(10),
+      lot0 = WAD.mul("10");
+    await auctioneer.connect(user).placeBid(auctionId, price0, lot0);
+    let [price1, lot1] = await auctioneer.bids(auctionId, user.address);
+
+    // Expect bid data to equal the inputs
+    expect(price1).to.equal(price0);
+    expect(lot1).to.equal(lot0);
+
+    const BUY_PRICE = RAY.mul(12).div(10); // $1.20
+    const EXPECTED_BUY_LOT = WAD.mul(10);
+    const EXPECTED_BUY_VALUE = BUY_PRICE.mul(EXPECTED_BUY_LOT).sub(
+      lot0.mul(price0)
+    ); // $12.00
+
+    // Get standby and stablecoin balances before purchase
+    let [standby0] = await vaultEngine.vaults(ASSET_ID["FLR"], user.address);
+    let stablecoin0 = await vaultEngine.stablecoin(user.address);
+
+    // Purchase 10 FLR on auction for $1.20 per unit
+    await auctioneer
+      .connect(user)
+      .buyItNow(auctionId, BUY_PRICE, EXPECTED_BUY_LOT);
+
+    // Get standby and stablecoin balances after purchase
+    let [standby1] = await vaultEngine.vaults(ASSET_ID["FLR"], user.address);
+    let stablecoin1 = await vaultEngine.stablecoin(user.address);
+    // console.log(stablecoin0.toString())
+    // console.log(stablecoin1.toString())
+    // console.log(stablecoin0.sub(stablecoin1).toString())
+    // console.log(EXPECTED_BUY_VALUE.toString())
+    // Expect (?)
+    expect(
+      stablecoin0.sub(stablecoin1).sub(EXPECTED_BUY_VALUE).abs().lte(RAD)
+    ).to.equal(true);
+    expect(
+      standby1.sub(standby0).sub(EXPECTED_BUY_LOT).toNumber() <= 1e17
+    ).to.equal(true);
+  });
+
   it("runs an IOU sale", async () => {
     // Deposit native token (FLR)
     await flrWallet.deposit({ value: STANDBY_AMOUNT.mul(2) });
