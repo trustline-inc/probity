@@ -9,7 +9,7 @@ import * as chai from "chai";
 import { bytes32, RAD, WAD, RAY } from "../utils/constants";
 import assertRevert from "../utils/assertRevert";
 import increaseTime from "../utils/increaseTime";
-import { rmul, rpow, wdiv } from "../utils/math";
+import { rdiv, rmul, rpow, wdiv } from "../utils/math";
 const expect = chai.expect;
 
 // Wallets
@@ -143,18 +143,6 @@ describe("Teller Unit Tests", function () {
       );
       await teller.initAsset(newCollId, 0);
       await teller.updateAccumulators(newCollId);
-    });
-
-    it("updates the lastUtilization", async () => {
-      const EXPECTED_UTILIAZATION_RATIO = wdiv(DEBT_TO_SET, EQUITY_TO_SET);
-      const before = await teller.assets(flrAssetId);
-      expect(before[0]).to.not.equal(0);
-      expect(before[1]).to.equal(0);
-      await increaseTime(40000);
-      await teller.updateAccumulators(flrAssetId);
-      const after = await teller.assets(flrAssetId);
-      expect(after[0]).to.gt(before[0]);
-      expect(after[1]).to.equal(EXPECTED_UTILIAZATION_RATIO);
     });
 
     it("fail if totalEquity is 0", async () => {
@@ -293,7 +281,9 @@ describe("Teller Unit Tests", function () {
 
       let lastUpdatedAfter = (await teller.assets(flrAssetId))[0];
       let mpr = await teller.mpr();
-      let utilitization = (await teller.assets(flrAssetId)).lastUtilization;
+      let totalDebt = await vaultEngine.totalDebt();
+      let totalEquity = await vaultEngine.totalEquity();
+      let utilitization = wdiv(totalDebt, totalEquity);
       let multipledByUtilization = rmul(mpr.sub(RAY), utilitization.mul(1e9));
       let exponentiated = rpow(
         multipledByUtilization.add(RAY),
@@ -316,7 +306,9 @@ describe("Teller Unit Tests", function () {
       await teller.updateAccumulators(flrAssetId);
 
       lastUpdatedAfter = (await teller.assets(flrAssetId))[0];
-      utilitization = (await teller.assets(flrAssetId)).lastUtilization;
+      totalDebt = await vaultEngine.totalDebt();
+      totalEquity = await vaultEngine.totalEquity();
+      utilitization = wdiv(totalDebt, totalEquity);
       multipledByUtilization = rmul(mpr.sub(RAY), utilitization.mul(1e9));
       exponentiated = rpow(
         multipledByUtilization.add(RAY),
@@ -347,7 +339,9 @@ describe("Teller Unit Tests", function () {
 
       let lastUpdatedAfter = (await teller.assets(flrAssetId))[0];
       let mpr = await teller.mpr();
-      let utilitization = (await teller.assets(flrAssetId)).lastUtilization;
+      let totalDebt = await vaultEngine.totalDebt();
+      let totalEquity = await vaultEngine.totalEquity();
+      let utilitization = wdiv(totalDebt, totalEquity);
       let multipledByUtilization = rmul(mpr.sub(RAY), utilitization.mul(1e9));
       let exponentiated = rpow(
         multipledByUtilization.add(RAY),
