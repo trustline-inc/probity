@@ -34,7 +34,6 @@ contract Teller is Stateful {
     /////////////////////////////////////////
     struct Asset {
         uint256 lastUpdated;
-        uint256 lastUtilization;
         uint256 protocolFee;
     }
 
@@ -112,13 +111,14 @@ contract Teller is Stateful {
         require(totalEquity > 0, "Teller/updateAccumulators: Total equity cannot be zero");
 
         // Update debt accumulator
+        uint256 utilization = wdiv(totalDebt, totalEquity);
         uint256 debtRateIncrease = rmul(rpow(mpr, (block.timestamp - asset.lastUpdated)), debtAccumulator) -
             debtAccumulator;
 
         uint256 exponentiated;
         {
             // Update equity accumulator
-            uint256 multipliedByUtilization = rmul(mpr - RAY, asset.lastUtilization * 1e9);
+            uint256 multipliedByUtilization = rmul(mpr - RAY, utilization * 1e9);
             uint256 multipliedByUtilizationPlusOne = multipliedByUtilization + RAY;
 
             exponentiated = rpow(multipliedByUtilizationPlusOne, (block.timestamp - asset.lastUpdated));
@@ -133,11 +133,10 @@ contract Teller is Stateful {
         uint256 equityRateIncrease = equityAccumulatorDiff - protocolFeeRate;
 
         // Set new APR (round to nearest 0.25%)
-        asset.lastUtilization = wdiv(totalDebt, totalEquity);
-        if (asset.lastUtilization >= 1e18) {
+        if (utilization >= 1e18) {
             apr = MAX_APR;
         } else {
-            uint256 oneMinusUtilization = RAY - (asset.lastUtilization * 1e9);
+            uint256 oneMinusUtilization = RAY - (utilization * 1e9);
             uint256 oneDividedByOneMinusUtilization = rdiv(10**27 * 0.01, oneMinusUtilization);
 
             uint256 round = 0.0025 * 10**27;
