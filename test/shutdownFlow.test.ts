@@ -26,6 +26,8 @@ import { deployTest, mock, probity } from "../lib/deployer";
 import increaseTime from "./utils/increaseTime";
 import { BigNumber } from "ethers";
 import { ASSET_ID, bytes32, WAD, RAY, RAD } from "./utils/constants";
+import exp = require("constants");
+import { wdiv } from "./utils/math";
 const expect = chai.expect;
 
 // Wallets
@@ -229,6 +231,7 @@ describe("Shutdown Flow Test", function () {
      */
 
     let expectedTotalDebt = BigNumber.from(0); // rad
+    let expectedTotalStablecoin = BigNumber.from(0); // rad
     let underlying: BigNumber; // wad
     let equity: BigNumber; // wad
     let collateral: BigNumber; // wad
@@ -260,6 +263,7 @@ describe("Shutdown Flow Test", function () {
     balances.bob["FLR"] = { collateral, debt };
     balances.bob["AUR"] = RAY.mul(debt);
     expectedTotalDebt = expectedTotalDebt.add(debt.mul(RAY));
+    expectedTotalStablecoin = expectedTotalStablecoin.add(debt.mul(RAY));
     await expectBalancesToMatch(bob, balances.bob);
 
     // Bob utilizes 150,000 FXRP ($417,000) to BORROW 135,000 AUR
@@ -271,6 +275,7 @@ describe("Shutdown Flow Test", function () {
     balances.bob["FXRP"] = { collateral, debt };
     balances.bob["AUR"] = balances.bob["AUR"].add(debt.mul(RAY));
     expectedTotalDebt = expectedTotalDebt.add(debt.mul(RAY));
+    expectedTotalStablecoin = expectedTotalStablecoin.add(debt.mul(RAY));
     await expectBalancesToMatch(bob, balances.bob);
 
     // Charlie utilizes 400,000 FXRP ($1,112,000) to MINT 150,000 AUR
@@ -291,6 +296,7 @@ describe("Shutdown Flow Test", function () {
     balances.charlie["FXRP"] = { collateral, debt };
     balances.charlie["AUR"] = debt.mul(RAY);
     expectedTotalDebt = expectedTotalDebt.add(debt.mul(RAY));
+    expectedTotalStablecoin = expectedTotalStablecoin.add(debt.mul(RAY));
     await expectBalancesToMatch(charlie, balances.charlie);
 
     // Don utilizes 6900 FLR ($7590) to BORROW 4500 AUR
@@ -302,10 +308,14 @@ describe("Shutdown Flow Test", function () {
     balances.don["FLR"] = { collateral, debt };
     balances.don["AUR"] = RAY.mul(debt);
     expectedTotalDebt = expectedTotalDebt.add(debt.mul(RAY));
+    expectedTotalStablecoin = expectedTotalStablecoin.add(debt.mul(RAY));
     await expectBalancesToMatch(don, balances.don);
 
     // Total debt should be 291,000 AUR
     expect(await vaultEngine.totalDebt()).to.equal(expectedTotalDebt);
+    expect(await vaultEngine.totalStablecoin()).to.equal(
+      expectedTotalStablecoin
+    );
 
     // Drop prices (FLR: $1.10 => $0.60), FXRP: ($2.78 => $1.23)
     await ftsoFlr.setCurrentPrice(RAY.div(RAY).mul(1e5).mul(60).div(100));
@@ -321,13 +331,17 @@ describe("Shutdown Flow Test", function () {
     await liquidator.liquidateVault(ASSET_ID["FLR"], bob.address);
     let newDebtToCover = balances.bob["FLR"].debt.mul(RAY);
     reserveBalances.debtToCover = newDebtToCover;
+    expectedTotalDebt = expectedTotalDebt.sub(newDebtToCover);
+    expect(await vaultEngine.totalDebt()).to.equal(expectedTotalDebt);
     await checkReserveBalances(reserveBalances);
 
     // Liquidate Bob's FXRP vault ($184,500 backing 135,000 AUR)
     await liquidator.liquidateVault(ASSET_ID["FXRP"], bob.address);
     newDebtToCover = balances.bob["FXRP"].debt.mul(RAY);
+    expectedTotalDebt = expectedTotalDebt.sub(newDebtToCover);
     reserveBalances.debtToCover =
       reserveBalances.debtToCover.add(newDebtToCover);
+    expect(await vaultEngine.totalDebt()).to.equal(expectedTotalDebt);
     await checkReserveBalances(reserveBalances);
 
     // Update expected balances
@@ -346,9 +360,14 @@ describe("Shutdown Flow Test", function () {
     // Increase debt threshold to 5000 * 1.2 = 6000
     const newDebtThreshold = DEBT_THRESHOLD.mul(12).div(10);
     await reserve.connect(owner).increaseSystemDebt(newDebtThreshold);
+    expectedTotalStablecoin = expectedTotalStablecoin.add(newDebtThreshold);
+    expect(await vaultEngine.totalStablecoin()).to.equal(
+      expectedTotalStablecoin
+    );
     reserveBalances.reserve = newDebtThreshold;
     reserveBalances.debtToCover =
       reserveBalances.debtToCover.add(newDebtThreshold);
+
     await checkReserveBalances(reserveBalances);
 
     // Send all reserve stablecoins to Bob (as a proxy for pool diminishment)
@@ -492,8 +511,9 @@ describe("Shutdown Flow Test", function () {
     reserveBalances.reserve = reserveBalances.reserve.sub(RAD.mul(137_500));
 
     // Set the finalized unbacked debt balance due after processing borrowers
-    await shutdown.setFinalDebtBalance();
-    const EXPECTED_FINAL_DEBT_BALANCE = RAD.mul(154_500);
+    await shutdown.setFinalStablecoinBalance();
+    const res = await vaultEngine.totalStablecoin();
+    const EXPECTED_FINAL_STABLECOIN_BALANCE = RAD.mul(154_500);
 
     // Calculate the investor obligation
     await shutdown.calculateInvestorObligation();
@@ -508,8 +528,8 @@ describe("Shutdown Flow Test", function () {
     await increaseTime(TWO_DAYS_IN_SECONDS);
 
     // Expect final debt balance to equal the previous calculation after two days (?)
-    expect(await shutdown.finalDebtBalance()).to.equal(
-      EXPECTED_FINAL_DEBT_BALANCE
+    expect(await shutdown.finalStablecoinBalance()).to.equal(
+      EXPECTED_FINAL_STABLECOIN_BALANCE
     );
 
     // Calcuate redemption ratio for FLR
@@ -583,6 +603,8 @@ describe("Shutdown Flow Test", function () {
   });
 
   it("should shutdown when the system is no longer solvent", async () => {
+    let expectedTotalDebt = BigNumber.from(0); // rad
+    let expectedTotalEquity = BigNumber.from(0); // rad
     // Current collateral ratio: 150%
     // Starting prices: (FLR: $4.30, FXRP: $6.23)
     await ftsoFlr.setCurrentPrice(RAY.mul(43).div(10));
@@ -603,6 +625,7 @@ describe("Shutdown Flow Test", function () {
         WAD.mul(4500),
         WAD.mul(5000)
       );
+    expectedTotalEquity = expectedTotalEquity.add(RAD.mul(5000));
     balances.alice["FLR"] = {
       underlying: WAD.mul(4500),
       equity: WAD.mul(5000),
@@ -616,6 +639,7 @@ describe("Shutdown Flow Test", function () {
         WAD.mul(1000000),
         WAD.mul(2000000)
       );
+    expectedTotalEquity = expectedTotalEquity.add(RAD.mul(2000000));
     balances.alice["FXRP"] = {
       underlying: WAD.mul(1000000),
       equity: WAD.mul(2000000),
@@ -634,6 +658,7 @@ describe("Shutdown Flow Test", function () {
         WAD.mul(2300),
         WAD.mul(6000)
       );
+    expectedTotalDebt = expectedTotalDebt.add(RAD.mul(6000));
     balances.bob["FLR"] = {
       collateral: WAD.mul(2300),
       debt: WAD.mul(6000),
@@ -646,6 +671,7 @@ describe("Shutdown Flow Test", function () {
         WAD.mul(270_000),
         WAD.mul(1_100_000)
       );
+    expectedTotalDebt = expectedTotalDebt.add(RAD.mul(1_100_000));
     balances.bob["FXRP"] = {
       collateral: WAD.mul(270_000),
       debt: WAD.mul(1_100_000),
@@ -664,6 +690,7 @@ describe("Shutdown Flow Test", function () {
         WAD.mul(9000),
         WAD.mul(15_000)
       );
+    expectedTotalDebt = expectedTotalDebt.add(RAD.mul(15_000));
     await vaultEngine
       .connect(charlie)
       .modifyDebt(
@@ -672,7 +699,7 @@ describe("Shutdown Flow Test", function () {
         WAD.mul(0),
         WAD.mul(10_000)
       );
-
+    expectedTotalDebt = expectedTotalDebt.add(RAD.mul(10_000));
     balances.charlie["FLR"] = {
       collateral: WAD.mul(9000),
       debt: WAD.mul(10_000 + 15_000),
@@ -689,6 +716,7 @@ describe("Shutdown Flow Test", function () {
         WAD.mul(20_000),
         WAD.mul(1_000_000)
       );
+    expectedTotalEquity = expectedTotalEquity.add(RAD.mul(1_000_000));
     await vaultEngine
       .connect(don)
       .modifyDebt(
@@ -697,7 +725,7 @@ describe("Shutdown Flow Test", function () {
         WAD.mul(620_000),
         WAD.mul(1_500_000)
       );
-
+    expectedTotalDebt = expectedTotalDebt.add(RAD.mul(1_500_000));
     balances.don["FXRP"] = {
       underlying: WAD.mul(20_000),
       collateral: WAD.mul(620_000),
@@ -719,6 +747,7 @@ describe("Shutdown Flow Test", function () {
         WAD.mul(1000),
         WAD.mul(1500)
       );
+    expectedTotalEquity = expectedTotalEquity.add(RAD.mul(1500));
     await vaultEngine
       .connect(lender)
       .modifyDebt(
@@ -727,6 +756,7 @@ describe("Shutdown Flow Test", function () {
         WAD.mul(1000),
         WAD.mul(1500)
       );
+    expectedTotalDebt = expectedTotalDebt.add(RAD.mul(1500));
 
     balances.lender["FLR"] = {
       underlying: WAD.mul(1000),
@@ -743,6 +773,7 @@ describe("Shutdown Flow Test", function () {
         WAD.mul(1_830_000),
         WAD.mul(1_500_000)
       );
+    expectedTotalEquity = expectedTotalEquity.add(RAD.mul(1_500_000));
     await vaultEngine
       .connect(lender)
       .modifyDebt(
@@ -751,7 +782,7 @@ describe("Shutdown Flow Test", function () {
         WAD.mul(1_830_000),
         WAD.mul(1_200_000)
       );
-
+    expectedTotalDebt = expectedTotalDebt.add(RAD.mul(1_200_000));
     balances.lender["FXRP"] = {
       underlying: WAD.mul(1_830_000),
       collateral: WAD.mul(1_830_000),
@@ -760,6 +791,11 @@ describe("Shutdown Flow Test", function () {
     };
     balances.lender["AUR"] = RAD.mul(1_200_000 + 1500);
     await expectBalancesToMatch(lender, balances.lender);
+
+    const totalDebt = await vaultEngine.totalDebt();
+    const totalEquity = await vaultEngine.totalEquity();
+    expect(totalDebt).to.equal(expectedTotalDebt);
+    expect(totalEquity).to.equal(expectedTotalEquity);
 
     // New collateral ratio: 175%
     // Drop prices FLR: $3.60, FXRP: $4.48
@@ -779,6 +815,7 @@ describe("Shutdown Flow Test", function () {
     // Start 2 auctions, 1 of each collateral
 
     await liquidator.liquidateVault(ASSET_ID["FLR"], bob.address);
+    expectedTotalDebt = expectedTotalDebt.sub(balances.bob.FLR.debt.mul(RAY));
     balances.bob["FLR"] = {
       collateral: WAD.mul(0),
       debt: WAD.mul(0),
@@ -787,6 +824,7 @@ describe("Shutdown Flow Test", function () {
     await checkReserveBalances(reserveBalances);
 
     await liquidator.liquidateVault(ASSET_ID["FXRP"], bob.address);
+    expectedTotalDebt = expectedTotalDebt.sub(balances.bob.FXRP.debt.mul(RAY));
     balances.bob["FXRP"] = {
       collateral: WAD.mul(0),
       debt: WAD.mul(0),
@@ -818,6 +856,9 @@ describe("Shutdown Flow Test", function () {
     // Initiate shutdown
     await shutdown.initiateShutdown();
     expect(await shutdown.initiated()).to.equal(true);
+    expect(await shutdown.finalUtilizationRatio()).to.equal(
+      wdiv(expectedTotalDebt, expectedTotalEquity)
+    );
 
     // Drop prices: (FLR => $2.23, FXRP => $2.20)
     await ftsoFlr.setCurrentPrice(BigNumber.from(1e5).mul(223).div(100));
@@ -931,21 +972,21 @@ describe("Shutdown Flow Test", function () {
     await reserve.settle(RAD.mul(147_000));
 
     // Set the final debt balance
-    await shutdown.setFinalDebtBalance();
-    const EXPECTED_FINAL_DEBT_BALANCE = RAD.mul(3_685_500);
-    expect(await shutdown.finalDebtBalance()).to.equal(
-      EXPECTED_FINAL_DEBT_BALANCE
+    await shutdown.setFinalStablecoinBalance();
+    const EXPECTED_FINAL_STABLECOIN_BALANCE = RAD.mul(3_685_500);
+    expect(await shutdown.finalStablecoinBalance()).to.equal(
+      EXPECTED_FINAL_STABLECOIN_BALANCE
     );
 
     await shutdown.calculateInvestorObligation();
 
     // total stablecoinGap 140930
     // total equity * final utilization Ratio = total equity in use
-    // $4506500 * 0.85043825585 = 3832500
+    // $4506500 * 0.605014978364584489 = 2726500
     // total stablecoinGap / total equity in use = supplier obligation ratio
-    // 140930 / 3685500 = 0.0382390449
+    // 140930 / 2726500 = 0.05168897854
 
-    const EXPECTED_SUPPLIER_OBLIGATION_RATIO = WAD.mul("382390449").div(1e10);
+    const EXPECTED_SUPPLIER_OBLIGATION_RATIO = WAD.mul("5168897854").div(1e11);
     expect(
       (await shutdown.investorObligationRatio())
         .sub(EXPECTED_SUPPLIER_OBLIGATION_RATIO)
@@ -954,11 +995,11 @@ describe("Shutdown Flow Test", function () {
     ).to.equal(true);
     // process supplier for flr collateral
     await shutdown.processUserEquity(ASSET_ID["FLR"], alice.address);
-    // user 1 has supplied $5000, 0.85043825585 = 4252.19127925 on hook
+    // user 1 has supplied $5000, 0.605014978364584489 = 3025.07489182 on hook
     // supplied amount * supplier obligation ratio
-    // 4252.19127925  * 0.0382390449 = 162.599733251
-    // coll amount = 162.599733251 / 2.23 = 72.9146785877
-    EXPECTED_FLR_GAP = EXPECTED_FLR_GAP.sub(WAD.mul("729146785877").div(1e10));
+    // 3025.07489182  * 0.05168897854 = 156.363031165
+    // coll amount = 156.363031165 / 2.23 = 70.1179511951
+    EXPECTED_FLR_GAP = EXPECTED_FLR_GAP.sub(WAD.mul("701179511951").div(1e10));
     expect(
       (await shutdown.assets(ASSET_ID["FLR"])).gap
         .sub(EXPECTED_FLR_GAP)
@@ -989,10 +1030,10 @@ describe("Shutdown Flow Test", function () {
     ).to.equal(true);
     await shutdown.processUserEquity(ASSET_ID["FLR"], lender.address);
 
-    // lender supplied $1500 * 0.85043825585 = 1275.65738377
-    // 1275.65738377 * 0.0382390449 = 48.779919975
-    // 48.779919975 / 2.23 = 21.8744035762
-    EXPECTED_FLR_GAP = EXPECTED_FLR_GAP.sub(WAD.mul("218744035762").div(1e10));
+    // lender supplied $1500 * 0.605014978364584489 = 907.522467547
+    // 907.522467547 * 0.05168897854 = 46.9089093496
+    // 48.779919975 / 2.23 = 21.0353853586
+    EXPECTED_FLR_GAP = EXPECTED_FLR_GAP.sub(WAD.mul("210353853586").div(1e10));
 
     expect(
       (await shutdown.assets(ASSET_ID["FLR"])).gap
@@ -1003,10 +1044,10 @@ describe("Shutdown Flow Test", function () {
 
     // process supplier for fxrp collateral
     await shutdown.processUserEquity(ASSET_ID["FXRP"], alice.address);
-    // alice supplied $2000000 * 0.85043825585 = 1700876.5117
-    // 1700876.5117 * 0.0382390449 = 65039.8933003
-    // 65039.8933003 / 2.20 = 29563.5878638
-    EXPECTED_FXRP_GAP = EXPECTED_FXRP_GAP.sub(WAD.mul("295635878638").div(1e7));
+    // alice supplied $2000000 * 0.605014978364584489 = 1210029.95673
+    // 1700876.5117 * 0.05168897854 = 62545.2124661
+    // 62545.2124661 / 2.20 = 28429.6420301
+    EXPECTED_FXRP_GAP = EXPECTED_FXRP_GAP.sub(WAD.mul("284296420301").div(1e7));
     expect(
       (await shutdown.assets(ASSET_ID["FXRP"])).gap
         .sub(EXPECTED_FXRP_GAP)
@@ -1029,10 +1070,10 @@ describe("Shutdown Flow Test", function () {
     ).to.equal(true);
     await shutdown.processUserEquity(ASSET_ID["FXRP"], don.address);
 
-    // don supplied $1_000_000 * 0.85043825585 = 850438.25585
-    // 850438.25585 * 0.0382390449 = 32519.9466501
-    // 32519.9466501 / 2.20 = 14781.7939319
-    EXPECTED_FXRP_GAP = EXPECTED_FXRP_GAP.sub(WAD.mul("147817939319").div(1e7));
+    // don supplied $1_000_000 * 0.605014978364584489 = 605014.978365
+    // 605014.978365 * 0.05168897854 = 31272.6062331
+    // 31272.6062331 / 2.20 = 14214.821015
+    EXPECTED_FXRP_GAP = EXPECTED_FXRP_GAP.sub(WAD.mul("14214821015").div(1e6));
     expect(
       (await shutdown.assets(ASSET_ID["FXRP"])).gap
         .sub(EXPECTED_FXRP_GAP)
@@ -1040,9 +1081,6 @@ describe("Shutdown Flow Test", function () {
         .lte(WAD.div(10))
     ).to.equal(true);
 
-    // lender supplied $1500000 * 0.85043825585 = 1275657.38377
-    // 1275657.38377 * 0.0382390449 = 48779.919975
-    // 48779.919975 / 2.20 = 22172.6908977
     EXPECTED_FXRP_GAP = WAD.mul(0);
     await shutdown.processUserEquity(ASSET_ID["FXRP"], lender.address);
     expect(
@@ -1058,11 +1096,14 @@ describe("Shutdown Flow Test", function () {
     // calcuate redemption ratio
     await shutdown.calculateRedemptionRatio(ASSET_ID["FLR"]);
     // redemption ratio = theoretical max - gap / total["AUR"] in circulation
-    // ((26500 / $2.23) - 2115.9732496600 / $3685500
-    // 11883.4080717 - 2063.5106908794 = 9767.43482209
-    // 9767.43482209 / 3685500 = 0.00265023329
+    2119608995286300000000;
+    //
+    // ((26500 / $2.23) - 2119.6089952863 / $3685500
+    // 11883.4080717 - 2119.6089952863 = 9763.79907641
+    // 9763.79907641 / 3685500 = 0.00264924679
 
-    const EXPECTED_FLR_REDEMPTION_RATIO = RAY.mul("265023329").div(1e11);
+    const EXPECTED_FLR_REDEMPTION_RATIO = RAY.mul("264924679").div(1e11);
+
     expect(
       (await shutdown.assets(ASSET_ID["FLR"])).redemptionRatio
         .sub(EXPECTED_FLR_REDEMPTION_RATIO)
@@ -1096,8 +1137,8 @@ describe("Shutdown Flow Test", function () {
       .standby;
     // bob["AUR"] balance: 1099000
     //["AUR"] balance * flr Redeemed Asset
-    // 1099000 * 0.00265023329 = 2912.60638571
-    const EXPECTED_FLR_COLL_REDEEMED = WAD.mul("291260638571").div(1e8);
+    // 1099000 * 0.00264924679 = 2911.52222221
+    const EXPECTED_FLR_COLL_REDEEMED = WAD.mul("291152222221").div(1e8);
     expect(
       after.sub(before).sub(EXPECTED_FLR_COLL_REDEEMED).abs().lte(WAD.div(100))
     ).to.equal(true);

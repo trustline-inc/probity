@@ -48,6 +48,7 @@ contract MockVaultEngine {
     uint256 public protocolFeeRates;
     uint256 public totalDebt;
     uint256 public totalEquity;
+    uint256 public totalStablecoin;
     LiquidateDebtPositionCall public lastLiquidateDebtPositionCall;
     LiquidateEquityPositionCall public lastLiquidateEquityPositionCall;
 
@@ -85,14 +86,16 @@ contract MockVaultEngine {
         pbt[user] += amount;
     }
 
-    //added for testing purposes
     function setTotalDebt(uint256 newTotalDebt) external {
         totalDebt = newTotalDebt;
     }
 
-    // added for testing purposes
     function setTotalEquity(uint256 newTotalEquity) external {
         totalEquity = newTotalEquity;
+    }
+
+    function setTotalStablecoin(uint256 newTotalStablecoin) external {
+        totalStablecoin = newTotalStablecoin;
     }
 
     function initAsset(bytes32 assetId) external {
