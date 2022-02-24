@@ -41,6 +41,7 @@ contract VaultEngine is Stateful, Eventful {
     uint256 private constant RAY = 10**27;
 
     uint256 public totalDebt;
+    uint256 public totalStablecoin;
     uint256 public totalEquity;
     uint256 public totalUnbackedDebt;
     address[] public userList;
@@ -274,6 +275,7 @@ contract VaultEngine is Stateful, Eventful {
         assets[assetId].normDebt = add(assets[assetId].normDebt, debtAmount);
 
         totalDebt = add(totalDebt, debtCreated);
+        totalStablecoin = add(totalStablecoin, debtCreated);
 
         require(totalDebt <= assets[assetId].ceiling, "Vault/modifyDebt: Debt ceiling reached");
         require(
@@ -314,6 +316,7 @@ contract VaultEngine is Stateful, Eventful {
         vault.debt = add(vault.debt, debtAmount);
         asset.normDebt = add(asset.normDebt, debtAmount);
         int256 fundraiseTarget = mul(asset.debtAccumulator, debtAmount);
+        totalDebt = add(totalDebt, fundraiseTarget);
 
         vaults[assetId][auctioneer].standby = sub(vaults[assetId][auctioneer].standby, collateralAmount);
         unbackedDebt[reservePool] = sub(unbackedDebt[reservePool], fundraiseTarget);
@@ -362,7 +365,7 @@ contract VaultEngine is Stateful, Eventful {
     function settle(uint256 amount) external onlyByProbity {
         stablecoin[msg.sender] -= amount;
         unbackedDebt[msg.sender] -= amount;
-        totalDebt -= amount;
+        totalStablecoin -= amount;
         emit Log("vault", "settle", msg.sender);
     }
 
@@ -374,7 +377,7 @@ contract VaultEngine is Stateful, Eventful {
     function increaseSystemDebt(uint256 amount) external onlyByProbity {
         stablecoin[msg.sender] += amount;
         unbackedDebt[msg.sender] += amount;
-        totalDebt += amount;
+        totalStablecoin += amount;
         emit Log("vault", "increaseSystemDebt", msg.sender);
     }
 
@@ -433,6 +436,7 @@ contract VaultEngine is Stateful, Eventful {
 
         totalEquity += newEquity;
         totalDebt += newDebt;
+        totalStablecoin += newDebt;
 
         asset.debtAccumulator += debtRateIncrease;
         asset.equityAccumulator += equityRateIncrease;
