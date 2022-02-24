@@ -108,7 +108,8 @@ describe("Auctioneer Unit Tests", function () {
           LOT_SIZE,
           DEBT_SIZE,
           COLL_OWNER,
-          BENEFICIARY
+          BENEFICIARY,
+          false
         ),
         "AccessControl/onlyBy: Caller does not have permission"
       );
@@ -117,7 +118,14 @@ describe("Auctioneer Unit Tests", function () {
 
       await auctioneer
         .connect(user1)
-        .startAuction(flrAssetId, LOT_SIZE, DEBT_SIZE, COLL_OWNER, BENEFICIARY);
+        .startAuction(
+          flrAssetId,
+          LOT_SIZE,
+          DEBT_SIZE,
+          COLL_OWNER,
+          BENEFICIARY,
+          false
+        );
     });
 
     it("tests that auction object is created properly", async () => {
@@ -137,7 +145,14 @@ describe("Auctioneer Unit Tests", function () {
 
       await auctioneer
         .connect(liquidatorCaller)
-        .startAuction(flrAssetId, LOT_SIZE, DEBT_SIZE, COLL_OWNER, BENEFICIARY);
+        .startAuction(
+          flrAssetId,
+          LOT_SIZE,
+          DEBT_SIZE,
+          COLL_OWNER,
+          BENEFICIARY,
+          false
+        );
 
       const after = await auctioneer.auctions(0);
       expect(after.assetId).to.equal(flrAssetId);
@@ -166,7 +181,8 @@ describe("Auctioneer Unit Tests", function () {
             LOT_SIZE,
             DEBT_SIZE,
             COLL_OWNER,
-            BENEFICIARY
+            BENEFICIARY,
+            false
           ),
         "AuctionStarted",
         auctioneer
@@ -188,7 +204,8 @@ describe("Auctioneer Unit Tests", function () {
           LOT_SIZE,
           DEBT_SIZE,
           user1.address,
-          reservePool.address
+          reservePool.address,
+          false
         );
 
       await vaultEngine.updateVault(
@@ -285,7 +302,8 @@ describe("Auctioneer Unit Tests", function () {
           LOT_SIZE,
           DEBT_SIZE,
           user1.address,
-          reservePool.address
+          reservePool.address,
+          false
         );
 
       await vaultEngine.updateVault(
@@ -442,7 +460,8 @@ describe("Auctioneer Unit Tests", function () {
           LOT_SIZE,
           DEBT_SIZE,
           user1.address,
-          reservePool.address
+          reservePool.address,
+          false
         );
 
       await vaultEngine.updateVault(
@@ -455,6 +474,7 @@ describe("Auctioneer Unit Tests", function () {
         0,
         0
       );
+
       await vaultEngine.addStablecoin(owner.address, RAD.mul(1000000));
       await vaultEngine.addStablecoin(user1.address, RAD.mul(1000000));
       await vaultEngine.addStablecoin(user2.address, RAD.mul(1000000));
@@ -525,6 +545,28 @@ describe("Auctioneer Unit Tests", function () {
       expect(before.standby.add(after.standby)).to.equal(EXPECTED_LOT_SIZE);
     });
 
+    it("tests auctionDebt is not reduced when sellAllLot Flag is on", async () => {
+      const AUCTION_ID = 1;
+
+      await auctioneer
+        .connect(liquidatorCaller)
+        .startAuction(
+          flrAssetId,
+          LOT_SIZE,
+          DEBT_SIZE,
+          user1.address,
+          reservePool.address,
+          true
+        );
+
+      await priceCalc.setPrice(RAY.div(11));
+
+      await auctioneer.buyItNow(AUCTION_ID, RAY, LOT_SIZE);
+
+      const after = await auctioneer.auctions(AUCTION_ID);
+      expect(after.debt).to.equal(DEBT_SIZE);
+    });
+
     it("tests auctionDebt is reduced when the auction ended with non-zero debt", async () => {
       let EXPECTED_DEBT_SIZE = DEBT_SIZE.sub(LOT_SIZE.mul(RAY.div(11)));
       await priceCalc.setPrice(RAY.div(11));
@@ -544,7 +586,36 @@ describe("Auctioneer Unit Tests", function () {
       expect(after).to.equal(EXPECTED_LOT_SIZE.mul(PRICE));
     });
 
-    it("tests that it cancel old bids that are no longer in contention", async () => {
+    it("tests that it cancel old bids that are no longer in contention and sellAllLot is true", async () => {
+      const AUCTION_ID = 1;
+      await auctioneer
+        .connect(liquidatorCaller)
+        .startAuction(
+          flrAssetId,
+          LOT_SIZE,
+          0,
+          reservePool.address,
+          reservePool.address,
+          true
+        );
+
+      await auctioneer
+        .connect(user1)
+        .placeBid(0, RAY.div(10), LOT_SIZE.mul(4).div(10));
+      await auctioneer
+        .connect(user2)
+        .placeBid(0, RAY.div(5), LOT_SIZE.mul(4).div(10));
+
+      await auctioneer.buyItNow(0, RAY.mul(12).div(10), LOT_SIZE);
+      let user1Bid = await auctioneer.bids(AUCTION_ID, user1.address);
+      expect(user1Bid.price).to.equal(0);
+      expect(user1Bid.lot).to.equal(0);
+      let user2Bid = await auctioneer.bids(AUCTION_ID, user2.address);
+      expect(user2Bid.price).to.equal(0);
+      expect(user2Bid.lot).to.equal(0);
+    });
+
+    it("tests that it cancel old bids that are no longer in contention and sellAllLot is false", async () => {
       const AUCTION_ID = 0;
       const before = await auctioneer.nextHighestBidder(AUCTION_ID, HEAD);
       expect(before).to.equal(ADDRESS_ZERO);
@@ -597,7 +668,8 @@ describe("Auctioneer Unit Tests", function () {
           LOT_SIZE,
           DEBT_SIZE,
           user1.address,
-          reservePool.address
+          reservePool.address,
+          false
         );
 
       await vaultEngine.updateVault(
@@ -691,6 +763,41 @@ describe("Auctioneer Unit Tests", function () {
       expect(after).to.equal(ADDRESS_ZERO);
     });
 
+    it("tests auctionDebt is not reduced when sellAllLot Flag is on", async () => {
+      const AUCTION_ID = 1;
+      await auctioneer
+        .connect(liquidatorCaller)
+        .startAuction(
+          flrAssetId,
+          LOT_SIZE,
+          DEBT_SIZE,
+          user1.address,
+          reservePool.address,
+          true
+        );
+
+      await auctioneer
+        .connect(user1)
+        .placeBid(AUCTION_ID, RAY.div(10), LOT_SIZE.mul(4).div(10));
+
+      await auctioneer
+        .connect(user2)
+        .placeBid(AUCTION_ID, RAY.div(5), LOT_SIZE.mul(3).div(10));
+
+      await auctioneer
+        .connect(user3)
+        .placeBid(AUCTION_ID, RAY.div(4), LOT_SIZE.mul(3).div(10));
+
+      await priceCalc.setPrice(RAY.div(11));
+
+      await auctioneer.connect(user1).finalizeSale(AUCTION_ID);
+      await auctioneer.connect(user2).finalizeSale(AUCTION_ID);
+      await auctioneer.connect(user3).finalizeSale(AUCTION_ID);
+
+      const after = await auctioneer.auctions(AUCTION_ID);
+      expect(after.debt).to.equal(DEBT_SIZE);
+    });
+
     it("tests auctionDebt is reduced when the auction ended with non-zero debt", async () => {
       let EXPECTED_DEBT_SIZE = DEBT_SIZE.sub(
         LOT_SIZE.mul(4).div(10).mul(RAY.div(10))
@@ -752,6 +859,66 @@ describe("Auctioneer Unit Tests", function () {
       expect(parsedEvents[0].args.price).to.equal(RAY);
       expect(parsedEvents[0].args.lotSize).to.equal(EXPECTED_LOT_SIZE);
     });
+
+    it("tests that auction only ends after lot = 0 if sellAllLot is true", async () => {
+      const AUCTION_ID = 1;
+      await auctioneer
+        .connect(liquidatorCaller)
+        .startAuction(
+          flrAssetId,
+          LOT_SIZE,
+          0,
+          reservePool.address,
+          reservePool.address,
+          true
+        );
+
+      await auctioneer
+        .connect(user1)
+        .placeBid(AUCTION_ID, RAY.div(10), LOT_SIZE.mul(4).div(10));
+
+      await auctioneer
+        .connect(user2)
+        .placeBid(AUCTION_ID, RAY.div(5), LOT_SIZE.mul(3).div(10));
+
+      await auctioneer
+        .connect(user3)
+        .placeBid(AUCTION_ID, RAY.div(4), LOT_SIZE.mul(3).div(10));
+
+      await priceCalc.setPrice(RAY.div(11));
+
+      await auctioneer.connect(user1).finalizeSale(AUCTION_ID);
+      let after = await auctioneer.auctions(AUCTION_ID);
+      expect(after.isOver).to.equal(false);
+
+      await auctioneer.connect(user2).finalizeSale(AUCTION_ID);
+      after = await auctioneer.auctions(AUCTION_ID);
+
+      expect(after.isOver).to.equal(false);
+      await auctioneer.connect(user3).finalizeSale(AUCTION_ID);
+
+      after = await auctioneer.auctions(AUCTION_ID);
+      expect(after.isOver).to.equal(true);
+    });
+
+    it("tests that Sale Event is emitted correctly", async () => {
+      const COLL_OWNER = owner.address;
+      const EXPECTED_LOT_SIZE = LOT_SIZE.div(10);
+      await auctioneer.placeBid(0, RAY, EXPECTED_LOT_SIZE);
+      await priceCalc.setPrice(RAY.mul(7).div(10));
+
+      const parsedEvents = await parseEvents(
+        auctioneer.finalizeSale(0),
+        "Sale",
+        auctioneer
+      );
+
+      expect(parsedEvents[0].args.assetId).to.equal(flrAssetId);
+      expect(parsedEvents[0].args.auctionId).to.equal(0);
+      expect(parsedEvents[0].args.user).to.equal(COLL_OWNER);
+      expect(parsedEvents[0].args.price).to.equal(RAY);
+      expect(parsedEvents[0].args.lotSize).to.equal(EXPECTED_LOT_SIZE);
+    });
   });
 
   describe("calculatePrice Unit Test", function () {
@@ -763,7 +930,8 @@ describe("Auctioneer Unit Tests", function () {
           LOT_SIZE,
           DEBT_SIZE,
           user1.address,
-          reservePool.address
+          reservePool.address,
+          false
         );
 
       const startingPriceBefore = await priceCalc.lastStartPrice();
@@ -796,7 +964,8 @@ describe("Auctioneer Unit Tests", function () {
           LOT_SIZE,
           DEBT_SIZE,
           user1.address,
-          reservePool.address
+          reservePool.address,
+          false
         );
 
       await reservePool

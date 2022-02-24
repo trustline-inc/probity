@@ -45,6 +45,7 @@ contract Auctioneer is Stateful, Eventful {
         address beneficiary; // stablecoins will go to this address
         uint256 startPrice;
         uint256 startTime;
+        bool sellAllLot; // if true, debt amount doesn't matter, auction will attempt to sell until lot is zero
         bool isOver;
     }
 
@@ -151,7 +152,8 @@ contract Auctioneer is Stateful, Eventful {
         uint256 lotSize,
         uint256 debtSize,
         address owner,
-        address beneficiary
+        address beneficiary,
+        bool sellAllLot
     ) external onlyBy("liquidator") {
         uint256 currentPrice = priceFeed.getPrice(assetId);
         uint256 startPrice = (currentPrice * priceBuffer) / ONE;
@@ -164,6 +166,7 @@ contract Auctioneer is Stateful, Eventful {
             beneficiary,
             startPrice,
             block.timestamp,
+            sellAllLot,
             false
         );
 
@@ -202,24 +205,22 @@ contract Auctioneer is Stateful, Eventful {
         uint256 bidLot
     ) external {
         require(!auctions[auctionId].isOver, "Auctioneer/placeBid: Auction is over");
-        // TODO: #235 re-evaluate why user shouldn't be able to place two bids
         require(bids[auctionId][msg.sender].price == 0, "Auctioneer/placeBid: This user has already placed a bid");
 
-        (uint256 totalBidValue, uint256 totalBidLot, address indexToAdd) = totalBidValueAtPrice(auctionId, bidPrice);
-        uint256 biddableValue = auctions[auctionId].debt - totalBidValue;
-        uint256 biddableLot = auctions[auctionId].lot - totalBidLot;
-        uint256 bidValue = bidPrice * bidLot;
+        (uint256 biddableLot, uint256 totalBidValue, uint256 totalBidLot, address indexToAdd) = getBiddableLot(
+            auctionId,
+            bidPrice,
+            bidLot
+        );
 
-        if (biddableValue < bidValue) {
-            bidLot = min(biddableValue / bidPrice, biddableLot);
-            bidValue = bidLot * bidPrice;
-        }
+        biddableLot = min(bidLot, biddableLot);
+        uint256 bidValue = biddableLot * bidPrice;
 
         vaultEngine.moveStablecoin(msg.sender, address(this), bidValue);
 
         nextHighestBidder[auctionId][msg.sender] = nextHighestBidder[auctionId][indexToAdd];
         nextHighestBidder[auctionId][indexToAdd] = msg.sender;
-        bids[auctionId][msg.sender] = Bid(bidPrice, bidLot);
+        bids[auctionId][msg.sender] = Bid(bidPrice, biddableLot);
 
         emit BidPlaced(auctions[auctionId].assetId, auctionId, msg.sender, bidPrice, bidLot);
         cancelOldBids(auctionId, totalBidValue, totalBidLot, indexToAdd);
@@ -228,7 +229,7 @@ contract Auctioneer is Stateful, Eventful {
     /**
      * @notice Allows a user to purchase collateral outright
      * @param auctionId The ID of the auction
-     * @param maxPrice TODO: #238 where is this used?
+     * @param maxPrice Max price the buyer is willing to pay for the lot
      * @param lot The amount of collateral to purchase
      */
     function buyItNow(
@@ -236,39 +237,33 @@ contract Auctioneer is Stateful, Eventful {
         uint256 maxPrice,
         uint256 lot
     ) external {
-        require(!auctions[auctionId].isOver, "Auctioneer/buyItNow: Auction is over");
+        Auction memory auction = auctions[auctionId];
+        require(!auction.isOver, "Auctioneer/buyItNow: Auction is over");
         uint256 currentPrice = calculatePrice(auctionId);
         require(currentPrice <= maxPrice, "Auctioneer/buyItNow: Current price is higher than max price");
         require(currentPrice != 0, "Auctioneer/buyItNow: Current price is now zero");
         uint256 lotValue = lot * currentPrice;
 
-        (uint256 totalBidValue, uint256 totalBidLot, address index) = totalBidValueAtPrice(auctionId, currentPrice);
+        (uint256 biddableLot, , , address index) = getBiddableLot(auctionId, currentPrice, lot);
+        require(biddableLot > 0, "Auctioneer/buyItNow: Price has reach a point where BuyItNow is no longer available");
 
-        require(
-            totalBidValue < auctions[auctionId].debt && totalBidLot < auctions[auctionId].lot,
-            "Auctioneer/buyItNow: Price has reach a point where BuyItNow is no longer available"
-        );
-
-        if (totalBidValue + lotValue > auctions[auctionId].debt) {
-            lotValue = auctions[auctionId].debt - totalBidValue;
-        }
-
-        uint256 lotToBuy = lotValue / currentPrice;
-        require(lotToBuy > 0, "Auctioneer/buyItNow: Price has reach a point where BuyItNow is no longer available");
-
-        lotToBuy = min(lotToBuy, auctions[auctionId].lot);
+        uint256 lotToBuy = min(lot, biddableLot);
         lotValue = lotToBuy * currentPrice;
-
         vaultEngine.moveStablecoin(msg.sender, auctions[auctionId].beneficiary, lotValue);
         vaultEngine.moveAsset(auctions[auctionId].assetId, address(this), msg.sender, lotToBuy);
 
-        auctions[auctionId].debt = auctions[auctionId].debt - lotValue;
-        auctions[auctionId].lot = auctions[auctionId].lot - lotToBuy;
+        if (!auction.sellAllLot) {
+            auctions[auctionId].debt = auctions[auctionId].debt - lotValue;
+        }
 
-        liquidator.reduceAuctionDebt(lotValue);
+        auctions[auctionId].lot = auctions[auctionId].lot - lotToBuy;
+        if (!auctions[auctionId].sellAllLot) {
+            liquidator.reduceAuctionDebt(lotValue);
+        }
+
         endAuction(auctionId);
         emit Sale(auctions[auctionId].assetId, auctionId, msg.sender, currentPrice, lotToBuy);
-        cancelOldBids(auctionId, 0, 0, index);
+        cancelOldBids(auctionId, 0, 0, HEAD);
     }
 
     /**
@@ -285,7 +280,10 @@ contract Auctioneer is Stateful, Eventful {
 
         vaultEngine.moveAsset(auctions[auctionId].assetId, address(this), msg.sender, bids[auctionId][msg.sender].lot);
 
-        auctions[auctionId].debt -= buyAmount;
+        if (!auctions[auctionId].sellAllLot) {
+            auctions[auctionId].debt -= buyAmount;
+        }
+
         auctions[auctionId].lot -= bids[auctionId][msg.sender].lot;
 
         removeIndex(auctionId, msg.sender);
@@ -296,8 +294,48 @@ contract Auctioneer is Stateful, Eventful {
             bids[auctionId][msg.sender].price,
             bids[auctionId][msg.sender].lot
         );
-        liquidator.reduceAuctionDebt(buyAmount);
+
+        if (!auctions[auctionId].sellAllLot) {
+            liquidator.reduceAuctionDebt(buyAmount);
+        }
+
         endAuction(auctionId);
+    }
+
+    /**
+     * @notice getBiddable lot and amount
+     * @param auctionId The ID of the auction
+     */
+    function getBiddableLot(
+        uint256 auctionId,
+        uint256 bidPrice,
+        uint256 bidLot
+    )
+        public
+        returns (
+            uint256 biddableLot,
+            uint256 totalBidValue,
+            uint256 totalBidLot,
+            address indexToAdd
+        )
+    {
+        Auction memory auction = auctions[auctionId];
+
+        (uint256 totalBidValue, uint256 totalBidLot, address index) = totalBidValueAtPrice(auctionId, bidPrice);
+
+        if (auction.sellAllLot) {
+            biddableLot = auction.lot - totalBidLot;
+            return (biddableLot, totalBidValue, totalBidLot, index);
+        }
+
+        uint256 biddableValue = auction.debt - totalBidValue;
+        biddableLot = auction.lot - totalBidLot;
+
+        if (biddableValue < bidPrice * bidLot) {
+            biddableLot = min(biddableValue / bidPrice, biddableLot);
+        }
+
+        return (biddableLot, totalBidValue, totalBidLot, index);
     }
 
     /**
@@ -319,6 +357,7 @@ contract Auctioneer is Stateful, Eventful {
         Auction storage auction = auctions[auctionId];
 
         cancelOldBids(auctionId, auction.debt, auction.lot, HEAD);
+
         // accept the debt?
         liquidator.reduceAuctionDebt(auction.debt);
         vaultEngine.moveAsset(auction.assetId, address(this), recipient, auction.lot);
@@ -372,25 +411,25 @@ contract Auctioneer is Stateful, Eventful {
      * @param auctionId The ID of the auction
      */
     function endAuction(uint256 auctionId) internal {
-        if (auctions[auctionId].debt == 0 || auctions[auctionId].lot == 0) {
-            auctions[auctionId].isOver = true;
+        Auction storage auction = auctions[auctionId];
 
-            auctions[auctionId].lot = 0;
+        if (auction.lot == 0 || (auction.debt == 0 && !auction.sellAllLot)) {
+            // auction is ended for sure
+            auction.isOver = true;
 
-            if (auctions[auctionId].debt != 0) {
-                // since there are no more lot, the rest of the debt is no longer on Auction
-                liquidator.reduceAuctionDebt(auctions[auctionId].debt);
-                auctions[auctionId].debt = 0;
+            if (!auction.sellAllLot) {
+                if (auction.debt > 0) {
+                    liquidator.reduceAuctionDebt(auction.debt);
+                }
+
+                if (auction.lot > 0) {
+                    vaultEngine.moveAsset(auction.assetId, address(this), auction.owner, auction.lot);
+                }
+                auction.lot = 0;
+                auction.debt = 0;
             }
 
-            vaultEngine.moveAsset(
-                auctions[auctionId].assetId,
-                address(this),
-                auctions[auctionId].owner,
-                auctions[auctionId].lot
-            );
-
-            emit AuctionEnded(auctions[auctionId].assetId, auctionId);
+            emit AuctionEnded(auction.assetId, auctionId);
             return;
         }
     }
@@ -415,54 +454,39 @@ contract Auctioneer is Stateful, Eventful {
         while (true) {
             uint256 bidPrice = bids[auctionId][index].price;
             uint256 bidLot = bids[auctionId][index].lot;
-            if (bidPrice * bidLot <= amountLeft && bidLot <= lotLeft) {
-                // we don't need to remove these as they are still valid
-                amountLeft -= bidPrice * ONE;
-                lotLeft -= bidLot;
-            } else if (amountLeft > 0) {
-                uint256 buyableLot = (amountLeft / bidPrice);
-                buyableLot = min(lotLeft, buyableLot);
-                if (buyableLot < bidLot) {
-                    uint256 lotDiff = bidLot - buyableLot;
-                    bids[auctionId][index].lot = buyableLot;
-                    vaultEngine.moveStablecoin(address(this), index, lotDiff * bidPrice);
+
+            if (auctions[auctionId].sellAllLot) {
+                if (bidLot <= lotLeft) {
+                    // we don't need to remove these as they are still valid
+                    lotLeft -= bidLot;
+                } else if (lotLeft > 0) {
+                    // lotLeft > 0 && lotLeft < bidLot
+                    modifyBid(auctionId, index, lotLeft);
+                    lotLeft = 0;
+                } else {
+                    // bidLeft left == 0, we remove the bidder and return the funds
+                    removeBid(auctionId, index, prev);
+                    index = prev;
                 }
-
-                if (bids[auctionId][index].lot == 0) {
-                    bids[auctionId][index].price = 0;
-                }
-
-                emit BidModified(
-                    auctions[auctionId].assetId,
-                    auctionId,
-                    msg.sender,
-                    bidPrice,
-                    bidLot - buyableLot,
-                    buyableLot
-                );
-
-                lotLeft -= buyableLot;
-                amountLeft -= buyableLot * bidPrice;
             } else {
-                // amount left == 0, we remove the bidder and return the funds
-                vaultEngine.moveStablecoin(address(this), index, bidLot * bidPrice);
-                // remove the index from the nextHighestBidder and reset the bids to zero
-                emit BidRemoved(
-                    auctions[auctionId].assetId,
-                    auctionId,
-                    msg.sender,
-                    bids[auctionId][index].price,
-                    bids[auctionId][index].lot
-                );
-                bids[auctionId][index].lot = 0;
-                bids[auctionId][index].price = 0;
+                if (bidPrice * bidLot <= amountLeft && bidLot <= lotLeft) {
+                    // we don't need to remove these as they are still valid
+                    amountLeft -= bidPrice * ONE;
+                    lotLeft -= bidLot;
+                } else if (amountLeft > 0) {
+                    uint256 buyableLot = (amountLeft / bidPrice);
+                    buyableLot = min(lotLeft, buyableLot);
+                    if (buyableLot < bidLot) {
+                        modifyBid(auctionId, index, buyableLot);
+                    }
 
-                // set prev -> index.next
-                nextHighestBidder[auctionId][prev] = nextHighestBidder[auctionId][index];
-                // set index.next = zero
-                nextHighestBidder[auctionId][index] = address(0);
-
-                index = prev;
+                    lotLeft -= buyableLot;
+                    amountLeft -= buyableLot * bidPrice;
+                } else {
+                    // amount left == 0, we remove the bidder and return the funds
+                    removeBid(auctionId, index, prev);
+                    index = prev;
+                }
             }
 
             if (nextHighestBidder[auctionId][index] == address(0)) {
@@ -471,6 +495,55 @@ contract Auctioneer is Stateful, Eventful {
             prev = index;
             index = nextHighestBidder[auctionId][index];
         }
+    }
+
+    function modifyBid(
+        uint256 auctionId,
+        address bidder,
+        uint256 newLot
+    ) internal {
+        vaultEngine.moveStablecoin(
+            address(this),
+            bidder,
+            (bids[auctionId][bidder].lot - newLot) * bids[auctionId][bidder].price
+        );
+        bids[auctionId][bidder].lot = newLot;
+
+        if (bids[auctionId][bidder].lot == 0) {
+            bids[auctionId][bidder].price = 0;
+        }
+
+        emit BidModified(
+            auctions[auctionId].assetId,
+            auctionId,
+            msg.sender,
+            bids[auctionId][bidder].price,
+            bids[auctionId][bidder].lot,
+            newLot
+        );
+    }
+
+    function removeBid(
+        uint256 auctionId,
+        address bidder,
+        address prev
+    ) internal {
+        vaultEngine.moveStablecoin(address(this), bidder, bids[auctionId][bidder].lot * bids[auctionId][bidder].price);
+        // remove the index from the nextHighestBidder and reset the bids to zero
+        emit BidRemoved(
+            auctions[auctionId].assetId,
+            auctionId,
+            msg.sender,
+            bids[auctionId][bidder].price,
+            bids[auctionId][bidder].lot
+        );
+        bids[auctionId][bidder].lot = 0;
+        bids[auctionId][bidder].price = 0;
+
+        // set prev -> index.next
+        nextHighestBidder[auctionId][prev] = nextHighestBidder[auctionId][bidder];
+        // set index.next = zero
+        nextHighestBidder[auctionId][bidder] = address(0);
     }
 
     /**

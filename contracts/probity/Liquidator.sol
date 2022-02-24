@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 
 import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
-import "hardhat/console.sol";
 
 interface VaultEngineLike {
     function vaults(bytes32 assetId, address user)
@@ -14,7 +13,8 @@ interface VaultEngineLike {
             uint256 underlying,
             uint256 collateral,
             uint256 debt,
-            uint256 equity
+            uint256 equity,
+            uint256 initialEquity
         );
 
     function assets(bytes32 assetId)
@@ -41,7 +41,9 @@ interface VaultEngineLike {
     function liquidateEquityPosition(
         bytes32 assetId,
         address user,
-        int256 underlyingAmount,
+        address auctioneer,
+        int256 assetToAuction,
+        int256 assetToReturn,
         int256 equityAmount
     ) external;
 }
@@ -52,7 +54,8 @@ interface AuctioneerLike {
         uint256 lotSize,
         uint256 debtSize,
         address owner,
-        address beneficiary
+        address beneficiary,
+        bool sellAllLot
     ) external;
 }
 
@@ -60,6 +63,10 @@ interface ReservePoolLike {
     function addAuctionDebt(uint256 newDebt) external;
 
     function reduceAuctionDebt(uint256 debtToReduce) external;
+}
+
+interface PriceFeedLike {
+    function getPrice(bytes32 assetId) external returns (uint256 price);
 }
 
 // When a vault is liquidated, the reserve pool will take the on the debt and
@@ -87,6 +94,8 @@ contract Liquidator is Stateful, Eventful {
 
     VaultEngineLike public immutable vaultEngine;
     ReservePoolLike public immutable reserve;
+    PriceFeedLike public immutable priceFeed;
+
     address public immutable treasuryAddress;
 
     mapping(bytes32 => Asset) public assets;
@@ -98,10 +107,12 @@ contract Liquidator is Stateful, Eventful {
         address registryAddress,
         VaultEngineLike vaultEngineAddress,
         ReservePoolLike reservePoolAddress,
+        PriceFeedLike priceFeedAddress,
         address _treasuryAddress
     ) Stateful(registryAddress) {
         vaultEngine = vaultEngineAddress;
         reserve = reservePoolAddress;
+        priceFeed = priceFeedAddress;
         treasuryAddress = _treasuryAddress;
     }
 
@@ -115,7 +126,7 @@ contract Liquidator is Stateful, Eventful {
         );
         assets[assetId].auctioneer = auctioneer;
         assets[assetId].debtPenaltyFee = 1.17E18;
-        assets[assetId].equityPenaltyFee = 1.05E18;
+        assets[assetId].equityPenaltyFee = 5E16;
     }
 
     /**
@@ -153,7 +164,6 @@ contract Liquidator is Stateful, Eventful {
     }
 
     /**
-     * TODO: #239 How is reduceAuctionDebt used?
      * @param amount The amount to reduce the ReservePool debt by
      */
     function reduceAuctionDebt(uint256 amount) external {
@@ -167,15 +177,17 @@ contract Liquidator is Stateful, Eventful {
      */
     function liquidateVault(bytes32 assetId, address user) external {
         (uint256 debtAccumulator, , uint256 adjustedPrice) = vaultEngine.assets(assetId);
-        (, uint256 underlying, uint256 collateral, uint256 debt, uint256 equity) = vaultEngine.vaults(assetId, user);
+        (, uint256 underlying, uint256 collateral, uint256 debt, uint256 equity, uint256 initialEquity) = vaultEngine
+            .vaults(assetId, user);
 
         require((underlying + collateral) != 0 && (debt + equity != 0), "Lidquidator: Nothing to liquidate");
 
-        // TODO: Should equity be initialEquity below?
         require(
-            collateral * adjustedPrice < debt * debtAccumulator || underlying * adjustedPrice < equity * RAY,
+            collateral * adjustedPrice < debt * debtAccumulator || underlying * adjustedPrice < initialEquity,
             "Liquidator: Vault collateral/underlying is above the liquidation ratio"
         );
+
+        Asset memory asset = assets[assetId];
 
         if (collateral * adjustedPrice < debt * debtAccumulator) {
             // Transfer the debt to reserve pool
@@ -183,14 +195,21 @@ contract Liquidator is Stateful, Eventful {
             vaultEngine.liquidateDebtPosition(
                 assetId,
                 user,
-                address(assets[assetId].auctioneer),
+                address(asset.auctioneer),
                 address(reserve),
                 -int256(collateral),
                 -int256(debt)
             );
 
-            uint256 fundraiseTarget = (debt * debtAccumulator * assets[assetId].debtPenaltyFee) / WAD;
-            assets[assetId].auctioneer.startAuction(assetId, collateral, fundraiseTarget, user, address(reserve));
+            uint256 fundraiseTarget = (debt * debtAccumulator * asset.debtPenaltyFee) / WAD;
+            assets[assetId].auctioneer.startAuction(
+                assetId,
+                collateral,
+                fundraiseTarget,
+                user,
+                address(reserve),
+                false
+            );
         }
 
         if (underlying * adjustedPrice < equity * RAY) {
@@ -199,8 +218,28 @@ contract Liquidator is Stateful, Eventful {
                 "VaultEngine/liquidateEquityPosition: Not enough treasury funds"
             );
 
-            vaultEngine.liquidateEquityPosition(assetId, user, -int256(underlying), -int256(equity));
-            vaultEngine.removeStablecoin(treasuryAddress, equity * RAY);
+            uint256 penaltyAmount = (initialEquity * asset.equityPenaltyFee) / WAD;
+            uint256 currPrice = priceFeed.getPrice(assetId);
+            uint256 assetToAuction = penaltyAmount / currPrice;
+            vaultEngine.liquidateEquityPosition(
+                assetId,
+                user,
+                address(asset.auctioneer),
+                -int256(assetToAuction),
+                -int256(underlying - assetToAuction),
+                -int256(equity)
+            );
+
+            assets[assetId].auctioneer.startAuction(
+                assetId,
+                assetToAuction,
+                penaltyAmount,
+                address(reserve),
+                address(reserve),
+                true
+            );
+
+            vaultEngine.removeStablecoin(treasuryAddress, initialEquity);
         }
     }
 }

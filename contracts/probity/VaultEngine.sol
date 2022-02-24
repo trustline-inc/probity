@@ -327,26 +327,29 @@ contract VaultEngine is Stateful, Eventful {
      * @dev Returns underlying asset to user vault with penalty
      * @param assetId The ID of the vault asset type
      * @param user The address of the vault to liquidate
-     * @param assetAmount The amount of asset to liquidate
+     * @param auctioneer The address of the auctioneer to auction the asset
+     * @param assetToAuction The amount of asset sent to auctioneer to be auctioned
+     * @param assetToReturn The amount of asset to sent back to owner
      * @param equityAmount The amount of equity to clear
      */
     function liquidateEquityPosition(
         bytes32 assetId,
         address user,
-        int256 assetAmount,
+        address auctioneer,
+        int256 assetToAuction,
+        int256 assetToReturn,
         int256 equityAmount
     ) external onlyByProbity {
         Vault storage vault = vaults[assetId][user];
         Asset storage asset = assets[assetId];
 
-        // TODO: Assess penalty
-
-        vault.underlying = add(vault.underlying, assetAmount);
-        vault.standby = add(vault.standby, -assetAmount);
+        vault.underlying = add(vault.underlying, assetToReturn);
+        vault.standby = sub(vault.standby, assetToReturn);
         vault.equity = add(vault.equity, equityAmount);
         vault.initialEquity = add(vault.initialEquity, mul(RAY, equityAmount));
         asset.normEquity = add(asset.normEquity, equityAmount);
 
+        vaults[assetId][auctioneer].standby = sub(vaults[assetId][auctioneer].standby, assetToAuction);
         totalEquity = add(totalEquity, mul(RAY, equityAmount));
 
         emit Log("vault", "liquidateEquityPosition", msg.sender);

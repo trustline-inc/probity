@@ -1115,6 +1115,7 @@ const deployLiquidator = async (param?: {
   registry?: string;
   vaultEngine?: string;
   reservePool?: string;
+  priceFeed?: string;
   treasury?: string;
 }) => {
   if (contracts.liquidator !== null && process.env.NODE_ENV !== "test") {
@@ -1134,6 +1135,8 @@ const deployLiquidator = async (param?: {
     param && param.reservePool
       ? param.reservePool
       : contracts.reservePool.address;
+  const priceFeed =
+    param && param.priceFeed ? param.priceFeed : contracts.priceFeed.address;
   const treasury =
     param && param.treasury ? param.treasury : contracts.treasury.address;
 
@@ -1146,6 +1149,7 @@ const deployLiquidator = async (param?: {
     registry,
     vaultEngine,
     reservePool,
+    priceFeed,
     treasury
   );
   await contracts.liquidator.deployed();

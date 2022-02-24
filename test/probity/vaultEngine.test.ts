@@ -2,6 +2,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import "@nomiclabs/hardhat-ethers";
 
 import {
+  Auctioneer,
   MockFtso,
   NativeAssetManager,
   PriceFeed,
@@ -36,6 +37,7 @@ let ftso: MockFtso;
 let teller: Teller;
 let priceFeed: PriceFeed;
 let treasury: Treasury;
+let auctioneer: Auctioneer;
 
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
@@ -52,6 +54,7 @@ describe("Vault Engine Unit Tests", function () {
     priceFeed = contracts.priceFeed;
     ftso = contracts.ftso;
     treasury = contracts.treasury;
+    auctioneer = contracts.auctioneer;
 
     // Set signers
     owner = signers.owner;
@@ -829,6 +832,8 @@ describe("Vault Engine Unit Tests", function () {
         .liquidateEquityPosition(
           ASSET_ID["FLR"],
           owner.address,
+          auctioneer.address,
+          0,
           0,
           BigNumber.from("0").sub(AMOUNT_TO_LIQUIDATE)
         );
@@ -848,6 +853,8 @@ describe("Vault Engine Unit Tests", function () {
         .liquidateEquityPosition(
           ASSET_ID["FLR"],
           owner.address,
+          auctioneer.address,
+          0,
           0,
           BigNumber.from("0").sub(AMOUNT_TO_LIQUIDATE)
         );
