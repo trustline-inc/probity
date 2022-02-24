@@ -1096,8 +1096,6 @@ describe("Shutdown Flow Test", function () {
     // calcuate redemption ratio
     await shutdown.calculateRedemptionRatio(ASSET_ID["FLR"]);
     // redemption ratio = theoretical max - gap / total["AUR"] in circulation
-    2119608995286300000000;
-    //
     // ((26500 / $2.23) - 2119.6089952863 / $3685500
     // 11883.4080717 - 2119.6089952863 = 9763.79907641
     // 9763.79907641 / 3685500 = 0.00264924679
