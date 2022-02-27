@@ -61,10 +61,10 @@ const init = async () => {
   );
   const teller = new ethers.Contract(process.env.TELLER, TellerABI.abi, owner);
   const vaultEngine = new ethers.Contract(
-    nativeToken === "SGB"
+    process.env.VAULT_ENGINE_S_B
       ? process.env.VAULT_ENGINE_S_B
       : process.env.VAULT_ENGINE,
-    nativeToken === "SGB" ? VaultEngineSBABI.abi : VaultEngineABI.abi,
+    process.env.VAULT_ENGINE_S_B ? VaultEngineSBABI.abi : VaultEngineABI.abi,
     owner
   );
 
