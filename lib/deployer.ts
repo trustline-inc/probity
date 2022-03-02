@@ -269,7 +269,7 @@ const parseExistingContracts = async () => {
     }
   }
 
-  // for each contracts if file read has an address for it, set it else move on
+  return contracts;
 };
 
 const deployRegistry = async (param?: { govAddress?: string }) => {
