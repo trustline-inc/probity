@@ -51,14 +51,14 @@ const init = async () => {
         `Please provide ${contractName.toUpperCase()} address in env variables`
       );
     } else {
-      console.log(`Setting unPaused state for ${contractName}`);
+      console.log(`Setting unpaused state for ${contractName}`);
       await contracts[contractName].setState(bytes32("paused"), false);
     }
     // add delay mechnism to avoid issues
     await checkDelay();
   }
 
-  console.log(`Verifying that unPaused state is set properly`);
+  console.log(`Verifying that unpaused state is set properly`);
   for (let contractName of contractsToCheck) {
     const isPaused = await contracts[contractName].states(bytes32("paused"));
     if (isPaused) {
