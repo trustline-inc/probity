@@ -3,6 +3,11 @@ import "@nomiclabs/hardhat-ethers";
 import "@nomiclabs/hardhat-web3";
 import { artifacts, ethers, web3 } from "hardhat";
 import axios from "axios";
+import * as dotenv from "dotenv";
+import getNativeToken from "../lib/getNativeToken";
+dotenv.config();
+
+const nativeToken = getNativeToken();
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -45,7 +50,7 @@ function sleep(ms: number) {
 
       tx = await priceFeed
         .connect(owner)
-        .updateAdjustedPrice(web3.utils.keccak256("CFLR"), {
+        .updateAdjustedPrice(web3.utils.keccak256(nativeToken), {
           gasLimit: 300000,
         });
       await tx.wait();

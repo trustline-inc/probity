@@ -2,19 +2,12 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import "@nomiclabs/hardhat-ethers";
 import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-web3";
-import { artifacts, ethers, web3 } from "hardhat";
-import * as dotenv from "dotenv";
 import * as hre from "hardhat";
-dotenv.config();
+import { artifacts, ethers, web3 } from "hardhat";
+import getNativeToken from "../lib/getNativeToken";
 
+const nativeToken = getNativeToken();
 const networkName = hre.network.name;
-
-if (["local", "internal"].includes(networkName) && !process.env.NATIVE_TOKEN)
-  throw Error("Must sent the NATIVE_TOKEN environment variable.");
-if (!["CFLR", "FLR", "SGB"].includes(process.env.NATIVE_TOKEN.toUpperCase()))
-  throw Error("Invalid native token type.");
-
-const nativeToken = process.env.NATIVE_TOKEN.toUpperCase();
 
 const ASSETS = {
   CFLR: web3.utils.keccak256("CFLR"),
