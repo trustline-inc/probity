@@ -29,6 +29,9 @@ function sleep(ms: number) {
     console.log("Updating price...");
 
     try {
+      /**
+       * Below is handled by FTSO in production
+       */
       const [price] = await ftso.getCurrentPrice();
       console.log("Current price:", String(ethers.utils.formatUnits(price, 5)));
 
@@ -48,6 +51,9 @@ function sleep(ms: number) {
       });
       await tx.wait();
 
+      /**
+       * Update the Probity system's price
+       */
       tx = await priceFeed
         .connect(owner)
         .updateAdjustedPrice(web3.utils.keccak256(nativeToken), {
