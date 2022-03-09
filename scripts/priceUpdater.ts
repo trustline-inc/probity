@@ -25,7 +25,7 @@ function sleep(ms: number) {
 
     try {
       const [price] = await ftso.getCurrentPrice();
-      console.log("Current price:", price.toString());
+      console.log("Current price:", String(ethers.utils.formatUnits(price, 5)));
 
       const response = await axios({
         url: `https://min-api.cryptocompare.com/data/price?fsym=SGB&tsyms=USD`,
