@@ -32,7 +32,7 @@ You can view the contract code in the [`contracts`](./contracts) folder. We will
 
 This project uses [Node.js](https://nodejs.org/en/) and assumes you have it installed.
 
-Add `@trustline/probity` to your project with `npm` or `yarn`:
+Add `@trustline-inc/probity` to your project with `npm` or `yarn`:
 
 ```
 npm install @trustline-inc/probity --save
