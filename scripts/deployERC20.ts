@@ -1,7 +1,7 @@
 import "@nomiclabs/hardhat-ethers";
 import { probity } from "../lib/deployer";
 import * as fs from "fs";
-import { artifacts, ethers } from "hardhat";
+import { ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 async function main() {
