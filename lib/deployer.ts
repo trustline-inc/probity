@@ -18,8 +18,8 @@ import {
   Registry,
   PbtToken,
   VaultEngine,
-  VaultEngineSB,
-  VaultEngineCoston,
+  VaultEngineWithLimit,
+  VaultEngineNoWhitelist,
   NativeAssetManager,
   ERC20AssetManager,
   Teller,
@@ -53,7 +53,7 @@ import {
   LowAPR__factory,
   HighAPR__factory,
   VaultEngine__factory,
-  VaultEngineCoston__factory,
+  VaultEngineNoWhitelist__factory,
   VPAssetManager__factory,
   ERC20AssetManager__factory,
   NativeAssetManager__factory,
@@ -77,7 +77,7 @@ import {
   MockPriceCalc__factory,
   MockReservePool__factory,
   MockBondIssuer__factory,
-  VaultEngineSB__factory,
+  VaultEngineWithLimit__factory,
 } from "../typechain";
 import { ADDRESS_ZERO } from "../test/utils/constants";
 
@@ -85,10 +85,10 @@ import { ADDRESS_ZERO } from "../test/utils/constants";
  * Set native token for the deployment's target network
  */
 const NETWORK_NATIVE_TOKENS = {
-  local: process.env.NATIVE_TOKEN_LOCAL || "FLR",
-  hardhat: "FLR", // tests always use FLR and AUR
-  internal: process.env.NATIVE_TOKEN_INTERNAL || "FLR",
-  coston: process.env.NATIVE_TOKEN_COSTON || "CFLR",
+  local: process.env.NATIVE_TOKEN || "FLR",
+  hardhat: "FLR", // tests always use FLR
+  internal: process.env.NATIVE_TOKEN || "FLR",
+  coston: "CFLR",
   songbird: "SGB",
   flare: "FLR",
 };
@@ -106,8 +106,8 @@ interface ContractDict {
   registry: Registry;
   pbtToken: PbtToken;
   vaultEngine: VaultEngine;
-  vaultEngineSB: VaultEngineSB;
-  vaultEngineCoston: VaultEngineCoston;
+  vaultEngineWithLimit: VaultEngineWithLimit;
+  vaultEngineNoWhitelist: VaultEngineNoWhitelist;
   nativeAssetManager: NativeAssetManager;
   erc20AssetManager: ERC20AssetManager;
   ftsoManager: MockFtsoManager;
@@ -142,8 +142,8 @@ const artifactNameMap = {
   registry: "Registry",
   pbtToken: "PbtToken",
   vaultEngine: "VaultEngine",
-  vaultEngineSB: "VaultEngineSB",
-  vaultEngineCoston: "VaultEngineCoston",
+  vaultEngineWithLimit: "VaultEngineWithLimit",
+  vaultEngineNoWhitelist: "VaultEngineNoWhitelist",
   nativeAssetManager: "NativeAssetManager",
   erc20AssetManager: "ERC20AssetManager",
   ftsoManager: "MockFtsoManager",
@@ -178,8 +178,8 @@ const contracts: ContractDict = {
   registry: null,
   pbtToken: null,
   vaultEngine: null,
-  vaultEngineSB: null,
-  vaultEngineCoston: null,
+  vaultEngineWithLimit: null,
+  vaultEngineNoWhitelist: null,
   nativeAssetManager: null,
   erc20AssetManager: null,
   ftsoManager: null,
@@ -442,8 +442,8 @@ const deployVaultEngine = async (param?: { registry?: string }) => {
   return contracts;
 };
 
-const deployVaultEngineCoston = async (param?: { registry?: string }) => {
-  if (contracts.vaultEngineCoston !== null && process.env.NODE_ENV !== "test") {
+const deployVaultEngineNoWhitelist = async (param?: { registry?: string }) => {
+  if (contracts.vaultEngine !== null && process.env.NODE_ENV !== "test") {
     console.info("vaultEngine contract has already been deployed, skipping");
     return contracts;
   }
@@ -452,13 +452,13 @@ const deployVaultEngineCoston = async (param?: { registry?: string }) => {
     param && param.registry ? param.registry : contracts.registry.address;
   const signers = await getSigners();
   const vaultEngineFactory = (await ethers.getContractFactory(
-    "VaultEngineCoston",
+    "VaultEngineNoWhitelist",
     signers.owner
-  )) as VaultEngineCoston__factory;
-  contracts.vaultEngineCoston = await vaultEngineFactory.deploy(registry);
-  await contracts.vaultEngineCoston.deployed();
+  )) as VaultEngineNoWhitelist__factory;
+  contracts.vaultEngine = await vaultEngineFactory.deploy(registry);
+  await contracts.vaultEngine.deployed();
   if (process.env.NODE_ENV !== "test") {
-    console.info("vaultEngineCoston deployed ✓");
+    console.info("vaultEngine deployed ✓");
     console.info({ registry });
   }
   await contracts.registry.setupAddress(
@@ -469,9 +469,9 @@ const deployVaultEngineCoston = async (param?: { registry?: string }) => {
   return contracts;
 };
 
-const deployVaultEngineSB = async (param?: { registry?: string }) => {
-  if (contracts.vaultEngineSB !== null && process.env.NODE_ENV !== "test") {
-    console.info("vaultEngineSB contract has already been deployed, skipping");
+const deployVaultEngineWithLimit = async (param?: { registry?: string }) => {
+  if (contracts.vaultEngine !== null && process.env.NODE_ENV !== "test") {
+    console.info("vaultEngine contract has already been deployed, skipping");
     return contracts;
   }
 
@@ -479,18 +479,18 @@ const deployVaultEngineSB = async (param?: { registry?: string }) => {
     param && param.registry ? param.registry : contracts.registry.address;
   const signers = await getSigners();
   const vaultEngineFactory = (await ethers.getContractFactory(
-    "VaultEngineSB",
+    "VaultEngineWithLimit",
     signers.owner
-  )) as VaultEngineSB__factory;
-  contracts.vaultEngineSB = await vaultEngineFactory.deploy(registry);
-  await contracts.vaultEngineSB.deployed();
+  )) as VaultEngineWithLimit__factory;
+  contracts.vaultEngine = await vaultEngineFactory.deploy(registry);
+  await contracts.vaultEngine.deployed();
   if (process.env.NODE_ENV !== "test") {
-    console.info("vaultEngineSB deployed ✓");
+    console.info("vaultEngine deployed ✓");
     console.info({ registry });
   }
   await contracts.registry.setupAddress(
     bytes32("vaultEngine"),
-    contracts.vaultEngineSB.address
+    contracts.vaultEngine.address
   );
   await checkDeploymentDelay();
   return contracts;
@@ -530,8 +530,6 @@ const deployVPAssetManager = async (param?: {
   const vaultEngine =
     param && param.vaultEngine
       ? param.vaultEngine
-      : process.env.STABLECOIN?.toUpperCase() === "PHI"
-      ? contracts.vaultEngineSB.address
       : contracts.vaultEngine.address;
 
   const signers = await getSigners();
@@ -592,8 +590,6 @@ const deployERC20AssetManager = async (param?: {
   const vaultEngine =
     param && param.vaultEngine
       ? param.vaultEngine
-      : process.env.STABLECOIN?.toUpperCase() === "PHI"
-      ? contracts.vaultEngineSB.address
       : contracts.vaultEngine.address;
 
   const signers = await getSigners();
@@ -652,8 +648,6 @@ const deployNativeAssetManager = async (param?: {
   const vaultEngine =
     param && param.vaultEngine
       ? param.vaultEngine
-      : process.env.STABLECOIN?.toUpperCase() === "PHI"
-      ? contracts.vaultEngineSB.address
       : contracts.vaultEngine.address;
 
   const signers = await getSigners();
@@ -670,7 +664,7 @@ const deployNativeAssetManager = async (param?: {
   await contracts.nativeAssetManager.deployed();
   if (process.env.NODE_ENV !== "test") {
     console.info("nativeAssetManager deployed ✓");
-    console.info(`with native Token ${NETWORK_NATIVE_TOKEN}`);
+    console.info(`Native token: ${NETWORK_NATIVE_TOKEN}`);
     console.info({
       registry,
       assetId,
@@ -707,8 +701,6 @@ const deployShutdown = async (param?: {
   const vaultEngine =
     param && param.vaultEngine
       ? param.vaultEngine
-      : process.env.STABLECOIN?.toUpperCase() === "PHI"
-      ? contracts.vaultEngineSB.address
       : contracts.vaultEngine.address;
   const priceFeed =
     param && param.priceFeed ? param.priceFeed : contracts.priceFeed.address;
@@ -783,8 +775,6 @@ const deployTeller = async (param?: {
   const vaultEngine =
     param && param.vaultEngine
       ? param.vaultEngine
-      : process.env.STABLECOIN?.toUpperCase() === "PHI"
-      ? contracts.vaultEngineSB.address
       : contracts.vaultEngine.address;
   const lowApr =
     param && param.lowApr ? param.lowApr : contracts.lowApr.address;
@@ -894,8 +884,6 @@ const deployPriceFeed = async (param?: {
   const vaultEngine =
     param && param.vaultEngine
       ? param.vaultEngine
-      : process.env.STABLECOIN?.toUpperCase() === "PHI"
-      ? contracts.vaultEngineSB.address
       : contracts.vaultEngine.address;
 
   const signers = await getSigners();
@@ -937,8 +925,6 @@ const deployAuctioneer = async (param?: {
   const vaultEngine =
     param && param.vaultEngine
       ? param.vaultEngine
-      : process.env.STABLECOIN?.toUpperCase() === "PHI"
-      ? contracts.vaultEngineSB.address
       : contracts.vaultEngine.address;
   const linearDecrease =
     param && param.priceCalc
@@ -1021,8 +1007,6 @@ const deployBondIssuer = async (param?: {
   const vaultEngine =
     param && param.vaultEngine
       ? param.vaultEngine
-      : process.env.STABLECOIN?.toUpperCase() === "PHI"
-      ? contracts.vaultEngineSB.address
       : contracts.vaultEngine.address;
 
   const signers = await getSigners();
@@ -1063,8 +1047,6 @@ const deployReservePool = async (param?: {
   const vaultEngine =
     param && param.vaultEngine
       ? param.vaultEngine
-      : process.env.STABLECOIN?.toUpperCase() === "PHI"
-      ? contracts.vaultEngineSB.address
       : contracts.vaultEngine.address;
   const bondIssuer =
     param && param.bondIssuer ? param.bondIssuer : contracts.bondIssuer.address;
@@ -1123,8 +1105,6 @@ const deployLiquidator = async (param?: {
   const vaultEngine =
     param && param.vaultEngine
       ? param.vaultEngine
-      : process.env.STABLECOIN?.toUpperCase() === "PHI"
-      ? contracts.vaultEngineSB.address
       : contracts.vaultEngine.address;
   const reservePool =
     param && param.reservePool
@@ -1458,7 +1438,12 @@ const deployProbity = async () => {
   await deployAurei();
   await deployPbt();
   await deployApr();
-  await deployVaultEngine();
+
+  // Deploy VaultEngine based on network
+  if (network.name === "coston") await deployVaultEngineNoWhitelist();
+  else if (network.name === "songbird") await deployVaultEngineWithLimit();
+  else await deployVaultEngine();
+
   await deployNativeAssetManager();
   await deployBondIssuer();
   await deployReservePool();
@@ -1505,8 +1490,8 @@ const deployTest = async () => {
   await deployRegistry();
   await deployMocks();
   await deployProbity();
-  await deployVaultEngineSB();
-  await deployVaultEngineCoston();
+  await deployVaultEngineWithLimit();
+  await deployVaultEngineNoWhitelist();
   await deployAuctioneer();
   await deployERC20AssetManager();
   await deployVPAssetManager();
@@ -1520,7 +1505,7 @@ const deployProd = async () => {
   const signers = await getSigners();
   try {
     await deployRegistry();
-    await deployMocks(); // for coston only
+    if (network.name === "coston") await deployMocks();
     await deployProbity();
     await deployAuctioneer();
     await deployERC20AssetManager();

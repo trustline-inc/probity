@@ -2,17 +2,17 @@
 
 pragma solidity ^0.8.0;
 
-import "../VaultEngine.sol";
+import "./VaultEngine.sol";
 
 /**
- * @title VaultEngineSB (Songbird) contract
+ * @title VaultEngineNoWhitelist contract
  * @author Matthew Rosendin <matt@trustline.co, @mrosendin>
  * @author Shine Lee <shine@trustline.co, @shine2lay>
  * @notice The core accounting module for the Probity system
- * It inherits VaultEngine and adds a feature to limit the vault size,
+ * This contract inherits VaultEngine removes the whitelist feature
  */
 
-contract VaultEngineCoston is VaultEngine {
+contract VaultEngineNoWhitelist is VaultEngine {
     /////////////////////////////////////////
     // Data Variables
     /////////////////////////////////////////

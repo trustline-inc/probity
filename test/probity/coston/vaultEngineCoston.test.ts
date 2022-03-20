@@ -9,8 +9,8 @@ import {
   ReservePool,
   Teller,
   Treasury,
-  VaultEngineCoston,
-  VaultEngineSB,
+  VaultEngineNoWhitelist,
+  VaultEngineWithLimit,
 } from "../../../typechain";
 
 import { deployTest } from "../../../lib/deployer";
@@ -29,7 +29,7 @@ let coll: SignerWithAddress;
 let assetManager: SignerWithAddress;
 
 // Contracts
-let vaultEngine: VaultEngineCoston;
+let vaultEngine: VaultEngineNoWhitelist;
 let registry: Registry;
 let reservePool: ReservePool;
 let nativeAssetManager: NativeAssetManager;

@@ -2,24 +2,24 @@
 
 pragma solidity ^0.8.0;
 
-import "../VaultEngine.sol";
+import "./VaultEngine.sol";
 
 /**
- * @title VaultEngineSB (Songbird) contract
+ * @title VaultEngineWithLimit contract
  * @author Matthew Rosendin <matt@trustline.co, @mrosendin>
  * @author Shine Lee <shine@trustline.co, @shine2lay>
  * @notice The core accounting module for the Probity system
- * It inherits VaultEngine and adds a feature to limit the vault size,
+ * This contract inherits VaultEngine and adds a feature to limit the vault size
  */
 
-contract VaultEngineSB is VaultEngine {
+contract VaultEngineWithLimit is VaultEngine {
     /////////////////////////////////////////
     // Data Variables
     /////////////////////////////////////////
     uint256 private constant RAY = 10**27;
 
-    // For Songbird purposes only
-    uint256 public individualVaultLimit;
+    // For testing on the Songbird network
+    uint256 public vaultLimit;
 
     /////////////////////////////////////////
     // Constructor
@@ -123,19 +123,17 @@ contract VaultEngineSB is VaultEngine {
 
     /**
      * @notice Updates individual vault limit
-     * For Songbird purposes only
      */
     function updateIndividualVaultLimit(uint256 newLimit) external onlyBy("gov") {
-        individualVaultLimit = newLimit;
+        vaultLimit = newLimit;
     }
 
     /**
-     * @notice Check if user's vault is under individual vault limit
-     * For Songbird purposes only
+     * @notice Check if user's vault is under vault limit
      */
     function enforceVaultLimit(bytes32 assetId, Vault memory vault) internal view {
         require(
-            (vault.debt * assets[assetId].debtAccumulator) + vault.initialEquity <= individualVaultLimit,
+            (vault.debt * assets[assetId].debtAccumulator) + vault.initialEquity <= vaultLimit,
             "Vault is over the individual vault limit"
         );
     }

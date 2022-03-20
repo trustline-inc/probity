@@ -46,6 +46,9 @@ const config: HardhatUserConfig = {
     songbird: {
       url: "https://songbird.towolabs.com/rpc",
       chainId: 19,
+      accounts: {
+        mnemonic: "",
+      },
     },
   },
   solidity: "0.8.4",

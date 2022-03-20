@@ -139,13 +139,13 @@ npm run createInitialTx:local
 
 Deploy the smart contract in the local network using the `deploy:local` script.
 
-> Set the `FLARE_DIR` envioronment variables. Set `NATIVE_TOKEN_LOCAL` if you are deploying locally.
+> Set the `FLARE_DIR` envioronment variables. Set `NATIVE_TOKEN` if you are deploying locally.
 
 For example:
 
 ```
 FLARE_DIR=~/Desktop/flare \
-NATIVE_TOKEN_LOCAL=CFLR \
+NATIVE_TOKEN=CFLR \
 npm run deploy:local
 ```
 
@@ -157,7 +157,7 @@ There are currently three remote deployment target networks: `internal`, `coston
 
 ```
 FLARE_DIR=~/Desktop/flare \
-NATIVE_TOKEN_LOCAL=CFLR \
+NATIVE_TOKEN=CFLR \
 npm run deploy:internal
 ```
 
