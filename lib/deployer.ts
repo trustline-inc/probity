@@ -1485,13 +1485,13 @@ const deployDev = async () => {
   return { contracts, signers };
 };
 
-const deployTest = async () => {
+const deployTest = async (vaultEngineType?: string) => {
   const signers = await getSigners();
   await deployRegistry();
   await deployMocks();
   await deployProbity();
-  await deployVaultEngineWithLimit();
-  await deployVaultEngineNoWhitelist();
+  if (vaultEngineType === "limited") await deployVaultEngineWithLimit();
+  if (vaultEngineType === "unrestricted") await deployVaultEngineNoWhitelist();
   await deployAuctioneer();
   await deployERC20AssetManager();
   await deployVPAssetManager();

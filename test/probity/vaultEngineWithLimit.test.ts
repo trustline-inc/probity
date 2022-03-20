@@ -10,14 +10,13 @@ import {
   Teller,
   Treasury,
   VaultEngineWithLimit,
-} from "../../../typechain";
+} from "../../typechain";
 
-import { deployTest } from "../../../lib/deployer";
+import { deployTest } from "../../lib/deployer";
 import { ethers } from "hardhat";
 import * as chai from "chai";
-import { bytes32, RAD, WAD, RAY } from "../../utils/constants";
-import { BigNumber } from "ethers";
-import assertRevert from "../../utils/assertRevert";
+import { bytes32, RAD, WAD, RAY } from "../utils/constants";
+import assertRevert from "../utils/assertRevert";
 const expect = chai.expect;
 
 // Wallets
@@ -40,12 +39,12 @@ let flrAssetId = bytes32("FLR");
 
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
-describe("Vault Engine Songbird Unit Tests", function () {
+describe("Vault Engine With Limit Unit Tests", function () {
   beforeEach(async function () {
-    let { contracts, signers } = await deployTest();
+    let { contracts, signers } = await deployTest("limited");
     // Set contracts
     registry = contracts.registry;
-    vaultEngine = contracts.vaultEngineSB;
+    vaultEngine = contracts.vaultEngineWithLimit;
     reservePool = contracts.reservePool;
     nativeAssetManager = contracts.nativeAssetManager;
     teller = contracts.teller;
@@ -63,7 +62,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
     await registry.setupAddress(bytes32("whitelisted"), owner.address);
   });
 
-  describe("individualVaultLimit Unit Tests", function () {
+  describe("vaultLimit Unit Tests", function () {
     beforeEach(async function () {
       await owner.sendTransaction({
         to: user.address,
@@ -80,16 +79,16 @@ describe("Vault Engine Songbird Unit Tests", function () {
 
     it("updateIndividualVaultLimit works properly", async () => {
       const NEW_INDIVIDUAL_VAULT_LIMTI = RAD.mul(500);
-      expect(await vaultEngine.connect(gov).individualVaultLimit()).to.equal(0);
+      expect(await vaultEngine.connect(gov).vaultLimit()).to.equal(0);
       await vaultEngine
         .connect(gov)
         .updateIndividualVaultLimit(NEW_INDIVIDUAL_VAULT_LIMTI);
-      expect(await vaultEngine.connect(gov).individualVaultLimit()).to.equal(
+      expect(await vaultEngine.connect(gov).vaultLimit()).to.equal(
         NEW_INDIVIDUAL_VAULT_LIMTI
       );
     });
 
-    it("modifyDebt uses individualVaultLimit", async () => {
+    it("modifyDebt uses vaultLimit", async () => {
       const UNDERLYING_AMOUNT = WAD.mul(10000);
       const COLL_AMOUNT = WAD.mul(10000);
       const EQUITY_AMOUNT = WAD.mul(500);
@@ -128,7 +127,7 @@ describe("Vault Engine Songbird Unit Tests", function () {
       );
     });
 
-    it("modifyEquity uses individualVaultLimit", async () => {
+    it("modifyEquity uses vaultLimit", async () => {
       const UNDERLYING_AMOUNT = WAD.mul(10000);
       const COLL_AMOUNT = WAD.mul(10000);
       const DEBT_AMOUNT = WAD.mul(500);

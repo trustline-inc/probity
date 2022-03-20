@@ -10,16 +10,11 @@ import {
   Teller,
   Treasury,
   VaultEngineNoWhitelist,
-  VaultEngineWithLimit,
-} from "../../../typechain";
+} from "../../typechain";
 
-import { deployTest } from "../../../lib/deployer";
+import { deployTest } from "../../lib/deployer";
 import { ethers } from "hardhat";
-import * as chai from "chai";
-import { bytes32, RAD, WAD, RAY, ASSET_ID } from "../../utils/constants";
-import { BigNumber } from "ethers";
-import assertRevert from "../../utils/assertRevert";
-const expect = chai.expect;
+import { bytes32, RAD, WAD, RAY, ASSET_ID } from "../utils/constants";
 
 // Wallets
 let owner: SignerWithAddress;
@@ -42,12 +37,12 @@ let flrAssetId = bytes32("FLR");
 
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
-describe("Vault Engine Coston Unit Tests", function () {
+describe("Vault Engine No Whitelist Unit Tests", function () {
   beforeEach(async function () {
-    let { contracts, signers } = await deployTest();
+    let { contracts, signers } = await deployTest("unrestricted");
     // Set contracts
     registry = contracts.registry;
-    vaultEngine = contracts.vaultEngineCoston;
+    vaultEngine = contracts.vaultEngineNoWhitelist;
     reservePool = contracts.reservePool;
     nativeAssetManager = contracts.nativeAssetManager;
     teller = contracts.teller;
