@@ -139,13 +139,12 @@ npm run createInitialTx:local
 
 Deploy the smart contract in the local network using the `deploy:local` script.
 
-> Set the `FLARE_DIR` and `STABLECOIN` envioronment variables. Set `NATIVE_TOKEN_LOCAL` if you are deploying locally.
+> Set the `FLARE_DIR` envioronment variables. Set `NATIVE_TOKEN_LOCAL` if you are deploying locally.
 
 For example:
 
 ```
 FLARE_DIR=~/Desktop/flare \
-STABLECOIN=AUR \
 NATIVE_TOKEN_LOCAL=CFLR \
 npm run deploy:local
 ```
@@ -154,11 +153,10 @@ If you get the error `ProviderError: err: Invalid value for block.coinbase`, tha
 
 ### Remote Deployment
 
-There are currently three remote deployment target networks: `internal` and `coston`.
+There are currently three remote deployment target networks: `internal`, `coston`, and `songbird`.
 
 ```
 FLARE_DIR=~/Desktop/flare \
-STABLECOIN=AUR \
 NATIVE_TOKEN_LOCAL=CFLR \
 npm run deploy:internal
 ```
@@ -196,7 +194,9 @@ yarn run priceUpdater:local
 
 ### Internal Network
 
-The internal network is only accessible to the Probity developers. The network native token depends on the chain ID. Since we're running chain ID 16, the native token is `CFLR` and the stablecoin is `AUR`.
+The internal network is only accessible to the Probity developers. The network native token depends on the chain ID.
+
+Since we're running chain ID 16, the native token is `CFLR`.
 
 | Contract             | Address                                    |
 | -------------------- | ------------------------------------------ |
@@ -231,7 +231,7 @@ The internal network is only accessible to the Probity developers. The network n
 
 ### Coston Network
 
-The network native token is `CFLR` and the stablecoin is `AUR`.
+The network native token is `CFLR`.
 
 | Contract             | Address                                    |
 | -------------------- | ------------------------------------------ |
@@ -265,6 +265,8 @@ The network native token is `CFLR` and the stablecoin is `AUR`.
 | MOCK_BOND_ISSUER     | 0x37516F0cd21F16814330D7DbEb19D1cef105aFcE |
 
 ### Songbird Network
+
+The network native token is `SGB`.
 
 | Contract             | Address                                    |
 | -------------------- | ------------------------------------------ |
