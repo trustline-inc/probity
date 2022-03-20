@@ -117,57 +117,38 @@ We use [GitHub Packages](https://docs.github.com/en/packages/working-with-a-gith
 
 3. [Create a new release](https://github.com/trustline-inc/probity/releases/new) for the tagged version
 
-## Deployment
-
-### Local Deployment
-
-You can deploy in the local network following these steps:
-
-1. Run a local node.
+## Running Locally
 
 Run a local [Flare](https://gitlab.com/flarenetwork/flare) node.
 
 You should run an initial transaction before deploying contracts:
 
-> This command can also be run when deploying.
+> You should also run this for the `internal` network
 
 ```
-npm run createInitialTx:local
+npm run createInitialTx <network>
 ```
 
-2. Deploy to the local network.
+## Deployment
 
-Deploy the smart contract in the local network using the `deploy:local` script.
+Deploy the smart contract in the local network using the `deploy` script.
 
-> Set the `FLARE_DIR` envioronment variables. Set `NATIVE_TOKEN` if you are deploying locally.
+> Set the `FLARE_DIR` envioronment variables. Optionally set `NATIVE_TOKEN` if you are deploying locally.
 
 For example:
 
 ```
-FLARE_DIR=~/Desktop/flare \
-NATIVE_TOKEN=CFLR \
-npm run deploy:local
+FLARE_DIR=~/Desktop/flare npm run deploy:prod <network>
 ```
 
-If you get the error `ProviderError: err: Invalid value for block.coinbase`, that means you have to first run `npm run createInitialTx:local`, which creates a genesis transaction in order for the network to start properly.
-
-### Remote Deployment
-
-There are currently three remote deployment target networks: `internal`, `coston`, and `songbird`.
-
-```
-FLARE_DIR=~/Desktop/flare \
-NATIVE_TOKEN=CFLR \
-npm run deploy:internal
-```
+If you get the error `ProviderError: err: Invalid value for block.coinbase`, that means you have to first run `npm run createInitialTx local`, which creates a genesis transaction in order for the network to start properly.
 
 ## Initialization
 
 You can use a script to initialize the system with a new asset type.
 
 ```
-FLARE_DIR=~/Desktop/flare \
-yarn run initialize:songbird
+FLARE_DIR=~/Desktop/flare yarn run initialize <network>
 ```
 
 You can override the native token in the `local` or `internal` networks with `NATIVE_TOKEN=<CFLR|SGB|FLR>`.
@@ -176,10 +157,10 @@ You can override the native token in the `local` or `internal` networks with `NA
 
 ### Rate Updater
 
-Run this command to call `Teller.updateAccumulators()` every 5 seconds.
+Run this command to call update the rate accumulators every 5 seconds.
 
 ```
-yarn run rateUpdater:<network>
+yarn run rateUpdater <network>
 ```
 
 ### Price Updater
@@ -187,7 +168,7 @@ yarn run rateUpdater:<network>
 Run this command in the local environment to use the mock FTSO.
 
 ```
-yarn run priceUpdater:local
+yarn run priceUpdater <network>
 ```
 
 ## Contract Addresses
