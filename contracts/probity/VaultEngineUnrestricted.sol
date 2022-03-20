@@ -5,14 +5,14 @@ pragma solidity ^0.8.0;
 import "./VaultEngine.sol";
 
 /**
- * @title VaultEngineNoWhitelist contract
+ * @title VaultEngineUnrestricted contract
  * @author Matthew Rosendin <matt@trustline.co, @mrosendin>
  * @author Shine Lee <shine@trustline.co, @shine2lay>
  * @notice The core accounting module for the Probity system
  * This contract inherits VaultEngine removes the whitelist feature
  */
 
-contract VaultEngineNoWhitelist is VaultEngine {
+contract VaultEngineUnrestricted is VaultEngine {
     /////////////////////////////////////////
     // Data Variables
     /////////////////////////////////////////

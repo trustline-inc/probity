@@ -37,7 +37,7 @@ let flrAssetId = bytes32("FLR");
 
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
-describe("Vault Engine No Whitelist Unit Tests", function () {
+describe("Vault Engine Unrestricted Unit Tests", function () {
   beforeEach(async function () {
     let { contracts, signers } = await deployTest("unrestricted");
     // Set contracts

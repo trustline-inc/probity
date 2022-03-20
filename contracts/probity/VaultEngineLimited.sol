@@ -5,14 +5,14 @@ pragma solidity ^0.8.0;
 import "./VaultEngine.sol";
 
 /**
- * @title VaultEngineWithLimit contract
+ * @title VaultEngineLimited contract
  * @author Matthew Rosendin <matt@trustline.co, @mrosendin>
  * @author Shine Lee <shine@trustline.co, @shine2lay>
  * @notice The core accounting module for the Probity system
  * This contract inherits VaultEngine and adds a feature to limit the vault size
  */
 
-contract VaultEngineWithLimit is VaultEngine {
+contract VaultEngineLimited is VaultEngine {
     /////////////////////////////////////////
     // Data Variables
     /////////////////////////////////////////
