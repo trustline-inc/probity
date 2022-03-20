@@ -9,7 +9,7 @@ import {
   ReservePool,
   Teller,
   Treasury,
-  VaultEngineNoWhitelist,
+  VaultEngineUnrestricted,
 } from "../../typechain";
 
 import { deployTest } from "../../lib/deployer";
@@ -24,7 +24,7 @@ let coll: SignerWithAddress;
 let assetManager: SignerWithAddress;
 
 // Contracts
-let vaultEngine: VaultEngineNoWhitelist;
+let vaultEngine: VaultEngineUnrestricted;
 let registry: Registry;
 let reservePool: ReservePool;
 let nativeAssetManager: NativeAssetManager;
@@ -42,7 +42,7 @@ describe("Vault Engine No Whitelist Unit Tests", function () {
     let { contracts, signers } = await deployTest("unrestricted");
     // Set contracts
     registry = contracts.registry;
-    vaultEngine = contracts.vaultEngineNoWhitelist;
+    vaultEngine = contracts.vaultEngineUnrestricted;
     reservePool = contracts.reservePool;
     nativeAssetManager = contracts.nativeAssetManager;
     teller = contracts.teller;

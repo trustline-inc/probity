@@ -9,7 +9,7 @@ import {
   ReservePool,
   Teller,
   Treasury,
-  VaultEngineWithLimit,
+  VaultEngineLimited,
 } from "../../typechain";
 
 import { deployTest } from "../../lib/deployer";
@@ -26,7 +26,7 @@ let gov: SignerWithAddress;
 let coll: SignerWithAddress;
 
 // Contracts
-let vaultEngine: VaultEngineWithLimit;
+let vaultEngine: VaultEngineLimited;
 let registry: Registry;
 let reservePool: ReservePool;
 let nativeAssetManager: NativeAssetManager;
@@ -39,12 +39,12 @@ let flrAssetId = bytes32("FLR");
 
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
-describe("Vault Engine With Limit Unit Tests", function () {
+describe("Vault Engine Limited Unit Tests", function () {
   beforeEach(async function () {
     let { contracts, signers } = await deployTest("limited");
     // Set contracts
     registry = contracts.registry;
-    vaultEngine = contracts.vaultEngineWithLimit;
+    vaultEngine = contracts.vaultEngineLimited;
     reservePool = contracts.reservePool;
     nativeAssetManager = contracts.nativeAssetManager;
     teller = contracts.teller;

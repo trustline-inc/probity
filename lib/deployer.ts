@@ -18,8 +18,8 @@ import {
   Registry,
   PbtToken,
   VaultEngine,
-  VaultEngineWithLimit,
-  VaultEngineNoWhitelist,
+  VaultEngineLimited,
+  VaultEngineUnrestricted,
   NativeAssetManager,
   ERC20AssetManager,
   Teller,
@@ -53,7 +53,7 @@ import {
   LowAPR__factory,
   HighAPR__factory,
   VaultEngine__factory,
-  VaultEngineNoWhitelist__factory,
+  VaultEngineUnrestricted__factory,
   VPAssetManager__factory,
   ERC20AssetManager__factory,
   NativeAssetManager__factory,
@@ -77,7 +77,7 @@ import {
   MockPriceCalc__factory,
   MockReservePool__factory,
   MockBondIssuer__factory,
-  VaultEngineWithLimit__factory,
+  VaultEngineLimited__factory,
 } from "../typechain";
 import { ADDRESS_ZERO } from "../test/utils/constants";
 
@@ -106,8 +106,8 @@ interface ContractDict {
   registry: Registry;
   pbtToken: PbtToken;
   vaultEngine: VaultEngine;
-  vaultEngineWithLimit: VaultEngineWithLimit;
-  vaultEngineNoWhitelist: VaultEngineNoWhitelist;
+  vaultEngineLimited: VaultEngineLimited;
+  vaultEngineUnrestricted: VaultEngineUnrestricted;
   nativeAssetManager: NativeAssetManager;
   erc20AssetManager: ERC20AssetManager;
   ftsoManager: MockFtsoManager;
@@ -142,8 +142,8 @@ const artifactNameMap = {
   registry: "Registry",
   pbtToken: "PbtToken",
   vaultEngine: "VaultEngine",
-  vaultEngineWithLimit: "VaultEngineWithLimit",
-  vaultEngineNoWhitelist: "VaultEngineNoWhitelist",
+  vaultEngineLimited: "VaultEngineLimited",
+  vaultEngineUnrestricted: "VaultEngineUnrestricted",
   nativeAssetManager: "NativeAssetManager",
   erc20AssetManager: "ERC20AssetManager",
   ftsoManager: "MockFtsoManager",
@@ -178,8 +178,8 @@ const contracts: ContractDict = {
   registry: null,
   pbtToken: null,
   vaultEngine: null,
-  vaultEngineWithLimit: null,
-  vaultEngineNoWhitelist: null,
+  vaultEngineLimited: null,
+  vaultEngineUnrestricted: null,
   nativeAssetManager: null,
   erc20AssetManager: null,
   ftsoManager: null,
@@ -442,9 +442,14 @@ const deployVaultEngine = async (param?: { registry?: string }) => {
   return contracts;
 };
 
-const deployVaultEngineNoWhitelist = async (param?: { registry?: string }) => {
-  if (contracts.vaultEngine !== null && process.env.NODE_ENV !== "test") {
-    console.info("vaultEngine contract has already been deployed, skipping");
+const deployVaultEngineUnrestricted = async (param?: { registry?: string }) => {
+  if (
+    contracts.vaultEngineUnrestricted !== null &&
+    process.env.NODE_ENV !== "test"
+  ) {
+    console.info(
+      "vaultEngineUnrestricted contract has already been deployed, skipping"
+    );
     return contracts;
   }
 
@@ -452,26 +457,31 @@ const deployVaultEngineNoWhitelist = async (param?: { registry?: string }) => {
     param && param.registry ? param.registry : contracts.registry.address;
   const signers = await getSigners();
   const vaultEngineFactory = (await ethers.getContractFactory(
-    "VaultEngineNoWhitelist",
+    "VaultEngineUnrestricted",
     signers.owner
-  )) as VaultEngineNoWhitelist__factory;
-  contracts.vaultEngine = await vaultEngineFactory.deploy(registry);
-  await contracts.vaultEngine.deployed();
+  )) as VaultEngineUnrestricted__factory;
+  contracts.vaultEngineUnrestricted = await vaultEngineFactory.deploy(registry);
+  await contracts.vaultEngineUnrestricted.deployed();
   if (process.env.NODE_ENV !== "test") {
-    console.info("vaultEngine deployed ✓");
+    console.info("vaultEngineUnrestricted deployed ✓");
     console.info({ registry });
   }
   await contracts.registry.setupAddress(
-    bytes32("vaultEngine"),
-    contracts.vaultEngine.address
+    bytes32("vaultEngineUnrestricted"),
+    contracts.vaultEngineUnrestricted.address
   );
   await checkDeploymentDelay();
   return contracts;
 };
 
-const deployVaultEngineWithLimit = async (param?: { registry?: string }) => {
-  if (contracts.vaultEngine !== null && process.env.NODE_ENV !== "test") {
-    console.info("vaultEngine contract has already been deployed, skipping");
+const deployVaultEngineLimited = async (param?: { registry?: string }) => {
+  if (
+    contracts.vaultEngineLimited !== null &&
+    process.env.NODE_ENV !== "test"
+  ) {
+    console.info(
+      "vaultEngineLimited contract has already been deployed, skipping"
+    );
     return contracts;
   }
 
@@ -479,18 +489,18 @@ const deployVaultEngineWithLimit = async (param?: { registry?: string }) => {
     param && param.registry ? param.registry : contracts.registry.address;
   const signers = await getSigners();
   const vaultEngineFactory = (await ethers.getContractFactory(
-    "VaultEngineWithLimit",
+    "VaultEngineLimited",
     signers.owner
-  )) as VaultEngineWithLimit__factory;
-  contracts.vaultEngine = await vaultEngineFactory.deploy(registry);
-  await contracts.vaultEngine.deployed();
+  )) as VaultEngineLimited__factory;
+  contracts.vaultEngineLimited = await vaultEngineFactory.deploy(registry);
+  await contracts.vaultEngineLimited.deployed();
   if (process.env.NODE_ENV !== "test") {
-    console.info("vaultEngine deployed ✓");
+    console.info("vaultEngineLimited deployed ✓");
     console.info({ registry });
   }
   await contracts.registry.setupAddress(
-    bytes32("vaultEngine"),
-    contracts.vaultEngine.address
+    bytes32("vaultEngineLimited"),
+    contracts.vaultEngineLimited.address
   );
   await checkDeploymentDelay();
   return contracts;
@@ -1440,8 +1450,8 @@ const deployProbity = async () => {
   await deployApr();
 
   // Deploy VaultEngine based on network
-  if (network.name === "coston") await deployVaultEngineNoWhitelist();
-  else if (network.name === "songbird") await deployVaultEngineWithLimit();
+  if (network.name === "coston") await deployVaultEngineUnrestricted();
+  else if (network.name === "songbird") await deployVaultEngineLimited();
   else await deployVaultEngine();
 
   await deployNativeAssetManager();
@@ -1490,8 +1500,8 @@ const deployTest = async (vaultEngineType?: string) => {
   await deployRegistry();
   await deployMocks();
   await deployProbity();
-  if (vaultEngineType === "limited") await deployVaultEngineWithLimit();
-  if (vaultEngineType === "unrestricted") await deployVaultEngineNoWhitelist();
+  if (vaultEngineType === "limited") await deployVaultEngineLimited();
+  if (vaultEngineType === "unrestricted") await deployVaultEngineUnrestricted();
   await deployAuctioneer();
   await deployERC20AssetManager();
   await deployVPAssetManager();
