@@ -1,7 +1,10 @@
 import "@nomiclabs/hardhat-ethers";
+import { utils } from "ethers";
 import { deployDev, Deployment, deployProd } from "../lib/deployer";
 import * as fs from "fs";
 import * as hre from "hardhat";
+
+utils.Logger.setLogLevel(utils.Logger.levels.ERROR);
 
 async function main() {
   let deployment: Deployment;
