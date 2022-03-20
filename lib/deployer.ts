@@ -831,7 +831,6 @@ const deployTeller = async (param?: {
 
 const deployTreasury = async (param?: {
   registry?: string;
-  stablecoin?: string;
   pbtToken?: string;
   vaultEngine?: string;
 }) => {
@@ -845,11 +844,7 @@ const deployTreasury = async (param?: {
   const vaultEngine =
     param && param.vaultEngine
       ? param.vaultEngine
-      : process.env.STABLECOIN?.toUpperCase() === "PHI"
-      ? contracts.vaultEngineSB.address
       : contracts.vaultEngine.address;
-  const stablecoin =
-    param && param.stablecoin ? param.stablecoin : contracts.aurei.address;
   const pbtToken =
     param && param.pbtToken ? param.pbtToken : contracts.pbtToken.address;
   const signers = await getSigners();
@@ -860,7 +855,7 @@ const deployTreasury = async (param?: {
   )) as Treasury__factory;
   contracts.treasury = await treasuryFactory.deploy(
     registry,
-    stablecoin,
+    contracts.aurei.address,
     pbtToken,
     vaultEngine
   );
@@ -870,7 +865,7 @@ const deployTreasury = async (param?: {
     console.info("treasury deployed ✓");
     console.info({
       registry,
-      stablecoin,
+      aurei: contracts.aurei.address,
       pbtToken,
       vaultEngine,
     });
@@ -1458,31 +1453,19 @@ const deployMocks = async () => {
   return { contracts, signers };
 };
 
-const deployProbity = async (stablecoin?: string) => {
+const deployProbity = async () => {
   const signers = await getSigners();
-  if (stablecoin && !["AUR", "PHI"].includes(stablecoin))
-    throw Error('Token must be either "AUR" or "PHI".');
-  stablecoin = stablecoin === undefined ? "AUR" : stablecoin;
-  let contracts =
-    stablecoin === "AUR" ? await deployAurei() : await deployPhi();
+  await deployAurei();
   await deployPbt();
   await deployApr();
-  contracts =
-    stablecoin === "AUR"
-      ? await deployVaultEngine()
-      : await deployVaultEngineSB();
+  await deployVaultEngine();
   await deployNativeAssetManager();
   await deployBondIssuer();
   await deployReservePool();
   await deployTeller();
   await deployPriceCalc();
   await deployPriceFeed();
-  await deployTreasury({
-    stablecoin:
-      stablecoin.toUpperCase() === "PHI"
-        ? contracts.phi.address
-        : contracts.aurei.address,
-  });
+  await deployTreasury();
   await deployLiquidator();
   await deployShutdown();
 
@@ -1499,13 +1482,13 @@ function checkDeploymentDelay() {
   return new Promise((resolve) => setTimeout(resolve, delayTime));
 }
 
-const deployDev = async (stablecoin?: string) => {
+const deployDev = async () => {
   await parseExistingContracts();
   const signers = await getSigners();
   try {
     await deployRegistry();
     await deployMocks();
-    await deployProbity(stablecoin);
+    await deployProbity();
     await deployAuctioneer();
     await deployERC20AssetManager();
     await deployVPAssetManager();
@@ -1517,11 +1500,11 @@ const deployDev = async (stablecoin?: string) => {
   return { contracts, signers };
 };
 
-const deployTest = async (stablecoin?: string) => {
+const deployTest = async () => {
   const signers = await getSigners();
   await deployRegistry();
   await deployMocks();
-  await deployProbity(stablecoin);
+  await deployProbity();
   await deployVaultEngineSB();
   await deployVaultEngineCoston();
   await deployAuctioneer();
@@ -1532,13 +1515,13 @@ const deployTest = async (stablecoin?: string) => {
   return { contracts, signers };
 };
 
-const deployProd = async (stablecoin?: string) => {
+const deployProd = async () => {
   await parseExistingContracts();
   const signers = await getSigners();
   try {
     await deployRegistry();
     await deployMocks(); // for coston only
-    await deployProbity(stablecoin);
+    await deployProbity();
     await deployAuctioneer();
     await deployERC20AssetManager();
     await deployVPAssetManager();
