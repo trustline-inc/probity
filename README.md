@@ -113,7 +113,7 @@ We use [GitHub Packages](https://docs.github.com/en/packages/working-with-a-gith
 
 1. Update `version` in `package.json` and commit the change
 
-2. Create a tag that matches `version` for the commit and run `git push --tags`
+2. Create a tag that matches `version` for the commit and run `git push --follow-tags`
 
 3. [Create a new release](https://github.com/trustline-inc/probity/releases/new) for the tagged version
 
