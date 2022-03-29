@@ -39,9 +39,9 @@ contract VaultEngineLimited is VaultEngine {
             "Vault/modifyEquity: Treasury address is not valid"
         );
 
-        if (!userExists[msg.sender]) {
-            userList.push(msg.sender);
-            userExists[msg.sender] = true;
+        if (!vaultExists[msg.sender]) {
+            vaultList.push(msg.sender);
+            vaultExists[msg.sender] = true;
         }
 
         Vault storage vault = vaults[assetId][msg.sender];
@@ -83,9 +83,9 @@ contract VaultEngineLimited is VaultEngine {
     ) external override onlyByWhiteListed {
         require(registry.checkValidity("treasury", treasuryAddress), "Vault/modifyDebt: Treasury address is not valid");
 
-        if (!userExists[msg.sender]) {
-            userList.push(msg.sender);
-            userExists[msg.sender] = true;
+        if (!vaultExists[msg.sender]) {
+            vaultList.push(msg.sender);
+            vaultExists[msg.sender] = true;
         }
 
         if (debtAmount > 0) {

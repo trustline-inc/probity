@@ -336,7 +336,7 @@ describe("Vault Engine Unit Tests", function () {
     });
 
     it("adds a new user to the user list", async () => {
-      const before = await vaultEngine.getUserList();
+      const before = await vaultEngine.getVaultList();
       expect(before.length).to.equal(0);
 
       await vaultEngine.modifyEquity(
@@ -346,7 +346,7 @@ describe("Vault Engine Unit Tests", function () {
         EQUITY_AMOUNT
       );
 
-      const after = await vaultEngine.getUserList();
+      const after = await vaultEngine.getVaultList();
       expect(after.length).to.equal(1);
       expect(after[0]).to.equal(owner.address);
     });
@@ -359,7 +359,7 @@ describe("Vault Engine Unit Tests", function () {
         EQUITY_AMOUNT.div(2)
       );
 
-      const before = await vaultEngine.getUserList();
+      const before = await vaultEngine.getVaultList();
       expect(before.length).to.equal(1);
 
       await vaultEngine.modifyEquity(
@@ -369,7 +369,7 @@ describe("Vault Engine Unit Tests", function () {
         EQUITY_AMOUNT.div(2)
       );
 
-      const after = await vaultEngine.getUserList();
+      const after = await vaultEngine.getVaultList();
       expect(after.length).to.equal(1);
       expect(after[0]).to.equal(owner.address);
     });
@@ -639,7 +639,7 @@ describe("Vault Engine Unit Tests", function () {
     });
 
     it("adds a new user to the user list", async () => {
-      const before = await vaultEngine.getUserList();
+      const before = await vaultEngine.getVaultList();
       expect(before.length).to.equal(1);
 
       await vaultEngine.modifyDebt(
@@ -649,7 +649,7 @@ describe("Vault Engine Unit Tests", function () {
         DEBT_AMOUNT
       );
 
-      const after = await vaultEngine.getUserList();
+      const after = await vaultEngine.getVaultList();
       expect(after.length).to.equal(2);
       expect(after[1]).to.equal(owner.address);
     });
@@ -662,7 +662,7 @@ describe("Vault Engine Unit Tests", function () {
         DEBT_AMOUNT.div(2)
       );
 
-      const before = await vaultEngine.getUserList();
+      const before = await vaultEngine.getVaultList();
       expect(before.length).to.equal(2);
 
       await vaultEngine.modifyDebt(
@@ -672,7 +672,7 @@ describe("Vault Engine Unit Tests", function () {
         DEBT_AMOUNT.div(2)
       );
 
-      const after = await vaultEngine.getUserList();
+      const after = await vaultEngine.getVaultList();
       expect(after.length).to.equal(2);
       expect(after[1]).to.equal(owner.address);
     });
