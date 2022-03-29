@@ -43,7 +43,7 @@ contract VaultEngine is Stateful, Eventful {
     uint256 public totalDebt; // Total Debt position for all asset Types
     uint256 public totalStablecoin; // Total Stablecoin balance in circulation
     uint256 public totalEquity; // Total Equity position for all asset Types
-    uint256 public totalSystemDebt; // Total system debt (stablecoin without collateral)
+    uint256 public totalSystemDebt; // Total system debt
     address[] public userList;
     mapping(address => bool) public userExists;
     mapping(address => uint256) public stablecoin;
