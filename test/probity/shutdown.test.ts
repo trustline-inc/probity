@@ -642,10 +642,7 @@ describe("Shutdown Unit Tests", function () {
       );
 
       await vaultEngine.setTotalStablecoin(TOTAL_DEBT_TO_SET);
-      await vaultEngine.setUnbackedDebt(
-        reservePool.address,
-        SYSTEM_DEBT_TO_SET
-      );
+      await vaultEngine.setsystemDebt(reservePool.address, SYSTEM_DEBT_TO_SET);
       await vaultEngine.setStablecoin(
         reservePool.address,
         SYSTEM_RESERVE_TO_SET
@@ -653,7 +650,7 @@ describe("Shutdown Unit Tests", function () {
       await increaseTime(TIME_TO_FORWARD);
     });
 
-    it("tests that investorObligation calculation is zero when the system surplus >= unbackedDebt", async () => {
+    it("tests that investorObligation calculation is zero when the system surplus >= systemDebt", async () => {
       const TOTAL_DEBT_TO_SET = RAD.mul(100);
       const TOTAL_EQUITY_TO_SET = RAD.mul(150);
       const EXPECTED_AUR_GAP = DEBT_TO_SET.sub(COLL_TO_SET).mul(RAY);
@@ -668,7 +665,7 @@ describe("Shutdown Unit Tests", function () {
       await vaultEngine.setTotalStablecoin(TOTAL_DEBT_TO_SET);
       await vaultEngine.setTotalEquity(TOTAL_EQUITY_TO_SET);
 
-      await vaultEngine.setUnbackedDebt(reservePool.address, 0);
+      await vaultEngine.setsystemDebt(reservePool.address, 0);
 
       await shutdown.writeOffFromReserves();
       await shutdown.setFinalStablecoinBalance();
@@ -681,7 +678,7 @@ describe("Shutdown Unit Tests", function () {
       expect(suppObligation).to.equal(0);
     });
 
-    it("tests that investorObligation and unbackedDebt calculation is correct", async () => {
+    it("tests that investorObligation and systemDebt calculation is correct", async () => {
       const SYSTEM_RESERVE_TO_SET = RAD.mul(10);
       const EXPECTED_SUPP_OBLIGATION = wdiv(RAD.mul(40), RAD.mul(100));
 
@@ -691,7 +688,7 @@ describe("Shutdown Unit Tests", function () {
       );
       await shutdown.processUserDebt(ASSET_ID["FLR"], user.address);
 
-      await vaultEngine.setUnbackedDebt(reservePool.address, 0);
+      await vaultEngine.setsystemDebt(reservePool.address, 0);
 
       await shutdown.writeOffFromReserves();
       await shutdown.setFinalStablecoinBalance();
@@ -711,7 +708,7 @@ describe("Shutdown Unit Tests", function () {
         "shutdown/calculateInvestorObligation: finalStablecoinBalance must be set first"
       );
 
-      await vaultEngine.setUnbackedDebt(reservePool.address, 0);
+      await vaultEngine.setsystemDebt(reservePool.address, 0);
 
       await shutdown.writeOffFromReserves();
       await shutdown.setFinalStablecoinBalance();
@@ -761,14 +758,11 @@ describe("Shutdown Unit Tests", function () {
         EQUITY_TO_SET.mul(RAY)
       );
 
-      await vaultEngine.setUnbackedDebt(
-        reservePool.address,
-        SYSTEM_DEBT_TO_SET
-      );
+      await vaultEngine.setsystemDebt(reservePool.address, SYSTEM_DEBT_TO_SET);
       await vaultEngine.setStablecoin(reservePool.address, 0);
       await shutdown.processUserDebt(ASSET_ID["FLR"], user.address);
       await increaseTime(172800);
-      await vaultEngine.setUnbackedDebt(reservePool.address, 0);
+      await vaultEngine.setsystemDebt(reservePool.address, 0);
 
       await shutdown.setFinalStablecoinBalance();
     });
@@ -837,13 +831,13 @@ describe("Shutdown Unit Tests", function () {
       await increaseTime(172800 * 2);
 
       await vaultEngine.setStablecoin(reservePool.address, 1);
-      await vaultEngine.setUnbackedDebt(reservePool.address, 1);
+      await vaultEngine.setsystemDebt(reservePool.address, 1);
       await assertRevert(
         shutdown.setFinalStablecoinBalance(),
         "shutdown/setFinalStablecoinBalance: system reserve or debt must be zero"
       );
 
-      await vaultEngine.setUnbackedDebt(reservePool.address, 0);
+      await vaultEngine.setsystemDebt(reservePool.address, 0);
 
       // await shutdown.setFinalStablecoinBalance()
     });

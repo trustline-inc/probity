@@ -6,7 +6,7 @@ import "../dependencies/Eventful.sol";
 interface VaultEngineLike {
     function stablecoin(address user) external returns (uint256 balance);
 
-    function unbackedDebt(address user) external returns (uint256 balance);
+    function systemDebt(address user) external returns (uint256 balance);
 
     function settle(uint256 balance) external;
 
