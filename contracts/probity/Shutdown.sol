@@ -29,7 +29,7 @@ interface VaultLike {
 
     function stablecoin(address user) external returns (uint256 value);
 
-    function unbackedDebt(address user) external returns (uint256 value);
+    function systemDebt(address user) external returns (uint256 value);
 
     function totalDebt() external returns (uint256 value);
 
@@ -422,7 +422,7 @@ contract Shutdown is Stateful, Eventful {
             "shutdown/setFinalStablecoinBalance: Waiting for auctions to complete"
         );
         require(
-            vaultEngine.unbackedDebt(address(reservePool)) == 0 || vaultEngine.stablecoin(address(reservePool)) == 0,
+            vaultEngine.systemDebt(address(reservePool)) == 0 || vaultEngine.stablecoin(address(reservePool)) == 0,
             "shutdown/setFinalStablecoinBalance: system reserve or debt must be zero"
         );
 

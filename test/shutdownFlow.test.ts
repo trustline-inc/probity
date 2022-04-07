@@ -111,7 +111,7 @@ async function checkReserveBalances(reserveBalances: ReserveBalances) {
   expect(await vaultEngine.stablecoin(reserve.address)).to.equal(
     reserveBalances.reserve
   );
-  expect(await vaultEngine.unbackedDebt(reserve.address)).to.equal(
+  expect(await vaultEngine.systemDebt(reserve.address)).to.equal(
     reserveBalances.debtToCover
   );
 }

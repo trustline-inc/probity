@@ -43,7 +43,7 @@ contract MockVaultEngine {
     mapping(bytes32 => Asset) public assets;
     mapping(address => uint256) public stablecoin;
     mapping(address => uint256) public pbt;
-    mapping(address => uint256) public unbackedDebt;
+    mapping(address => uint256) public systemDebt;
 
     uint256 public protocolFeeRates;
     uint256 public totalDebt;
@@ -73,8 +73,8 @@ contract MockVaultEngine {
         stablecoin[user] = amount;
     }
 
-    function setUnbackedDebt(address user, uint256 amount) external {
-        unbackedDebt[user] = amount;
+    function setsystemDebt(address user, uint256 amount) external {
+        systemDebt[user] = amount;
     }
 
     function reducePbt(address user, uint256 amount) external {
@@ -167,12 +167,12 @@ contract MockVaultEngine {
 
     function settle(uint256 amount) external {
         stablecoin[msg.sender] -= amount;
-        unbackedDebt[msg.sender] -= amount;
+        systemDebt[msg.sender] -= amount;
     }
 
     function increaseSystemDebt(uint256 amount) external {
         stablecoin[msg.sender] += amount;
-        unbackedDebt[msg.sender] += amount;
+        systemDebt[msg.sender] += amount;
         totalDebt += amount;
     }
 

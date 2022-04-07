@@ -498,7 +498,7 @@ describe("Probity happy flow", function () {
     await priceFeed.updateAdjustedPrice(ASSET_ID["FLR"]);
 
     // Get unbacked debt and balances before liquidation
-    let unbackedDebt0 = await vaultEngine.unbackedDebt(reserve.address);
+    let systemDebt0 = await vaultEngine.systemDebt(reserve.address);
     let [, underlying0] = await vaultEngine.vaults(
       ASSET_ID["FLR"],
       owner.address
@@ -508,14 +508,14 @@ describe("Probity happy flow", function () {
     await liquidator.liquidateVault(ASSET_ID["FLR"], owner.address);
 
     // Get unbacked debt and balances after liquidation
-    let unbackedDebt1 = await vaultEngine.unbackedDebt(reserve.address);
+    let systemDebt1 = await vaultEngine.systemDebt(reserve.address);
     let [, underlying1] = await vaultEngine.vaults(
       ASSET_ID["FLR"],
       owner.address
     );
 
     // Expect unbacked debt to equal the loan amount and underlying to be the same (?)
-    expect(unbackedDebt1.sub(unbackedDebt0)).to.equal(LOAN_AMOUNT.mul(RAY));
+    expect(systemDebt1.sub(systemDebt0)).to.equal(LOAN_AMOUNT.mul(RAY));
     expect(underlying1).to.equal(UNDERLYING_AMOUNT.mul(2));
   });
 
@@ -788,8 +788,8 @@ describe("Probity happy flow", function () {
       );
 
     // Expect unbacked debt to equal amount on auction (100)
-    const unbackedDebt = await vaultEngine.unbackedDebt(reserve.address);
-    expect(unbackedDebt).to.equal(LOAN_AMOUNT.mul(RAY));
+    const systemDebt = await vaultEngine.systemDebt(reserve.address);
+    expect(systemDebt).to.equal(LOAN_AMOUNT.mul(RAY));
 
     // Reduce auction debt by 20 AUR (from 100 to 80)
     const debtToReduce = RAD.mul(20);
@@ -807,7 +807,7 @@ describe("Probity happy flow", function () {
     const _debtThreshold = await reserve.debtThreshold();
     expect(_debtThreshold).to.equal(debtThreshold);
 
-    // Start an IOU sale (unbackedDebt - debtOnAuction > debtThreshold)
+    // Start an IOU sale (systemDebt - debtOnAuction > debtThreshold)
     await reserve.connect(gov).startSale();
 
     await ethers.provider.send("evm_increaseTime", [21601]);

@@ -40,17 +40,17 @@ contract VaultEngine is Stateful, Eventful {
     /////////////////////////////////////////
     uint256 private constant RAY = 10**27;
 
-    uint256 public totalDebt;
-    uint256 public totalStablecoin;
-    uint256 public totalEquity;
-    uint256 public totalUnbackedDebt;
-    address[] public userList;
-    mapping(address => bool) public userExists;
-    mapping(address => uint256) public stablecoin;
-    mapping(address => uint256) public pbt;
-    mapping(address => uint256) public unbackedDebt;
-    mapping(bytes32 => Asset) public assets;
-    mapping(bytes32 => mapping(address => Vault)) public vaults;
+    uint256 public totalDebt; // Total Debt position for all asset Types
+    uint256 public totalStablecoin; // Total Stablecoin balance in circulation
+    uint256 public totalEquity; // Total Equity position for all asset Types
+    uint256 public totalSystemDebt; // Total system debt
+    address[] public vaultList; // list of vaults that had either equity and/or debt position
+    mapping(address => bool) public vaultExists;
+    mapping(address => uint256) public stablecoin; // vault holder's stablecoin balance
+    mapping(address => uint256) public pbt; // vault holder's governance token balance
+    mapping(address => uint256) public systemDebt; // vault holder's systemDebt
+    mapping(bytes32 => Asset) public assets; // assetId -> Asset
+    mapping(bytes32 => mapping(address => Vault)) public vaults; // assetId -> vault holder's address -> Vault
 
     /////////////////////////////////////////
     // Events
@@ -74,8 +74,8 @@ contract VaultEngine is Stateful, Eventful {
     /**
      * @dev returns the list of keys for the vaults
      */
-    function getUserList() external view returns (address[] memory list) {
-        return userList;
+    function getVaultList() external view returns (address[] memory list) {
+        return vaultList;
     }
 
     /**
@@ -211,9 +211,9 @@ contract VaultEngine is Stateful, Eventful {
             "Vault/modifyEquity: Treasury address is not valid"
         );
 
-        if (!userExists[msg.sender]) {
-            userList.push(msg.sender);
-            userExists[msg.sender] = true;
+        if (!vaultExists[msg.sender]) {
+            vaultList.push(msg.sender);
+            vaultExists[msg.sender] = true;
         }
 
         Vault storage vault = vaults[assetId][msg.sender];
@@ -254,9 +254,9 @@ contract VaultEngine is Stateful, Eventful {
     ) external virtual onlyByWhiteListed {
         require(registry.checkValidity("treasury", treasuryAddress), "Vault/modifyDebt: Treasury address is not valid");
 
-        if (!userExists[msg.sender]) {
-            userList.push(msg.sender);
-            userExists[msg.sender] = true;
+        if (!vaultExists[msg.sender]) {
+            vaultList.push(msg.sender);
+            vaultExists[msg.sender] = true;
         }
 
         if (debtAmount > 0) {
@@ -319,8 +319,8 @@ contract VaultEngine is Stateful, Eventful {
         totalDebt = add(totalDebt, fundraiseTarget);
 
         vaults[assetId][auctioneer].standby = sub(vaults[assetId][auctioneer].standby, collateralAmount);
-        unbackedDebt[reservePool] = sub(unbackedDebt[reservePool], fundraiseTarget);
-        totalUnbackedDebt = sub(totalUnbackedDebt, fundraiseTarget);
+        systemDebt[reservePool] = sub(systemDebt[reservePool], fundraiseTarget);
+        totalSystemDebt = sub(totalSystemDebt, fundraiseTarget);
 
         emit Log("vault", "liquidateDebtPosition", msg.sender);
     }
@@ -364,7 +364,7 @@ contract VaultEngine is Stateful, Eventful {
      */
     function settle(uint256 amount) external onlyByProbity {
         stablecoin[msg.sender] -= amount;
-        unbackedDebt[msg.sender] -= amount;
+        systemDebt[msg.sender] -= amount;
         totalStablecoin -= amount;
         emit Log("vault", "settle", msg.sender);
     }
@@ -376,7 +376,7 @@ contract VaultEngine is Stateful, Eventful {
      */
     function increaseSystemDebt(uint256 amount) external onlyByProbity {
         stablecoin[msg.sender] += amount;
-        unbackedDebt[msg.sender] += amount;
+        systemDebt[msg.sender] += amount;
         totalStablecoin += amount;
         emit Log("vault", "increaseSystemDebt", msg.sender);
     }
