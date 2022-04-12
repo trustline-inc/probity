@@ -61,7 +61,7 @@ describe("VP Token  Unit Test", function () {
 
     await assertRevert(
       vpAssetManager.connect(user).deposit(AMOUNT_TO_MINT),
-      "AccessControl/onlyByWhiteListed: Access forbidden"
+      "AccessControl/onlyBy: Caller does not have permission"
     );
 
     await registry

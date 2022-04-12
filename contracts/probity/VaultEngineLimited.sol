@@ -33,7 +33,7 @@ contract VaultEngineLimited is VaultEngine {
         address treasuryAddress,
         int256 underlyingAmount,
         int256 equityAmount
-    ) external override onlyByWhiteListed {
+    ) external override onlyBy("whitelisted") {
         require(
             registry.checkValidity("treasury", treasuryAddress),
             "Vault/modifyEquity: Treasury address is not valid"
@@ -80,7 +80,7 @@ contract VaultEngineLimited is VaultEngine {
         address treasuryAddress,
         int256 collAmount,
         int256 debtAmount
-    ) external override onlyByWhiteListed {
+    ) external override onlyBy("whitelisted") {
         require(registry.checkValidity("treasury", treasuryAddress), "Vault/modifyDebt: Treasury address is not valid");
 
         if (!vaultExists[msg.sender]) {
