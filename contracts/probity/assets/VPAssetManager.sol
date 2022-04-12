@@ -20,7 +20,7 @@ contract VPAssetManager is Delegatable {
         bytes32 collateralHash,
         FtsoManagerLike ftsoManagerAddress,
         FtsoRewardManagerLike rewardManagerAddress,
-        VPAssetManagerLike tokenAddress,
+        VPTokenManagerLike tokenAddress,
         VaultEngineLike vaultEngineAddress
     )
         Delegatable(
