@@ -17,7 +17,7 @@ interface FtsoManagerLike {
     function getCurrentRewardEpoch() external view returns (uint256);
 }
 
-interface VPAssetManagerLike {
+interface VPTokenManagerLike {
     function transfer(address recipient, uint256 amount) external returns (bool);
 
     function transferFrom(
@@ -45,6 +45,11 @@ interface VaultEngineLike {
     ) external;
 }
 
+/**
+ * @title Delegatable Contract
+ * @notice This contract handles the delegate and claim rewards actions for VP token
+ */
+
 contract Delegatable is Stateful {
     ///////////////////////////////////
     // State Variables
@@ -55,17 +60,16 @@ contract Delegatable is Stateful {
     FtsoManagerLike public immutable ftsoManager;
     FtsoRewardManagerLike public immutable ftsoRewardManager;
     VaultEngineLike public immutable vaultEngine;
-    VPAssetManagerLike public immutable token;
+    VPTokenManagerLike public immutable token;
     bytes32 public immutable assetId;
 
-    address[] public dataProviders;
-    uint256 public lastClaimedEpoch;
-    mapping(uint256 => uint256) public contractBalanceByEpoch;
-    mapping(uint256 => uint256) public rewardPerUnitAtEpoch;
-    mapping(address => uint256) public userLastClaimedEpoch;
-    mapping(address => uint256) public recentTotalDeposit;
-    // maybe a different data structure?
-    mapping(address => mapping(uint256 => uint256)) public recentDeposits;
+    address[] public dataProviders; // List of data providers to delegate voting power
+    uint256 public lastClaimedEpoch; // Epoch in which the last reward was claimed
+    mapping(uint256 => uint256) public contractBalanceByEpoch; // Balance for each epoch
+    mapping(uint256 => uint256) public rewardPerUnitAtEpoch; // Reward multiplier for each epoch
+    mapping(address => uint256) public userLastClaimedEpoch; // user's last claimed Epoch
+    mapping(address => uint256) public recentTotalDeposit; // user's total recent deposit since last claimed epoch
+    mapping(address => mapping(uint256 => uint256)) public recentDeposits; // user's recent deposit during each epoch
 
     ///////////////////////////////////
     // Constructor
@@ -75,7 +79,7 @@ contract Delegatable is Stateful {
         bytes32 collateralId,
         FtsoManagerLike ftsoManagerAddress,
         FtsoRewardManagerLike rewardManagerAddress,
-        VPAssetManagerLike tokenAddress,
+        VPTokenManagerLike tokenAddress,
         VaultEngineLike vaultEngineAddress
     ) Stateful(registryAddress) {
         assetId = collateralId;
@@ -86,19 +90,40 @@ contract Delegatable is Stateful {
     }
 
     ///////////////////////////////////
+    // Public Functions
+    ///////////////////////////////////
+
+    function getEpochsWithClaimableRewards() public view returns (uint256 startEpoch, uint256 endEpochId) {
+        return ftsoRewardManager.getEpochsWithClaimableRewards();
+    }
+
+    ///////////////////////////////////
     // External Functions
     ///////////////////////////////////
-    function claimReward() external {
+
+    /**
+     * @dev claim reward from the delegated providers up to last claimable rewards, use EpochToEnd if there are too many
+     *      claimable epochs
+     * @param epochToEnd The Last epoch Id to process, if 0 is provided, it'll go to current highest claimable epoch
+     *
+     */
+    function claimReward(uint256 epochToEnd) external {
         require(
-            ftsoManager.getCurrentRewardEpoch() > lastClaimedEpoch,
+            ftsoManager.getCurrentRewardEpoch() >= lastClaimedEpoch,
             "Delegatable/claimReward: No new epoch to claim"
         );
-        (uint256 startEpochId, uint256 endEpochId) = ftsoRewardManager.getEpochsWithClaimableRewards();
+
+        (uint256 startEpochId, uint256 endEpochId) = getEpochsWithClaimableRewards();
+
+        if (epochToEnd != 0 && endEpochId < epochToEnd) {
+            endEpochId = epochToEnd;
+        }
 
         for (uint256 epochId = startEpochId; epochId <= endEpochId; epochId++) {
             uint256[] memory epochs;
             epochs[0] = epochId;
 
+            // we only get reward from each individual
             uint256 rewardAmount = ftsoRewardManager.claimRewardFromDataProviders(
                 payable(address(this)),
                 epochs,
@@ -111,43 +136,66 @@ contract Delegatable is Stateful {
         lastClaimedEpoch = ftsoManager.getCurrentRewardEpoch();
     }
 
-    function userCollectReward() external {
+    /**
+     * @dev allow user to collect reward based on their locked up token value, use epochToEnd parameter if there are
+     *      too many epochs to process
+     * @param epochToEnd stop at this epoch instead of the lastClaimedEpoch, leave zero to process up until
+     *        lastClaimedEpoch
+     */
+    function userCollectReward(uint256 epochToEnd) external {
         require(
-            lastClaimedEpoch > userLastClaimedEpoch[msg.sender],
+            lastClaimedEpoch >= userLastClaimedEpoch[msg.sender],
             "Delegatable/userCollectReward: No new epoch to claim"
         );
+
         (uint256 underlying, uint256 collateral, uint256 standby) = vaultEngine.vaults(assetId, msg.sender);
         uint256 currentBalance = standby + underlying + collateral;
         uint256 rewardBalance = 0;
 
-        for (
-            uint256 userEpoch = userLastClaimedEpoch[msg.sender];
-            userEpoch <= ftsoManager.getCurrentRewardEpoch();
-            userEpoch++
-        ) {
-            uint256 rewardableBalance = currentBalance - recentTotalDeposit[msg.sender];
-            recentTotalDeposit[msg.sender] -= recentDeposits[msg.sender][userEpoch];
-            rewardBalance += rewardPerUnitAtEpoch[userEpoch] * rewardableBalance;
-            delete recentDeposits[msg.sender][userEpoch];
+        uint256 lastEpoch = lastClaimedEpoch;
+
+        if (epochToEnd != 0 && lastClaimedEpoch < epochToEnd) {
+            lastEpoch = epochToEnd;
+        }
+
+        for (uint256 epochId = userLastClaimedEpoch[msg.sender]; epochId <= lastEpoch; epochId++) {
+            uint256 rewardableBalance = 0;
+
+            if (recentTotalDeposit[msg.sender] < currentBalance) {
+                rewardableBalance = currentBalance - recentTotalDeposit[msg.sender];
+            }
+
+            recentTotalDeposit[msg.sender] -= recentDeposits[msg.sender][epochId];
+            rewardBalance += rewardPerUnitAtEpoch[epochId] * rewardableBalance;
+            delete recentDeposits[msg.sender][epochId];
         }
 
         userLastClaimedEpoch[msg.sender] = lastClaimedEpoch;
+        token.transfer(msg.sender, rewardBalance);
     }
 
-    function changeDataProviders(address[] memory providers, uint256[] memory pct) external onlyBy("gov") {
+    /**
+     * @dev change the data providers by delegating a certain percentage
+     * @param providers list of the data providers to delegate
+     * @param pcts list of percentage for the corresponding provider
+     *             The pct must add up to 100% (10000)
+     */
+    function changeDataProviders(address[] memory providers, uint256[] memory pcts) external onlyBy("gov") {
         require(
-            providers.length == pct.length,
+            providers.length == pcts.length,
             "Delegatable/changeDataProviders: Length of providers and pct mismatch"
         );
         uint256 totalPct = 0;
         for (uint256 index = 0; index <= providers.length; index++) {
-            token.delegate(providers[index], pct[index]);
-            totalPct += pct[index];
+            token.delegate(providers[index], pcts[index]);
+            totalPct += pcts[index];
         }
+
         require(
             totalPct == HUNDRED_PERCENT,
             "Delegatable/changeDataProviders: Provided percentages does not add up to 100%"
         );
+
         dataProviders = providers;
     }
 
