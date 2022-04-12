@@ -104,7 +104,7 @@ describe("Vault Engine Unit Tests", function () {
           UNDERLYING_AMOUNT,
           EQUITY_AMOUNT
         ),
-        "AccessControl/onlyByWhiteListed: Access forbidden"
+        "AccessControl/onlyBy: Caller does not have permission"
       );
 
       await registry
@@ -442,7 +442,7 @@ describe("Vault Engine Unit Tests", function () {
           COLLATERAL_AMOUNT,
           DEBT_AMOUNT
         ),
-        "AccessControl/onlyByWhiteListed: Access forbidden"
+        "AccessControl/onlyBy: Caller does not have permission"
       );
 
       await registry

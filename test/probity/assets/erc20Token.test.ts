@@ -61,7 +61,7 @@ describe("ERC20 Asset Unit Test", function () {
 
     await assertRevert(
       erc20AssetManager.connect(user).deposit(AMOUNT_TO_MINT),
-      "AccessControl/onlyByWhiteListed: Access forbidden"
+      "AccessControl/onlyBy: Caller does not have permission"
     );
 
     await registry

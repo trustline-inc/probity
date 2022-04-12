@@ -48,7 +48,7 @@ describe("Native Token Unit Test", function () {
   it("fails if caller is not a whitelisted user", async () => {
     await assertRevert(
       nativeAssetManager.connect(user).deposit({ value: AMOUNT_TO_DEPOSIT }),
-      "AccessControl/onlyByWhiteListed: Access forbidden"
+      "AccessControl/onlyBy: Caller does not have permission"
     );
 
     await registry

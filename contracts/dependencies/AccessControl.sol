@@ -1,32 +1,43 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "../interfaces/IRegistry.sol";
+interface IRegistry {
+    function checkValidity(address addr) external returns (bool);
 
+    function checkValidity(bytes32 name, address addr) external returns (bool);
+}
+
+/**
+ * @title AccessControl contract
+ * @notice Modifiers to check if caller has roles in the registry contract
+ */
 contract AccessControl {
     ///////////////////////////////////
     // State Variables
     ///////////////////////////////////
-    IRegistry public registry;
+    IRegistry public registry; // registry contract
 
     ///////////////////////////////////
     // Modifiers
     ///////////////////////////////////
+
+    /**
+     * @dev check if the caller has been registered with name in the registry
+     * @param name in the registry
+     */
     modifier onlyBy(bytes32 name) {
         require(registry.checkValidity(name, msg.sender), "AccessControl/onlyBy: Caller does not have permission");
         _;
     }
 
+    /**
+     * @dev check if the caller is from one of the Probity system's contract
+     */
     modifier onlyByProbity() {
         require(
             registry.checkValidity(msg.sender) && !registry.checkValidity("whitelisted", msg.sender),
             "AccessControl/onlyByProbity: Caller must be from Probity system contract"
         );
-        _;
-    }
-
-    modifier onlyByWhiteListed() {
-        require(registry.checkValidity("whitelisted", msg.sender), "AccessControl/onlyByWhiteListed: Access forbidden");
         _;
     }
 

@@ -41,7 +41,7 @@ contract NativeAssetManager is Stateful {
     /////////////////////////////////////////
     // External Functions
     /////////////////////////////////////////
-    function deposit() external payable onlyWhen("paused", false) onlyByWhiteListed {
+    function deposit() external payable onlyWhen("paused", false) onlyBy("whitelisted") {
         vaultEngine.modifyStandbyAsset(assetId, msg.sender, int256(msg.value));
         emit DepositNativeCrypto(msg.sender, msg.value);
     }
