@@ -3,6 +3,7 @@
 pragma solidity ^0.8.0;
 
 import "../dependencies/Stateful.sol";
+import "../dependencies/Eventful.sol";
 
 interface VaultEngineLike {
     function assets(bytes32) external returns (uint256 debtAccumulator, uint256 equityAccumulator);
@@ -26,9 +27,10 @@ interface IAPR {
 }
 
 /**
- * @notice Creates loans and manages vault debt.
+ * @title Teller contract
+ * @notice Calculates and update the rates for probity
  */
-contract Teller is Stateful {
+contract Teller is Stateful, Eventful {
     /////////////////////////////////////////
     // Type Declarations
     /////////////////////////////////////////
@@ -49,14 +51,15 @@ contract Teller is Stateful {
     IAPR public immutable lowAprRate;
     IAPR public immutable highAprRate;
 
-    address public reservePool;
+    address public reservePool; // reservePool address will be the recipient of the protocol fees calculated
     uint256 public apr; // Annualized percentage rate
     uint256 public mpr; // Momentized percentage rate
-    mapping(bytes32 => Asset) public assets;
+    mapping(bytes32 => Asset) public assets; // assetId -> Asset
 
     /////////////////////////////////////////
     // Events
     /////////////////////////////////////////
+    event AssetInitialized(bytes32 indexed assetId, uint256 protocolFee);
     event RatesUpdated(uint256 timestamp, uint256 debtAccumulator, uint256 equityAccumulator);
 
     /////////////////////////////////////////
@@ -78,27 +81,44 @@ contract Teller is Stateful {
     }
 
     /////////////////////////////////////////
-    // Public Functions
-    /////////////////////////////////////////
-    function setProtocolFee(bytes32 assetId, uint256 protocolFee) public onlyBy("gov") {
-        assets[assetId].protocolFee = protocolFee;
-    }
-
-    /////////////////////////////////////////
     // External Functions
     /////////////////////////////////////////
+
+    /**
+     * @dev initialized a new asset
+     * @param assetId the asset ID
+     * @param protocolFee the protocolFee to take during accumulator calcuation
+     */
     function initAsset(bytes32 assetId, uint256 protocolFee) external onlyBy("gov") {
         require(assets[assetId].lastUpdated == 0, "Teller/initAsset: This asset has already been initialized");
         assets[assetId].lastUpdated = block.timestamp;
         assets[assetId].protocolFee = protocolFee;
+
+        emit AssetInitialized(assetId, protocolFee);
     }
 
+    /**
+     * @dev update the protocol fee for an asset
+     * @param assetId to update
+     * @param protocolFee new protocolFee
+     */
+    function setProtocolFee(bytes32 assetId, uint256 protocolFee) external onlyBy("gov") {
+        emit LogVarUpdate(bytes32("teller"), assetId, bytes32("protocolFee"), assets[assetId].protocolFee, protocolFee);
+        assets[assetId].protocolFee = protocolFee;
+    }
+
+    /**
+     * @dev update the reservePool address
+     * @param newReservePool the new reserve Pool's address
+     */
     function setReservePoolAddress(address newReservePool) public onlyBy("gov") {
+        emit LogVarUpdate(bytes32("teller"), bytes32("reservePool"), reservePool, newReservePool);
         reservePool = newReservePool;
     }
 
     /**
      * @dev Updates the debt and equity rate accumulators
+     * @param assetId of the asset to update accumulators
      */
     function updateAccumulators(bytes32 assetId) external {
         require(assets[assetId].lastUpdated != 0, "Teller/updateAccumulators: Asset not initialized");

@@ -14,7 +14,7 @@ interface Eventful {
         uint256 oldValue,
         uint256 newValue
     );
-    event LogVarUpdate(bytes32 indexed contractName, bytes32 indexed variable, uint256 oldValue, uint256 newValue);
+
     event LogVarUpdate(
         bytes32 indexed contractName,
         bytes32 indexed assetId,
@@ -22,4 +22,7 @@ interface Eventful {
         address oldValue,
         address newValue
     );
+
+    event LogVarUpdate(bytes32 indexed contractName, bytes32 indexed variable, uint256 oldValue, uint256 newValue);
+    event LogVarUpdate(bytes32 indexed contractName, bytes32 indexed variable, address oldValue, address newValue);
 }
