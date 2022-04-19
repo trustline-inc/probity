@@ -6,23 +6,36 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../../dependencies/Stateful.sol";
 
 /**
- * Based upon OpenZeppelin's ERC20 contract:
- * https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC20/ERC20.sol
- *
- * and their EIP2612 (ERC20Permit / ERC712) functionality:
- * https://github.com/OpenZeppelin/openzeppelin-contracts/blob/53516bc555a454862470e7860a9b5254db4d00f5/contracts/token/ERC20/ERC20Permit.sol
+ * @title Aurei token contract
+ * @notice AUR ERC20 Token Contract
  */
 contract Aurei is ERC20, Stateful {
     constructor(address registryAddress) Stateful(registryAddress) ERC20("Aurei", "AUR") {}
 
+    /**
+     * @dev minting capability for Treasury module
+     * @param account the address to mint tokens for
+     * @param amount of tokens to mint
+     */
     function mint(address account, uint256 amount) external onlyBy("treasury") {
         _mint(account, amount);
     }
 
+    /**
+     * @dev burning capability for Treasury module
+     * @param account the address to burn tokens for
+     * @param amount of tokens to burn
+     */
     function burn(address account, uint256 amount) external onlyBy("treasury") {
         _burn(account, amount);
     }
 
+    /**
+     * @dev check if contract is in paused state before transferring
+     * @param from the address to transfer tokens for
+     * @param to the address to transfer tokens to
+     * @param amount of tokens to transfer
+     */
     function _beforeTokenTransfer(
         address from,
         address to,

@@ -6,23 +6,33 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../../dependencies/Stateful.sol";
 
 /**
- * Based upon OpenZeppelin's ERC20 contract:
- * https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC20/ERC20.sol
- *
- * and their EIP2612 (ERC20Permit / ERC712) functionality:
- * https://github.com/OpenZeppelin/openzeppelin-contracts/blob/53516bc555a454862470e7860a9b5254db4d00f5/contracts/token/ERC20/ERC20Permit.sol
+ * @title Probity token contract
+ * @notice PBT ERC20 Token Contract a non transferable token
  */
 contract PbtToken is ERC20, Stateful {
     constructor(address registryAddress) Stateful(registryAddress) ERC20("Trustline Credit Network Token", "PBT") {}
 
+    /**
+     * @dev minting capability for Treasury module
+     * @param account the address to mint tokens for
+     * @param amount of tokens to mint
+     */
     function mint(address account, uint256 amount) external onlyBy("treasury") {
         _mint(account, amount);
     }
 
+    /**
+     * @dev burning capability for Treasury module
+     * @param account the address to burn tokens for
+     * @param amount of tokens to burn
+     */
     function burn(address account, uint256 amount) external onlyBy("treasury") {
         _burn(account, amount);
     }
 
+    /**
+     * @dev disable approve function of Pbt token
+     */
     function _approve(
         address,
         address,
@@ -31,19 +41,14 @@ contract PbtToken is ERC20, Stateful {
         revert("Approve is disabled for PBT token");
     }
 
+    /**
+     * @dev disable transfer of Pbt Token
+     */
     function _transfer(
         address,
         address,
         uint256
     ) internal pure override {
         revert("Transfer is disabled for PBT token");
-    }
-
-    function _beforeTokenTransfer(
-        address from,
-        address to,
-        uint256 amount
-    ) internal override onlyWhen("paused", false) {
-        super._beforeTokenTransfer(from, to, amount);
     }
 }
