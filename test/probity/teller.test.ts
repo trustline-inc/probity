@@ -10,6 +10,7 @@ import { bytes32, RAD, WAD, RAY } from "../utils/constants";
 import assertRevert from "../utils/assertRevert";
 import increaseTime from "../utils/increaseTime";
 import { rdiv, rmul, rpow, wdiv } from "../utils/math";
+import parseEvents from "../utils/parseEvents";
 const expect = chai.expect;
 
 // Wallets
@@ -66,6 +67,21 @@ describe("Teller Unit Tests", function () {
         .connect(user)
         .setReservePoolAddress(NEW_RESERVE_POOL_ADDRESS);
     });
+
+    it("tests that LogVarUpdate event is emitted properly", async () => {
+      const NEW_RESERVE_POOL_ADDRESS = owner.address;
+
+      let parsedEvents = await parseEvents(
+        teller.setReservePoolAddress(NEW_RESERVE_POOL_ADDRESS),
+        "LogVarUpdate",
+        teller
+      );
+
+      expect(parsedEvents[0].args[0]).to.equal(bytes32("teller"));
+      expect(parsedEvents[0].args[1]).to.equal(bytes32("reservePool"));
+      expect(parsedEvents[0].args[2]).to.equal(reservePoolAddress);
+      expect(parsedEvents[0].args[3]).to.equal(NEW_RESERVE_POOL_ADDRESS);
+    });
   });
 
   describe("setProtocolFee Unit Tests", function () {
@@ -94,6 +110,22 @@ describe("Teller Unit Tests", function () {
       await teller
         .connect(user)
         .setProtocolFee(flrAssetId, PROTOCOL_FEE_TO_SET);
+    });
+
+    it("tests that LogVarUpdate event is emitted properly", async () => {
+      const PROTOCOL_FEE_TO_SET = WAD.div(10);
+
+      let parsedEvents = await parseEvents(
+        teller.setProtocolFee(flrAssetId, PROTOCOL_FEE_TO_SET),
+        "LogVarUpdate",
+        teller
+      );
+
+      expect(parsedEvents[0].args[0]).to.equal(bytes32("teller"));
+      expect(parsedEvents[0].args[1]).to.equal(flrAssetId);
+      expect(parsedEvents[0].args[2]).to.equal(bytes32("protocolFee"));
+      expect(parsedEvents[0].args[3]).to.equal(0);
+      expect(parsedEvents[0].args[4]).to.equal(PROTOCOL_FEE_TO_SET);
     });
   });
 
@@ -124,6 +156,19 @@ describe("Teller Unit Tests", function () {
         teller.initAsset(assetId, 0),
         "Teller/initAsset: This asset has already been initialized"
       );
+    });
+
+    it("tests that AssetInitialized event is emitted properly", async () => {
+      const PROTOCOL_FEE = WAD.div(10);
+
+      let parsedEvents = await parseEvents(
+        teller.initAsset(flrAssetId, PROTOCOL_FEE),
+        "AssetInitialized",
+        teller
+      );
+
+      expect(parsedEvents[0].args[0]).to.equal(flrAssetId);
+      expect(parsedEvents[0].args[1]).to.equal(PROTOCOL_FEE);
     });
   });
 
