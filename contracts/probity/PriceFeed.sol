@@ -13,6 +13,11 @@ interface FtsoLike {
     function getCurrentPrice() external returns (uint256 _price, uint256 _timestamp);
 }
 
+/**
+ * @title PriceFeed contract
+ * @notice The connector between FTSO and probity making sure the price is in the correct format probity requires and
+ *          updates the vaultEngine with price.
+ */
 contract PriceFeed is Stateful, Eventful {
     /////////////////////////////////////////
     // Type Declaration
@@ -33,7 +38,6 @@ contract PriceFeed is Stateful, Eventful {
     /////////////////////////////////////////
     // Modifiers
     /////////////////////////////////////////
-
     modifier collateralExists(bytes32 assetId) {
         require(address(assets[assetId].ftso) != address(0), "PriceFeed/AssetExists: Asset is not set");
         _;
@@ -49,6 +53,12 @@ contract PriceFeed is Stateful, Eventful {
     /////////////////////////////////////////
     // External functions
     /////////////////////////////////////////
+    /**
+     * @dev initialize a new asset and set the liquidation ratio and ftso addresss
+     * @param assetId the asset ID
+     * @param liquidationRatio liquidationRatio for the asset
+     * @param ftso the ftso address for the asset
+     */
     function initAsset(
         bytes32 assetId,
         uint256 liquidationRatio,
@@ -99,8 +109,8 @@ contract PriceFeed is Stateful, Eventful {
      */
     function updateAdjustedPrice(bytes32 assetId) external {
         require(address(assets[assetId].ftso) != address(0), "PriceFeed/UpdatePrice: Asset is not initialized");
-        (uint256 price, ) = assets[assetId].ftso.getCurrentPrice();
-        uint256 adjustedPrice = rdiv(rdiv(price, 1e5), assets[assetId].liquidationRatio * 1e9);
+        uint256 price = this.getPrice(assetId);
+        uint256 adjustedPrice = rdiv(price, assets[assetId].liquidationRatio * 1e9);
         vaultEngine.updateAdjustedPrice(assetId, adjustedPrice);
     }
 
