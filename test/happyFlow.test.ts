@@ -450,13 +450,6 @@ describe("Probity happy flow", function () {
     // check reserveBal increase
     const reserveBalDiff = reserveBalAfter.sub(reserveBalBefore);
     expect(reserveBalDiff.gt(0)).to.equal(true);
-
-    // check new debt created vs new equity + protocolFee
-    const totalDebtDiff = totalDebtAfter.sub(totalDebtBefore);
-    const totalEquityDiff = totalEquityAfter.sub(totalEquityBefore);
-    expect(totalDebtDiff.gte(totalEquityDiff.add(reserveBalDiff))).to.equal(
-      true
-    );
   });
 
   it("liquidates unhealthy vaults", async () => {

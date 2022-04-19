@@ -187,6 +187,8 @@ contract VaultEngine is Stateful, Eventful {
         pbt[msg.sender] += interestAmount;
         stablecoin[msg.sender] += interestAmount;
 
+        totalStablecoin += interestAmount;
+
         // @todo evaluate how loss of precision can impact here
         vaults[assetId][msg.sender].equity -= interestAmount / asset.equityAccumulator;
 
@@ -293,7 +295,7 @@ contract VaultEngine is Stateful, Eventful {
     }
 
     /**
-     * @notice Liquidates an undercollateralized debt position
+     * @notice Liquidates an debt position
      * @param assetId The ID of the vault asset type
      * @param user The address of the vault to liquidate
      * @param auctioneer The address of the desired auctioneer contract
@@ -326,7 +328,7 @@ contract VaultEngine is Stateful, Eventful {
     }
 
     /**
-     * @notice Liquidates an undercollateralized equity position
+     * @notice Liquidates an equity position
      * @dev Returns underlying asset to user vault with penalty
      * @param assetId The ID of the vault asset type
      * @param user The address of the vault to liquidate
@@ -433,10 +435,6 @@ contract VaultEngine is Stateful, Eventful {
         Asset storage asset = assets[assetId];
         uint256 newDebt = asset.normDebt * debtRateIncrease;
         uint256 newEquity = asset.normEquity * equityRateIncrease;
-
-        totalEquity += newEquity;
-        totalDebt += newDebt;
-        totalStablecoin += newDebt;
 
         asset.debtAccumulator += debtRateIncrease;
         asset.equityAccumulator += equityRateIncrease;
