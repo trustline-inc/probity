@@ -3,11 +3,13 @@
 pragma solidity ^0.8.0;
 
 interface PriceCalc {
-    function price(uint256 startingPrice, uint256 timeElapsed)
-        external
-        returns (uint256 calculatedPrice);
+    function price(uint256 startingPrice, uint256 timeElapsed) external returns (uint256 calculatedPrice);
 }
 
+/**
+ * @title LinearDecrease contract
+ * @notice Calculate the current price over a linearly decreasing function from starting price to zero over timeToZero
+ */
 contract LinearDecrease is PriceCalc {
     /////////////////////////////////////////
     // State Variables
@@ -19,6 +21,12 @@ contract LinearDecrease is PriceCalc {
     /////////////////////////////////////////
     // External Functions
     /////////////////////////////////////////
+
+    /**
+     * @dev calculate and return the current price based on how much time has passed and starting price
+     * @param startingPrice to be used in calculation
+     * @param timeElapsed in seconds
+     */
     function price(uint256 startingPrice, uint256 timeElapsed)
         external
         view
@@ -26,25 +34,14 @@ contract LinearDecrease is PriceCalc {
         returns (uint256 calculatedPrice)
     {
         if (timeElapsed >= timeToZero) return 0;
-        return
-            rmul(
-                startingPrice,
-                mul(timeToZero - timeElapsed, RAY) / timeToZero
-            );
+        return rmul(startingPrice, mul(timeToZero - timeElapsed, RAY) / timeToZero);
     }
 
     /////////////////////////////////////////
     // Internal Functions
     /////////////////////////////////////////
-    function add(uint256 a, uint256 b) internal pure returns (uint256 c) {
-        require((c = a + b) >= a, "LinearDecrease/add: add op failed");
-    }
-
     function mul(uint256 a, uint256 b) internal pure returns (uint256 c) {
-        require(
-            b == 0 || (c = a * b) / b == a,
-            "LinearDecrease/mul: mul op failed"
-        );
+        require(b == 0 || (c = a * b) / b == a, "LinearDecrease/mul: mul op failed");
     }
 
     function rmul(uint256 a, uint256 b) internal pure returns (uint256 c) {
