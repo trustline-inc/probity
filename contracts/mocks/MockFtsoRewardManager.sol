@@ -13,11 +13,7 @@ contract MockFtsoRewardManager {
         return rewardAmount;
     }
 
-    function getEpochsWithClaimableRewards()
-        external
-        view
-        returns (uint256 _startEpochId, uint256 _endEpochId)
-    {
+    function getEpochsWithClaimableRewards() external view returns (uint256 _startEpochId, uint256 _endEpochId) {
         return (startEpochId, endEpochId);
     }
 
