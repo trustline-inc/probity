@@ -47,10 +47,10 @@ describe("VP Token  Unit Test", function () {
     user = signers.alice;
     gov = signers.bob;
 
-    await registry.setupAddress(bytes32("gov"), gov.address);
+    await registry.setupAddress(bytes32("gov"), gov.address, true);
     await registry
       .connect(gov)
-      .setupAddress(bytes32("whitelisted"), owner.address);
+      .setupAddress(bytes32("whitelisted"), owner.address, false);
   });
 
   it("fails if caller is not a whitelisted user", async () => {
@@ -66,7 +66,7 @@ describe("VP Token  Unit Test", function () {
 
     await registry
       .connect(gov)
-      .setupAddress(bytes32("whitelisted"), user.address);
+      .setupAddress(bytes32("whitelisted"), user.address, false);
     await vpAssetManager.connect(user).deposit(AMOUNT_TO_MINT);
   });
 

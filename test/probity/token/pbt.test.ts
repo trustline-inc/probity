@@ -43,7 +43,7 @@ describe("PBT Token Unit Test", function () {
     );
 
     // add owner to registry as 'treasury' then check if owner can now mint
-    await registry.setupAddress(bytes32("treasury"), owner.address);
+    await registry.setupAddress(bytes32("treasury"), owner.address, true);
 
     const balanceBefore = await pbt.balanceOf(user.address);
 
@@ -54,7 +54,7 @@ describe("PBT Token Unit Test", function () {
   });
 
   it("test that transfer is not allowed", async () => {
-    await registry.setupAddress(bytes32("treasury"), owner.address);
+    await registry.setupAddress(bytes32("treasury"), owner.address, true);
 
     await pbt.mint(user.address, AMOUNT_TO_MINT);
 
@@ -65,7 +65,7 @@ describe("PBT Token Unit Test", function () {
   });
 
   it("test that approve is not allowed", async () => {
-    await registry.setupAddress(bytes32("treasury"), owner.address);
+    await registry.setupAddress(bytes32("treasury"), owner.address, true);
 
     await pbt.mint(user.address, AMOUNT_TO_MINT);
 
@@ -77,7 +77,7 @@ describe("PBT Token Unit Test", function () {
 
   it("test burn can only be called by vault contract", async () => {
     // add owner to registry as 'treasury' then check if owner can now mint
-    await registry.setupAddress(bytes32("treasury"), owner.address);
+    await registry.setupAddress(bytes32("treasury"), owner.address, true);
 
     await pbt.mint(user.address, AMOUNT_TO_MINT);
 

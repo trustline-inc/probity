@@ -19,7 +19,7 @@ contract Registry {
     /////////////////////////////////////////
     // State Variables
     /////////////////////////////////////////
-    mapping(address => bytes32) public addressToRole;
+    mapping(address => Role) public addressToRole;
 
     /////////////////////////////////////////
     // Modifiers
@@ -28,7 +28,7 @@ contract Registry {
      * @dev check if caller is from Governance contract address
      */
     modifier onlyByGov() {
-        require(addressToRole[msg.sender] == "gov", "Registry/onlyByGov: caller is not from 'gov' address");
+        require(addressToRole[msg.sender].name == "gov", "Registry/onlyByGov: caller is not from 'gov' address");
         _;
     }
 
@@ -42,7 +42,8 @@ contract Registry {
     // Constructor
     /////////////////////////////////////////
     constructor(address govAddress) {
-        addressToRole[govAddress] = "gov";
+        addressToRole[govAddress].name = "gov";
+        addressToRole[govAddress].isProbitySystem = true;
     }
 
     /////////////////////////////////////////
@@ -59,7 +60,8 @@ contract Registry {
         address addr,
         bool isProbitySystem
     ) external onlyByGov {
-        addressToRole[addr] = roleName;
+        addressToRole[addr].name = roleName;
+        addressToRole[addr].isProbitySystem = isProbitySystem;
         emit ContractAdded(roleName, addr);
     }
 
@@ -68,8 +70,9 @@ contract Registry {
      * @param addr to be removed
      */
     function removeAddress(address addr) external onlyByGov {
-        bytes32 roleName = addressToRole[addr];
-        addressToRole[addr] = bytes32("");
+        bytes32 roleName = addressToRole[addr].name;
+        addressToRole[addr].name = bytes32("");
+        addressToRole[addr].isProbitySystem = false;
         emit ContractRemoved(roleName, addr);
     }
 
@@ -78,15 +81,23 @@ contract Registry {
      * @param roleName to check against
      * @param addr to check
      */
-    function checkValidity(bytes32 roleName, address addr) external view returns (bool) {
-        return addressToRole[addr] == roleName;
+    function checkRole(bytes32 roleName, address addr) external view returns (bool) {
+        return addressToRole[addr].name == roleName;
+    }
+
+    /**
+     * @dev check if an address is in the registry and isProbitySystem is true
+     * @param addr to be check
+     */
+    function checkIfProbitySystem(address addr) external view returns (bool) {
+        return addressToRole[addr].name != bytes32("") && addressToRole[addr].isProbitySystem;
     }
 
     /**
      * @dev check if an address is in the registry
      * @param addr to be check
      */
-    function checkValidity(address addr) external view returns (bool) {
-        return addressToRole[addr] != bytes32("");
+    function checkIfRegistered(address addr) external view returns (bool) {
+        return addressToRole[addr].name != bytes32("");
     }
 }

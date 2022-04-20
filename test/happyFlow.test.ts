@@ -83,9 +83,9 @@ describe("Probity happy flow", function () {
     user = signers.alice;
     gov = signers.charlie;
 
-    await registry.setupAddress(bytes32("gov"), gov.address);
-    await registry.setupAddress(bytes32("whitelisted"), user.address);
-    await registry.setupAddress(bytes32("whitelisted"), owner.address);
+    await registry.setupAddress(bytes32("gov"), gov.address, true);
+    await registry.setupAddress(bytes32("whitelisted"), user.address, false);
+    await registry.setupAddress(bytes32("whitelisted"), owner.address, false);
   });
 
   it("deposits and withdraws native token to/from wallet", async () => {

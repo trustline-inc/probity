@@ -169,7 +169,7 @@ describe("Shutdown Unit Tests", function () {
           .switchAddress(bytes32("PriceFeed"), user.address),
         "AccessControl/onlyBy: Caller does not have permission"
       );
-      await registry.setupAddress(bytes32("gov"), user.address);
+      await registry.setupAddress(bytes32("gov"), user.address, true);
       await shutdown
         .connect(user)
         .switchAddress(bytes32("PriceFeed"), user.address);
@@ -227,7 +227,7 @@ describe("Shutdown Unit Tests", function () {
           .changeWaitPeriod(bytes32("auctionWaitPeriod"), NEW_WAIT_PERIOD),
         "AccessControl/onlyBy: Caller does not have permission"
       );
-      await registry.setupAddress(bytes32("gov"), user.address);
+      await registry.setupAddress(bytes32("gov"), user.address, true);
       await shutdown
         .connect(user)
         .changeWaitPeriod(bytes32("auctionWaitPeriod"), NEW_WAIT_PERIOD);
@@ -324,7 +324,7 @@ describe("Shutdown Unit Tests", function () {
         shutdown.connect(user).initiateShutdown(),
         "AccessControl/onlyBy: Caller does not have permission"
       );
-      await registry.setupAddress(bytes32("gov"), user.address);
+      await registry.setupAddress(bytes32("gov"), user.address, true);
       await shutdown.connect(user).initiateShutdown();
     });
 

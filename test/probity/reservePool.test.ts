@@ -50,7 +50,11 @@ describe("ReservePool Unit Tests", function () {
     liquidator = signers.charlie;
     gov = signers.don;
 
-    await registry.setupAddress(bytes32("liquidator"), liquidator.address);
+    await registry.setupAddress(
+      bytes32("liquidator"),
+      liquidator.address,
+      true
+    );
   });
 
   describe("updateDebtThreshold Unit Tests", function () {
@@ -81,12 +85,12 @@ describe("ReservePool Unit Tests", function () {
         reservePool.connect(user).addAuctionDebt(AUCTION_DEBT_TO_ADD),
         "AccessControl/onlyBy: Caller does not have permission"
       );
-      await registry.setupAddress(bytes32("liquidator"), user.address);
+      await registry.setupAddress(bytes32("liquidator"), user.address, true);
       await reservePool.connect(user).addAuctionDebt(AUCTION_DEBT_TO_ADD);
     });
 
     it("tests that values are properly set", async () => {
-      await registry.setupAddress(bytes32("liquidator"), user.address);
+      await registry.setupAddress(bytes32("liquidator"), user.address, true);
 
       const before = await reservePool.debtOnAuction();
       await reservePool.connect(user).addAuctionDebt(AUCTION_DEBT_TO_ADD);
@@ -108,7 +112,7 @@ describe("ReservePool Unit Tests", function () {
         reservePool.connect(user).reduceAuctionDebt(AUCTION_DEBT_TO_REDUCE),
         "AccessControl/onlyBy: Caller does not have permission"
       );
-      await registry.setupAddress(bytes32("liquidator"), user.address);
+      await registry.setupAddress(bytes32("liquidator"), user.address, true);
       await reservePool.connect(user).reduceAuctionDebt(AUCTION_DEBT_TO_REDUCE);
     });
 
@@ -142,7 +146,7 @@ describe("ReservePool Unit Tests", function () {
         reservePool.connect(user).settle(AMOUNT_TO_SETTLE),
         "AccessControl/onlyByProbity: Caller must be from Probity system contract"
       );
-      await registry.setupAddress(bytes32("liquidator"), user.address);
+      await registry.setupAddress(bytes32("liquidator"), user.address, true);
       await reservePool.connect(user).settle(AMOUNT_TO_SETTLE);
     });
 
@@ -180,7 +184,7 @@ describe("ReservePool Unit Tests", function () {
         reservePool.connect(user).increaseSystemDebt(AMOUNT_TO_INCREASE),
         "AccessControl/onlyByProbity: Caller must be from Probity system contract"
       );
-      await registry.setupAddress(bytes32("liquidator"), user.address);
+      await registry.setupAddress(bytes32("liquidator"), user.address, true);
       await reservePool.connect(user).increaseSystemDebt(AMOUNT_TO_INCREASE);
     });
 
@@ -207,14 +211,14 @@ describe("ReservePool Unit Tests", function () {
         reservePool.connect(user).sendStablecoin(owner.address, AMOUNT_TO_SEND),
         "AccessControl/onlyBy: Caller does not have permission"
       );
-      await registry.setupAddress(bytes32("gov"), user.address);
+      await registry.setupAddress(bytes32("gov"), user.address, true);
       await reservePool
         .connect(user)
         .sendStablecoin(owner.address, AMOUNT_TO_SEND);
     });
 
     it("tests that values are properly set", async () => {
-      await registry.setupAddress(bytes32("gov"), user.address);
+      await registry.setupAddress(bytes32("gov"), user.address, true);
 
       const before = await vaultEngine.stablecoin(owner.address);
       await reservePool
@@ -239,7 +243,7 @@ describe("ReservePool Unit Tests", function () {
         reservePool.connect(user).startSale(),
         "AccessControl/onlyByProbity: Caller must be from Probity system contract"
       );
-      await registry.setupAddress(bytes32("gov"), user.address);
+      await registry.setupAddress(bytes32("gov"), user.address, true);
       await reservePool.connect(user).startSale();
     });
 

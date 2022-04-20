@@ -73,6 +73,7 @@ const init = async () => {
       .connect(owner)
       .setupAddress(
         ethers.utils.formatBytes32String("whitelisted"),
+        false,
         TRUSTLINE_INC,
         {
           gasLimit: 300000,

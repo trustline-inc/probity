@@ -26,6 +26,7 @@ const init = async () => {
     const args = [
       ethers.utils.formatBytes32String("whitelisted"),
       "0x6310B7E8bDFD25EFbeDfB17987Ba69D9191a45bD",
+      false,
       { gasLimit: 300000 },
     ];
     await registry.callStatic.setupAddress(...args);

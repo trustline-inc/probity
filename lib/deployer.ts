@@ -322,7 +322,8 @@ const deployAurei = async (param?: { registry?: string }) => {
   }
   await contracts.registry.setupAddress(
     bytes32("aur"),
-    contracts.aurei.address
+    contracts.aurei.address,
+    true
   );
   await checkDeploymentDelay();
   return contracts;
@@ -347,7 +348,11 @@ const deployPhi = async (param?: { registry?: string }) => {
     console.info("phi deployed ✓");
     console.info({ registry });
   }
-  await contracts.registry.setupAddress(bytes32("phi"), contracts.phi.address);
+  await contracts.registry.setupAddress(
+    bytes32("phi"),
+    contracts.phi.address,
+    true
+  );
   await checkDeploymentDelay();
   return contracts;
 };
@@ -373,7 +378,8 @@ const deployPbt = async (param?: { registry?: string }) => {
   }
   await contracts.registry.setupAddress(
     bytes32("pbt"),
-    contracts.pbtToken.address
+    contracts.pbtToken.address,
+    true
   );
   await checkDeploymentDelay();
   return contracts;
@@ -398,7 +404,8 @@ const deployApr = async () => {
   await contracts.lowApr.deployed();
   await contracts.registry.setupAddress(
     bytes32("lowApr"),
-    contracts.lowApr.address
+    contracts.lowApr.address,
+    true
   );
   const highAprFactory = (await ethers.getContractFactory(
     "HighAPR",
@@ -409,7 +416,8 @@ const deployApr = async () => {
   if (process.env.NODE_ENV !== "test") console.info("highApr deployed ✓");
   await contracts.registry.setupAddress(
     bytes32("highApr"),
-    contracts.highApr.address
+    contracts.highApr.address,
+    true
   );
   await checkDeploymentDelay();
   return contracts;
@@ -436,7 +444,8 @@ const deployVaultEngine = async (param?: { registry?: string }) => {
   }
   await contracts.registry.setupAddress(
     bytes32("vaultEngine"),
-    contracts.vaultEngine.address
+    contracts.vaultEngine.address,
+    true
   );
   await checkDeploymentDelay();
   return contracts;
@@ -468,7 +477,8 @@ const deployVaultEngineUnrestricted = async (param?: { registry?: string }) => {
   }
   await contracts.registry.setupAddress(
     bytes32("vaultEngineUnrestricted"),
-    contracts.vaultEngineUnrestricted.address
+    contracts.vaultEngineUnrestricted.address,
+    true
   );
   await checkDeploymentDelay();
   return contracts;
@@ -500,7 +510,8 @@ const deployVaultEngineLimited = async (param?: { registry?: string }) => {
   }
   await contracts.registry.setupAddress(
     bytes32("vaultEngineLimited"),
-    contracts.vaultEngineLimited.address
+    contracts.vaultEngineLimited.address,
+    true
   );
   await checkDeploymentDelay();
   return contracts;
@@ -571,7 +582,8 @@ const deployVPAssetManager = async (param?: {
 
   await contracts.registry.setupAddress(
     bytes32("assetManager"),
-    contracts.vpAssetManager.address
+    contracts.vpAssetManager.address,
+    true
   );
 
   await checkDeploymentDelay();
@@ -627,7 +639,8 @@ const deployERC20AssetManager = async (param?: {
 
   await contracts.registry.setupAddress(
     bytes32("assetManager"),
-    contracts.erc20AssetManager.address
+    contracts.erc20AssetManager.address,
+    true
   );
 
   await checkDeploymentDelay();
@@ -684,7 +697,8 @@ const deployNativeAssetManager = async (param?: {
 
   await contracts.registry.setupAddress(
     bytes32("assetManager"),
-    contracts.nativeAssetManager.address
+    contracts.nativeAssetManager.address,
+    true
   );
 
   await checkDeploymentDelay();
@@ -761,7 +775,8 @@ const deployShutdown = async (param?: {
 
   await contracts.registry.setupAddress(
     bytes32("shutdown"),
-    contracts.shutdown.address
+    contracts.shutdown.address,
+    true
   );
 
   await checkDeploymentDelay();
@@ -822,7 +837,8 @@ const deployTeller = async (param?: {
 
   await contracts.registry.setupAddress(
     bytes32("teller"),
-    contracts.teller.address
+    contracts.teller.address,
+    true
   );
 
   await checkDeploymentDelay();
@@ -873,7 +889,8 @@ const deployTreasury = async (param?: {
 
   await contracts.registry.setupAddress(
     bytes32("treasury"),
-    contracts.treasury.address
+    contracts.treasury.address,
+    true
   );
 
   await checkDeploymentDelay();
@@ -911,7 +928,8 @@ const deployPriceFeed = async (param?: {
 
   await contracts.registry.setupAddress(
     bytes32("priceFeed"),
-    contracts.priceFeed.address
+    contracts.priceFeed.address,
+    true
   );
 
   await checkDeploymentDelay();
@@ -972,7 +990,8 @@ const deployAuctioneer = async (param?: {
 
   await registry.setupAddress(
     bytes32("auctioneer"),
-    contracts.auctioneer.address
+    contracts.auctioneer.address,
+    true
   );
 
   await checkDeploymentDelay();
@@ -996,7 +1015,8 @@ const deployPriceCalc = async () => {
     console.info("linearDecrease deployed ✓");
   await contracts.registry.setupAddress(
     bytes32("priceCalc"),
-    contracts.linearDecrease.address
+    contracts.linearDecrease.address,
+    true
   );
 
   await checkDeploymentDelay();
@@ -1035,7 +1055,8 @@ const deployBondIssuer = async (param?: {
   }
   await contracts.registry.setupAddress(
     bytes32("bondIssuer"),
-    contracts.bondIssuer.address
+    contracts.bondIssuer.address,
+    true
   );
 
   await checkDeploymentDelay();
@@ -1082,7 +1103,8 @@ const deployReservePool = async (param?: {
   }
   await contracts.registry.setupAddress(
     bytes32("reservePool"),
-    contracts.reservePool.address
+    contracts.reservePool.address,
+    true
   );
 
   if (
@@ -1148,7 +1170,8 @@ const deployLiquidator = async (param?: {
   }
   await contracts.registry.setupAddress(
     bytes32("liquidator"),
-    contracts.liquidator.address
+    contracts.liquidator.address,
+    true
   );
 
   await checkDeploymentDelay();
@@ -1244,7 +1267,8 @@ const deployMockFtso = async () => {
   if (process.env.NODE_ENV !== "test") console.info("ftso deployed ✓");
   await contracts.registry.setupAddress(
     bytes32("ftso"),
-    contracts.ftso.address
+    contracts.ftso.address,
+    true
   );
   await checkDeploymentDelay();
   return contracts;
@@ -1268,7 +1292,8 @@ const deployMockFtsoManager = async () => {
   if (process.env.NODE_ENV !== "test") console.info("ftsoManager deployed ✓");
   await contracts.registry.setupAddress(
     bytes32("ftsoManager"),
-    contracts.ftsoManager.address
+    contracts.ftsoManager.address,
+    true
   );
   await checkDeploymentDelay();
   return contracts;
@@ -1294,7 +1319,8 @@ const deployMockFtsoRewardManager = async () => {
     console.info("ftsoRewardManager deployed ✓");
   await contracts.registry.setupAddress(
     bytes32("ftsoRewardManager"),
-    contracts.ftsoRewardManager.address
+    contracts.ftsoRewardManager.address,
+    true
   );
   await checkDeploymentDelay();
   return contracts;
@@ -1319,7 +1345,8 @@ const deployMockPriceFeed = async () => {
 
   await contracts.registry.setupAddress(
     bytes32("priceFeed"),
-    contracts.mockPriceFeed.address
+    contracts.mockPriceFeed.address,
+    true
   );
   await checkDeploymentDelay();
   return contracts;
@@ -1344,7 +1371,8 @@ const deployMockLiquidator = async () => {
     console.info("mockLiquidator deployed ✓");
   await contracts.registry.setupAddress(
     bytes32("liquidator"),
-    contracts.mockLiquidator.address
+    contracts.mockLiquidator.address,
+    true
   );
   await checkDeploymentDelay();
   return contracts;
@@ -1370,7 +1398,8 @@ const deployMockAuctioneer = async () => {
 
   await contracts.registry.setupAddress(
     bytes32("auctioneer"),
-    contracts.mockAuctioneer.address
+    contracts.mockAuctioneer.address,
+    true
   );
   await checkDeploymentDelay();
   return contracts;
@@ -1395,7 +1424,8 @@ const deployMockReservePool = async () => {
 
   await contracts.registry.setupAddress(
     bytes32("reservePool"),
-    contracts.mockReserve.address
+    contracts.mockReserve.address,
+    true
   );
   await checkDeploymentDelay();
   return contracts;
@@ -1421,7 +1451,8 @@ const deployMockBondIssuer = async () => {
 
   await contracts.registry.setupAddress(
     bytes32("bondIssuer"),
-    contracts.mockBondIssuer.address
+    contracts.mockBondIssuer.address,
+    true
   );
   await checkDeploymentDelay();
   return contracts;

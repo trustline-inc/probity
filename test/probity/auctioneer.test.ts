@@ -91,7 +91,8 @@ describe("Auctioneer Unit Tests", function () {
 
     await registry.setupAddress(
       bytes32("liquidator"),
-      liquidatorCaller.address
+      liquidatorCaller.address,
+      true
     );
     await priceCalc.setPrice(RAY.mul(12).div(10));
     await priceFeed.setPrice(flrAssetId, RAY);
@@ -114,7 +115,7 @@ describe("Auctioneer Unit Tests", function () {
         "AccessControl/onlyBy: Caller does not have permission"
       );
 
-      await registry.setupAddress(bytes32("liquidator"), user1.address);
+      await registry.setupAddress(bytes32("liquidator"), user1.address, true);
 
       await auctioneer
         .connect(user1)
