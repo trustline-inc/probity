@@ -59,6 +59,10 @@ contract VaultEngine is Stateful, Eventful {
     event EquityModified(address indexed user, int256 underlyingAmount, int256 equityAmount);
     event DebtModified(address indexed user, int256 collAmount, int256 debtAmount);
     event InterestCollected(address indexed user, bytes32 assetId, uint256 interestAmount);
+    event EquityLiquidated(address indexed user, int256 assetToAuction, int256 assetToReturn, int256 equityAmount);
+    event DebtLiquidated(address indexed user, int256 collAmount, int256 debtAmount);
+    event SystemDebtSettled(address indexed caller, uint256 amount);
+    event SystemDebtIncreased(address indexed caller, uint256 amount);
 
     /////////////////////////////////////////
     // Constructor
@@ -324,7 +328,7 @@ contract VaultEngine is Stateful, Eventful {
         systemDebt[reservePool] = sub(systemDebt[reservePool], fundraiseTarget);
         totalSystemDebt = sub(totalSystemDebt, fundraiseTarget);
 
-        emit Log("vault", "liquidateDebtPosition", msg.sender);
+        emit DebtLiquidated(user, collateralAmount, debtAmount);
     }
 
     /**
@@ -357,7 +361,7 @@ contract VaultEngine is Stateful, Eventful {
         vaults[assetId][auctioneer].standby = sub(vaults[assetId][auctioneer].standby, assetToAuction);
         totalEquity = add(totalEquity, mul(RAY, equityAmount));
 
-        emit Log("vault", "liquidateEquityPosition", msg.sender);
+        emit EquityLiquidated(user, assetToAuction, assetToReturn, equityAmount);
     }
 
     /**
@@ -368,7 +372,8 @@ contract VaultEngine is Stateful, Eventful {
         stablecoin[msg.sender] -= amount;
         systemDebt[msg.sender] -= amount;
         totalStablecoin -= amount;
-        emit Log("vault", "settle", msg.sender);
+
+        emit SystemDebtSettled(msg.sender, amount);
     }
 
     /**
@@ -380,7 +385,8 @@ contract VaultEngine is Stateful, Eventful {
         stablecoin[msg.sender] += amount;
         systemDebt[msg.sender] += amount;
         totalStablecoin += amount;
-        emit Log("vault", "increaseSystemDebt", msg.sender);
+
+        emit SystemDebtIncreased(msg.sender, amount);
     }
 
     /// Admin-related functions

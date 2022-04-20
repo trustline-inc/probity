@@ -6,7 +6,6 @@ interface Eventful {
     ///////////////////////////////////
     // Events
     ///////////////////////////////////
-    event Log(bytes32 indexed contractName, bytes32 indexed action, address caller);
     event LogVarUpdate(
         bytes32 indexed contractName,
         bytes32 indexed assetId,
