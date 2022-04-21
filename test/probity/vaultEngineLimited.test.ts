@@ -57,9 +57,9 @@ describe("Vault Engine Limited Unit Tests", function () {
     gov = signers.charlie;
     coll = signers.don;
 
-    await registry.setupAddress(bytes32("gov"), gov.address);
-    await registry.setupAddress(bytes32("whitelisted"), user.address);
-    await registry.setupAddress(bytes32("whitelisted"), owner.address);
+    await registry.setupAddress(bytes32("gov"), gov.address, true);
+    await registry.setupAddress(bytes32("whitelisted"), user.address, false);
+    await registry.setupAddress(bytes32("whitelisted"), owner.address, false);
   });
 
   describe("vaultLimit Unit Tests", function () {
@@ -74,7 +74,7 @@ describe("Vault Engine Limited Unit Tests", function () {
         .updateCeiling(flrAssetId, RAD.mul(10000000));
       await registry
         .connect(gov)
-        .setupAddress(bytes32("assetManager"), coll.address);
+        .setupAddress(bytes32("assetManager"), coll.address, true);
     });
 
     it("updateIndividualVaultLimit works properly", async () => {

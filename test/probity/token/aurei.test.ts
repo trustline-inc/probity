@@ -43,7 +43,7 @@ describe("Aurei Token Unit Test", function () {
     );
 
     // add owner to registry as 'treasury' then check if owner can now mint
-    await registry.setupAddress(bytes32("treasury"), owner.address);
+    await registry.setupAddress(bytes32("treasury"), owner.address, true);
 
     const balanceBefore = await aurei.balanceOf(user.address);
 
@@ -55,7 +55,7 @@ describe("Aurei Token Unit Test", function () {
 
   it("test burn can only be called by vault contract", async () => {
     // add owner to registry as 'treasury' then check if owner can now mint
-    await registry.setupAddress(bytes32("treasury"), owner.address);
+    await registry.setupAddress(bytes32("treasury"), owner.address, true);
 
     await aurei.mint(user.address, AMOUNT_TO_MINT);
 

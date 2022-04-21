@@ -56,7 +56,7 @@ describe("Vault Engine Unrestricted Unit Tests", function () {
     coll = signers.don;
     assetManager = signers.lender;
 
-    await registry.setupAddress(bytes32("gov"), gov.address);
+    await registry.setupAddress(bytes32("gov"), gov.address, true);
   });
 
   describe("modifyEquity Unit Tests", function () {
@@ -75,7 +75,7 @@ describe("Vault Engine Unrestricted Unit Tests", function () {
         .updateCeiling(ASSET_ID["FLR"], RAD.mul(10_000_000));
       await registry
         .connect(gov)
-        .setupAddress(bytes32("assetManager"), assetManager.address);
+        .setupAddress(bytes32("assetManager"), assetManager.address, true);
       await vaultEngine
         .connect(gov)
         .updateAdjustedPrice(ASSET_ID["FLR"], RAY.mul(1));
@@ -87,7 +87,7 @@ describe("Vault Engine Unrestricted Unit Tests", function () {
     it("tests that non whitelisted user can call modifyEquity", async () => {
       await registry
         .connect(gov)
-        .setupAddress(bytes32("notWhitelisted"), owner.address);
+        .setupAddress(bytes32("notWhitelisted"), owner.address, true);
 
       await vaultEngine.modifyEquity(
         ASSET_ID["FLR"],
@@ -116,7 +116,7 @@ describe("Vault Engine Unrestricted Unit Tests", function () {
         .updateCeiling(ASSET_ID["FLR"], RAD.mul(10_000_000));
       await registry
         .connect(gov)
-        .setupAddress(bytes32("assetManager"), assetManager.address);
+        .setupAddress(bytes32("assetManager"), assetManager.address, true);
       await vaultEngine
         .connect(gov)
         .updateAdjustedPrice(ASSET_ID["FLR"], RAY.mul(1));
@@ -139,7 +139,7 @@ describe("Vault Engine Unrestricted Unit Tests", function () {
     it("tests that non whitelisted user can call modifyDebt", async () => {
       await registry
         .connect(gov)
-        .setupAddress(bytes32("notWhitelisted"), owner.address);
+        .setupAddress(bytes32("notWhitelisted"), owner.address, false);
 
       await vaultEngine.modifyDebt(
         ASSET_ID["FLR"],

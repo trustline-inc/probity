@@ -62,9 +62,9 @@ describe("Vault Engine Unit Tests", function () {
     gov = signers.charlie;
     assetManager = signers.don;
 
-    await registry.setupAddress(bytes32("gov"), gov.address);
-    await registry.setupAddress(bytes32("whitelisted"), user.address);
-    await registry.setupAddress(bytes32("whitelisted"), owner.address);
+    await registry.setupAddress(bytes32("gov"), gov.address, true);
+    await registry.setupAddress(bytes32("whitelisted"), user.address, false);
+    await registry.setupAddress(bytes32("whitelisted"), owner.address, false);
   });
 
   describe("modifyEquity Unit Tests", function () {
@@ -83,7 +83,7 @@ describe("Vault Engine Unit Tests", function () {
         .updateCeiling(ASSET_ID["FLR"], RAD.mul(10_000_000));
       await registry
         .connect(gov)
-        .setupAddress(bytes32("assetManager"), assetManager.address);
+        .setupAddress(bytes32("assetManager"), assetManager.address, true);
       await vaultEngine
         .connect(gov)
         .updateAdjustedPrice(ASSET_ID["FLR"], RAY.mul(1));
@@ -95,7 +95,7 @@ describe("Vault Engine Unit Tests", function () {
     it("only allows whitelisted users to call modifyEquity", async () => {
       await registry
         .connect(gov)
-        .setupAddress(bytes32("notWhitelisted"), owner.address);
+        .setupAddress(bytes32("notWhitelisted"), owner.address, false);
 
       await assertRevert(
         vaultEngine.modifyEquity(
@@ -109,7 +109,7 @@ describe("Vault Engine Unit Tests", function () {
 
       await registry
         .connect(gov)
-        .setupAddress(bytes32("whitelisted"), owner.address);
+        .setupAddress(bytes32("whitelisted"), owner.address, false);
 
       await vaultEngine.modifyEquity(
         ASSET_ID["FLR"],
@@ -126,7 +126,7 @@ describe("Vault Engine Unit Tests", function () {
       // Add owner to the whitelist
       await registry
         .connect(gov)
-        .setupAddress(bytes32("whitelisted"), owner.address);
+        .setupAddress(bytes32("whitelisted"), owner.address, false);
 
       // Update FLR asset floor
       await vaultEngine.connect(gov).updateFloor(ASSET_ID["FLR"], FLOOR_AMOUNT);
@@ -271,7 +271,9 @@ describe("Vault Engine Unit Tests", function () {
       );
 
       // Update accumulators
-      await registry.connect(gov).setupAddress(bytes32("teller"), user.address);
+      await registry
+        .connect(gov)
+        .setupAddress(bytes32("teller"), user.address, true);
       await vaultEngine
         .connect(user)
         .updateAccumulators(
@@ -408,7 +410,7 @@ describe("Vault Engine Unit Tests", function () {
         .updateCeiling(ASSET_ID["FLR"], RAD.mul(10_000_000));
       await registry
         .connect(gov)
-        .setupAddress(bytes32("assetManager"), assetManager.address);
+        .setupAddress(bytes32("assetManager"), assetManager.address, true);
       await vaultEngine
         .connect(gov)
         .updateAdjustedPrice(ASSET_ID["FLR"], RAY.mul(1));
@@ -434,7 +436,7 @@ describe("Vault Engine Unit Tests", function () {
     it("only allows whitelisted users to call modifyDebt", async () => {
       await registry
         .connect(gov)
-        .setupAddress(bytes32("notWhitelisted"), owner.address);
+        .setupAddress(bytes32("notWhitelisted"), owner.address, false);
       await assertRevert(
         vaultEngine.modifyDebt(
           ASSET_ID["FLR"],
@@ -447,7 +449,7 @@ describe("Vault Engine Unit Tests", function () {
 
       await registry
         .connect(gov)
-        .setupAddress(bytes32("whitelisted"), owner.address);
+        .setupAddress(bytes32("whitelisted"), owner.address, false);
 
       await vaultEngine.modifyDebt(
         ASSET_ID["FLR"],
@@ -463,7 +465,7 @@ describe("Vault Engine Unit Tests", function () {
 
       await registry
         .connect(gov)
-        .setupAddress(bytes32("whitelisted"), owner.address);
+        .setupAddress(bytes32("whitelisted"), owner.address, false);
 
       await vaultEngine.connect(gov).updateFloor(ASSET_ID["FLR"], FLOOR_AMOUNT);
 
@@ -605,7 +607,9 @@ describe("Vault Engine Unit Tests", function () {
       );
 
       // Update accumulators
-      await registry.connect(gov).setupAddress(bytes32("teller"), user.address);
+      await registry
+        .connect(gov)
+        .setupAddress(bytes32("teller"), user.address, true);
       await vaultEngine
         .connect(user)
         .updateAccumulators(
@@ -697,7 +701,7 @@ describe("Vault Engine Unit Tests", function () {
         .updateCeiling(ASSET_ID["FLR"], RAD.mul(10000000));
       await registry
         .connect(gov)
-        .setupAddress(bytes32("assetManager"), assetManager.address);
+        .setupAddress(bytes32("assetManager"), assetManager.address, true);
       await vaultEngine
         .connect(gov)
         .updateAdjustedPrice(ASSET_ID["FLR"], RAY.mul(1));
@@ -725,7 +729,9 @@ describe("Vault Engine Unit Tests", function () {
           DEBT_AMOUNT
         );
 
-      await registry.connect(gov).setupAddress(bytes32("teller"), user.address);
+      await registry
+        .connect(gov)
+        .setupAddress(bytes32("teller"), user.address, true);
 
       await vaultEngine
         .connect(user)
@@ -792,7 +798,7 @@ describe("Vault Engine Unit Tests", function () {
         .updateCeiling(ASSET_ID["FLR"], RAD.mul(10_000_000));
       await registry
         .connect(gov)
-        .setupAddress(bytes32("assetManager"), assetManager.address);
+        .setupAddress(bytes32("assetManager"), assetManager.address, true);
       await vaultEngine
         .connect(assetManager)
         .modifyStandbyAsset(
@@ -819,7 +825,7 @@ describe("Vault Engine Unit Tests", function () {
 
       await registry
         .connect(gov)
-        .setupAddress(bytes32("liquidator"), user.address);
+        .setupAddress(bytes32("liquidator"), user.address, true);
     });
 
     it("reduces initial equity", async () => {
@@ -881,7 +887,7 @@ describe("Vault Engine Unit Tests", function () {
         .updateCeiling(ASSET_ID["FLR"], RAD.mul(10_000_000));
       await registry
         .connect(gov)
-        .setupAddress(bytes32("assetManager"), assetManager.address);
+        .setupAddress(bytes32("assetManager"), assetManager.address, true);
       await vaultEngine
         .connect(assetManager)
         .modifyStandbyAsset(
@@ -906,7 +912,9 @@ describe("Vault Engine Unit Tests", function () {
         DEBT_AMOUNT
       );
 
-      await registry.connect(gov).setupAddress(bytes32("teller"), user.address);
+      await registry
+        .connect(gov)
+        .setupAddress(bytes32("teller"), user.address, true);
     });
 
     it("only allows teller to update rate accumulators", async () => {

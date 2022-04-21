@@ -2,9 +2,9 @@
 pragma solidity ^0.8.0;
 
 interface IRegistry {
-    function checkValidity(address addr) external returns (bool);
+    function checkIfProbitySystem(address addr) external returns (bool);
 
-    function checkValidity(bytes32 name, address addr) external returns (bool);
+    function checkRole(bytes32 name, address addr) external returns (bool);
 }
 
 /**
@@ -26,7 +26,7 @@ contract AccessControl {
      * @param name in the registry
      */
     modifier onlyBy(bytes32 name) {
-        require(registry.checkValidity(name, msg.sender), "AccessControl/onlyBy: Caller does not have permission");
+        require(registry.checkRole(name, msg.sender), "AccessControl/onlyBy: Caller does not have permission");
         _;
     }
 
@@ -35,7 +35,7 @@ contract AccessControl {
      */
     modifier onlyByProbity() {
         require(
-            registry.checkValidity(msg.sender) && !registry.checkValidity("whitelisted", msg.sender),
+            registry.checkIfProbitySystem(msg.sender),
             "AccessControl/onlyByProbity: Caller must be from Probity system contract"
         );
         _;

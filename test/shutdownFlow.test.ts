@@ -209,12 +209,16 @@ describe("Shutdown Flow Test", function () {
     };
     reserveBalances = { reserve: WAD.mul(0), debtToCover: WAD.mul(0) };
 
-    await registry.setupAddress(bytes32("whitelisted"), alice.address);
-    await registry.setupAddress(bytes32("whitelisted"), bob.address);
-    await registry.setupAddress(bytes32("whitelisted"), charlie.address);
-    await registry.setupAddress(bytes32("whitelisted"), don.address);
-    await registry.setupAddress(bytes32("whitelisted"), lender.address);
-    await registry.setupAddress(bytes32("whitelisted"), borrower.address);
+    await registry.setupAddress(bytes32("whitelisted"), alice.address, false);
+    await registry.setupAddress(bytes32("whitelisted"), bob.address, false);
+    await registry.setupAddress(bytes32("whitelisted"), charlie.address, false);
+    await registry.setupAddress(bytes32("whitelisted"), don.address, false);
+    await registry.setupAddress(bytes32("whitelisted"), lender.address, false);
+    await registry.setupAddress(
+      bytes32("whitelisted"),
+      borrower.address,
+      false
+    );
   });
 
   it("should shutdown when the system is solvent", async () => {
@@ -355,7 +359,7 @@ describe("Shutdown Flow Test", function () {
      */
 
     // Give owner the gov role for testing purposes below
-    await registry.setupAddress(bytes32("gov"), owner.address);
+    await registry.setupAddress(bytes32("gov"), owner.address, true);
 
     // Increase debt threshold to 5000 * 1.2 = 6000
     const newDebtThreshold = DEBT_THRESHOLD.mul(12).div(10);
