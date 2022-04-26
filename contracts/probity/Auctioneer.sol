@@ -32,6 +32,11 @@ interface LiquidatorLike {
     function reduceAuctionDebt(uint256 amount) external;
 }
 
+/**
+ * @title Auctioneer contract
+ * @notice Auctioneer will auction off the asset in exchange for the stablecoin
+ */
+
 contract Auctioneer is Stateful, Eventful {
     /////////////////////////////////////////
     // Type Declaration
@@ -68,8 +73,8 @@ contract Auctioneer is Stateful, Eventful {
 
     uint256 public auctionCount;
     // TODO: check and fix these values
-    uint256 public nextBidRatio = 1.05E18;
-    uint256 public priceBuffer = 1.20E18;
+    uint256 public nextBidRatio = 1.05E18; // the next bid must be 105% of current bid or higher
+    uint256 public priceBuffer = 1.20E18; // buffer to starting price to ensure the asset gets the highest price possible
     // TODO: add smallest possible bid as to avoid tiny amounts
     mapping(uint256 => Auction) public auctions;
     mapping(uint256 => mapping(address => Bid)) public bids;
@@ -140,7 +145,7 @@ contract Auctioneer is Stateful, Eventful {
     /////////////////////////////////////////
 
     /**
-     * @notice Starts a collateral auction
+     * @notice Starts a asset auction
      * @param assetId The ID of the collateral on auction
      * @param lotSize The size of the lot
      * @param debtSize The amount of stablecoins that need to be raised
@@ -227,7 +232,7 @@ contract Auctioneer is Stateful, Eventful {
     }
 
     /**
-     * @notice Allows a user to purchase collateral outright
+     * @notice Allows a user to purchase collateral outright as long as the current Price is less than maxPrice
      * @param auctionId The ID of the auction
      * @param maxPrice Max price the buyer is willing to pay for the lot
      * @param lot The amount of collateral to purchase
@@ -267,7 +272,7 @@ contract Auctioneer is Stateful, Eventful {
     }
 
     /**
-     * @notice TODO
+     * @notice Finalize a sale for a bid if the current price is at or below the bid price
      * @param auctionId The ID of the auction to finalize
      */
     function finalizeSale(uint256 auctionId) public {
@@ -303,7 +308,7 @@ contract Auctioneer is Stateful, Eventful {
     }
 
     /**
-     * @notice getBiddable lot and amount
+     * @notice get current biddable lot and amount based on existing bids and current price
      * @param auctionId The ID of the auction
      */
     function getBiddableLot(
@@ -369,9 +374,9 @@ contract Auctioneer is Stateful, Eventful {
     /**
      * @notice Cycles through the linked list to calculate the total value of the bids
      * @param auctionId The ID of the auction
-     * @param cutOffPrice TODO
+     * @param price to stop at
      */
-    function totalBidValueAtPrice(uint256 auctionId, uint256 cutOffPrice)
+    function totalBidValueAtPrice(uint256 auctionId, uint256 price)
         public
         view
         returns (
@@ -387,7 +392,7 @@ contract Auctioneer is Stateful, Eventful {
         address index = nextHighestBidder[auctionId][HEAD];
 
         while (true) {
-            if ((bids[auctionId][index].price * nextBidRatio) / ONE < cutOffPrice) {
+            if ((bids[auctionId][index].price * nextBidRatio) / ONE < price) {
                 break;
             }
             totalLot += bids[auctionId][index].lot;
@@ -435,11 +440,11 @@ contract Auctioneer is Stateful, Eventful {
     }
 
     /**
-     * @notice TODO
+     * @notice Cancel bids that are no longer in contention based on new bids or sales
      * @param auctionId The ID of the auction to cancel old bids for
-     * @param startingValue TODO
-     * @param startingLot TODO
-     * @param prev TODO
+     * @param startingValue allow the function to start at a predetermined value instead of looping from beginning
+     * @param startingLot allow the function to start at a predetermined lot instead of looping from beginning
+     * @param prev address of the bidder in the linked list that holds the cumulative value and lot
      */
     function cancelOldBids(
         uint256 auctionId,
@@ -497,6 +502,12 @@ contract Auctioneer is Stateful, Eventful {
         }
     }
 
+    /**
+     * @notice Allow uer to change the current bid
+     * @param auctionId The ID of the auction to cancel old bids for
+     * @param bidder address of the bidder
+     * @param newLot new lot value for bidder
+     */
     function modifyBid(
         uint256 auctionId,
         address bidder,
@@ -523,6 +534,12 @@ contract Auctioneer is Stateful, Eventful {
         );
     }
 
+    /**
+     * @notice Remove an existing bid
+     * @param auctionId The ID of the auction to cancel old bids for
+     * @param bidder address of the bidder
+     * @param prev index of the prev bidder in bids
+     */
     function removeBid(
         uint256 auctionId,
         address bidder,
@@ -547,9 +564,9 @@ contract Auctioneer is Stateful, Eventful {
     }
 
     /**
-     * @notice TODO
+     * @notice remove the bidder at index on the bids linked list
      * @param auctionId The ID of the auction
-     * @param indexToRemove TODO
+     * @param indexToRemove address of the bidder to remove from bids linked list
      */
     function removeIndex(uint256 auctionId, address indexToRemove) internal {
         bool removed = false;
@@ -565,10 +582,6 @@ contract Auctioneer is Stateful, Eventful {
         }
         require(removed, "Auctioneer/removeIndex: The index could not be found");
     }
-
-    /////////////////////////////////////////
-    // Internal functions
-    /////////////////////////////////////////
 
     function min(uint256 a, uint256 b) internal pure returns (uint256 c) {
         if (a > b) {
