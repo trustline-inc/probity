@@ -77,9 +77,8 @@ contract Auctioneer is Stateful, Eventful {
     uint256 public priceBuffer = 1.20E18; // buffer to starting price to ensure the asset gets the highest price possible
     // TODO: add smallest possible bid as to avoid tiny amounts
     mapping(uint256 => Auction) public auctions;
-    mapping(uint256 => mapping(address => Bid)) public bids;
-    // sorted linked list of bidders
-    mapping(uint256 => mapping(address => address)) public nextHighestBidder;
+    mapping(uint256 => mapping(address => Bid)) public bids; // auctionId -> user address -> bid
+    mapping(uint256 => mapping(address => address)) public nextHighestBidder; // sorted linked list of bidders
 
     /////////////////////////////////////////
     // Events
@@ -151,6 +150,7 @@ contract Auctioneer is Stateful, Eventful {
      * @param debtSize The amount of stablecoins that need to be raised
      * @param owner The owner of the liquidated vault
      * @param beneficiary A ReservePool address
+     * @param sellAllLot if true, sell all the asset regardless of the debt size needed to raise
      */
     function startAuction(
         bytes32 assetId,
@@ -179,15 +179,15 @@ contract Auctioneer is Stateful, Eventful {
     }
 
     /**
-     * @notice Reset the auction
+     * @notice Reset the auction if it is over and there are still lots to be sold
      * @param auctionId The ID of the auction to reset
      */
     function resetAuction(uint256 auctionId) external {
         require(!auctions[auctionId].isOver, "Auctioneer/resetAuction: Auction is over");
         Auction storage auction = auctions[auctionId];
         require(
-            calculatePrice(auctionId) == 0 && auction.startTime != 0,
-            "Auctioneer/resetAuction: This auction isn't expired, or doesn't exist"
+            calculatePrice(auctionId) == 0 && auction.startTime != 0 && auction.lot != 0,
+            "Auctioneer/resetAuction: This auction hasn't expired, doesn't exist or no more asset to auction"
         );
 
         uint256 currentPrice = priceFeed.getPrice(auctions[auctionId].assetId);
@@ -372,7 +372,7 @@ contract Auctioneer is Stateful, Eventful {
     }
 
     /**
-     * @notice Cycles through the linked list to calculate the total value of the bids
+     * @notice Cycles through the nextHighestBidder list to calculate the total value of the bids at a certain price
      * @param auctionId The ID of the auction
      * @param price to stop at
      */
@@ -564,7 +564,7 @@ contract Auctioneer is Stateful, Eventful {
     }
 
     /**
-     * @notice remove the bidder at index on the bids linked list
+     * @notice remove the bidder at index on the nextHighestBidder List
      * @param auctionId The ID of the auction
      * @param indexToRemove address of the bidder to remove from bids linked list
      */

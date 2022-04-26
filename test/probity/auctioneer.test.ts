@@ -237,7 +237,7 @@ describe("Auctioneer Unit Tests", function () {
     it("fails if current price is not zero", async () => {
       await assertRevert(
         auctioneer.resetAuction(0),
-        "Auctioneer/resetAuction: This auction isn't expired, or doesn't exist"
+        "Auctioneer/resetAuction: This auction hasn't expired, doesn't exist or no more asset to auction"
       );
 
       await priceCalc.setPrice(0);
@@ -247,7 +247,7 @@ describe("Auctioneer Unit Tests", function () {
       await priceCalc.setPrice(0);
       await assertRevert(
         auctioneer.resetAuction(1),
-        "Auctioneer/resetAuction: This auction isn't expired, or doesn't exist"
+        "Auctioneer/resetAuction: This auction hasn't expired, doesn't exist or no more asset to auction"
       );
 
       await auctioneer.resetAuction(0);
