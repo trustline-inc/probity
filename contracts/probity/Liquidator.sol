@@ -119,6 +119,11 @@ contract Liquidator is Stateful, Eventful {
     /////////////////////////////////////////
     // External functions
     /////////////////////////////////////////
+    /**
+     * @notice Initialize new asset type
+     * @param assetId The ID of the asset type
+     * @param auctioneer the contract address of the auctioneer
+     */
     function initAsset(bytes32 assetId, AuctioneerLike auctioneer) external onlyBy("gov") {
         require(
             address(assets[assetId].auctioneer) == address(0),
@@ -164,6 +169,7 @@ contract Liquidator is Stateful, Eventful {
     }
 
     /**
+     * @notice reduce debt that's current on auction
      * @param amount The amount to reduce the ReservePool debt by
      */
     function reduceAuctionDebt(uint256 amount) external {
@@ -171,7 +177,7 @@ contract Liquidator is Stateful, Eventful {
     }
 
     /**
-     * @notice Liquidates an undercollateralized vault
+     * @notice Check and liquidates an undercollateralized vault
      * @param assetId The ID of the collateral type
      * @param user The address of the vault to liquidate
      */
