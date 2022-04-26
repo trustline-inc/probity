@@ -253,7 +253,7 @@ describe("Liquidator Unit Tests", function () {
 
       await assertRevert(
         liquidator.liquidateVault(ASSET_ID["FLR"], user.address),
-        "Liquidator: Vault collateral/underlying is above the liquidation ratio"
+        "Liquidator: Vault both equity and debt positions are above the liquidation ratio"
       );
 
       await vaultEngine.updateVault(

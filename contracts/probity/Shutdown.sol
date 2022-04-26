@@ -88,7 +88,8 @@ interface VaultLike {
         address treasury,
         int256 assetToAuction,
         int256 assetToReturn,
-        int256 equity
+        int256 equity,
+        int256 initialEquity
     ) external;
 }
 
@@ -409,7 +410,15 @@ contract Shutdown is Stateful, Eventful {
         assets[assetId].gap -= amountToGrab;
         stablecoinGap -= amountToGrab * assets[assetId].finalPrice;
 
-        vaultEngine.liquidateEquityPosition(assetId, user, address(treasury), 0, -int256(underlying), -int256(equity));
+        vaultEngine.liquidateEquityPosition(
+            assetId,
+            user,
+            address(treasury),
+            0,
+            -int256(underlying),
+            -int256(equity),
+            -int256(initialEquity)
+        );
     }
 
     /**

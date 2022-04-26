@@ -344,7 +344,8 @@ contract VaultEngine is Stateful, Eventful {
         address auctioneer,
         int256 assetToAuction,
         int256 assetToReturn,
-        int256 equityAmount
+        int256 equityAmount,
+        int256 initialEquityAmount
     ) external onlyByProbity {
         Vault storage vault = vaults[assetId][user];
         Asset storage asset = assets[assetId];
@@ -352,7 +353,7 @@ contract VaultEngine is Stateful, Eventful {
         vault.underlying = add(vault.underlying, assetToReturn);
         vault.standby = sub(vault.standby, assetToReturn);
         vault.equity = add(vault.equity, equityAmount);
-        vault.initialEquity = add(vault.initialEquity, mul(RAY, equityAmount));
+        vault.initialEquity = add(vault.initialEquity, initialEquityAmount);
         asset.normEquity = add(asset.normEquity, equityAmount);
 
         vaults[assetId][auctioneer].standby = sub(vaults[assetId][auctioneer].standby, assetToAuction);

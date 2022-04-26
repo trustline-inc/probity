@@ -841,13 +841,14 @@ describe("Vault Engine Unit Tests", function () {
           auctioneer.address,
           0,
           0,
-          BigNumber.from("0").sub(AMOUNT_TO_LIQUIDATE)
+          BigNumber.from("0").sub(AMOUNT_TO_LIQUIDATE),
+          BigNumber.from("0").sub(EQUITY_AMOUNT.mul(RAY))
         );
 
       const after = (await vaultEngine.vaults(ASSET_ID["FLR"], owner.address))
         .initialEquity;
 
-      expect(after.sub(before).abs()).to.equal(AMOUNT_TO_LIQUIDATE.mul(RAY));
+      expect(after.sub(before).abs()).to.equal(EQUITY_AMOUNT.mul(RAY));
     });
 
     it("tests that totalEquity is lowered properly", async () => {
@@ -862,7 +863,8 @@ describe("Vault Engine Unit Tests", function () {
           auctioneer.address,
           0,
           0,
-          BigNumber.from("0").sub(AMOUNT_TO_LIQUIDATE)
+          BigNumber.from("0").sub(AMOUNT_TO_LIQUIDATE),
+          EQUITY_AMOUNT
         );
 
       const after = await vaultEngine.totalEquity();

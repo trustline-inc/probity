@@ -44,7 +44,8 @@ interface VaultEngineLike {
         address auctioneer,
         int256 assetToAuction,
         int256 assetToReturn,
-        int256 equityAmount
+        int256 equityAmount,
+        int256 initialEquityAmount
     ) external;
 }
 
@@ -190,7 +191,7 @@ contract Liquidator is Stateful, Eventful {
 
         require(
             collateral * adjustedPrice < debt * debtAccumulator || underlying * adjustedPrice < initialEquity,
-            "Liquidator: Vault collateral/underlying is above the liquidation ratio"
+            "Liquidator: Vault both equity and debt positions are above the liquidation ratio"
         );
 
         Asset memory asset = assets[assetId];
@@ -226,6 +227,7 @@ contract Liquidator is Stateful, Eventful {
 
             uint256 penaltyAmount = (initialEquity * asset.equityPenaltyFee) / WAD;
             uint256 currPrice = priceFeed.getPrice(assetId);
+            // what happens if assetToAuction is less than underlying?
             uint256 assetToAuction = penaltyAmount / currPrice;
             vaultEngine.liquidateEquityPosition(
                 assetId,
@@ -233,7 +235,8 @@ contract Liquidator is Stateful, Eventful {
                 address(asset.auctioneer),
                 -int256(assetToAuction),
                 -int256(underlying - assetToAuction),
-                -int256(equity)
+                -int256(equity),
+                -int256(initialEquity)
             );
 
             assets[assetId].auctioneer.startAuction(
