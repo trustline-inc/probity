@@ -61,7 +61,7 @@ ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 describe("Auctioneer Unit Tests", function () {
   const LOT_SIZE = WAD.mul(1000);
   const DEBT_SIZE = RAD.mul(4827);
-  const DEFUALT_PRICE_BUFFER = WAD.mul(120).div(100);
+  const DEFUALT_PRICE_BUFFER = WAD.mul(110).div(100);
   const HEAD = "0x0000000000000000000000000000000000000001";
   beforeEach(async function () {
     let { contracts, signers } = await deployTest();
@@ -254,7 +254,7 @@ describe("Auctioneer Unit Tests", function () {
     });
 
     it("tests that startPrice is properly updated", async () => {
-      const OLD_PRICE = RAY.mul(12).div(10);
+      const OLD_PRICE = RAY.mul(11).div(10);
       const NEW_PRICE = RAY.mul(10).div(10);
 
       await priceCalc.setPrice(0);
@@ -265,7 +265,7 @@ describe("Auctioneer Unit Tests", function () {
       await auctioneer.resetAuction(0);
 
       const after = await auctioneer.auctions(0);
-      expect(after.startPrice).to.equal(RAY.mul(12).div(10));
+      expect(after.startPrice).to.equal(RAY.mul(11).div(10));
     });
 
     it("tests that startTime is properly updated", async () => {
@@ -943,7 +943,7 @@ describe("Auctioneer Unit Tests", function () {
       await auctioneer.calculatePrice(0);
 
       const startingPriceAfter = await priceCalc.lastStartPrice();
-      expect(startingPriceAfter).to.equal(RAY.mul(12).div(10));
+      expect(startingPriceAfter).to.equal(RAY.mul(11).div(10));
       const startingTime = (await auctioneer.auctions(0)).startTime;
       const timeElapsedAfter = await priceCalc.lastTimeElapsed();
       const EXPECTED_TIME_ELAPSED = BigNumber.from(
