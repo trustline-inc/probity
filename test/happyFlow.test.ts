@@ -578,7 +578,7 @@ describe("Probity happy flow", function () {
 
     // Place a bid on the collateral auction as user
     const auctionId = 0,
-      price0 = RAY.mul(10).div(10),
+      price0 = RAY.mul(9).div(10),
       lot0 = WAD.mul("100");
     await auctioneer.connect(user).placeBid(auctionId, price0, lot0);
     let [price1, lot1] = await auctioneer.bids(auctionId, user.address);
@@ -587,7 +587,7 @@ describe("Probity happy flow", function () {
     expect(price1).to.equal(price0);
     expect(lot1).to.equal(lot0);
 
-    const BUY_PRICE = RAY.mul(12).div(10); // $1.20
+    const BUY_PRICE = RAY.mul(11).div(10); // $1.10
     const EXPECTED_BUY_LOT = WAD.mul(10);
     const EXPECTED_BUY_VALUE = BUY_PRICE.mul(EXPECTED_BUY_LOT); // $12.00
 
@@ -595,7 +595,7 @@ describe("Probity happy flow", function () {
     let [standby0] = await vaultEngine.vaults(ASSET_ID["FLR"], user.address);
     let stablecoin0 = await vaultEngine.stablecoin(user.address);
 
-    // Purchase 10 FLR on auction for $1.20 per unit
+    // Purchase 10 FLR on auction for $1.10 per unit
     await auctioneer
       .connect(user)
       .buyItNow(auctionId, BUY_PRICE, EXPECTED_BUY_LOT);
@@ -603,7 +603,6 @@ describe("Probity happy flow", function () {
     // Get standby and stablecoin balances after purchase
     let [standby1] = await vaultEngine.vaults(ASSET_ID["FLR"], user.address);
     let stablecoin1 = await vaultEngine.stablecoin(user.address);
-
     // Expect (?)
     expect(
       stablecoin0.sub(stablecoin1).sub(EXPECTED_BUY_VALUE).abs().lte(RAD)
@@ -679,11 +678,11 @@ describe("Probity happy flow", function () {
     expect(price1).to.equal(price0);
     expect(lot1).to.equal(lot0);
 
-    const BUY_PRICE = RAY.mul(12).div(10); // $1.20
+    const BUY_PRICE = RAY.mul(11).div(10); // $1.10
     const EXPECTED_BUY_LOT = WAD.mul(10);
     const EXPECTED_BUY_VALUE = BUY_PRICE.mul(EXPECTED_BUY_LOT).sub(
       lot0.mul(price0)
-    ); // $12.00
+    ); // $11.00
 
     // Get standby and stablecoin balances before purchase
     let [standby0] = await vaultEngine.vaults(ASSET_ID["FLR"], user.address);
