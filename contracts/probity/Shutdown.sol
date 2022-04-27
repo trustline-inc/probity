@@ -167,14 +167,16 @@ contract Shutdown is Stateful, Eventful {
 
     bool public initiated; // whether or not shutdown has been initiated
     uint256 public initiatedAt;
-    uint256 public auctionWaitPeriod = 2 days; // the wait period for existing auctions to end after shutdown is initiated
+    uint256 public auctionWaitPeriod = 2 days; // the wait period for existing auctions to end
     uint256 public supplierWaitPeriod = 2 days; // the wait period for supplier's vault to be processed
     mapping(bytes32 => Asset) public assets; // assetId -> Asset
-    mapping(bytes32 => mapping(address => uint256)) public collRedeemed; // assetId -> redeemer's address -> amount redeemed
+    // assetId -> redeemer's address -> amount redeemed
+    mapping(bytes32 => mapping(address => uint256)) public collRedeemed;
     mapping(address => uint256) public stablecoin; // redeemer's address -> stablecoin balance already returned
     uint256 public finalUtilizationRatio; // Total Equity Utilization Ratio at the moment shutdown is initiated
     uint256 public stablecoinGap; // amount of stablecoin that doesn't have collateral backing
-    uint256 public investorObligationRatio; // ratio of equity position's underlying asset that will be used to cover the stablecoin Gap
+    // ratio of equity position's underlying asset that will be used to cover the stablecoin Gap
+    uint256 public investorObligationRatio;
     uint256 public finalStablecoinBalance; // final balance of how much stablecoin are in circulation
     uint256 public finalTotalReserve; // final balance of the stablecoins held by reserve pool
 
@@ -385,7 +387,8 @@ contract Shutdown is Stateful, Eventful {
     }
 
     /**
-     * @notice Calculate the investor's obligation ratio to cover the stablecoin Gap created by undercollateralized debt positions
+     * @notice Calculate the investor's obligation ratio to cover the stablecoin Gap created by
+     *         undercollateralized debt positions
      */
     function calculateInvestorObligation() external onlyWhenInShutdown {
         // assumptions:
@@ -515,7 +518,8 @@ contract Shutdown is Stateful, Eventful {
     }
 
     /**
-     * @notice Allows bondsVoucher holders to redeem for a share of stablecoin held by reserve Pool up to the voucher amount
+     * @notice Allows bondsVoucher holders to redeem for a share of stablecoin held by reserve Pool
+     *         up to the voucher amount
      */
     function redeemVouchers() external {
         require(finalTotalReserve != 0, "shutdown/redeemVouchers: finalTotalReserve must be set first");
