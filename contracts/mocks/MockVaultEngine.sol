@@ -36,6 +36,7 @@ contract MockVaultEngine {
         int256 assetToAuction;
         int256 assetToReturn;
         int256 equity;
+        int256 initialEquity;
     }
 
     mapping(bytes32 => mapping(address => Vault)) public vaults;
@@ -200,7 +201,8 @@ contract MockVaultEngine {
         address auctioneer,
         int256 assetToAuction,
         int256 assetToReturn,
-        int256 equityAmount
+        int256 equityAmount,
+        int256 initialEquityAmount
     ) external {
         lastLiquidateEquityPositionCall = LiquidateEquityPositionCall(
             assetId,
@@ -208,7 +210,8 @@ contract MockVaultEngine {
             auctioneer,
             assetToAuction,
             assetToReturn,
-            equityAmount
+            equityAmount,
+            initialEquityAmount
         );
     }
 

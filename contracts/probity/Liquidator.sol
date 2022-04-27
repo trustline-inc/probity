@@ -44,7 +44,8 @@ interface VaultEngineLike {
         address auctioneer,
         int256 assetToAuction,
         int256 assetToReturn,
-        int256 equityAmount
+        int256 equityAmount,
+        int256 initialEquityAmount
     ) external;
 }
 
@@ -119,6 +120,11 @@ contract Liquidator is Stateful, Eventful {
     /////////////////////////////////////////
     // External functions
     /////////////////////////////////////////
+    /**
+     * @notice Initialize new asset type
+     * @param assetId The ID of the asset type
+     * @param auctioneer The contract address of the auctioneer
+     */
     function initAsset(bytes32 assetId, AuctioneerLike auctioneer) external onlyBy("gov") {
         require(
             address(assets[assetId].auctioneer) == address(0),
@@ -164,6 +170,7 @@ contract Liquidator is Stateful, Eventful {
     }
 
     /**
+     * @notice reduces debt that's currently on auction
      * @param amount The amount to reduce the ReservePool debt by
      */
     function reduceAuctionDebt(uint256 amount) external {
@@ -171,7 +178,7 @@ contract Liquidator is Stateful, Eventful {
     }
 
     /**
-     * @notice Liquidates an undercollateralized vault
+     * @notice checks and liquidates an undercollateralized vault
      * @param assetId The ID of the collateral type
      * @param user The address of the vault to liquidate
      */
@@ -184,7 +191,7 @@ contract Liquidator is Stateful, Eventful {
 
         require(
             collateral * adjustedPrice < debt * debtAccumulator || underlying * adjustedPrice < initialEquity,
-            "Liquidator: Vault collateral/underlying is above the liquidation ratio"
+            "Liquidator: Vault both equity and debt positions are above the liquidation ratio"
         );
 
         Asset memory asset = assets[assetId];
@@ -221,13 +228,23 @@ contract Liquidator is Stateful, Eventful {
             uint256 penaltyAmount = (initialEquity * asset.equityPenaltyFee) / WAD;
             uint256 currPrice = priceFeed.getPrice(assetId);
             uint256 assetToAuction = penaltyAmount / currPrice;
+            uint256 assetToReturn;
+
+            // if assetToAuction is more than underlying, auction all the remaining
+            if (underlying <= assetToAuction) {
+                assetToAuction = underlying;
+            } else {
+                assetToReturn = underlying - assetToAuction;
+            }
+
             vaultEngine.liquidateEquityPosition(
                 assetId,
                 user,
                 address(asset.auctioneer),
                 -int256(assetToAuction),
-                -int256(underlying - assetToAuction),
-                -int256(equity)
+                -int256(assetToReturn),
+                -int256(equity),
+                -int256(initialEquity)
             );
 
             assets[assetId].auctioneer.startAuction(
