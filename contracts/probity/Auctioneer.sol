@@ -72,10 +72,8 @@ contract Auctioneer is Stateful, Eventful {
     PriceCalc public immutable priceCalc;
 
     uint256 public auctionCount;
-    // TODO: check and fix these values
-    uint256 public nextBidRatio = 1.05E18; // the next bid must be 105% of current bid or higher
-    uint256 public priceBuffer = 1.20E18; // buffer to starting price to ensure the asset gets the highest price possible
-    // TODO: add smallest possible bid as to avoid tiny amounts
+    uint256 public nextBidRatio = 1.03E18; // the next bid must be 103% of current bid or higher
+    uint256 public priceBuffer = 1.10E18; // buffer to starting price, 110% of current price
     mapping(uint256 => Auction) public auctions;
     mapping(uint256 => mapping(address => Bid)) public bids; // auctionId -> user address -> bid
     mapping(uint256 => mapping(address => address)) public nextHighestBidder; // sorted linked list of bidders
@@ -363,7 +361,6 @@ contract Auctioneer is Stateful, Eventful {
 
         cancelOldBids(auctionId, auction.debt, auction.lot, HEAD);
 
-        // accept the debt?
         liquidator.reduceAuctionDebt(auction.debt);
         vaultEngine.moveAsset(auction.assetId, address(this), recipient, auction.lot);
 
