@@ -304,7 +304,7 @@ describe("Shutdown Unit Tests", function () {
     it("tests utilRatio is max out at 100%", async () => {
       const EQUITY_TO_SET = RAD.mul(1000);
       const DEBT_TO_SET = RAD.mul(1100);
-      const EXPECTED_UTIL_RATIO = RAY;
+      const EXPECTED_UTIL_RATIO = WAD;
 
       let utilRatio = await shutdown.finalUtilizationRatio();
       expect(utilRatio).to.equal(0);
