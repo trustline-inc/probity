@@ -142,7 +142,7 @@ contract Auctioneer is Stateful, Eventful {
     /////////////////////////////////////////
 
     /**
-     * @notice Starts a asset auction
+     * @notice Starts an asset auction
      * @param assetId The ID of the collateral on auction
      * @param lotSize The size of the lot
      * @param debtSize The amount of stablecoins that need to be raised
