@@ -136,6 +136,35 @@ describe("Treasury Unit Tests", function () {
     });
   });
 
+  describe("transferStablecoin Unit Tests", function () {
+    beforeEach(async function () {
+      await vaultEngine.addStablecoin(owner.address, AMOUNT_TO_MINT.mul(RAY));
+    });
+
+    it("tests that transferStablecoin call vaultEngine.moveStablecoin function", async () => {
+      const stablecoinBalanceBefore = await vaultEngine.stablecoin(
+        user.address
+      );
+      await treasury.transferStablecoin(user.address, AMOUNT_TO_MINT);
+      const stablecoinBalanceAfter = await vaultEngine.stablecoin(user.address);
+      expect(
+        stablecoinBalanceAfter.sub(stablecoinBalanceBefore).div(RAY)
+      ).to.equal(AMOUNT_TO_MINT);
+    });
+
+    it("tests that TransferStablecoin event is emitted properly", async () => {
+      const parsedEvents = await parseEvents(
+        treasury.transferStablecoin(user.address, AMOUNT_TO_MINT),
+        "TransferStablecoin",
+        treasury
+      );
+
+      expect(parsedEvents[0].args[0]).to.equal(owner.address);
+      expect(parsedEvents[0].args[1]).to.equal(user.address);
+      expect(parsedEvents[0].args[2]).to.equal(AMOUNT_TO_MINT);
+    });
+  });
+
   describe("withdrawPbt Unit Tests", function () {
     beforeEach(async function () {
       await vaultEngine.addPbt(owner.address, AMOUNT_TO_MINT.mul(RAY));
