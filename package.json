@@ -28,7 +28,7 @@
     "deployVpToken": "npx hardhat --network local run ./scripts/deployVpToken.ts",
     "test": "NODE_ENV=test npx hardhat test --network hardhat",
     "test:happy": "NODE_ENV=test npx hardhat test test/happyFlow.test.ts --network hardhat",
-    "coverage": "npm run build && npx hardhat coverage --temp artifacts --network hardhat --solcoverjs ./.solcover.js"
+    "coverage": "npm run build && export NODE_ENV=test && npx hardhat coverage --temp artifacts --network hardhat --solcoverjs ./.solcover.js"
   },
   "contributors": [
     {
