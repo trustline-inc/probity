@@ -34,6 +34,7 @@ import {
   LowAPR,
   HighAPR,
   Shutdown,
+  Stateful,
   MockFtso,
   MockFtsoManager,
   MockFtsoRewardManager,
@@ -64,6 +65,7 @@ import {
   LinearDecrease__factory,
   ReservePool__factory,
   Shutdown__factory,
+  Stateful__factory,
   Liquidator__factory,
   MockERC20AssetManager__factory,
   MockVPToken__factory,
@@ -121,6 +123,7 @@ interface ContractDict {
   reservePool: ReservePool;
   mockErc20Token: MockERC20AssetManager;
   shutdown: Shutdown;
+  stateful: Stateful;
   mockVpToken: MockVPToken;
   vpAssetManager: VPAssetManager;
   lowApr: LowAPR;
@@ -195,6 +198,7 @@ const contracts: ContractDict = {
   vpAssetManager: null,
   mockVpToken: null,
   shutdown: null,
+  stateful: null,
   lowApr: null,
   highApr: null,
   mockVaultEngine: null,
@@ -294,6 +298,26 @@ const deployRegistry = async (param?: { govAddress?: string }) => {
       params: { govAddress },
     });
   }
+  await checkDeploymentDelay();
+  return contracts;
+};
+
+const deployStateful = async (param?: { registry?: string }) => {
+  if (contracts.stateful !== null && process.env.NODE_ENV !== "test") {
+    console.info("aurei contract has already been deployed, skipping");
+    return contracts;
+  }
+
+  const registry =
+    param && param.registry ? param.registry : contracts.registry.address;
+  const signers = await getSigners();
+  const statefulFactory = (await ethers.getContractFactory(
+    "Stateful",
+    signers.owner
+  )) as Stateful__factory;
+  contracts.stateful = await statefulFactory.deploy(registry);
+  await contracts.stateful.deployed();
+
   await checkDeploymentDelay();
   return contracts;
 };
@@ -1530,6 +1554,8 @@ const deployTest = async (vaultEngineType?: string) => {
   const signers = await getSigners();
   await deployRegistry();
   await deployMocks();
+  await deployStateful();
+  await deployPhi();
   await deployProbity();
   if (vaultEngineType === "limited") await deployVaultEngineLimited();
   if (vaultEngineType === "unrestricted") await deployVaultEngineUnrestricted();
