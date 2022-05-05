@@ -65,8 +65,9 @@ contract Delegatable is Stateful {
 
     address[] public dataProviders; // List of data providers to delegate voting power
     uint256 public lastClaimedEpoch; // Epoch in which the last reward was claimed
-    mapping(uint256 => uint256) public contractBalanceByEpoch; // Balance for each epoch
-    mapping(uint256 => uint256) public rewardPerUnitAtEpoch; // Reward multiplier for each epoch
+    mapping(uint256 => uint256) public totalBalanceAtEpoch;
+    mapping(uint256 => int256) public totalDepositsForEpoch;
+    mapping(uint256 => uint256) public rewardPerUnitForEpoch; // Reward multiplier for each epoch
     mapping(address => uint256) public userLastClaimedEpoch; // user's last claimed Epoch
     mapping(address => uint256) public recentTotalDeposit; // user's total recent deposit since last claimed epoch
     mapping(address => mapping(uint256 => uint256)) public recentDeposits; // user's recent deposit during each epoch
@@ -102,25 +103,27 @@ contract Delegatable is Stateful {
     ///////////////////////////////////
 
     /**
+     * @dev return the data provider list
+     */
+    function getDataProviders() external view returns (address[] memory _dataProviders) {
+        return dataProviders;
+    }
+
+    /**
      * @dev claim reward from the delegated providers up to last claimable rewards, use EpochToEnd if there are too many
      *      claimable epochs
      * @param epochToEnd The Last epoch Id to process, if 0 is provided, it'll go to current highest claimable epoch
      *
      */
     function claimReward(uint256 epochToEnd) external {
-        require(
-            ftsoManager.getCurrentRewardEpoch() >= lastClaimedEpoch,
-            "Delegatable/claimReward: No new epoch to claim"
-        );
-
         (uint256 startEpochId, uint256 endEpochId) = getEpochsWithClaimableRewards();
 
-        if (epochToEnd != 0 && endEpochId < epochToEnd) {
+        if (epochToEnd != 0 && epochToEnd < endEpochId) {
             endEpochId = epochToEnd;
         }
 
         for (uint256 epochId = startEpochId; epochId <= endEpochId; epochId++) {
-            uint256[] memory epochs;
+            uint256[] memory epochs = new uint256[](1);
             epochs[0] = epochId;
 
             // we only get reward from each individual
@@ -130,10 +133,17 @@ contract Delegatable is Stateful {
                 dataProviders
             );
 
-            rewardPerUnitAtEpoch[epochId] = rdiv(rewardAmount, contractBalanceByEpoch[epochId]);
+            if (epochId != 0) {
+                totalBalanceAtEpoch[epochId] = add(totalBalanceAtEpoch[epochId - 1], totalDepositsForEpoch[epochId]);
+            } else {
+                // at epoch 0, totalDepositsForEpoch could not become negative
+                totalBalanceAtEpoch[epochId] = uint256(totalDepositsForEpoch[epochId]);
+            }
+
+            rewardPerUnitForEpoch[epochId] = rdiv(rewardAmount, totalBalanceAtEpoch[epochId]);
         }
 
-        lastClaimedEpoch = ftsoManager.getCurrentRewardEpoch();
+        lastClaimedEpoch = endEpochId;
     }
 
     /**
@@ -144,7 +154,7 @@ contract Delegatable is Stateful {
      */
     function userCollectReward(uint256 epochToEnd) external {
         require(
-            lastClaimedEpoch >= userLastClaimedEpoch[msg.sender],
+            lastClaimedEpoch > userLastClaimedEpoch[msg.sender],
             "Delegatable/userCollectReward: No new epoch to claim"
         );
 
@@ -154,7 +164,7 @@ contract Delegatable is Stateful {
 
         uint256 lastEpoch = lastClaimedEpoch;
 
-        if (epochToEnd != 0 && lastClaimedEpoch < epochToEnd) {
+        if (epochToEnd != 0 && epochToEnd < lastClaimedEpoch) {
             lastEpoch = epochToEnd;
         }
 
@@ -166,11 +176,13 @@ contract Delegatable is Stateful {
             }
 
             recentTotalDeposit[msg.sender] -= recentDeposits[msg.sender][epochId];
-            rewardBalance += rewardPerUnitAtEpoch[epochId] * rewardableBalance;
+            rewardBalance += (rewardPerUnitForEpoch[epochId] * rewardableBalance) / RAY;
+
             delete recentDeposits[msg.sender][epochId];
         }
 
-        userLastClaimedEpoch[msg.sender] = lastClaimedEpoch;
+        userLastClaimedEpoch[msg.sender] = lastEpoch;
+
         token.transfer(msg.sender, rewardBalance);
     }
 
@@ -186,7 +198,8 @@ contract Delegatable is Stateful {
             "Delegatable/changeDataProviders: Length of providers and pct mismatch"
         );
         uint256 totalPct = 0;
-        for (uint256 index = 0; index <= providers.length; index++) {
+
+        for (uint256 index = 0; index < providers.length; index++) {
             token.delegate(providers[index], pcts[index]);
             totalPct += pcts[index];
         }
@@ -202,6 +215,14 @@ contract Delegatable is Stateful {
     ///////////////////////////////////
     // Internal Functions
     ///////////////////////////////////
+    function add(uint256 a, int256 b) internal pure returns (uint256 c) {
+        unchecked {
+            c = a + uint256(b);
+        }
+        require(b >= 0 || c <= a, "Vault/add: add op failed");
+        require(b <= 0 || c >= a, "Vault/add: add op failed");
+    }
+
     function rdiv(uint256 x, uint256 y) internal pure returns (uint256 z) {
         z = ((x * RAY) + (y / 2)) / y;
     }

@@ -1,20 +1,14 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import "@nomiclabs/hardhat-ethers";
 
-import {
-  VaultEngine,
-  Registry,
-  MockVPToken,
-  VPAssetManager,
-} from "../../../typechain";
+import { VaultEngine, Registry, NativeAssetManager } from "../../../typechain";
 
 import { deployTest } from "../../../lib/deployer";
-import parseEvents from "../../utils/parseEvents";
 import { ethers } from "hardhat";
 import * as chai from "chai";
 import { bytes32, WAD } from "../../utils/constants";
+import parseEvents from "../../utils/parseEvents";
 import assertRevert from "../../utils/assertRevert";
-
 const expect = chai.expect;
 
 // Wallets
@@ -23,25 +17,23 @@ let user: SignerWithAddress;
 let gov: SignerWithAddress;
 
 // Contracts
-let vpAssetManager: VPAssetManager;
-let mockVpToken: MockVPToken;
+let nativeAssetManager: NativeAssetManager;
 let vaultEngine: VaultEngine;
 let registry: Registry;
 
-const AMOUNT_TO_MINT = WAD.mul(100);
+const AMOUNT_TO_DEPOSIT = WAD.mul(100);
 const AMOUNT_TO_WITHDRAW = WAD.mul(50);
 
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
-describe("VP Token  Unit Test", function () {
+describe("Native Asset Manager Unit Test", function () {
   beforeEach(async function () {
     const { contracts, signers } = await deployTest();
 
     // Set contracts
     vaultEngine = contracts.vaultEngine;
     registry = contracts.registry;
-    vpAssetManager = contracts.vpAssetManager;
-    mockVpToken = contracts.mockVpToken;
+    nativeAssetManager = contracts.nativeAssetManager;
 
     owner = signers.owner;
     user = signers.alice;
@@ -54,44 +46,36 @@ describe("VP Token  Unit Test", function () {
   });
 
   it("fails if caller is not a whitelisted user", async () => {
-    await mockVpToken.mint(user.address, AMOUNT_TO_MINT);
-    await mockVpToken
-      .connect(user)
-      .approve(vpAssetManager.address, AMOUNT_TO_MINT);
-
     await assertRevert(
-      vpAssetManager.connect(user).deposit(AMOUNT_TO_MINT),
+      nativeAssetManager.connect(user).deposit({ value: AMOUNT_TO_DEPOSIT }),
       "AccessControl/onlyBy: Caller does not have permission"
     );
 
     await registry
       .connect(gov)
       .setupAddress(bytes32("whitelisted"), user.address, false);
-    await vpAssetManager.connect(user).deposit(AMOUNT_TO_MINT);
+    await nativeAssetManager
+      .connect(user)
+      .deposit({ value: AMOUNT_TO_DEPOSIT });
   });
 
-  it("test DepositVPAssetManager event is emitted properly", async () => {
-    await mockVpToken.mint(owner.address, AMOUNT_TO_MINT);
-    await mockVpToken.approve(vpAssetManager.address, AMOUNT_TO_MINT);
+  it("test DepositNativeCrypto event is emitted properly", async () => {
     let parsedEvents = await parseEvents(
-      vpAssetManager.deposit(AMOUNT_TO_MINT),
-      "DepositVPAssetManager",
-      vpAssetManager
+      nativeAssetManager.deposit({ value: AMOUNT_TO_DEPOSIT }),
+      "DepositNativeCrypto",
+      nativeAssetManager
     );
-
     expect(parsedEvents[0].args[0]).to.equal(owner.address);
-    expect(parsedEvents[0].args[1]).to.equal(AMOUNT_TO_MINT);
+    expect(parsedEvents[0].args[1]).to.equal(AMOUNT_TO_DEPOSIT);
   });
 
-  it("test WithdrawVPAssetManager event is emitted properly", async () => {
-    await mockVpToken.mint(owner.address, AMOUNT_TO_MINT);
-    await mockVpToken.approve(vpAssetManager.address, AMOUNT_TO_MINT);
-    await vpAssetManager.deposit(AMOUNT_TO_MINT);
+  it("test WithdrawNativeCrypto event is emitted properly", async () => {
+    await nativeAssetManager.deposit({ value: AMOUNT_TO_DEPOSIT });
 
     let parsedEvents = await parseEvents(
-      vpAssetManager.withdraw(AMOUNT_TO_WITHDRAW),
-      "WithdrawVPAssetManager",
-      vpAssetManager
+      nativeAssetManager.withdraw(AMOUNT_TO_WITHDRAW),
+      "WithdrawNativeCrypto",
+      nativeAssetManager
     );
     expect(parsedEvents[0].args[0]).to.equal(owner.address);
     expect(parsedEvents[0].args[1]).to.equal(AMOUNT_TO_WITHDRAW);

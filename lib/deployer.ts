@@ -14,6 +14,7 @@ export type Deployment = {
 import {
   Aurei,
   BondIssuer,
+  Delegatable,
   Phi,
   Registry,
   PbtToken,
@@ -103,6 +104,7 @@ const NETWORK_NATIVE_TOKEN = NETWORK_NATIVE_TOKENS[network.name];
 interface ContractDict {
   aurei: Aurei;
   bondIssuer: BondIssuer;
+  delegatable: Delegatable;
   phi: Phi;
   ftso: MockFtso;
   registry: Registry;
@@ -176,6 +178,7 @@ const artifactNameMap = {
 const contracts: ContractDict = {
   aurei: null,
   bondIssuer: null,
+  delegatable: null,
   phi: null,
   ftso: null,
   registry: null,
