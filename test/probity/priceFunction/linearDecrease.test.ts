@@ -44,7 +44,7 @@ describe("LinearDecrease Unit Tests", function () {
     );
   });
 
-  it.only("tests that the price decrease linearly", async () => {
+  it("tests that the price decrease linearly", async () => {
     let timeElapsed = 3600 * 12; // 25% of time elapased
     let expectedPrice = STARTING_PRICE.sub(STARTING_PRICE.div(4));
 
