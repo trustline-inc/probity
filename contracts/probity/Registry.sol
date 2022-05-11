@@ -35,7 +35,7 @@ contract Registry {
     /////////////////////////////////////////
     // Events
     /////////////////////////////////////////
-    event ContractAdded(bytes32 roleName, address contractAddress);
+    event ContractAdded(bytes32 roleName, address contractAddress, bool isProbitySystem);
     event ContractRemoved(bytes32 roleName, address contractAddress);
 
     /////////////////////////////////////////
@@ -62,7 +62,7 @@ contract Registry {
     ) external onlyByGov {
         addressToRole[addr].name = roleName;
         addressToRole[addr].isProbitySystem = isProbitySystem;
-        emit ContractAdded(roleName, addr);
+        emit ContractAdded(roleName, addr, isProbitySystem);
     }
 
     /**
