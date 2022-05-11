@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
+import "../dependencies/Math.sol";
 
 interface PriceFeedLike {
     function setShutdownState() external;
@@ -307,7 +308,7 @@ contract Shutdown is Stateful, Eventful {
         uint256 totalDebt = vaultEngine.totalDebt();
         uint256 totalEquity = vaultEngine.totalEquity();
         if (totalEquity != 0) {
-            finalUtilizationRatio = min(wdiv(totalDebt, totalEquity), WAD);
+            finalUtilizationRatio = Math.min(Math.wdiv(totalDebt, totalEquity), WAD);
         }
 
         emit ShutdownInitiated();
@@ -336,7 +337,7 @@ contract Shutdown is Stateful, Eventful {
         (uint256 debtAccumulator, , , , , , ) = vaultEngine.assets(assetId);
 
         uint256 required = (debt * debtAccumulator) / assets[assetId].finalPrice;
-        uint256 amountToGrab = min(collateral, required);
+        uint256 amountToGrab = Math.min(collateral, required);
         uint256 gap = required - amountToGrab;
         assets[assetId].gap += gap;
         stablecoinGap += gap * assets[assetId].finalPrice;
@@ -381,7 +382,7 @@ contract Shutdown is Stateful, Eventful {
             "shutdown/writeOffFromReserves: the system debt needs to be zero before write off can happen"
         );
         uint256 reserveBalance = vaultEngine.stablecoin(address(reservePool));
-        uint256 amountToMove = min(stablecoinGap, reserveBalance);
+        uint256 amountToMove = Math.min(stablecoinGap, reserveBalance);
         vaultEngine.moveStablecoin(address(reservePool), address(this), amountToMove);
         stablecoinGap -= amountToMove;
     }
@@ -405,7 +406,7 @@ contract Shutdown is Stateful, Eventful {
             "shutdown/calculateInvestorObligation: system reserve or stablecoin gap must be zero"
         );
         uint256 stablecoinUtilized = (vaultEngine.totalEquity() / WAD) * finalUtilizationRatio;
-        investorObligationRatio = min((stablecoinGap * WAD) / stablecoinUtilized, WAD);
+        investorObligationRatio = Math.min((stablecoinGap * WAD) / stablecoinUtilized, WAD);
 
         emit InvestorObligationCalculated(investorObligationRatio);
     }
@@ -422,7 +423,7 @@ contract Shutdown is Stateful, Eventful {
         uint256 hookedSuppliedAmount = (initialEquity / WAD) * finalUtilizationRatio;
         uint256 investorObligation = ((hookedSuppliedAmount * investorObligationRatio) / WAD) /
             assets[assetId].finalPrice;
-        uint256 amountToGrab = min(underlying, investorObligation);
+        uint256 amountToGrab = Math.min(underlying, investorObligation);
 
         if (amountToGrab > assets[assetId].gap) {
             amountToGrab = assets[assetId].gap;
@@ -529,8 +530,8 @@ contract Shutdown is Stateful, Eventful {
 
         require(userVouchers != 0 && totalVouchers != 0, "shutdown/redeemVouchers: no vouchers to redeem");
 
-        uint256 percentageOfBonds = rdiv(userVouchers, totalVouchers);
-        uint256 shareOfStablecoin = rmul(percentageOfBonds, finalTotalReserve);
+        uint256 percentageOfBonds = Math.rdiv(userVouchers, totalVouchers);
+        uint256 shareOfStablecoin = Math.rmul(percentageOfBonds, finalTotalReserve);
 
         if (shareOfStablecoin > userVouchers) {
             shareOfStablecoin = userVouchers;
@@ -539,29 +540,5 @@ contract Shutdown is Stateful, Eventful {
         bondIssuer.shutdownRedemption(msg.sender, shareOfStablecoin);
 
         emit BondsVoucherRedeemed(msg.sender, shareOfStablecoin);
-    }
-
-    /////////////////////////////////////////
-    // Internal Functions
-    /////////////////////////////////////////
-
-    function min(uint256 a, uint256 b) internal pure returns (uint256 c) {
-        if (a > b) {
-            return b;
-        } else {
-            return a;
-        }
-    }
-
-    function rmul(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        z = ((x * y) + (RAY / 2)) / RAY;
-    }
-
-    function wdiv(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        z = ((x * WAD) + y / 2) / y;
-    }
-
-    function rdiv(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        z = ((x * RAY) + y / 2) / y;
     }
 }

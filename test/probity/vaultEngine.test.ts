@@ -194,7 +194,7 @@ describe("Vault Engine Unit Tests", function () {
           BigNumber.from(0).sub(UNDERLYING_AMOUNT),
           BigNumber.from(0).sub(EQUITY_AMOUNT.add(1))
         ),
-        "reverted with reason string 'Vault/add: add op failed"
+        "reverted with reason string 'Math/add: add op failed"
       );
 
       // Decrease equity
@@ -525,7 +525,7 @@ describe("Vault Engine Unit Tests", function () {
           BigNumber.from(0).sub(ASSET_AMOUNT),
           BigNumber.from(0).sub(DEBT_AMOUNT.add(1))
         ),
-        "reverted with reason string 'Vault/add: add op failed"
+        "reverted with reason string 'Math/add: add op failed"
       );
 
       await vaultEngine.modifyDebt(
