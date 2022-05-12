@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 
 import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
+import "../dependencies/Math.sol";
 
 interface VaultEngineLike {
     function moveAsset(
@@ -216,7 +217,7 @@ contract Auctioneer is Stateful, Eventful {
             bidLot
         );
 
-        biddableLot = min(bidLot, biddableLot);
+        biddableLot = Math.min(bidLot, biddableLot);
         uint256 bidValue = biddableLot * bidPrice;
 
         vaultEngine.moveStablecoin(msg.sender, address(this), bidValue);
@@ -250,7 +251,7 @@ contract Auctioneer is Stateful, Eventful {
         (uint256 biddableLot, , , address index) = getBiddableLot(auctionId, currentPrice, lot);
         require(biddableLot > 0, "Auctioneer/buyItNow: Price has reach a point where BuyItNow is no longer available");
 
-        uint256 lotToBuy = min(lot, biddableLot);
+        uint256 lotToBuy = Math.min(lot, biddableLot);
         lotValue = lotToBuy * currentPrice;
         vaultEngine.moveStablecoin(msg.sender, auctions[auctionId].beneficiary, lotValue);
         vaultEngine.moveAsset(auctions[auctionId].assetId, address(this), msg.sender, lotToBuy);
@@ -335,7 +336,7 @@ contract Auctioneer is Stateful, Eventful {
         biddableLot = auction.lot - totalBidLot;
 
         if (biddableValue < bidPrice * bidLot) {
-            biddableLot = min(biddableValue / bidPrice, biddableLot);
+            biddableLot = Math.min(biddableValue / bidPrice, biddableLot);
         }
 
         return (biddableLot, totalBidValue, totalBidLot, index);
@@ -477,7 +478,7 @@ contract Auctioneer is Stateful, Eventful {
                     lotLeft -= bidLot;
                 } else if (amountLeft > 0) {
                     uint256 buyableLot = (amountLeft / bidPrice);
-                    buyableLot = min(lotLeft, buyableLot);
+                    buyableLot = Math.min(lotLeft, buyableLot);
                     if (buyableLot < bidLot) {
                         modifyBid(auctionId, index, buyableLot);
                     }
@@ -578,17 +579,5 @@ contract Auctioneer is Stateful, Eventful {
             index = nextHighestBidder[auctionId][index];
         }
         require(removed, "Auctioneer/removeIndex: The index could not be found");
-    }
-
-    function min(uint256 a, uint256 b) internal pure returns (uint256 c) {
-        if (a > b) {
-            return b;
-        } else {
-            return a;
-        }
-    }
-
-    function rdiv(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        z = ((x * RAY) + (y / 2)) / y;
     }
 }

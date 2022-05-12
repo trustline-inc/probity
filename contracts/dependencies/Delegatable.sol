@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "./Stateful.sol";
+import "./Math.sol";
 
 interface FtsoRewardManagerLike {
     function claimRewardFromDataProviders(
@@ -134,13 +135,16 @@ contract Delegatable is Stateful {
             );
 
             if (epochId != 0) {
-                totalBalanceAtEpoch[epochId] = add(totalBalanceAtEpoch[epochId - 1], totalDepositsForEpoch[epochId]);
+                totalBalanceAtEpoch[epochId] = Math.add(
+                    totalBalanceAtEpoch[epochId - 1],
+                    totalDepositsForEpoch[epochId]
+                );
             } else {
                 // at epoch 0, totalDepositsForEpoch could not become negative
                 totalBalanceAtEpoch[epochId] = uint256(totalDepositsForEpoch[epochId]);
             }
 
-            rewardPerUnitForEpoch[epochId] = rdiv(rewardAmount, totalBalanceAtEpoch[epochId]);
+            rewardPerUnitForEpoch[epochId] = Math.rdiv(rewardAmount, totalBalanceAtEpoch[epochId]);
         }
 
         lastClaimedEpoch = endEpochId;
@@ -210,20 +214,5 @@ contract Delegatable is Stateful {
         );
 
         dataProviders = providers;
-    }
-
-    ///////////////////////////////////
-    // Internal Functions
-    ///////////////////////////////////
-    function add(uint256 a, int256 b) internal pure returns (uint256 c) {
-        unchecked {
-            c = a + uint256(b);
-        }
-        require(b >= 0 || c <= a, "Vault/add: add op failed");
-        require(b <= 0 || c >= a, "Vault/add: add op failed");
-    }
-
-    function rdiv(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        z = ((x * RAY) + (y / 2)) / y;
     }
 }

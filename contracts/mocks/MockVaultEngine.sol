@@ -237,8 +237,8 @@ contract MockVaultEngine {
         unchecked {
             c = a + uint256(b);
         }
-        require(b >= 0 || c <= a, "Vault/add: add op failed");
-        require(b <= 0 || c >= a, "Vault/add: add op failed");
+        require(b >= 0 || c <= a, "Math/add: add op failed");
+        require(b <= 0 || c >= a, "Math/add: add op failed");
     }
 
     function mul(uint256 a, int256 b) internal pure returns (int256 c) {
