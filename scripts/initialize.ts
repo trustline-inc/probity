@@ -34,8 +34,8 @@ const init = async () => {
   const PriceFeedABI = await artifacts.readArtifact("PriceFeed");
   const TellerABI = await artifacts.readArtifact("Teller");
   const VaultEngineABI = await artifacts.readArtifact("VaultEngine");
-  const VaultEngineWithLimitABI = await artifacts.readArtifact(
-    "VaultEngineWithLimit"
+  const VaultEngineLimitedABI = await artifacts.readArtifact(
+    "VaultEngineLimited"
   );
 
   // Contracts
@@ -60,7 +60,7 @@ const init = async () => {
       ? process.env.VAULT_ENGINE_S_B
       : process.env.VAULT_ENGINE,
     process.env.VAULT_ENGINE_S_B
-      ? VaultEngineWithLimitABI.abi
+      ? VaultEngineLimitedABI.abi
       : VaultEngineABI.abi,
     owner
   );
@@ -73,8 +73,8 @@ const init = async () => {
       .connect(owner)
       .setupAddress(
         ethers.utils.formatBytes32String("whitelisted"),
-        false,
         TRUSTLINE_INC,
+        false,
         {
           gasLimit: 300000,
         }
