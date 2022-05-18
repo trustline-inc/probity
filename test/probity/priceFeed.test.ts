@@ -1,14 +1,22 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import "@nomiclabs/hardhat-ethers";
 
-import { Registry } from "../../typechain";
+import {
+  FtsoLike,
+  MockFtso,
+  MockVaultEngine,
+  PriceFeed,
+  Registry,
+} from "../../typechain";
 
 import { deployTest, probity } from "../../lib/deployer";
 import { ethers } from "hardhat";
 import * as chai from "chai";
-import { bytes32, BYTES32_ZERO } from "../utils/constants";
+import { ADDRESS_ZERO, bytes32, BYTES32_ZERO, WAD } from "../utils/constants";
 import assertRevert from "../utils/assertRevert";
 import parseEvents from "../utils/parseEvents";
+import { BigNumber } from "ethers";
+import { rdiv } from "../utils/math";
 const expect = chai.expect;
 
 // Wallets
@@ -17,14 +25,22 @@ let gov: SignerWithAddress;
 
 // Contracts
 let registry: Registry;
+let priceFeed: PriceFeed;
+let ftso: MockFtso;
 
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
-describe("Registry Unit Tests", function () {
+describe("PriceFeed Unit Tests", function () {
+  const ASSET_ID = bytes32("asset name");
+  const DEFAULT_LIQUIDATION_RATIO = WAD.mul(15).div(10);
+  const CONTRACT_NAME = bytes32("priceFeed");
+
   beforeEach(async function () {
     let { contracts, signers } = await deployTest();
     // Set contracts
     registry = contracts.registry;
+    priceFeed = contracts.priceFeed;
+    ftso = contracts.ftso;
 
     gov = signers.owner;
     user = signers.alice;
@@ -33,81 +49,229 @@ describe("Registry Unit Tests", function () {
   describe("initAsset Unit Tests", function () {
     it("fails if caller is not by gov", async () => {
       await assertRevert(
-        registry
+        priceFeed
           .connect(user)
-          .setupAddress(bytes32("test"), user.address, false),
-        "Registry/onlyByGov: caller is not from 'gov' address"
+          .initAsset(ASSET_ID, DEFAULT_LIQUIDATION_RATIO, ftso.address),
+        "AccessControl/onlyBy: Caller does not have permission"
+      );
+      await priceFeed
+        .connect(gov)
+        .initAsset(ASSET_ID, DEFAULT_LIQUIDATION_RATIO, ftso.address);
+    });
+
+    it("fails if the asset has already been initialized", async () => {
+      const DIFF_ASSET_ID = bytes32("different asset");
+
+      await priceFeed.initAsset(
+        ASSET_ID,
+        DEFAULT_LIQUIDATION_RATIO,
+        ftso.address
+      );
+      await assertRevert(
+        priceFeed.initAsset(ASSET_ID, DEFAULT_LIQUIDATION_RATIO, ftso.address),
+        "PriceFeed/initAsset: This asset has already been initialized"
       );
 
-      await registry
-        .connect(gov)
-        .setupAddress(bytes32("test"), user.address, false);
+      await priceFeed.initAsset(
+        DIFF_ASSET_ID,
+        DEFAULT_LIQUIDATION_RATIO,
+        ftso.address
+      );
+    });
+
+    it("tests that all the variables are properly initialized", async () => {
+      const assetBefore = await priceFeed.assets(ASSET_ID);
+      expect(assetBefore.liquidationRatio.toNumber()).to.equal(0);
+      expect(assetBefore.ftso).to.equal(ADDRESS_ZERO);
+
+      await priceFeed.initAsset(
+        ASSET_ID,
+        DEFAULT_LIQUIDATION_RATIO,
+        ftso.address
+      );
+
+      const assetAfter = await priceFeed.assets(ASSET_ID);
+      expect(assetAfter.liquidationRatio).to.equal(DEFAULT_LIQUIDATION_RATIO);
+      expect(assetAfter.ftso).to.equal(ftso.address);
     });
   });
 
   describe("updateLiquidationRatio Unit Tests", function () {
+    const NEW_LIQUIDATION_RATIO = DEFAULT_LIQUIDATION_RATIO.div(2);
+    beforeEach(async function () {
+      await priceFeed.initAsset(
+        ASSET_ID,
+        DEFAULT_LIQUIDATION_RATIO,
+        ftso.address
+      );
+    });
+
     it("fails if caller is not by gov", async () => {
       await assertRevert(
-        registry
+        priceFeed
           .connect(user)
-          .setupAddress(bytes32("test"), user.address, false),
-        "Registry/onlyByGov: caller is not from 'gov' address"
+          .updateLiquidationRatio(ASSET_ID, NEW_LIQUIDATION_RATIO),
+        "AccessControl/onlyBy: Caller does not have permission"
+      );
+      await priceFeed
+        .connect(gov)
+        .updateLiquidationRatio(ASSET_ID, NEW_LIQUIDATION_RATIO);
+    });
+
+    it("tests that all the variables are properly updated ", async () => {
+      const assetBefore = await priceFeed.assets(ASSET_ID);
+      expect(assetBefore.liquidationRatio).to.equal(DEFAULT_LIQUIDATION_RATIO);
+      expect(assetBefore.ftso).to.equal(ftso.address);
+
+      await priceFeed.updateLiquidationRatio(ASSET_ID, NEW_LIQUIDATION_RATIO);
+
+      const assetAfter = await priceFeed.assets(ASSET_ID);
+      expect(assetAfter.liquidationRatio).to.equal(NEW_LIQUIDATION_RATIO);
+      expect(assetAfter.ftso).to.equal(ftso.address);
+    });
+
+    it("tests that LogVarUpdate is emitted correctly", async () => {
+      const VARIABLE_NAME = bytes32("liquidationRatio");
+
+      const events = await parseEvents(
+        priceFeed.updateLiquidationRatio(ASSET_ID, NEW_LIQUIDATION_RATIO),
+        "LogVarUpdate",
+        priceFeed
       );
 
-      await registry
-        .connect(gov)
-        .setupAddress(bytes32("test"), user.address, false);
+      expect(events.length).to.equal(1);
+      expect(events[0].args.contractName).to.equal(CONTRACT_NAME);
+      expect(events[0].args.assetId).to.equal(ASSET_ID);
+      expect(events[0].args.variable).to.equal(VARIABLE_NAME);
+      expect(events[0].args.oldValue).to.equal(DEFAULT_LIQUIDATION_RATIO);
+      expect(events[0].args.newValue).to.equal(NEW_LIQUIDATION_RATIO);
     });
   });
 
   describe("updateFtso Unit Tests", function () {
+    beforeEach(async function () {
+      await priceFeed.initAsset(
+        ASSET_ID,
+        DEFAULT_LIQUIDATION_RATIO,
+        ftso.address
+      );
+    });
+
     it("fails if caller is not by gov", async () => {
+      const NEW_FTSO_ADDRESS = user.address;
+
       await assertRevert(
-        registry
-          .connect(user)
-          .setupAddress(bytes32("test"), user.address, false),
-        "Registry/onlyByGov: caller is not from 'gov' address"
+        priceFeed.connect(user).updateFtso(ASSET_ID, NEW_FTSO_ADDRESS),
+        "AccessControl/onlyBy: Caller does not have permission"
+      );
+      await priceFeed.connect(gov).updateFtso(ASSET_ID, NEW_FTSO_ADDRESS);
+    });
+
+    it("tests that all the variables are properly updated ", async () => {
+      const NEW_FTSO_ADDRESS = user.address;
+
+      const assetBefore = await priceFeed.assets(ASSET_ID);
+      expect(assetBefore.liquidationRatio).to.equal(DEFAULT_LIQUIDATION_RATIO);
+      expect(assetBefore.ftso).to.equal(ftso.address);
+
+      await priceFeed.updateFtso(ASSET_ID, NEW_FTSO_ADDRESS);
+
+      const assetAfter = await priceFeed.assets(ASSET_ID);
+      expect(assetAfter.liquidationRatio).to.equal(DEFAULT_LIQUIDATION_RATIO);
+      expect(assetAfter.ftso).to.equal(NEW_FTSO_ADDRESS);
+    });
+
+    it("tests that LogVarUpdate is emitted correctly", async () => {
+      const NEW_FTSO_ADDRESS = user.address;
+
+      const VARIABLE_NAME = bytes32("ftso");
+
+      const events = await parseEvents(
+        priceFeed.updateFtso(ASSET_ID, NEW_FTSO_ADDRESS),
+        "LogVarUpdate",
+        priceFeed
       );
 
-      await registry
-        .connect(gov)
-        .setupAddress(bytes32("test"), user.address, false);
+      expect(events.length).to.equal(1);
+      expect(events[0].args.contractName).to.equal(CONTRACT_NAME);
+      expect(events[0].args.assetId).to.equal(ASSET_ID);
+      expect(events[0].args.variable).to.equal(VARIABLE_NAME);
+      expect(events[0].args.oldValue).to.equal(ftso.address);
+      expect(events[0].args.newValue).to.equal(NEW_FTSO_ADDRESS);
     });
   });
 
   describe("getPrice Unit Tests", function () {
-    it("fails if caller is not by gov", async () => {
-      await assertRevert(
-        registry
-          .connect(user)
-          .setupAddress(bytes32("test"), user.address, false),
-        "Registry/onlyByGov: caller is not from 'gov' address"
+    const CURRENT_PRICE_TO_SET = BigNumber.from(1e5).mul(3).div(10);
+    beforeEach(async function () {
+      await priceFeed.initAsset(
+        ASSET_ID,
+        DEFAULT_LIQUIDATION_RATIO,
+        ftso.address
       );
+      await ftso.setCurrentPrice(CURRENT_PRICE_TO_SET);
+    });
 
-      await registry
-        .connect(gov)
-        .setupAddress(bytes32("test"), user.address, false);
+    it("tests that get price returned in correct precision", async () => {
+      const EXPECTED_PRICE = rdiv(CURRENT_PRICE_TO_SET, BigNumber.from(1e5));
+      const price = await priceFeed.callStatic.getPrice(ASSET_ID);
+      expect(price).to.equal(EXPECTED_PRICE);
     });
   });
 
   describe("updateAdjustedPrice Unit Tests", function () {
-    const ROLE_NAME = bytes32("very very special role");
-    let ADDRESS;
-    const IS_PROBITY = true;
+    const CURRENT_PRICE_TO_SET = BigNumber.from(1e5).mul(3).div(10);
+    let vaultEngine: MockVaultEngine;
 
     beforeEach(async function () {
-      ADDRESS = user.address;
+      let { contracts, signers } = await deployTest();
+      // Set contracts
+      registry = contracts.registry;
+      ftso = contracts.ftso;
+      vaultEngine = contracts.mockVaultEngine;
 
-      await registry.setupAddress(ROLE_NAME, ADDRESS, IS_PROBITY);
+      const res = await probity.deployPriceFeed({
+        registry: contracts.registry.address,
+        vaultEngine: contracts.mockVaultEngine.address,
+      });
+      priceFeed = res.priceFeed;
+
+      await ftso.setCurrentPrice(CURRENT_PRICE_TO_SET);
     });
 
-    it("fails if caller is not by gov", async () => {
+    it("fails if asset has not been initialized", async () => {
       await assertRevert(
-        registry.connect(user).removeAddress(ADDRESS),
-        "Registry/onlyByGov: caller is not from 'gov' address"
+        priceFeed.updateAdjustedPrice(ASSET_ID),
+        "PriceFeed/UpdatePrice: Asset is not initialized"
+      );
+      await priceFeed.initAsset(
+        ASSET_ID,
+        DEFAULT_LIQUIDATION_RATIO,
+        ftso.address
+      );
+      await priceFeed.updateAdjustedPrice(ASSET_ID);
+    });
+
+    it("tests that vaultEngine's updateAdjustedPrice is called properly", async () => {
+      const EXPECTED_PRICE = rdiv(CURRENT_PRICE_TO_SET, BigNumber.from(1e5));
+      const EXPECTED_ADJUSTED_PRICE = rdiv(
+        EXPECTED_PRICE,
+        DEFAULT_LIQUIDATION_RATIO.mul(1e9)
       );
 
-      await registry.connect(gov).removeAddress(ADDRESS);
+      await priceFeed.initAsset(
+        ASSET_ID,
+        DEFAULT_LIQUIDATION_RATIO,
+        ftso.address
+      );
+
+      const assetBefore = await vaultEngine.assets(ASSET_ID);
+      expect(assetBefore.adjustedPrice).to.equal(0);
+
+      await priceFeed.updateAdjustedPrice(ASSET_ID);
+
+      const assetAfter = await vaultEngine.assets(ASSET_ID);
+      expect(assetAfter.adjustedPrice).to.equal(EXPECTED_ADJUSTED_PRICE);
     });
   });
 });
