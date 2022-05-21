@@ -138,7 +138,7 @@ Deploy the smart contract in the local network using the `deploy` script.
 For example:
 
 ```
-FLARE_DIR=~/Desktop/flare npm run deploy:prod <network>
+FLARE_DIR=~/Desktop/flare npm run deploy:<dev|prod> <network>
 ```
 
 If you get the error `ProviderError: err: Invalid value for block.coinbase`, that means you have to first run `npm run createInitialTx local`, which creates a genesis transaction in order for the network to start properly.
@@ -154,6 +154,14 @@ FLARE_DIR=~/Desktop/flare yarn run initialize <network>
 You can override the native token in the `local` or `internal` networks with `NATIVE_TOKEN=<CFLR|SGB|FLR>`.
 
 ## Utility Scripts
+
+### UI Object Generator
+
+Use this command to paste the output into [probity-ui](https://github.com/trustline-inc/probity-ui):
+
+```
+yarn run generateUiObject <network>
+```
 
 ### Rate Updater
 
