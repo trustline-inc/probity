@@ -104,6 +104,10 @@ contract MockVaultEngine {
         assets[assetId].equityAccumulator = 1e27;
     }
 
+    function updateAdjustedPrice(bytes32 assetId, uint256 price) external {
+        assets[assetId].adjustedPrice = price;
+    }
+
     function updateAsset(
         bytes32 assetId,
         uint256 adjustedPrice,
