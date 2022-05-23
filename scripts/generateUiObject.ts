@@ -7,6 +7,7 @@ AUCTIONEER: {
   address: "${process.env.AUCTIONEER}",
   abi: AuctioneerABI.abi
 },
+// NOTE: BRIDGE is deployed from https://github.com/trustline-inc/solaris-sdk
 BRIDGE: {
   address: "",
   abi: null
