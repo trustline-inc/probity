@@ -16,6 +16,7 @@ import {
   BondIssuer,
   Delegatable,
   Phi,
+  USD,
   Registry,
   PbtToken,
   VaultEngine,
@@ -47,6 +48,7 @@ import {
   MockLiquidator,
   MockReservePool,
   MockBondIssuer,
+  USD__factory,
   Registry__factory,
   Aurei__factory,
   BondIssuer__factory,
@@ -106,6 +108,7 @@ interface ContractDict {
   bondIssuer: BondIssuer;
   delegatable: Delegatable;
   phi: Phi;
+  usd: USD;
   ftso: MockFtso;
   registry: Registry;
   pbtToken: PbtToken;
@@ -141,6 +144,7 @@ interface ContractDict {
 
 const artifactNameMap = {
   aurei: "Aurei",
+  usd: "USD",
   bondIssuer: "BondIssuer",
   phi: "Phi",
   ftso: "MockFtso",
@@ -177,6 +181,7 @@ const artifactNameMap = {
 
 const contracts: ContractDict = {
   aurei: null,
+  usd: null,
   bondIssuer: null,
   delegatable: null,
   phi: null,
@@ -325,6 +330,10 @@ const deployStateful = async (param?: { registry?: string }) => {
   return contracts;
 };
 
+//
+// Currencies
+//
+
 const deployAurei = async (param?: { registry?: string }) => {
   if (contracts.aurei !== null && process.env.NODE_ENV !== "test") {
     console.info("aurei contract has already been deployed, skipping");
@@ -350,6 +359,37 @@ const deployAurei = async (param?: { registry?: string }) => {
   await contracts.registry.setupAddress(
     bytes32("aur"),
     contracts.aurei.address,
+    true
+  );
+  await checkDeploymentDelay();
+  return contracts;
+};
+
+const deployUsd = async (param?: { registry?: string }) => {
+  if (contracts.usd !== null && process.env.NODE_ENV !== "test") {
+    console.info("USD contract has already been deployed, skipping");
+    return contracts;
+  }
+
+  const registry =
+    param && param.registry ? param.registry : contracts.registry.address;
+  const signers = await getSigners();
+  const usdFactory = (await ethers.getContractFactory(
+    "USD",
+    signers.owner
+  )) as USD__factory;
+  contracts.usd = await usdFactory.deploy(registry);
+  await contracts.usd.deployed();
+  if (process.env.NODE_ENV !== "test") {
+    console.info("usd deployed ✓");
+    console.info({
+      address: contracts.usd.address,
+      params: { registry },
+    });
+  }
+  await contracts.registry.setupAddress(
+    bytes32("usd"),
+    contracts.usd.address,
     true
   );
   await checkDeploymentDelay();
@@ -412,6 +452,10 @@ const deployPbt = async (param?: { registry?: string }) => {
   return contracts;
 };
 
+//
+// APR
+//
+
 const deployApr = async () => {
   if (
     contracts.lowApr !== null &&
@@ -449,6 +493,10 @@ const deployApr = async () => {
   await checkDeploymentDelay();
   return contracts;
 };
+
+//
+// Vault Engines
+//
 
 const deployVaultEngine = async (param?: { registry?: string }) => {
   if (contracts.vaultEngine !== null && process.env.NODE_ENV !== "test") {
@@ -543,6 +591,10 @@ const deployVaultEngineLimited = async (param?: { registry?: string }) => {
   await checkDeploymentDelay();
   return contracts;
 };
+
+//
+// Asset Managers
+//
 
 const deployVPAssetManager = async (param?: {
   registry?: string;
@@ -732,6 +784,10 @@ const deployNativeAssetManager = async (param?: {
   return contracts;
 };
 
+//
+// Shutdown
+//
+
 const deployShutdown = async (param?: {
   registry?: string;
   priceFeed?: string;
@@ -810,6 +866,10 @@ const deployShutdown = async (param?: {
   return contracts;
 };
 
+//
+// Teller
+//
+
 const deployTeller = async (param?: {
   registry?: string;
   vaultEngine?: string;
@@ -872,6 +932,10 @@ const deployTeller = async (param?: {
   return contracts;
 };
 
+//
+// Treasury
+//
+
 const deployTreasury = async (param?: {
   registry?: string;
   pbtToken?: string;
@@ -924,6 +988,10 @@ const deployTreasury = async (param?: {
   return contracts;
 };
 
+//
+// Price Feed
+//
+
 const deployPriceFeed = async (param?: {
   registry?: string;
   vaultEngine?: string;
@@ -962,6 +1030,10 @@ const deployPriceFeed = async (param?: {
   await checkDeploymentDelay();
   return contracts;
 };
+
+//
+// Auctioneer
+//
 
 const deployAuctioneer = async (param?: {
   registry?: Registry;
@@ -1050,6 +1122,10 @@ const deployPriceCalc = async () => {
   return contracts;
 };
 
+//
+// Bond Issuer
+//
+
 const deployBondIssuer = async (param?: {
   registry?: string;
   vaultEngine?: string;
@@ -1089,6 +1165,10 @@ const deployBondIssuer = async (param?: {
   await checkDeploymentDelay();
   return contracts;
 };
+
+//
+// Reserve Pool
+//
 
 const deployReservePool = async (param?: {
   registry?: string;
@@ -1147,6 +1227,10 @@ const deployReservePool = async (param?: {
   return contracts;
 };
 
+//
+// Liquidator
+//
+
 const deployLiquidator = async (param?: {
   registry?: string;
   vaultEngine?: string;
@@ -1204,6 +1288,10 @@ const deployLiquidator = async (param?: {
   await checkDeploymentDelay();
   return contracts;
 };
+
+//
+// Mocks
+//
 
 const deployMockErc20Token = async () => {
   if (contracts.erc20AssetManager !== null && process.env.NODE_ENV !== "test") {
@@ -1485,6 +1573,10 @@ const deployMockBondIssuer = async () => {
   return contracts;
 };
 
+/*
+ * Aggregated Deployment Functions
+ */
+
 const deployMocks = async () => {
   const signers = await getSigners();
   await deployMockErc20Token();
@@ -1504,6 +1596,7 @@ const deployMocks = async () => {
 const deployProbity = async () => {
   const signers = await getSigners();
   await deployAurei();
+  await deployUsd();
   await deployPbt();
   await deployApr();
 
@@ -1590,6 +1683,7 @@ const deployProd = async () => {
 const probity = {
   deployRegistry,
   deployAurei,
+  deployUsd,
   deployPbt,
   deployApr,
   deployVaultEngine,
