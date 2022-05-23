@@ -87,7 +87,6 @@
     }
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^4.5.0",
-    "@trustline-inc/probity": "^1.0.0-alpha9"
+    "@openzeppelin/contracts": "^4.5.0"
   }
 }
