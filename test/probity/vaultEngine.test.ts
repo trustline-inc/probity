@@ -244,7 +244,7 @@ describe("Vault Engine Unit Tests", function () {
 
     it("updates equity when the accumulators are greater than the initial value", async () => {
       const COLLATERAL_AMOUNT = UNDERLYING_AMOUNT.div(2); // 5000 FLR
-      const DEBT_AMOUNT = EQUITY_AMOUNT.div(2); // 1000 AUR
+      const DEBT_AMOUNT = EQUITY_AMOUNT.div(2); // 1000 USD
 
       const debtRateIncrease = BigNumber.from("251035088626883475473007");
       const equityRateIncrease = BigNumber.from("125509667994754929166541");

@@ -10,7 +10,7 @@ import "../../dependencies/Stateful.sol";
  * @notice USD ERC20 Token Contract
  */
 contract USD is ERC20, Stateful {
-    constructor(address registryAddress) Stateful(registryAddress) ERC20("Aurei", "AUR") {}
+    constructor(address registryAddress) Stateful(registryAddress) ERC20("USD", "USD") {}
 
     /**
      * @dev minting capability for Treasury module

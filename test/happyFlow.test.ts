@@ -4,7 +4,7 @@ import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-web3";
 
 import {
-  Aurei,
+  USD,
   ERC20AssetManager,
   VaultEngine,
   NativeAssetManager,
@@ -32,7 +32,7 @@ let user: SignerWithAddress;
 let gov: SignerWithAddress;
 
 // Contracts
-let aurei: Aurei;
+let usd: USD;
 let vaultEngine: VaultEngine;
 let registry: Registry;
 let flrWallet: NativeAssetManager;
@@ -67,7 +67,7 @@ describe("Probity happy flow", function () {
     vaultEngine = contracts.vaultEngine;
     flrWallet = contracts.nativeAssetManager;
     fxrpWallet = contracts.erc20AssetManager;
-    aurei = contracts.aurei;
+    usd = contracts.usd;
     teller = contracts.teller;
     treasury = contracts.treasury;
     ftso = contracts.ftso;
@@ -220,11 +220,11 @@ describe("Probity happy flow", function () {
     expect(debt1.sub(debt0)).to.equal(LOAN_AMOUNT);
 
     // Withdraw stablecoins from vault to ERC20 tokens
-    let balance0 = await aurei.balanceOf(owner.address);
+    let balance0 = await usd.balanceOf(owner.address);
     await treasury.withdrawStablecoin(stablecoin1.div(RAY));
 
     // Expect stablecoin balance to be updated
-    let ownerBalanceAfter = await aurei.balanceOf(owner.address);
+    let ownerBalanceAfter = await usd.balanceOf(owner.address);
     expect(ownerBalanceAfter.sub(balance0).mul(RAY)).to.equal(stablecoin1);
   });
 
@@ -750,7 +750,7 @@ describe("Probity happy flow", function () {
     // Liquidate the vault
     await liquidator.liquidateVault(ASSET_ID["FLR"], owner.address);
 
-    // Check the amount on auction (lot = 200 FLR, debt = 100 AUR + 17 AUR penalty)
+    // Check the amount on auction (lot = 200 FLR, debt = 100 USD + 17 USD penalty)
     let auction = await auctioneer.auctions(0);
     const penalty = WAD.mul(17);
     expect(auction.lot).to.equal(COLL_AMOUNT);
@@ -783,7 +783,7 @@ describe("Probity happy flow", function () {
     const systemDebt = await vaultEngine.systemDebt(reserve.address);
     expect(systemDebt).to.equal(LOAN_AMOUNT.mul(RAY));
 
-    // Reduce auction debt by 20 AUR (from 100 to 80)
+    // Reduce auction debt by 20 USD (from 100 to 80)
     const debtToReduce = RAD.mul(20);
     await liquidator.reduceAuctionDebt(debtToReduce);
 
@@ -791,7 +791,7 @@ describe("Probity happy flow", function () {
     const debtOnAuction = await reserve.debtOnAuction();
     expect(debtOnAuction).to.equal(LOAN_AMOUNT.mul(RAY).sub(debtToReduce));
 
-    // Set debt threshold to 10 AUR
+    // Set debt threshold to 10 USD
     const debtThreshold = RAD.mul(10);
     await reserve.connect(gov).updateDebtThreshold(debtThreshold);
 

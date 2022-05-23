@@ -136,7 +136,7 @@ interface BondIssuerLike {
  * Step 4: Allow auctions to finish (is this gonna take too long?)
  * Step 5: Calculate net +/- in reserve vs. system debt
  * Step 6: Calculate the net deficit in unhealthy vaults (can we do this earlier?)
- * Step 7: Calculate final asset per AUR = amount of asset in vault / total AUR in circulation
+ * Step 7: Calculate final asset per USD = amount of asset in vault / total USD in circulation
  */
 
 contract Shutdown is Stateful, Eventful {
