@@ -63,12 +63,8 @@ describe("VP AssetManager  Unit Test", function () {
       .setupAddress(bytes32("whitelisted"), user.address, false);
 
     await mockVpToken.mint(owner.address, AMOUNT_TO_MINT);
-    await mockVpToken.mint(user.address, AMOUNT_TO_MINT);
 
     await mockVpToken.approve(vpAssetManager.address, AMOUNT_TO_MINT);
-    await mockVpToken
-      .connect(user)
-      .approve(vpAssetManager.address, AMOUNT_TO_MINT);
   });
 
   describe("claimReward  Unit Test", function () {
@@ -77,6 +73,11 @@ describe("VP AssetManager  Unit Test", function () {
     const CURRENT_REWARD_EPOCH = 1;
     const REWARD_AMOUNT = WAD;
     beforeEach(async function () {
+      await mockVpToken.mint(user.address, AMOUNT_TO_MINT);
+      await mockVpToken
+        .connect(user)
+        .approve(vpAssetManager.address, AMOUNT_TO_MINT);
+
       await mockFtsoManager.setCurrentRewardEpoch(CURRENT_REWARD_EPOCH);
       await mockFtsoRewardManager.setStartAndEpochId(
         CLAIMABLE_START_EPOCH,
@@ -157,6 +158,11 @@ describe("VP AssetManager  Unit Test", function () {
     const REWARD_AMOUNT = WAD;
 
     beforeEach(async function () {
+      await mockVpToken.mint(user.address, AMOUNT_TO_MINT);
+      await mockVpToken
+        .connect(user)
+        .approve(vpAssetManager.address, AMOUNT_TO_MINT);
+
       await mockFtsoManager.setCurrentRewardEpoch(CURRENT_REWARD_EPOCH);
       await mockFtsoRewardManager.setStartAndEpochId(
         CLAIMABLE_START_EPOCH,
@@ -287,6 +293,44 @@ describe("VP AssetManager  Unit Test", function () {
       expect(dataProviderAfter[0]).to.equal(NEW_DATA_PROVIDER[0]);
       expect(dataProviderAfter[1]).to.equal(NEW_DATA_PROVIDER[1]);
     });
+  });
+
+  it("fails if token transferFrom failed when depositing", async () => {
+    await registry
+      .connect(gov)
+      .setupAddress(bytes32("whitelisted"), user.address, false);
+
+    await assertRevert(
+      vpAssetManager.connect(user).deposit(AMOUNT_TO_MINT),
+      "ERC20: insufficient allowance"
+    );
+
+    await mockVpToken.mint(user.address, AMOUNT_TO_MINT);
+    await mockVpToken
+      .connect(user)
+      .approve(vpAssetManager.address, AMOUNT_TO_MINT);
+
+    await vpAssetManager.connect(user).deposit(AMOUNT_TO_MINT);
+  });
+
+  it("fails if token transfer failed when withdrawing", async () => {
+    await registry
+      .connect(gov)
+      .setupAddress(bytes32("whitelisted"), user.address, false);
+
+    await mockVpToken.mint(user.address, AMOUNT_TO_MINT);
+    await mockVpToken
+      .connect(user)
+      .approve(vpAssetManager.address, AMOUNT_TO_MINT);
+
+    await vpAssetManager.connect(user).deposit(AMOUNT_TO_MINT);
+
+    await mockVpToken.burn(vpAssetManager.address, AMOUNT_TO_MINT);
+
+    await assertRevert(
+      vpAssetManager.connect(user).withdraw(AMOUNT_TO_MINT),
+      "ERC20: transfer amount exceeds balance"
+    );
   });
 
   it("fails if caller is not a whitelisted user", async () => {
