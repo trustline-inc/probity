@@ -92,6 +92,49 @@ describe("Vault Engine Unit Tests", function () {
         .modifyStandbyAsset(ASSET_ID["FLR"], owner.address, STANDBY_AMOUNT);
     });
 
+    it("fails if treasury address provided is not registered as treasury", async () => {
+      await assertRevert(
+        vaultEngine.modifyEquity(
+          ASSET_ID["FLR"],
+          user.address,
+          UNDERLYING_AMOUNT,
+          EQUITY_AMOUNT
+        ),
+        "Vault/modifyEquity: Treasury address is not valid"
+      );
+
+      await vaultEngine.modifyEquity(
+        ASSET_ID["FLR"],
+        treasury.address,
+        UNDERLYING_AMOUNT,
+        EQUITY_AMOUNT
+      );
+    });
+
+    it("fails if supply ceiling has been reached", async () => {
+      const NEW_CEILING = RAD.mul(2000);
+      await vaultEngine
+        .connect(gov)
+        .updateCeiling(ASSET_ID["FLR"], NEW_CEILING);
+
+      await assertRevert(
+        vaultEngine.modifyEquity(
+          ASSET_ID["FLR"],
+          treasury.address,
+          UNDERLYING_AMOUNT,
+          EQUITY_AMOUNT.add(1)
+        ),
+        "Vault/modifyEquity: Supply ceiling reached"
+      );
+
+      await vaultEngine.modifyEquity(
+        ASSET_ID["FLR"],
+        treasury.address,
+        UNDERLYING_AMOUNT,
+        EQUITY_AMOUNT.sub(1)
+      );
+    });
+
     it("only allows whitelisted users to call modifyEquity", async () => {
       await registry
         .connect(gov)
@@ -392,9 +435,49 @@ describe("Vault Engine Unit Tests", function () {
     });
   });
 
+  describe("initAsset Unit Tests", function () {
+    it("fails if the caller is not gov", async () => {
+      const ASSET_ID = bytes32("new Asset ");
+      await assertRevert(
+        vaultEngine.connect(user).initAsset(ASSET_ID),
+        "AccessControl/onlyBy: Caller does not have permission"
+      );
+
+      await registry
+        .connect(gov)
+        .setupAddress(bytes32("gov"), user.address, true);
+
+      await vaultEngine.connect(user).initAsset(ASSET_ID);
+    });
+
+    it("fails if the asset has already been initialized", async () => {
+      const ASSET_ID = bytes32("new Asset");
+
+      await vaultEngine.connect(gov).initAsset(ASSET_ID);
+
+      await assertRevert(
+        vaultEngine.connect(gov).initAsset(ASSET_ID),
+        "VaultEngine/initAsset: This asset has already been initialized"
+      );
+    });
+
+    it("tests that variables are correctly initialized", async () => {
+      const ASSET_ID = bytes32("new Asset ");
+
+      const before = await vaultEngine.assets(ASSET_ID);
+      expect(before.debtAccumulator).to.equal(0);
+      expect(before.equityAccumulator).to.equal(0);
+
+      await vaultEngine.connect(gov).initAsset(ASSET_ID);
+
+      const after = await vaultEngine.assets(ASSET_ID);
+      expect(after.debtAccumulator).to.equal(RAY);
+      expect(after.equityAccumulator).to.equal(RAY);
+    });
+  });
+
   describe("addStablecoin Unit Tests", function () {
     const AMOUNT_TO_ADD = RAD.mul(173);
-    beforeEach(async function () {});
 
     it("fails if the caller is not treasury", async () => {
       await assertRevert(
@@ -626,6 +709,72 @@ describe("Vault Engine Unit Tests", function () {
           UNDERLYING_AMOUNT,
           EQUITY_AMOUNT
         );
+    });
+
+    it("fails if treasury address provided is not registered as treasury", async () => {
+      await assertRevert(
+        vaultEngine.modifyDebt(
+          ASSET_ID["FLR"],
+          user.address,
+          COLLATERAL_AMOUNT,
+          DEBT_AMOUNT
+        ),
+        "Vault/modifyDebt: Treasury address is not valid"
+      );
+
+      await vaultEngine.modifyDebt(
+        ASSET_ID["FLR"],
+        treasury.address,
+        COLLATERAL_AMOUNT,
+        DEBT_AMOUNT
+      );
+    });
+
+    it("fails if treasury address doesn't have enough capital", async () => {
+      await registry
+        .connect(gov)
+        .setupAddress(bytes32("treasury"), user.address, true);
+
+      await assertRevert(
+        vaultEngine.modifyDebt(
+          ASSET_ID["FLR"],
+          user.address,
+          COLLATERAL_AMOUNT,
+          DEBT_AMOUNT
+        ),
+        "Vault/modifyDebt: Treasury doesn't have enough equity to loan this amount"
+      );
+
+      await vaultEngine.modifyDebt(
+        ASSET_ID["FLR"],
+        treasury.address,
+        COLLATERAL_AMOUNT,
+        DEBT_AMOUNT
+      );
+    });
+
+    it("fails if debt ceiling has been reached", async () => {
+      const NEW_CEILING = RAD.mul(1000);
+      await vaultEngine
+        .connect(gov)
+        .updateCeiling(ASSET_ID["FLR"], NEW_CEILING);
+
+      await assertRevert(
+        vaultEngine.modifyDebt(
+          ASSET_ID["FLR"],
+          treasury.address,
+          COLLATERAL_AMOUNT,
+          DEBT_AMOUNT.add(1)
+        ),
+        "Vault/modifyDebt: Debt ceiling reached"
+      );
+
+      await vaultEngine.modifyDebt(
+        ASSET_ID["FLR"],
+        treasury.address,
+        COLLATERAL_AMOUNT,
+        DEBT_AMOUNT.sub(1)
+      );
     });
 
     it("only allows whitelisted users to call modifyDebt", async () => {
