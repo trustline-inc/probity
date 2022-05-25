@@ -607,7 +607,9 @@ const deployERC20AssetManager = async (param?: {
   vaultEngine?: string;
 }) => {
   if (contracts.erc20AssetManager !== null && process.env.NODE_ENV !== "test") {
-    console.info("erc20CToken contract has already been deployed, skipping");
+    console.info(
+      "erc20AssetManager contract has already been deployed, skipping"
+    );
     return contracts;
   }
 
