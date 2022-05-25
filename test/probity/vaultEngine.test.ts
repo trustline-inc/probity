@@ -392,6 +392,201 @@ describe("Vault Engine Unit Tests", function () {
     });
   });
 
+  describe("addStablecoin Unit Tests", function () {
+    const AMOUNT_TO_ADD = RAD.mul(173);
+    beforeEach(async function () {});
+
+    it("fails if the caller is not treasury", async () => {
+      await assertRevert(
+        vaultEngine.connect(user).addStablecoin(user.address, AMOUNT_TO_ADD),
+        "AccessControl/onlyBy: Caller does not have permission"
+      );
+
+      await registry
+        .connect(gov)
+        .setupAddress(bytes32("treasury"), user.address, true);
+
+      await vaultEngine
+        .connect(user)
+        .addStablecoin(user.address, AMOUNT_TO_ADD);
+    });
+
+    it("test that correct amount is added", async () => {
+      await registry
+        .connect(gov)
+        .setupAddress(bytes32("treasury"), user.address, true);
+
+      const before = await vaultEngine.stablecoin(user.address);
+
+      await vaultEngine
+        .connect(user)
+        .addStablecoin(user.address, AMOUNT_TO_ADD);
+
+      const after = await vaultEngine.stablecoin(user.address);
+      expect(after.sub(before)).to.equal(AMOUNT_TO_ADD);
+    });
+  });
+
+  describe("reducePbt Unit Tests", function () {
+    const UNDERLYING_AMOUNT = WAD.mul(10_000);
+    const ASSET_AMOUNT = WAD.mul(10_000);
+    const EQUITY_AMOUNT = WAD.mul(2000);
+    const DEBT_AMOUNT = WAD.mul(1000);
+
+    const debtRateIncrease = RAY.mul(40);
+    const equityRateIncrease = RAY.mul(15);
+
+    beforeEach(async function () {
+      await vaultEngine.connect(gov).initAsset(ASSET_ID["FLR"]);
+      await vaultEngine
+        .connect(gov)
+        .updateCeiling(ASSET_ID["FLR"], RAD.mul(10_000_000));
+      await registry
+        .connect(gov)
+        .setupAddress(bytes32("assetManager"), assetManager.address, true);
+
+      await vaultEngine.connect(gov).updateAdjustedPrice(ASSET_ID["FLR"], RAY);
+
+      await vaultEngine
+        .connect(assetManager)
+        .modifyStandbyAsset(
+          ASSET_ID["FLR"],
+          owner.address,
+          ASSET_AMOUNT.mul(2)
+        );
+
+      await vaultEngine
+        .connect(owner)
+        .modifyEquity(
+          ASSET_ID["FLR"],
+          treasury.address,
+          UNDERLYING_AMOUNT,
+          EQUITY_AMOUNT
+        );
+
+      await vaultEngine
+        .connect(owner)
+        .modifyDebt(
+          ASSET_ID["FLR"],
+          treasury.address,
+          ASSET_AMOUNT,
+          DEBT_AMOUNT
+        );
+
+      await registry
+        .connect(gov)
+        .setupAddress(bytes32("teller"), assetManager.address, true);
+
+      await vaultEngine
+        .connect(assetManager)
+        .updateAccumulators(
+          ASSET_ID["FLR"],
+          reservePool.address,
+          debtRateIncrease,
+          equityRateIncrease,
+          BigNumber.from(0)
+        );
+
+      await vaultEngine.connect(owner).collectInterest(ASSET_ID["FLR"]);
+    });
+
+    it("fails if the caller is not treasury", async () => {
+      const AMOUNT_TO_REDUCE = RAD.mul(23);
+
+      await assertRevert(
+        vaultEngine.connect(user).reducePbt(owner.address, AMOUNT_TO_REDUCE),
+        "AccessControl/onlyBy: Caller does not have permission"
+      );
+
+      await registry
+        .connect(gov)
+        .setupAddress(bytes32("treasury"), user.address, true);
+
+      await vaultEngine
+        .connect(user)
+        .reducePbt(owner.address, AMOUNT_TO_REDUCE);
+    });
+
+    it("test that correct amount is reduced", async () => {
+      await registry
+        .connect(gov)
+        .setupAddress(bytes32("treasury"), user.address, true);
+      const AMOUNT_TO_REDUCE = RAD.mul(23);
+
+      const before = await vaultEngine.pbt(owner.address);
+      await vaultEngine
+        .connect(user)
+        .reducePbt(owner.address, AMOUNT_TO_REDUCE);
+      const after = await vaultEngine.pbt(owner.address);
+
+      expect(before.sub(after)).to.equal(AMOUNT_TO_REDUCE);
+    });
+  });
+
+  describe("balanceOf Unit Tests", function () {
+    const UNDERLYING_AMOUNT = WAD.mul(10_000);
+    const ACCUMULATOR = RAY;
+    const ADJUSTED_PRICE = RAY;
+    const ASSET_AMOUNT = WAD.mul(10_000);
+    const EQUITY_AMOUNT = WAD.mul(2000);
+    const DEBT_AMOUNT = WAD.mul(1000);
+
+    beforeEach(async function () {
+      await owner.sendTransaction({
+        to: user.address,
+        value: ethers.utils.parseEther("1"),
+      });
+      await vaultEngine.connect(gov).initAsset(ASSET_ID["FLR"]);
+      await vaultEngine
+        .connect(gov)
+        .updateCeiling(ASSET_ID["FLR"], RAD.mul(10_000_000));
+      await registry
+        .connect(gov)
+        .setupAddress(bytes32("assetManager"), assetManager.address, true);
+
+      await vaultEngine.connect(gov).updateAdjustedPrice(ASSET_ID["FLR"], RAY);
+
+      await vaultEngine
+        .connect(assetManager)
+        .modifyStandbyAsset(ASSET_ID["FLR"], owner.address, ASSET_AMOUNT);
+
+      await vaultEngine
+        .connect(assetManager)
+        .modifyStandbyAsset(ASSET_ID["FLR"], user.address, ASSET_AMOUNT);
+
+      await vaultEngine
+        .connect(user)
+        .modifyEquity(
+          ASSET_ID["FLR"],
+          treasury.address,
+          UNDERLYING_AMOUNT,
+          EQUITY_AMOUNT
+        );
+    });
+
+    it("test that balanceOf returns correct info", async () => {
+      const before = await vaultEngine.balanceOf(
+        ASSET_ID["FLR"],
+        owner.address
+      );
+      expect(before.collateral).to.equal(0);
+      expect(before.debt).to.equal(0);
+      expect(before.equity).to.equal(0);
+
+      await vaultEngine.modifyDebt(
+        ASSET_ID["FLR"],
+        treasury.address,
+        ASSET_AMOUNT,
+        DEBT_AMOUNT
+      );
+
+      const after = await vaultEngine.balanceOf(ASSET_ID["FLR"], owner.address);
+      expect(after.collateral).to.equal(ASSET_AMOUNT.mul(ADJUSTED_PRICE));
+      expect(after.debt).to.equal(DEBT_AMOUNT.mul(ACCUMULATOR));
+      expect(after.equity).to.equal(0);
+    });
+  });
+
   describe("modifyDebt Unit Tests", function () {
     const UNDERLYING_AMOUNT = WAD.mul(10_000);
     const COLLATERAL_AMOUNT = WAD.mul(10_000);
