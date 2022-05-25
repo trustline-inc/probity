@@ -640,10 +640,13 @@ const deployERC20AssetManager = async (param?: {
   if (process.env.NODE_ENV !== "test") {
     console.info("erc20AssetManager deployed ✓");
     console.info({
-      registry: registry,
-      assetId,
-      mockErc20Token,
-      vaultEngine,
+      address: contracts.erc20AssetManager.address,
+      params: {
+        registry,
+        assetId,
+        mockErc20Token,
+        vaultEngine,
+      },
     });
   }
 
