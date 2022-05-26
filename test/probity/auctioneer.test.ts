@@ -546,6 +546,67 @@ describe("Auctioneer Unit Tests", function () {
       expect(before.standby.add(after.standby)).to.equal(EXPECTED_LOT_SIZE);
     });
 
+    it("tests that if there are extra lot when auction ended, it will be returned to owner", async () => {
+      const PRICE_TO_SET = DEBT_SIZE.div(LOT_SIZE).mul(2);
+      await priceCalc.setPrice(PRICE_TO_SET);
+
+      const before = await vaultEngine.vaults(flrAssetId, user1.address);
+      expect(before.standby).to.equal(0);
+
+      await auctioneer.buyItNow(0, PRICE_TO_SET.mul(2), LOT_SIZE);
+
+      const after = await vaultEngine.vaults(flrAssetId, user1.address);
+      expect(after.standby).to.not.equal(0);
+    });
+
+    it("tests that bids will be modified for existing bidder if buyItNow purchases a portion of it", async () => {
+      const AUCTION_ID = 1;
+
+      await auctioneer
+        .connect(liquidatorCaller)
+        .startAuction(
+          flrAssetId,
+          LOT_SIZE,
+          DEBT_SIZE,
+          user1.address,
+          reservePool.address,
+          true
+        );
+
+      const BID_PRICE = RAY.mul(11).div(10);
+      await auctioneer.connect(owner).placeBid(AUCTION_ID, BID_PRICE, LOT_SIZE);
+
+      const before = await auctioneer.bids(AUCTION_ID, owner.address);
+      expect(before.price).to.equal(BID_PRICE);
+      expect(before.lot).to.equal(LOT_SIZE);
+      // make sure to get buyItNow only buy partial of the current bid
+
+      await auctioneer.buyItNow(
+        AUCTION_ID,
+        RAY.mul(12).div(10),
+        LOT_SIZE.div(2)
+      );
+
+      const after = await auctioneer.bids(AUCTION_ID, owner.address);
+      expect(after.price).to.equal(BID_PRICE);
+      expect(after.lot).to.equal(LOT_SIZE.div(2));
+    });
+
+    it("tests that new buyer can only buy the biddable amount based on current existing bids", async () => {
+      const BID_PRICE = RAY.mul(12).div(10);
+      await auctioneer.connect(owner).placeBid(0, BID_PRICE, LOT_SIZE.div(4));
+      await priceCalc.setPrice(RAY);
+
+      const before = await vaultEngine.vaults(flrAssetId, owner.address);
+      expect(before.standby).to.equal(0);
+
+      await auctioneer.buyItNow(0, RAY.mul(11).div(10), LOT_SIZE);
+
+      const after = await vaultEngine.vaults(flrAssetId, owner.address);
+      console.log(after);
+      expect(after.standby).to.equal(LOT_SIZE.div(4).mul(3));
+    });
+
     it("tests auctionDebt is not reduced when sellAllLot Flag is on", async () => {
       const AUCTION_ID = 1;
 
