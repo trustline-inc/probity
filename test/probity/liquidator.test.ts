@@ -270,6 +270,56 @@ describe("Liquidator Unit Tests", function () {
       await liquidator.liquidateVault(ASSET_ID["FLR"], user.address);
     });
 
+    it("fails if treasury has not enough funds when liquidating equity position ", async () => {
+      await vaultEngine.updateVault(
+        ASSET_ID["FLR"],
+        user.address,
+        0,
+        UNDERLYING,
+        COLLATERAL,
+        DEBT,
+        EQUITY,
+        EQUITY.mul(RAY)
+      );
+
+      await vaultEngine.setStablecoin(treasury.address, 0);
+
+      await assertRevert(
+        liquidator.liquidateVault(ASSET_ID["FLR"], user.address),
+        "VaultEngine/liquidateEquityPosition: Not enough treasury funds"
+      );
+
+      await vaultEngine.setStablecoin(treasury.address, RAD.mul(100000));
+      await liquidator.liquidateVault(ASSET_ID["FLR"], user.address);
+    });
+
+    it("test that when underlying is less than assetToAuction, all of underlying is auctioned off", async () => {
+      await vaultEngine.updateVault(
+        ASSET_ID["FLR"],
+        user.address,
+        0,
+        WAD,
+        0,
+        0,
+        EQUITY,
+        EQUITY.mul(RAY)
+      );
+
+      await vaultEngine.updateAsset(
+        ASSET_ID["FLR"],
+        PRICE.div(1000),
+        DEBT,
+        EQUITY,
+        RAD.mul(1_000_000),
+        0
+      );
+
+      await liquidator.liquidateVault(ASSET_ID["FLR"], user.address);
+
+      const after = await vaultEngine.lastLiquidateEquityPositionCall();
+      expect(after.assetToAuction.abs()).to.equal(WAD);
+    });
+
     it("adds reserve pool auction debt", async () => {
       const EXPECTED_AUCTION_DEBT = DEBT.mul(DEBT_ACCUMULATOR);
 
