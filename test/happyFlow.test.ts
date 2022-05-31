@@ -696,11 +696,7 @@ describe("Probity happy flow", function () {
     // Get standby and stablecoin balances after purchase
     let [standby1] = await vaultEngine.vaults(ASSET_ID["FLR"], user.address);
     let stablecoin1 = await vaultEngine.stablecoin(user.address);
-    // console.log(stablecoin0.toString())
-    // console.log(stablecoin1.toString())
-    // console.log(stablecoin0.sub(stablecoin1).toString())
-    // console.log(EXPECTED_BUY_VALUE.toString())
-    // Expect (?)
+
     expect(
       stablecoin0.sub(stablecoin1).sub(EXPECTED_BUY_VALUE).abs().lte(RAD)
     ).to.equal(true);

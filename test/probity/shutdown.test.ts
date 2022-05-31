@@ -145,6 +145,16 @@ describe("Shutdown Unit Tests", function () {
       expect(after).to.equal(NEW_ADDRESS);
     });
 
+    it("should switch the bondIssuer address", async () => {
+      const NEW_ADDRESS = user.address;
+
+      const before = await shutdown.bondIssuer();
+      expect(before).to.equal(bondIssuer.address);
+      await shutdown.switchAddress(bytes32("bondIssuer"), NEW_ADDRESS);
+      const after = await shutdown.bondIssuer();
+      expect(after).to.equal(NEW_ADDRESS);
+    });
+
     it("should fail if which is unknown", async () => {
       await assertRevert(
         shutdown.switchAddress(bytes32("unknown"), user.address),
@@ -715,6 +725,24 @@ describe("Shutdown Unit Tests", function () {
 
       await shutdown.calculateInvestorObligation();
     });
+
+    it("fails if stablecoinGap and systemReserve is non zero", async () => {
+      await shutdown.processUserDebt(ASSET_ID["FLR"], user.address);
+      await vaultEngine.setsystemDebt(reservePool.address, 0);
+
+      await shutdown.setFinalStablecoinBalance();
+
+      await vaultEngine.setStablecoin(reservePool.address, 1);
+
+      await assertRevert(
+        shutdown.calculateInvestorObligation(),
+        "shutdown/calculateInvestorObligation: system reserve or stablecoin gap must be zero"
+      );
+
+      await vaultEngine.setStablecoin(reservePool.address, 0);
+
+      await shutdown.calculateInvestorObligation();
+    });
   });
 
   describe("processUserEquity Unit Tests", function () {
@@ -1079,6 +1107,117 @@ describe("Shutdown Unit Tests", function () {
       const after = await vaultEngine.vaults(ASSET_ID["FLR"], owner.address);
 
       expect(after.standby.sub(before.standby)).to.equal(DEBT_TO_SET);
+    });
+  });
+
+  describe("writeOffFromReserve Unit Tests", function () {
+    const PRICE_TO_SET = RAY.mul(987).div(1000);
+    const COLL_TO_SET = WAD.mul(100);
+    const UNDERCOLL_DEBT_TO_SET = COLL_TO_SET.mul(15).div(10);
+
+    beforeEach(async function () {
+      await shutdown.initiateShutdown();
+
+      // Final price = $0.987
+      await priceFeed.setPrice(ASSET_ID["FLR"], PRICE_TO_SET);
+
+      await vaultEngine.initAsset(ASSET_ID["FLR"]);
+      await shutdown.setFinalPrice(ASSET_ID.FLR);
+
+      // Owner vault is undercollateralized
+      await vaultEngine.updateVault(
+        ASSET_ID["FLR"],
+        owner.address,
+        0,
+        0,
+        COLL_TO_SET,
+        UNDERCOLL_DEBT_TO_SET,
+        0,
+        0
+      );
+    });
+
+    it("fails if system debt is not zero", async () => {
+      await vaultEngine.setsystemDebt(reservePool.address, 1);
+
+      await assertRevert(
+        shutdown.writeOffFromReserves(),
+        "shutdown/writeOffFromReserves: the system debt needs to be zero before write off can happen"
+      );
+      await vaultEngine.setsystemDebt(reservePool.address, 0);
+
+      await shutdown.writeOffFromReserves();
+    });
+
+    it("tests that correct amount of stablecoinGap is reduced by using the system Reserve", async () => {
+      const SYSTEM_RESERVE = 1;
+
+      await shutdown.processUserDebt(ASSET_ID["FLR"], owner.address);
+
+      await vaultEngine.setStablecoin(reservePool.address, SYSTEM_RESERVE);
+
+      const before = await shutdown.stablecoinGap();
+      await shutdown.writeOffFromReserves();
+
+      const after = await shutdown.stablecoinGap();
+      expect(before.sub(after)).to.equal(SYSTEM_RESERVE);
+    });
+  });
+
+  describe("setFinalSystemReserve Unit Tests", function () {
+    const TOTAL_DEBT_TO_SET = RAD.mul(150);
+
+    beforeEach(async function () {
+      await shutdown.initiateShutdown();
+
+      await vaultEngine.setTotalDebt(TOTAL_DEBT_TO_SET);
+      await vaultEngine.setTotalStablecoin(TOTAL_DEBT_TO_SET);
+      await increaseTime(172800 * 2);
+      await increaseTime(172800);
+    });
+
+    it("fails if finalStablecoinBalance is not set", async () => {
+      await vaultEngine.setStablecoin(reservePool.address, 1);
+
+      await assertRevert(
+        shutdown.setFinalSystemReserve(),
+        "shutdown/redeemVouchers: finalStablecoinBalance must be set first"
+      );
+      await shutdown.setFinalStablecoinBalance();
+
+      await shutdown.setFinalSystemReserve();
+    });
+
+    it("fails if system reserve is zero", async () => {
+      await shutdown.setFinalStablecoinBalance();
+
+      await vaultEngine.setStablecoin(reservePool.address, 0);
+
+      await assertRevert(
+        shutdown.setFinalSystemReserve(),
+        "shutdown/setFinalSystemReserve: system reserve is zero"
+      );
+
+      await vaultEngine.setStablecoin(reservePool.address, 1);
+      await shutdown.setFinalSystemReserve();
+    });
+
+    it("tests that finalTotalReserve is set correctly", async () => {
+      const SYSTEM_RESERVE_TO_SET = 1;
+      await shutdown.setFinalStablecoinBalance();
+
+      await vaultEngine.setStablecoin(
+        reservePool.address,
+        SYSTEM_RESERVE_TO_SET
+      );
+
+      const before = await shutdown.finalTotalReserve();
+      expect(before).to.equal(0);
+
+      await shutdown.setFinalSystemReserve();
+
+      const after = await shutdown.finalTotalReserve();
+      expect(after).to.equal(SYSTEM_RESERVE_TO_SET);
     });
   });
 
