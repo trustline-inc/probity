@@ -603,7 +603,6 @@ describe("Auctioneer Unit Tests", function () {
       await auctioneer.buyItNow(0, RAY.mul(11).div(10), LOT_SIZE);
 
       const after = await vaultEngine.vaults(flrAssetId, owner.address);
-      console.log(after);
       expect(after.standby).to.equal(LOT_SIZE.div(4).mul(3));
     });
 
