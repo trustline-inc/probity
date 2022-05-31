@@ -54,8 +54,6 @@ let priceFeed: MockPriceFeed;
 let liquidator: MockLiquidator;
 let priceCalc: MockPriceCalc;
 
-let flrAssetId = bytes32("FLR");
-
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
 describe("Auctioneer Unit Tests", function () {
@@ -95,7 +93,7 @@ describe("Auctioneer Unit Tests", function () {
       true
     );
     await priceCalc.setPrice(RAY.mul(12).div(10));
-    await priceFeed.setPrice(flrAssetId, RAY);
+    await priceFeed.setPrice(ASSET_ID.FLR, RAY);
   });
 
   describe("startAuction Unit Test", function () {
@@ -105,7 +103,7 @@ describe("Auctioneer Unit Tests", function () {
 
       await assertRevert(
         auctioneer.startAuction(
-          flrAssetId,
+          ASSET_ID.FLR,
           LOT_SIZE,
           DEBT_SIZE,
           COLL_OWNER,
@@ -120,7 +118,7 @@ describe("Auctioneer Unit Tests", function () {
       await auctioneer
         .connect(user1)
         .startAuction(
-          flrAssetId,
+          ASSET_ID.FLR,
           LOT_SIZE,
           DEBT_SIZE,
           COLL_OWNER,
@@ -147,7 +145,7 @@ describe("Auctioneer Unit Tests", function () {
       await auctioneer
         .connect(liquidatorCaller)
         .startAuction(
-          flrAssetId,
+          ASSET_ID.FLR,
           LOT_SIZE,
           DEBT_SIZE,
           COLL_OWNER,
@@ -156,7 +154,7 @@ describe("Auctioneer Unit Tests", function () {
         );
 
       const after = await auctioneer.auctions(0);
-      expect(after.assetId).to.equal(flrAssetId);
+      expect(after.assetId).to.equal(ASSET_ID.FLR);
       expect(after.lot).to.equal(LOT_SIZE);
       expect(after.debt).to.equal(DEBT_SIZE);
       expect(after.owner).to.equal(COLL_OWNER);
@@ -178,7 +176,7 @@ describe("Auctioneer Unit Tests", function () {
         auctioneer
           .connect(liquidatorCaller)
           .startAuction(
-            flrAssetId,
+            ASSET_ID.FLR,
             LOT_SIZE,
             DEBT_SIZE,
             COLL_OWNER,
@@ -189,7 +187,7 @@ describe("Auctioneer Unit Tests", function () {
         auctioneer
       );
 
-      expect(parsedEvents[0].args.assetId).to.equal(flrAssetId);
+      expect(parsedEvents[0].args.assetId).to.equal(ASSET_ID.FLR);
       expect(parsedEvents[0].args.auctionId).to.equal(0);
       expect(parsedEvents[0].args.lotSize).to.equal(LOT_SIZE);
     });
@@ -201,7 +199,7 @@ describe("Auctioneer Unit Tests", function () {
       await auctioneer
         .connect(liquidatorCaller)
         .startAuction(
-          flrAssetId,
+          ASSET_ID.FLR,
           LOT_SIZE,
           DEBT_SIZE,
           user1.address,
@@ -210,7 +208,7 @@ describe("Auctioneer Unit Tests", function () {
         );
 
       await vaultEngine.updateVault(
-        flrAssetId,
+        ASSET_ID.FLR,
         auctioneer.address,
         LOT_SIZE,
         0,
@@ -258,7 +256,7 @@ describe("Auctioneer Unit Tests", function () {
       const NEW_PRICE = RAY.mul(10).div(10);
 
       await priceCalc.setPrice(0);
-      await priceFeed.setPrice(flrAssetId, NEW_PRICE);
+      await priceFeed.setPrice(ASSET_ID.FLR, NEW_PRICE);
 
       const before = await auctioneer.auctions(0);
       expect(before.startPrice).to.equal(OLD_PRICE);
@@ -288,7 +286,7 @@ describe("Auctioneer Unit Tests", function () {
         auctioneer
       );
 
-      expect(parsedEvents[0].args.assetId).to.equal(flrAssetId);
+      expect(parsedEvents[0].args.assetId).to.equal(ASSET_ID.FLR);
       expect(parsedEvents[0].args.auctionId).to.equal(0);
       expect(parsedEvents[0].args.lotSize).to.equal(EXPECTED_LOT_SIZE);
     });
@@ -299,7 +297,7 @@ describe("Auctioneer Unit Tests", function () {
       await auctioneer
         .connect(liquidatorCaller)
         .startAuction(
-          flrAssetId,
+          ASSET_ID.FLR,
           LOT_SIZE,
           DEBT_SIZE,
           user1.address,
@@ -308,7 +306,7 @@ describe("Auctioneer Unit Tests", function () {
         );
 
       await vaultEngine.updateVault(
-        flrAssetId,
+        ASSET_ID.FLR,
         auctioneer.address,
         LOT_SIZE,
         0,
@@ -457,7 +455,7 @@ describe("Auctioneer Unit Tests", function () {
       await auctioneer
         .connect(liquidatorCaller)
         .startAuction(
-          flrAssetId,
+          ASSET_ID.FLR,
           LOT_SIZE,
           DEBT_SIZE,
           user1.address,
@@ -466,7 +464,7 @@ describe("Auctioneer Unit Tests", function () {
         );
 
       await vaultEngine.updateVault(
-        flrAssetId,
+        ASSET_ID.FLR,
         auctioneer.address,
         LOT_SIZE,
         0,
@@ -538,11 +536,11 @@ describe("Auctioneer Unit Tests", function () {
     it("tests that correct amount of collateral is sent to user", async () => {
       const EXPECTED_LOT_SIZE = LOT_SIZE.div(10);
 
-      const before = await vaultEngine.vaults(flrAssetId, owner.address);
+      const before = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
 
       await auctioneer.buyItNow(0, RAY.mul(12).div(10), EXPECTED_LOT_SIZE);
 
-      const after = await vaultEngine.vaults(flrAssetId, owner.address);
+      const after = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
       expect(before.standby.add(after.standby)).to.equal(EXPECTED_LOT_SIZE);
     });
 
@@ -550,12 +548,12 @@ describe("Auctioneer Unit Tests", function () {
       const PRICE_TO_SET = DEBT_SIZE.div(LOT_SIZE).mul(2);
       await priceCalc.setPrice(PRICE_TO_SET);
 
-      const before = await vaultEngine.vaults(flrAssetId, user1.address);
+      const before = await vaultEngine.vaults(ASSET_ID.FLR, user1.address);
       expect(before.standby).to.equal(0);
 
       await auctioneer.buyItNow(0, PRICE_TO_SET.mul(2), LOT_SIZE);
 
-      const after = await vaultEngine.vaults(flrAssetId, user1.address);
+      const after = await vaultEngine.vaults(ASSET_ID.FLR, user1.address);
       expect(after.standby).to.not.equal(0);
     });
 
@@ -565,7 +563,7 @@ describe("Auctioneer Unit Tests", function () {
       await auctioneer
         .connect(liquidatorCaller)
         .startAuction(
-          flrAssetId,
+          ASSET_ID.FLR,
           LOT_SIZE,
           DEBT_SIZE,
           user1.address,
@@ -597,12 +595,12 @@ describe("Auctioneer Unit Tests", function () {
       await auctioneer.connect(owner).placeBid(0, BID_PRICE, LOT_SIZE.div(4));
       await priceCalc.setPrice(RAY);
 
-      const before = await vaultEngine.vaults(flrAssetId, owner.address);
+      const before = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
       expect(before.standby).to.equal(0);
 
       await auctioneer.buyItNow(0, RAY.mul(11).div(10), LOT_SIZE);
 
-      const after = await vaultEngine.vaults(flrAssetId, owner.address);
+      const after = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
       expect(after.standby).to.equal(LOT_SIZE.div(4).mul(3));
     });
 
@@ -612,7 +610,7 @@ describe("Auctioneer Unit Tests", function () {
       await auctioneer
         .connect(liquidatorCaller)
         .startAuction(
-          flrAssetId,
+          ASSET_ID.FLR,
           LOT_SIZE,
           DEBT_SIZE,
           user1.address,
@@ -652,7 +650,7 @@ describe("Auctioneer Unit Tests", function () {
       await auctioneer
         .connect(liquidatorCaller)
         .startAuction(
-          flrAssetId,
+          ASSET_ID.FLR,
           LOT_SIZE,
           0,
           reservePool.address,
@@ -725,7 +723,7 @@ describe("Auctioneer Unit Tests", function () {
       await auctioneer
         .connect(liquidatorCaller)
         .startAuction(
-          flrAssetId,
+          ASSET_ID.FLR,
           LOT_SIZE,
           DEBT_SIZE,
           user1.address,
@@ -734,7 +732,7 @@ describe("Auctioneer Unit Tests", function () {
         );
 
       await vaultEngine.updateVault(
-        flrAssetId,
+        ASSET_ID.FLR,
         auctioneer.address,
         LOT_SIZE,
         0,
@@ -776,11 +774,11 @@ describe("Auctioneer Unit Tests", function () {
       await auctioneer.placeBid(0, RAY, EXPECTED_LOT_SIZE);
 
       await priceCalc.setPrice(RAY.mul(9).div(10));
-      const before = await vaultEngine.vaults(flrAssetId, owner.address);
+      const before = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
 
       await auctioneer.finalizeSale(0);
 
-      const after = await vaultEngine.vaults(flrAssetId, owner.address);
+      const after = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
       expect(before.standby.add(after.standby)).to.equal(EXPECTED_LOT_SIZE);
     });
 
@@ -829,7 +827,7 @@ describe("Auctioneer Unit Tests", function () {
       await auctioneer
         .connect(liquidatorCaller)
         .startAuction(
-          flrAssetId,
+          ASSET_ID.FLR,
           LOT_SIZE,
           DEBT_SIZE,
           user1.address,
@@ -914,7 +912,7 @@ describe("Auctioneer Unit Tests", function () {
         auctioneer
       );
 
-      expect(parsedEvents[0].args.assetId).to.equal(flrAssetId);
+      expect(parsedEvents[0].args.assetId).to.equal(ASSET_ID.FLR);
       expect(parsedEvents[0].args.auctionId).to.equal(0);
       expect(parsedEvents[0].args.user).to.equal(COLL_OWNER);
       expect(parsedEvents[0].args.price).to.equal(RAY);
@@ -926,7 +924,7 @@ describe("Auctioneer Unit Tests", function () {
       await auctioneer
         .connect(liquidatorCaller)
         .startAuction(
-          flrAssetId,
+          ASSET_ID.FLR,
           LOT_SIZE,
           0,
           reservePool.address,
@@ -974,7 +972,7 @@ describe("Auctioneer Unit Tests", function () {
         auctioneer
       );
 
-      expect(parsedEvents[0].args.assetId).to.equal(flrAssetId);
+      expect(parsedEvents[0].args.assetId).to.equal(ASSET_ID.FLR);
       expect(parsedEvents[0].args.auctionId).to.equal(0);
       expect(parsedEvents[0].args.user).to.equal(COLL_OWNER);
       expect(parsedEvents[0].args.price).to.equal(RAY);
@@ -987,7 +985,7 @@ describe("Auctioneer Unit Tests", function () {
       await auctioneer
         .connect(liquidatorCaller)
         .startAuction(
-          flrAssetId,
+          ASSET_ID.FLR,
           LOT_SIZE,
           DEBT_SIZE,
           user1.address,
@@ -1021,7 +1019,7 @@ describe("Auctioneer Unit Tests", function () {
       await auctioneer
         .connect(liquidatorCaller)
         .startAuction(
-          flrAssetId,
+          ASSET_ID.FLR,
           LOT_SIZE,
           DEBT_SIZE,
           user1.address,
@@ -1034,7 +1032,7 @@ describe("Auctioneer Unit Tests", function () {
         .addAuctionDebt(DEBT_ON_AUCTION);
 
       await vaultEngine.updateVault(
-        flrAssetId,
+        ASSET_ID.FLR,
         auctioneer.address,
         LOT_SIZE,
         0,
@@ -1073,11 +1071,11 @@ describe("Auctioneer Unit Tests", function () {
     });
 
     it("tests that recipient gets the all the collateral held", async () => {
-      const before = await vaultEngine.vaults(flrAssetId, owner.address);
+      const before = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
 
       await auctioneer.cancelAuction(0, owner.address);
 
-      const after = await vaultEngine.vaults(flrAssetId, owner.address);
+      const after = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
       expect(before.standby.add(after.standby)).to.equal(LOT_SIZE);
     });
 
