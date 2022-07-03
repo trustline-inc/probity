@@ -135,69 +135,69 @@ describe("BondIssuer Unit Tests", function () {
     });
   });
 
-  describe("updateSaleMaxPrice Unit Tests", function () {
+  describe("updateMaxDiscount Unit Tests", function () {
     const DEFAULT_MAX_PRICE = WAD.mul(15).div(10);
     const NEW_MAX_PRICE = WAD.mul(2);
     it("fails if caller is not 'gov'", async () => {
       await assertRevert(
-        bondIssuer.connect(user).updateSaleMaxPrice(NEW_MAX_PRICE),
+        bondIssuer.connect(user).updateMaxDiscount(NEW_MAX_PRICE),
         "AccessControl/onlyBy: Caller does not have permission"
       );
       await registry.setupAddress(bytes32("gov"), user.address, true);
-      await bondIssuer.connect(user).updateSaleMaxPrice(NEW_MAX_PRICE);
+      await bondIssuer.connect(user).updateMaxDiscount(NEW_MAX_PRICE);
     });
 
     it("tests that values are properly set", async () => {
-      const before = await bondIssuer.saleMaxPrice();
+      const before = await bondIssuer.maxDiscount();
       expect(before).to.equal(DEFAULT_MAX_PRICE);
-      await bondIssuer.connect(gov).updateSaleMaxPrice(NEW_MAX_PRICE);
-      const after = await bondIssuer.saleMaxPrice();
+      await bondIssuer.connect(gov).updateMaxDiscount(NEW_MAX_PRICE);
+      const after = await bondIssuer.maxDiscount();
       expect(after).to.equal(NEW_MAX_PRICE);
     });
   });
 
-  describe("updateSaleStepPeriod Unit Tests", function () {
+  describe("updateStepPeriod Unit Tests", function () {
     const NEW_STEP_PERIOD = DEFAULT_SALE_STEP_PERIOD / 2;
     it("fails if caller is not gov", async () => {
       await assertRevert(
-        bondIssuer.connect(user).updateSaleStepPeriod(NEW_STEP_PERIOD),
+        bondIssuer.connect(user).updateStepPeriod(NEW_STEP_PERIOD),
         "AccessControl/onlyBy: Caller does not have permission"
       );
       await registry.setupAddress(bytes32("gov"), user.address, true);
-      await bondIssuer.connect(user).updateSaleStepPeriod(NEW_STEP_PERIOD);
+      await bondIssuer.connect(user).updateStepPeriod(NEW_STEP_PERIOD);
     });
 
     it("tests that values are properly set", async () => {
-      const before = await bondIssuer.saleStepPeriod();
+      const before = await bondIssuer.stepPeriod();
       expect(before).to.equal(DEFAULT_SALE_STEP_PERIOD);
-      await bondIssuer.connect(gov).updateSaleStepPeriod(NEW_STEP_PERIOD);
-      const after = await bondIssuer.saleStepPeriod();
+      await bondIssuer.connect(gov).updateStepPeriod(NEW_STEP_PERIOD);
+      const after = await bondIssuer.stepPeriod();
       expect(after).to.equal(NEW_STEP_PERIOD);
     });
   });
 
-  describe("updateSalePriceIncreasePerStep Unit Tests", function () {
+  describe("updateDiscountIncreasePerStep Unit Tests", function () {
     const NEW_PRICE_INCREASE_PER_STEP = DEFAULT_PER_STEP_INCREASE.div(2);
     it("fails if caller is not by gov", async () => {
       await assertRevert(
         bondIssuer
           .connect(user)
-          .updateSalePriceIncreasePerStep(NEW_PRICE_INCREASE_PER_STEP),
+          .updateDiscountIncreasePerStep(NEW_PRICE_INCREASE_PER_STEP),
         "AccessControl/onlyBy: Caller does not have permission"
       );
       await registry.setupAddress(bytes32("gov"), user.address, true);
       await bondIssuer
         .connect(user)
-        .updateSalePriceIncreasePerStep(NEW_PRICE_INCREASE_PER_STEP);
+        .updateDiscountIncreasePerStep(NEW_PRICE_INCREASE_PER_STEP);
     });
 
     it("tests that values are properly set", async () => {
-      const before = await bondIssuer.salePriceIncreasePerStep();
+      const before = await bondIssuer.discountIncreasePerStep();
       expect(before).to.equal(DEFAULT_PER_STEP_INCREASE);
       await bondIssuer
         .connect(gov)
-        .updateSalePriceIncreasePerStep(NEW_PRICE_INCREASE_PER_STEP);
-      const after = await bondIssuer.salePriceIncreasePerStep();
+        .updateDiscountIncreasePerStep(NEW_PRICE_INCREASE_PER_STEP);
+      const after = await bondIssuer.discountIncreasePerStep();
       expect(after).to.equal(NEW_PRICE_INCREASE_PER_STEP);
     });
   });

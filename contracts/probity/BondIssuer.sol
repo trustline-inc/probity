@@ -43,9 +43,9 @@ contract BondIssuer is Stateful, Eventful {
 
     Offering public offering;
 
-    // Every saleStepPeriod, tokens received per stablecoin goes up by X% until maxDiscount
+    // Every stepPeriod, tokens received per stablecoin goes up by X% until maxDiscount
     uint256 public discountIncreasePerStep = 5E16; // 5%
-    uint256 public saleStepPeriod = 6 hours;
+    uint256 public stepPeriod = 6 hours;
     uint256 public maxDiscount = 1.5E18; // 150% of stablecoin (50% discount)
 
     mapping(address => uint256) public tokens;
@@ -66,7 +66,7 @@ contract BondIssuer is Stateful, Eventful {
      * @dev Stepwise discount increases until max discount is met
      */
     function tokensPerStablecoin() public view returns (uint256 discount) {
-        uint256 steps = (block.timestamp - offering.startTime) / saleStepPeriod;
+        uint256 steps = (block.timestamp - offering.startTime) / stepPeriod;
 
         if (ONE + (discountIncreasePerStep * steps) > maxDiscount) {
             return maxDiscount;
@@ -89,30 +89,30 @@ contract BondIssuer is Stateful, Eventful {
     }
 
     /**
-     * @notice Updates the maximum discount for a sale
+     * @notice Updates the maximum discount for an issue
      * @param newMaxDiscount The maximum discount to set
      */
-    function updateSaleMaxDiscount(uint256 newMaxDiscount) external onlyBy("gov") {
+    function updateMaxDiscount(uint256 newMaxDiscount) external onlyBy("gov") {
         emit LogVarUpdate("reserve", "maxDiscount", maxDiscount, newMaxDiscount);
         maxDiscount = newMaxDiscount;
     }
 
     /**
-     * @notice Updates the sale step period
+     * @notice Updates the step period
      * @param newStepPeriod The new period of time per step
      */
-    function updateSaleStepPeriod(uint256 newStepPeriod) external onlyBy("gov") {
-        emit LogVarUpdate("reserve", "saleStepPeriod", saleStepPeriod, newStepPeriod);
-        saleStepPeriod = newStepPeriod;
+    function updateStepPeriod(uint256 newStepPeriod) external onlyBy("gov") {
+        emit LogVarUpdate("reserve", "stepPeriod", stepPeriod, newStepPeriod);
+        stepPeriod = newStepPeriod;
     }
 
     /**
-     * @notice Updates the sale discount increase per step
-     * @param newPriceIncreasePerStep The new discount increase per step
+     * @notice Updates the discount increase per step
+     * @param newDiscountIncreasePerStep The new discount increase per step
      */
-    function updateSalePriceIncreasePerStep(uint256 newPriceIncreasePerStep) external onlyBy("gov") {
-        emit LogVarUpdate("reserve", "discountIncreasePerStep", discountIncreasePerStep, newPriceIncreasePerStep);
-        discountIncreasePerStep = newPriceIncreasePerStep;
+    function updateDiscountIncreasePerStep(uint256 newDiscountIncreasePerStep) external onlyBy("gov") {
+        emit LogVarUpdate("reserve", "discountIncreasePerStep", discountIncreasePerStep, newDiscountIncreasePerStep);
+        discountIncreasePerStep = newDiscountIncreasePerStep;
     }
 
     /**
@@ -158,7 +158,7 @@ contract BondIssuer is Stateful, Eventful {
      * @notice Redeems tokens for assets
      * @param amount The amount to redeem
      */
-    function redeemBonds(uint256 amount) external {
+    function redeemTokens(uint256 amount) external {
         processRedemption(msg.sender, amount);
     }
 
