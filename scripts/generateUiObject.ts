@@ -1,7 +1,7 @@
 console.log(`
-AUREI: {
-  address: "${process.env.AUREI}",
-  abi: AureiABI.abi
+USD: {
+  address: "${process.env.USD}",
+  abi: UsdABI.abi
 },
 AUCTIONEER: {
   address: "${process.env.AUCTIONEER}",
@@ -10,7 +10,7 @@ AUCTIONEER: {
 // NOTE: BRIDGE is deployed from https://github.com/trustline-inc/solaris-sdk
 BRIDGE: {
   address: "",
-  abi: null
+  abi: BridgeABI.abi
 },
 LIQUIDATOR: {
   address: "${process.env.LIQUIDATOR}",
@@ -28,9 +28,9 @@ REGISTRY: {
   address: "${process.env.REGISTRY}",
   abi: RegistryABI.abi
 },
-PBT_TOKEN: {
-  address: "${process.env.PBT_TOKEN}",
-  abi: PbtTokenABI.abi
+PBT: {
+  address: "${process.env.PBT}",
+  abi: PbtABI.abi
 },
 RESERVE_POOL: {
   address: "${process.env.RESERVE_POOL}",
@@ -49,13 +49,13 @@ VAULT_ENGINE: {
   abi: VaultEngineLimitedABI.abi
 },
 INTERFACES: {
-  "${process.env.AUREI}": AureiABI,
+  "${process.env.USD}": UsdABI,
   "${process.env.AUCTIONEER}": AuctioneerABI,
   "${process.env.LIQUIDATOR}": LiquidatorABI,
   "${process.env.PRICE_FEED}": PriceFeedABI,
   "${process.env.NATIVE_ASSET_MANAGER}": NativeAssetManagerABI,
   "${process.env.REGISTRY}": RegistryABI,
-  "${process.env.PBT_TOKEN}": PbtTokenABI,
+  "${process.env.PBT}": PbtABI,
   "${process.env.RESERVE_POOL}": ReservePoolABI,
   "${process.env.TELLER}": TellerABI,
   "${process.env.TREASURY}": TreasuryABI,

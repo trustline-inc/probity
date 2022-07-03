@@ -3,8 +3,8 @@ import "@nomiclabs/hardhat-ethers";
 
 import {
   Registry,
-  Aurei,
-  PbtToken,
+  USD,
+  PBT,
   Treasury,
   NativeAssetManager,
   MockVaultEngine,
@@ -23,8 +23,8 @@ let owner: SignerWithAddress;
 let user: SignerWithAddress;
 
 // Contracts
-let aurei: Aurei;
-let pbt: PbtToken;
+let usd: USD;
+let pbt: PBT;
 let vaultEngine: MockVaultEngine;
 let treasury: Treasury;
 let registry: Registry;
@@ -40,8 +40,8 @@ describe("Treasury Unit Tests", function () {
     let { contracts, signers } = await deployTest();
     // Set contracts
     registry = contracts.registry;
-    aurei = contracts.aurei;
-    pbt = contracts.pbtToken;
+    usd = contracts.usd;
+    pbt = contracts.pbt;
     flrAsset = contracts.nativeAssetManager;
 
     owner = signers.owner;
@@ -61,7 +61,7 @@ describe("Treasury Unit Tests", function () {
 
   describe("depositStablecoin Unit Tests", function () {
     beforeEach(async function () {
-      await aurei.mint(owner.address, AMOUNT_TO_MINT);
+      await usd.mint(owner.address, AMOUNT_TO_MINT);
     });
 
     it("tests that deposit calls vaultEngine.addStablecoin function", async () => {
@@ -73,10 +73,10 @@ describe("Treasury Unit Tests", function () {
       );
     });
 
-    it("tests that aurei is burned from user's balance", async () => {
-      const aurBalanceBefore = await aurei.balanceOf(owner.address);
+    it("tests that usd is burned from user's balance", async () => {
+      const aurBalanceBefore = await usd.balanceOf(owner.address);
       await treasury.depositStablecoin(AMOUNT_TO_MINT);
-      const aurBalanceAfter = await aurei.balanceOf(owner.address);
+      const aurBalanceAfter = await usd.balanceOf(owner.address);
       expect(aurBalanceBefore.sub(aurBalanceAfter)).to.equal(AMOUNT_TO_MINT);
     });
 
@@ -94,7 +94,7 @@ describe("Treasury Unit Tests", function () {
 
   describe("withdrawStablecoin Unit Tests", function () {
     beforeEach(async function () {
-      await aurei.mint(owner.address, AMOUNT_TO_MINT);
+      await usd.mint(owner.address, AMOUNT_TO_MINT);
       await treasury.depositStablecoin(AMOUNT_TO_MINT);
     });
 
@@ -115,10 +115,10 @@ describe("Treasury Unit Tests", function () {
       await treasury.withdrawStablecoin(AMOUNT_TO_WITHDRAW);
     });
 
-    it("tests that aurei is minted for user's balance", async () => {
-      const aurBalanceBefore = await aurei.balanceOf(owner.address);
+    it("tests that usd is minted for user's balance", async () => {
+      const aurBalanceBefore = await usd.balanceOf(owner.address);
       await treasury.withdrawStablecoin(AMOUNT_TO_WITHDRAW);
-      const aurBalanceAfter = await aurei.balanceOf(owner.address);
+      const aurBalanceAfter = await usd.balanceOf(owner.address);
       expect(aurBalanceAfter.sub(aurBalanceBefore)).to.equal(
         AMOUNT_TO_WITHDRAW
       );

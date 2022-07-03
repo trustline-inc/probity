@@ -23,10 +23,9 @@ const config: HardhatUserConfig = {
     local: {
       url: "http://127.0.0.1:9650/ext/bc/C/rpc",
       accounts: [
-        "44b8de040dec19cf810efe64919b481e05e2ba643efe003223662f1626b114f0",
-        "d77b743a0b9170c230e4a4be446b8605aa45f1d00da3d8cd5e5f778c287e1f22",
+        "6f65c8fc482827dfd05771d0f8cb1696b7c47595bd42ae2fa8b25c38c5692a1a",
       ],
-      chainId: 16,
+      chainId: 1337,
     },
     internal: {
       url: "https://coston.trustline.co/ext/bc/C/rpc",

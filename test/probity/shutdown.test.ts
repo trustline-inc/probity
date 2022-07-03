@@ -2,7 +2,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import "@nomiclabs/hardhat-ethers";
 
 import {
-  Aurei,
+  USD,
   Liquidator,
   MockAuctioneer,
   MockBondIssuer,
@@ -973,7 +973,7 @@ describe("Shutdown Unit Tests", function () {
       await vaultEngine.setStablecoin(owner.address, AUREI_AMOUNT_TO_SET);
     });
 
-    it("tests that correct amount of aurei are transferred", async () => {
+    it("tests that correct amount of usd are transferred", async () => {
       const AMOUNT_TO_RETURN = AUREI_AMOUNT_TO_SET.div(10);
       const stablecoinBalanceBefore = await vaultEngine.stablecoin(
         shutdown.address
@@ -1077,7 +1077,7 @@ describe("Shutdown Unit Tests", function () {
       expect(after.sub(before)).to.equal(DEBT_TO_SET);
     });
 
-    it("tests that if more aurei is returned, more collateral can be withdrawn", async () => {
+    it("tests that if more usd is returned, more collateral can be withdrawn", async () => {
       await shutdown.returnStablecoin(AUREI_AMOUNT_TO_SET.mul(2).div(3));
 
       let before = await shutdown.collRedeemed(ASSET_ID.FLR, owner.address);

@@ -1,7 +1,7 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import "@nomiclabs/hardhat-ethers";
 
-import { Aurei, VaultEngine, PbtToken, Registry } from "../../../typechain";
+import { USD, VaultEngine, PBT, Registry } from "../../../typechain";
 
 import { deployTest } from "../../../lib/deployer";
 import { ethers } from "hardhat";
@@ -17,19 +17,19 @@ let user: SignerWithAddress;
 // Contracts
 let vaultEngine: VaultEngine;
 let registry: Registry;
-let pbt: PbtToken;
+let pbt: PBT;
 
 const AMOUNT_TO_MINT = WAD.mul(1000);
 const AMOUNT_TO_BURN = WAD.mul(230);
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
-describe("PBT Token Unit Test", function () {
+describe("PBT Unit Test", function () {
   beforeEach(async function () {
     const { contracts, signers } = await deployTest();
 
     // Set contracts
     vaultEngine = contracts.vaultEngine;
-    pbt = contracts.pbtToken;
+    pbt = contracts.pbt;
     registry = contracts.registry;
 
     owner = signers.owner;
