@@ -21,7 +21,7 @@ interface VaultEngineLike {
 
 /**
  * @title BondIssuer contract
- * @notice A bond issuer system that allow user to purchase vouchers at redeemable when the probity reserve is positive
+ * @notice This contract sells zero-coupon bonds that are redeemable for excess reserves.
  */
 contract BondIssuer is Stateful, Eventful {
     /////////////////////////////////////////
