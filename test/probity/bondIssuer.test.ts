@@ -356,7 +356,7 @@ describe("BondIssuer Unit Tests", function () {
 
       await assertRevert(
         bondIssuer.purchaseBond(OFFER_AMOUNT.add(1)),
-        "ReservePool/purchaseBond: Can't purchase more tokens than amount available"
+        "ReservePool/purchaseBond: Can't purchase more tokens than offering value"
       );
       await bondIssuer.purchaseBond(OFFER_AMOUNT);
     });
