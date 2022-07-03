@@ -6,7 +6,7 @@ import "../dependencies/Eventful.sol";
 interface VaultEngineLike {
     function stablecoin(address user) external returns (uint256 balance);
 
-    function unbackedDebt(address user) external returns (uint256 balance);
+    function systemDebt(address user) external returns (uint256 balance);
 
     function settle(uint256 balance) external;
 
@@ -19,6 +19,10 @@ interface VaultEngineLike {
     ) external;
 }
 
+/**
+ * @title BondIssuer contract
+ * @notice A bond issuer system that allow user to purchase vouchers at redeemable when the probity reserve is positive
+ */
 contract BondIssuer is Stateful, Eventful {
     /////////////////////////////////////////
     // Type Declarations
@@ -38,20 +42,17 @@ contract BondIssuer is Stateful, Eventful {
 
     Offering public offering;
 
-    // Every Y hours, vouchers received per stablecoin goes up by X%
-    // TODO: evaluate these values
-    uint256 public salePriceIncreasePerStep = 5E16;
+    // Every saleStepPeriod, vouchers received per stablecoin goes up by X% until saleMaxPrice
+    uint256 public salePriceIncreasePerStep = 5E16; // 5%
     uint256 public saleStepPeriod = 6 hours;
-    // Max vouchers received per stablecoin is 50%
-    // TODO: evaluate this max value
-    uint256 public saleMaxPrice = 1.5E18;
+    uint256 public saleMaxPrice = 1.5E18; // 150% of stablecoin
+
     mapping(address => uint256) public vouchers;
     uint256 public totalVouchers;
 
     /////////////////////////////////////////
     // Constructor
     /////////////////////////////////////////
-
     constructor(address registryAddress, VaultEngineLike vaultEngineAddress) Stateful(registryAddress) {
         vaultEngine = vaultEngineAddress;
     }
@@ -59,7 +60,6 @@ contract BondIssuer is Stateful, Eventful {
     /////////////////////////////////////////
     // Public functions
     /////////////////////////////////////////
-
     /**
      * @notice Returns the amount of vouchers received per stablecoin
      * @dev Stepwise price increases until max price is met
@@ -127,7 +127,7 @@ contract BondIssuer is Stateful, Eventful {
     }
 
     /**
-     * @notice Processes a redemption when the system is shut down
+     * @notice Processes a redemption when the system is in shut down state
      * @param user The user to process for
      * @param amount The amount to redeem
      */
@@ -175,7 +175,8 @@ contract BondIssuer is Stateful, Eventful {
      */
     function processRedemption(address user, uint256 amount) internal {
         require(
-            vaultEngine.stablecoin(address(reservePoolAddress)) >= amount,
+            vaultEngine.stablecoin(address(reservePoolAddress)) - vaultEngine.systemDebt(address(reservePoolAddress)) >=
+                amount,
             "ReservePool/processRedemption: The reserve pool doesn't have enough funds"
         );
 

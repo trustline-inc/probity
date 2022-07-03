@@ -1,23 +1,20 @@
 import "@nomiclabs/hardhat-ethers";
+import { utils } from "ethers";
 import { deployDev, Deployment, deployProd } from "../lib/deployer";
 import * as fs from "fs";
 import * as hre from "hardhat";
 
+utils.Logger.setLogLevel(utils.Logger.levels.ERROR);
+
 async function main() {
   let deployment: Deployment;
 
-  const stablecoin: string = process.env.STABLECOIN
-    ? process.env.STABLECOIN.toUpperCase()
-    : "AUR";
-  if (!["PHI", "AUR"].includes(stablecoin))
-    throw Error('STABLECOIN envvar must be set to "PHI" or "AUR".');
-
   if (["local", "internal"].includes(hre.network.name)) {
     console.info("Deploying in Dev Mode");
-    deployment = await deployDev(stablecoin);
+    deployment = await deployDev();
   } else {
     console.info("Deploying in Production Mode");
-    deployment = await deployProd(stablecoin);
+    deployment = await deployProd();
     console.warn(
       "This deployment of Probity in Production does not include ERC20AssetManager, VPAssetManager and Auctioneer contracts. Please deploy them separately."
     );

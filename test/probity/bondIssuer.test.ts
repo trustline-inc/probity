@@ -49,9 +49,13 @@ describe("BondIssuer Unit Tests", function () {
     shutdown = signers.bob;
 
     await bondIssuer.setReservePoolAddress(reservePool.address);
-    await registry.setupAddress(bytes32("gov"), gov.address);
-    await registry.setupAddress(bytes32("reservePool"), reservePool.address);
-    await registry.setupAddress(bytes32("shutdown"), shutdown.address);
+    await registry.setupAddress(bytes32("gov"), gov.address, true);
+    await registry.setupAddress(
+      bytes32("reservePool"),
+      reservePool.address,
+      true
+    );
+    await registry.setupAddress(bytes32("shutdown"), shutdown.address, true);
   });
 
   describe("vouchersPerStablecoin Unit Tests", function () {
@@ -103,14 +107,14 @@ describe("BondIssuer Unit Tests", function () {
       registry = contracts.registry;
       bondIssuer = contracts.bondIssuer;
 
-      await registry.setupAddress(bytes32("gov"), gov.address);
+      await registry.setupAddress(bytes32("gov"), gov.address, true);
     });
     it("fails if caller is not 'gov'", async () => {
       await assertRevert(
         bondIssuer.connect(user).setReservePoolAddress(reservePool.address),
         "AccessControl/onlyBy: Caller does not have permission"
       );
-      await registry.setupAddress(bytes32("gov"), user.address);
+      await registry.setupAddress(bytes32("gov"), user.address, true);
       await bondIssuer.connect(user).setReservePoolAddress(reservePool.address);
     });
 
@@ -139,7 +143,7 @@ describe("BondIssuer Unit Tests", function () {
         bondIssuer.connect(user).updateSaleMaxPrice(NEW_MAX_PRICE),
         "AccessControl/onlyBy: Caller does not have permission"
       );
-      await registry.setupAddress(bytes32("gov"), user.address);
+      await registry.setupAddress(bytes32("gov"), user.address, true);
       await bondIssuer.connect(user).updateSaleMaxPrice(NEW_MAX_PRICE);
     });
 
@@ -159,7 +163,7 @@ describe("BondIssuer Unit Tests", function () {
         bondIssuer.connect(user).updateSaleStepPeriod(NEW_STEP_PERIOD),
         "AccessControl/onlyBy: Caller does not have permission"
       );
-      await registry.setupAddress(bytes32("gov"), user.address);
+      await registry.setupAddress(bytes32("gov"), user.address, true);
       await bondIssuer.connect(user).updateSaleStepPeriod(NEW_STEP_PERIOD);
     });
 
@@ -181,7 +185,7 @@ describe("BondIssuer Unit Tests", function () {
           .updateSalePriceIncreasePerStep(NEW_PRICE_INCREASE_PER_STEP),
         "AccessControl/onlyBy: Caller does not have permission"
       );
-      await registry.setupAddress(bytes32("gov"), user.address);
+      await registry.setupAddress(bytes32("gov"), user.address, true);
       await bondIssuer
         .connect(user)
         .updateSalePriceIncreasePerStep(NEW_PRICE_INCREASE_PER_STEP);
@@ -205,12 +209,12 @@ describe("BondIssuer Unit Tests", function () {
         bondIssuer.connect(user).newOffering(OFFER_AMOUNT),
         "AccessControl/onlyBy: Caller does not have permission"
       );
-      await registry.setupAddress(bytes32("reservePool"), user.address);
+      await registry.setupAddress(bytes32("reservePool"), user.address, true);
       await bondIssuer.connect(user).newOffering(OFFER_AMOUNT);
     });
 
     it("fails if current Offering is not over yet", async () => {
-      await registry.setupAddress(bytes32("reservePool"), user.address);
+      await registry.setupAddress(bytes32("reservePool"), user.address, true);
       await bondIssuer.connect(user).newOffering(OFFER_AMOUNT);
       await assertRevert(
         bondIssuer.connect(user).newOffering(OFFER_AMOUNT),
@@ -219,7 +223,7 @@ describe("BondIssuer Unit Tests", function () {
     });
 
     it("tests that values are properly set", async () => {
-      await registry.setupAddress(bytes32("reservePool"), user.address);
+      await registry.setupAddress(bytes32("reservePool"), user.address, true);
 
       const before = await bondIssuer.offering();
       expect(before.active).to.equal(false);
@@ -269,7 +273,7 @@ describe("BondIssuer Unit Tests", function () {
         bondIssuer.connect(user).shutdownRedemption(owner.address, BUY_AMOUNT),
         "AccessControl/onlyBy: Caller does not have permission"
       );
-      await registry.setupAddress(bytes32("shutdown"), user.address);
+      await registry.setupAddress(bytes32("shutdown"), user.address, true);
       await bondIssuer
         .connect(user)
         .shutdownRedemption(owner.address, BUY_AMOUNT);

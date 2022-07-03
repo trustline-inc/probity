@@ -33,7 +33,7 @@ const AMOUNT_TO_WITHDRAW = WAD.mul(50);
 
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
-describe("ERC20 Asset Unit Test", function () {
+describe("ERC20 Asset Manager Unit Test", function () {
   beforeEach(async function () {
     const { contracts, signers } = await deployTest();
 
@@ -47,10 +47,28 @@ describe("ERC20 Asset Unit Test", function () {
     user = signers.alice;
     gov = signers.bob;
 
-    await registry.setupAddress(bytes32("gov"), gov.address);
+    await registry.setupAddress(bytes32("gov"), gov.address, true);
     await registry
       .connect(gov)
-      .setupAddress(bytes32("whitelisted"), owner.address);
+      .setupAddress(bytes32("whitelisted"), owner.address, false);
+  });
+
+  it("fails if token transferFrom failed when depositing", async () => {
+    await registry
+      .connect(gov)
+      .setupAddress(bytes32("whitelisted"), user.address, false);
+
+    await assertRevert(
+      erc20AssetManager.connect(user).deposit(AMOUNT_TO_MINT),
+      "ERC20: insufficient allowance"
+    );
+
+    await erc20.mint(user.address, AMOUNT_TO_MINT);
+    await erc20
+      .connect(user)
+      .approve(erc20AssetManager.address, AMOUNT_TO_MINT);
+
+    await erc20AssetManager.connect(user).deposit(AMOUNT_TO_MINT);
   });
 
   it("fails if caller is not a whitelisted user", async () => {
@@ -61,12 +79,12 @@ describe("ERC20 Asset Unit Test", function () {
 
     await assertRevert(
       erc20AssetManager.connect(user).deposit(AMOUNT_TO_MINT),
-      "AccessControl/onlyByWhiteListed: Access forbidden"
+      "AccessControl/onlyBy: Caller does not have permission"
     );
 
     await registry
       .connect(gov)
-      .setupAddress(bytes32("whitelisted"), user.address);
+      .setupAddress(bytes32("whitelisted"), user.address, false);
     await erc20AssetManager.connect(user).deposit(AMOUNT_TO_MINT);
   });
 
@@ -82,6 +100,26 @@ describe("ERC20 Asset Unit Test", function () {
 
     expect(parsedEvents[0].args[0]).to.equal(owner.address);
     expect(parsedEvents[0].args[1]).to.equal(AMOUNT_TO_MINT);
+  });
+
+  it("fails if token transfer failed when withdrawing", async () => {
+    await registry
+      .connect(gov)
+      .setupAddress(bytes32("whitelisted"), user.address, false);
+
+    await erc20.mint(user.address, AMOUNT_TO_MINT);
+    await erc20
+      .connect(user)
+      .approve(erc20AssetManager.address, AMOUNT_TO_MINT);
+
+    await erc20AssetManager.connect(user).deposit(AMOUNT_TO_MINT);
+
+    await erc20.burn(erc20AssetManager.address, AMOUNT_TO_MINT);
+
+    await assertRevert(
+      erc20AssetManager.connect(user).withdraw(AMOUNT_TO_MINT),
+      "ERC20: transfer amount exceeds balance"
+    );
   });
 
   it("test WithdrawToken event is emitted properly", async () => {

@@ -36,6 +36,7 @@ contract MockVaultEngine {
         int256 assetToAuction;
         int256 assetToReturn;
         int256 equity;
+        int256 initialEquity;
     }
 
     mapping(bytes32 => mapping(address => Vault)) public vaults;
@@ -43,7 +44,7 @@ contract MockVaultEngine {
     mapping(bytes32 => Asset) public assets;
     mapping(address => uint256) public stablecoin;
     mapping(address => uint256) public pbt;
-    mapping(address => uint256) public unbackedDebt;
+    mapping(address => uint256) public systemDebt;
 
     uint256 public protocolFeeRates;
     uint256 public totalDebt;
@@ -73,8 +74,8 @@ contract MockVaultEngine {
         stablecoin[user] = amount;
     }
 
-    function setUnbackedDebt(address user, uint256 amount) external {
-        unbackedDebt[user] = amount;
+    function setsystemDebt(address user, uint256 amount) external {
+        systemDebt[user] = amount;
     }
 
     function reducePbt(address user, uint256 amount) external {
@@ -101,6 +102,10 @@ contract MockVaultEngine {
     function initAsset(bytes32 assetId) external {
         assets[assetId].debtAccumulator = 1e27;
         assets[assetId].equityAccumulator = 1e27;
+    }
+
+    function updateAdjustedPrice(bytes32 assetId, uint256 price) external {
+        assets[assetId].adjustedPrice = price;
     }
 
     function updateAsset(
@@ -167,12 +172,12 @@ contract MockVaultEngine {
 
     function settle(uint256 amount) external {
         stablecoin[msg.sender] -= amount;
-        unbackedDebt[msg.sender] -= amount;
+        systemDebt[msg.sender] -= amount;
     }
 
     function increaseSystemDebt(uint256 amount) external {
         stablecoin[msg.sender] += amount;
-        unbackedDebt[msg.sender] += amount;
+        systemDebt[msg.sender] += amount;
         totalDebt += amount;
     }
 
@@ -200,7 +205,8 @@ contract MockVaultEngine {
         address auctioneer,
         int256 assetToAuction,
         int256 assetToReturn,
-        int256 equityAmount
+        int256 equityAmount,
+        int256 initialEquityAmount
     ) external {
         lastLiquidateEquityPositionCall = LiquidateEquityPositionCall(
             assetId,
@@ -208,7 +214,8 @@ contract MockVaultEngine {
             auctioneer,
             assetToAuction,
             assetToReturn,
-            equityAmount
+            equityAmount,
+            initialEquityAmount
         );
     }
 
@@ -234,8 +241,8 @@ contract MockVaultEngine {
         unchecked {
             c = a + uint256(b);
         }
-        require(b >= 0 || c <= a, "Vault/add: add op failed");
-        require(b <= 0 || c >= a, "Vault/add: add op failed");
+        require(b >= 0 || c <= a, "Math/add: add op failed");
+        require(b <= 0 || c >= a, "Math/add: add op failed");
     }
 
     function mul(uint256 a, int256 b) internal pure returns (int256 c) {

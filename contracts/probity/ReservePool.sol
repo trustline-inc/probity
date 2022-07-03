@@ -8,7 +8,7 @@ import "../dependencies/Eventful.sol";
 interface VaultEngineLike {
     function stablecoin(address user) external returns (uint256 balance);
 
-    function unbackedDebt(address user) external returns (uint256 balance);
+    function systemDebt(address user) external returns (uint256 balance);
 
     function settle(uint256 balance) external;
 
@@ -25,11 +25,11 @@ interface BondIssuerLike {
     function newOffering(uint256 amount) external;
 }
 
-// The reserve pool holds the extra stablecoins that come from liquidation penalty fees
-// and protocol fees. When the system has bad debt, this reserve pool will be used to pay
-// it off. If there are no more reserves to pay off the outstanding bad debt, the reserve
-// will issue vouchers in order to cover it. People with IOUs can redeem it after the reserve
-// replenishes.
+/**
+ * @title ReservePool contract
+ * @notice Reserve Pool act as the Probity system's balance sheet
+ * Reserve Pool is Probity's balance sheet, all the system debt and protocol fees will be held by this contract.
+ */
 contract ReservePool is Stateful, Eventful {
     /////////////////////////////////////////
     // State Variables
@@ -38,8 +38,17 @@ contract ReservePool is Stateful, Eventful {
     VaultEngineLike public immutable vaultEngine;
     BondIssuerLike public immutable bondSeller;
 
-    uint256 public debtOnAuction;
+    uint256 public debtOnAuction; // Debt currently on Auction
     uint256 public debtThreshold; // The bad debt threshold, after which to start issuing vouchers
+
+    /////////////////////////////////////////
+    // Events
+    /////////////////////////////////////////
+    event DebtOnAuctionAdded(uint256 amountIncreased);
+    event DebtOnAuctionRemoved(uint256 amountRemoved);
+    event SystemDebtIncreased(uint256 amountToIncrase);
+    event SystemDebtSettled(uint256 amountSettle);
+    event StablecoinTransferred(address to, uint256 amount);
 
     /////////////////////////////////////////
     // Constructor
@@ -72,6 +81,7 @@ contract ReservePool is Stateful, Eventful {
      */
     function addAuctionDebt(uint256 newDebt) external onlyBy("liquidator") {
         debtOnAuction += newDebt;
+        emit DebtOnAuctionAdded(newDebt);
     }
 
     /**
@@ -80,6 +90,8 @@ contract ReservePool is Stateful, Eventful {
      */
     function reduceAuctionDebt(uint256 debtToReduce) external onlyBy("liquidator") {
         debtOnAuction -= debtToReduce;
+
+        emit DebtOnAuctionRemoved(debtToReduce);
     }
 
     /**
@@ -88,7 +100,7 @@ contract ReservePool is Stateful, Eventful {
      */
     function settle(uint256 amountToSettle) external onlyByProbity {
         require(
-            amountToSettle <= vaultEngine.unbackedDebt(address(this)),
+            amountToSettle <= vaultEngine.systemDebt(address(this)),
             "ReservePool/settle: Settlement amount is more than the debt"
         );
         require(
@@ -97,6 +109,8 @@ contract ReservePool is Stateful, Eventful {
         );
 
         vaultEngine.settle(amountToSettle);
+
+        emit SystemDebtSettled(amountToSettle);
     }
 
     /**
@@ -105,6 +119,8 @@ contract ReservePool is Stateful, Eventful {
      */
     function increaseSystemDebt(uint256 amountToIncrease) external onlyByProbity {
         vaultEngine.increaseSystemDebt(amountToIncrease);
+
+        emit SystemDebtIncreased(amountToIncrease);
     }
 
     /**
@@ -114,6 +130,8 @@ contract ReservePool is Stateful, Eventful {
      */
     function sendStablecoin(address to, uint256 amount) external onlyBy("gov") {
         vaultEngine.moveStablecoin(address(this), to, amount);
+
+        emit StablecoinTransferred(to, amount);
     }
 
     /**
@@ -121,7 +139,7 @@ contract ReservePool is Stateful, Eventful {
      */
     function startSale() external onlyByProbity {
         require(
-            vaultEngine.unbackedDebt(address(this)) - debtOnAuction > debtThreshold,
+            vaultEngine.systemDebt(address(this)) - debtOnAuction > debtThreshold,
             "ReservePool/startSale: Debt threshold is not yet crossed"
         );
 

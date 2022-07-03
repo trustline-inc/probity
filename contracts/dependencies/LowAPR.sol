@@ -2,6 +2,10 @@
 
 pragma solidity ^0.8.0;
 
+/**
+ * @title LowAPR contract
+ * @notice Holds the constant array of APR_MPR mapping from 1.00% to 50% APR
+ */
 contract LowAPR {
     ///////////////////////////////////
     // State Variables

@@ -2,6 +2,10 @@
 
 pragma solidity ^0.8.0;
 
+/**
+ * @title HighAPR contract
+ * @notice Holds the constant array of APR_MPR mapping from 50.25% to 100% APR
+ */
 contract HighAPR {
     // Follows R^(1/31557600) * (1-U) * f(1/31557600) = 1
     ///////////////////////////////////

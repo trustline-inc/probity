@@ -6,11 +6,11 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../../dependencies/Stateful.sol";
 
 /**
- * @title Phi token contract
- * @notice Phi ERC20 Token Contract
+ * @title USD token contract
+ * @notice USD ERC20 Token Contract
  */
-contract Phi is ERC20, Stateful {
-    constructor(address registryAddress) Stateful(registryAddress) ERC20("Phi", "PHI") {}
+contract USD is ERC20, Stateful {
+    constructor(address registryAddress) Stateful(registryAddress) ERC20("Aurei", "AUR") {}
 
     /**
      * @dev minting capability for Treasury module

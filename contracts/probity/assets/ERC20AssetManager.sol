@@ -53,7 +53,7 @@ contract ERC20AssetManager is Stateful {
     /////////////////////////////////////////
     // External Functions
     /////////////////////////////////////////
-    function deposit(uint256 amount) external onlyWhen("paused", false) onlyByWhiteListed {
+    function deposit(uint256 amount) external onlyWhen("paused", false) onlyBy("whitelisted") {
         require(token.transferFrom(msg.sender, address(this), amount), "ERC20AssetManager/deposit: transfer failed");
         vaultEngine.modifyStandbyAsset(assetId, msg.sender, int256(amount));
         emit DepositToken(msg.sender, amount, address(token));

@@ -3,6 +3,8 @@
 pragma solidity ^0.8.0;
 
 import "../dependencies/Stateful.sol";
+import "../dependencies/Eventful.sol";
+import "../dependencies/Math.sol";
 
 interface VaultEngineLike {
     function assets(bytes32) external returns (uint256 debtAccumulator, uint256 equityAccumulator);
@@ -26,9 +28,10 @@ interface IAPR {
 }
 
 /**
- * @notice Creates loans and manages vault debt.
+ * @title Teller contract
+ * @notice Calculates and update the rates for probity
  */
-contract Teller is Stateful {
+contract Teller is Stateful, Eventful {
     /////////////////////////////////////////
     // Type Declarations
     /////////////////////////////////////////
@@ -49,14 +52,15 @@ contract Teller is Stateful {
     IAPR public immutable lowAprRate;
     IAPR public immutable highAprRate;
 
-    address public reservePool;
+    address public reservePool; // reservePool address will be the recipient of the protocol fees calculated
     uint256 public apr; // Annualized percentage rate
     uint256 public mpr; // Momentized percentage rate
-    mapping(bytes32 => Asset) public assets;
+    mapping(bytes32 => Asset) public assets; // assetId -> Asset
 
     /////////////////////////////////////////
     // Events
     /////////////////////////////////////////
+    event AssetInitialized(bytes32 indexed assetId, uint256 protocolFee);
     event RatesUpdated(uint256 timestamp, uint256 debtAccumulator, uint256 equityAccumulator);
 
     /////////////////////////////////////////
@@ -78,27 +82,44 @@ contract Teller is Stateful {
     }
 
     /////////////////////////////////////////
-    // Public Functions
-    /////////////////////////////////////////
-    function setProtocolFee(bytes32 assetId, uint256 protocolFee) public onlyBy("gov") {
-        assets[assetId].protocolFee = protocolFee;
-    }
-
-    /////////////////////////////////////////
     // External Functions
     /////////////////////////////////////////
+
+    /**
+     * @dev initialized a new asset
+     * @param assetId the asset ID
+     * @param protocolFee the protocolFee to take during accumulator calcuation
+     */
     function initAsset(bytes32 assetId, uint256 protocolFee) external onlyBy("gov") {
         require(assets[assetId].lastUpdated == 0, "Teller/initAsset: This asset has already been initialized");
         assets[assetId].lastUpdated = block.timestamp;
         assets[assetId].protocolFee = protocolFee;
+
+        emit AssetInitialized(assetId, protocolFee);
     }
 
+    /**
+     * @dev update the protocol fee for an asset
+     * @param assetId to update
+     * @param protocolFee new protocolFee
+     */
+    function setProtocolFee(bytes32 assetId, uint256 protocolFee) external onlyBy("gov") {
+        emit LogVarUpdate(bytes32("teller"), assetId, bytes32("protocolFee"), assets[assetId].protocolFee, protocolFee);
+        assets[assetId].protocolFee = protocolFee;
+    }
+
+    /**
+     * @dev update the reservePool address
+     * @param newReservePool the new reserve Pool's address
+     */
     function setReservePoolAddress(address newReservePool) public onlyBy("gov") {
+        emit LogVarUpdate(bytes32("teller"), bytes32("reservePool"), reservePool, newReservePool);
         reservePool = newReservePool;
     }
 
     /**
      * @dev Updates the debt and equity rate accumulators
+     * @param assetId of the asset to update accumulators
      */
     function updateAccumulators(bytes32 assetId) external {
         require(assets[assetId].lastUpdated != 0, "Teller/updateAccumulators: Asset not initialized");
@@ -111,20 +132,20 @@ contract Teller is Stateful {
         require(totalEquity > 0, "Teller/updateAccumulators: Total equity cannot be zero");
 
         // Update debt accumulator
-        uint256 utilization = wdiv(totalDebt, totalEquity);
-        uint256 debtRateIncrease = rmul(rpow(mpr, (block.timestamp - asset.lastUpdated)), debtAccumulator) -
+        uint256 utilization = Math.wdiv(totalDebt, totalEquity);
+        uint256 debtRateIncrease = Math.rmul(Math.rpow(mpr, (block.timestamp - asset.lastUpdated)), debtAccumulator) -
             debtAccumulator;
 
         uint256 exponentiated;
         {
             // Update equity accumulator
-            uint256 multipliedByUtilization = rmul(mpr - RAY, utilization * 1e9);
+            uint256 multipliedByUtilization = Math.rmul(mpr - RAY, utilization * 1e9);
             uint256 multipliedByUtilizationPlusOne = multipliedByUtilization + RAY;
 
-            exponentiated = rpow(multipliedByUtilizationPlusOne, (block.timestamp - asset.lastUpdated));
+            exponentiated = Math.rpow(multipliedByUtilizationPlusOne, (block.timestamp - asset.lastUpdated));
         }
 
-        uint256 equityAccumulatorDiff = rmul(exponentiated, equityAccumulator) - equityAccumulator;
+        uint256 equityAccumulatorDiff = Math.rmul(exponentiated, equityAccumulator) - equityAccumulator;
         uint256 protocolFeeRate = 0;
         if (assets[assetId].protocolFee != 0) {
             protocolFeeRate = (equityAccumulatorDiff * assets[assetId].protocolFee) / WAD;
@@ -137,7 +158,7 @@ contract Teller is Stateful {
             apr = MAX_APR;
         } else {
             uint256 oneMinusUtilization = RAY - (utilization * 1e9);
-            uint256 oneDividedByOneMinusUtilization = rdiv(10**27 * 0.01, oneMinusUtilization);
+            uint256 oneDividedByOneMinusUtilization = Math.rdiv(10**27 * 0.01, oneMinusUtilization);
 
             uint256 round = 0.0025 * 10**27;
             apr = oneDividedByOneMinusUtilization + RAY;
@@ -160,47 +181,5 @@ contract Teller is Stateful {
 
         // Update asset info
         assets[assetId] = asset;
-    }
-
-    /////////////////////////////////////////
-    // Internal Functions
-    /////////////////////////////////////////
-    function rmul(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        z = ((x * y) + (RAY / 2)) / RAY;
-    }
-
-    function wdiv(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        z = ((x * WAD) + (y / 2)) / y;
-    }
-
-    function rdiv(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        z = ((x * RAY) + (y / 2)) / y;
-    }
-
-    // This famous algorithm is called "exponentiation by squaring"
-    // and calculates x^n with x as fixed-point and n as regular unsigned.
-    //
-    // It's O(log n), instead of O(n) for naive repeated multiplication.
-    //
-    // These facts are why it works:
-    //
-    //  If n is even, then x^n = (x^2)^(n/2).
-    //  If n is odd,  then x^n = x * x^(n-1),
-    //   and applying the equation for even x gives
-    //    x^n = x * (x^2)^((n-1) / 2).
-    //
-    //  Also, EVM division is flooring and
-    //    floor[(n-1) / 2] = floor[n / 2].
-    //
-    function rpow(uint256 x, uint256 n) internal pure returns (uint256 z) {
-        z = n % 2 != 0 ? x : RAY;
-
-        for (n /= 2; n != 0; n /= 2) {
-            x = rmul(x, x);
-
-            if (n % 2 != 0) {
-                z = rmul(z, x);
-            }
-        }
     }
 }

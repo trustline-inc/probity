@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 
 import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
+import "../dependencies/Math.sol";
 
 /**
  * @title VaultEngine contract
@@ -40,17 +41,17 @@ contract VaultEngine is Stateful, Eventful {
     /////////////////////////////////////////
     uint256 private constant RAY = 10**27;
 
-    uint256 public totalDebt;
-    uint256 public totalStablecoin;
-    uint256 public totalEquity;
-    uint256 public totalUnbackedDebt;
-    address[] public userList;
-    mapping(address => bool) public userExists;
-    mapping(address => uint256) public stablecoin;
-    mapping(address => uint256) public pbt;
-    mapping(address => uint256) public unbackedDebt;
-    mapping(bytes32 => Asset) public assets;
-    mapping(bytes32 => mapping(address => Vault)) public vaults;
+    uint256 public totalDebt; // Total Debt position for all asset Types
+    uint256 public totalStablecoin; // Total Stablecoin balance in circulation
+    uint256 public totalEquity; // Total Equity position for all asset Types
+    uint256 public totalSystemDebt; // Total system debt
+    address[] public vaultList; // list of vaults that had either equity and/or debt position
+    mapping(address => bool) public vaultExists;
+    mapping(address => uint256) public stablecoin; // vault holder's stablecoin balance
+    mapping(address => uint256) public pbt; // vault holder's governance token balance
+    mapping(address => uint256) public systemDebt; // vault holder's systemDebt
+    mapping(bytes32 => Asset) public assets; // assetId -> Asset
+    mapping(bytes32 => mapping(address => Vault)) public vaults; // assetId -> vault holder's address -> Vault
 
     /////////////////////////////////////////
     // Events
@@ -59,6 +60,10 @@ contract VaultEngine is Stateful, Eventful {
     event EquityModified(address indexed user, int256 underlyingAmount, int256 equityAmount);
     event DebtModified(address indexed user, int256 collAmount, int256 debtAmount);
     event InterestCollected(address indexed user, bytes32 assetId, uint256 interestAmount);
+    event EquityLiquidated(address indexed user, int256 assetToAuction, int256 assetToReturn, int256 equityAmount);
+    event DebtLiquidated(address indexed user, int256 collAmount, int256 debtAmount);
+    event SystemDebtSettled(address indexed caller, uint256 amount);
+    event SystemDebtIncreased(address indexed caller, uint256 amount);
 
     /////////////////////////////////////////
     // Constructor
@@ -74,8 +79,8 @@ contract VaultEngine is Stateful, Eventful {
     /**
      * @dev returns the list of keys for the vaults
      */
-    function getUserList() external view returns (address[] memory list) {
-        return userList;
+    function getVaultList() external view returns (address[] memory list) {
+        return vaultList;
     }
 
     /**
@@ -95,6 +100,7 @@ contract VaultEngine is Stateful, Eventful {
     {
         Vault storage vault = vaults[assetId][user];
         Asset storage asset = assets[assetId];
+
         return (
             vault.underlying * asset.adjustedPrice,
             vault.collateral * asset.adjustedPrice,
@@ -114,7 +120,7 @@ contract VaultEngine is Stateful, Eventful {
         address user,
         int256 amount
     ) external onlyByProbity {
-        vaults[asset][user].standby = add(vaults[asset][user].standby, amount);
+        vaults[asset][user].standby = Math.add(vaults[asset][user].standby, amount);
     }
 
     /**
@@ -187,6 +193,8 @@ contract VaultEngine is Stateful, Eventful {
         pbt[msg.sender] += interestAmount;
         stablecoin[msg.sender] += interestAmount;
 
+        totalStablecoin += interestAmount;
+
         // @todo evaluate how loss of precision can impact here
         vaults[assetId][msg.sender].equity -= interestAmount / asset.equityAccumulator;
 
@@ -205,38 +213,8 @@ contract VaultEngine is Stateful, Eventful {
         address treasuryAddress,
         int256 underlyingAmount,
         int256 equityAmount
-    ) external virtual onlyByWhiteListed {
-        require(
-            registry.checkValidity("treasury", treasuryAddress),
-            "Vault/modifyEquity: Treasury address is not valid"
-        );
-
-        if (!userExists[msg.sender]) {
-            userList.push(msg.sender);
-            userExists[msg.sender] = true;
-        }
-
-        Vault storage vault = vaults[assetId][msg.sender];
-        vault.standby = sub(vault.standby, underlyingAmount);
-        vault.underlying = add(vault.underlying, underlyingAmount);
-        int256 equityCreated = mul(assets[assetId].equityAccumulator, equityAmount);
-        vault.equity = add(vault.equity, equityAmount);
-        vault.initialEquity = add(vault.initialEquity, equityCreated);
-
-        assets[assetId].normEquity = add(assets[assetId].normEquity, equityAmount);
-
-        totalEquity = add(totalEquity, equityCreated);
-
-        require(totalEquity <= assets[assetId].ceiling, "Vault/modifyEquity: Supply ceiling reached");
-        require(
-            vault.equity == 0 || (vault.equity * RAY) > assets[assetId].floor,
-            "Vault/modifyEquity: Equity smaller than floor"
-        );
-        certifyEquityPosition(assetId, vault);
-
-        stablecoin[treasuryAddress] = add(stablecoin[treasuryAddress], equityCreated);
-
-        emit EquityModified(msg.sender, underlyingAmount, equityCreated);
+    ) external virtual onlyBy("whitelisted") {
+        _modifyEquity(assetId, treasuryAddress, underlyingAmount, equityAmount);
     }
 
     /**
@@ -251,49 +229,12 @@ contract VaultEngine is Stateful, Eventful {
         address treasuryAddress,
         int256 collAmount,
         int256 debtAmount
-    ) external virtual onlyByWhiteListed {
-        require(registry.checkValidity("treasury", treasuryAddress), "Vault/modifyDebt: Treasury address is not valid");
-
-        if (!userExists[msg.sender]) {
-            userList.push(msg.sender);
-            userExists[msg.sender] = true;
-        }
-
-        if (debtAmount > 0) {
-            require(
-                stablecoin[treasuryAddress] >= uint256(debtAmount),
-                "Vault/modifyDebt: Treasury doesn't have enough equity to loan this amount"
-            );
-        }
-
-        Vault memory vault = vaults[assetId][msg.sender];
-        vault.standby = sub(vault.standby, collAmount);
-        vault.collateral = add(vault.collateral, collAmount);
-        int256 debtCreated = mul(assets[assetId].debtAccumulator, debtAmount);
-        vault.debt = add(vault.debt, debtAmount);
-
-        assets[assetId].normDebt = add(assets[assetId].normDebt, debtAmount);
-
-        totalDebt = add(totalDebt, debtCreated);
-        totalStablecoin = add(totalStablecoin, debtCreated);
-
-        require(totalDebt <= assets[assetId].ceiling, "Vault/modifyDebt: Debt ceiling reached");
-        require(
-            vault.debt == 0 || (vault.debt * RAY) > assets[assetId].floor,
-            "Vault/modifyDebt: Debt smaller than floor"
-        );
-        certifyDebtPosition(assetId, vault);
-
-        stablecoin[msg.sender] = add(stablecoin[msg.sender], debtCreated);
-        stablecoin[treasuryAddress] = sub(stablecoin[treasuryAddress], debtCreated);
-
-        vaults[assetId][msg.sender] = vault;
-
-        emit DebtModified(msg.sender, collAmount, debtCreated);
+    ) external virtual onlyBy("whitelisted") {
+        _modifyDebt(assetId, treasuryAddress, collAmount, debtAmount);
     }
 
     /**
-     * @notice Liquidates an undercollateralized debt position
+     * @notice Liquidates an debt position
      * @param assetId The ID of the vault asset type
      * @param user The address of the vault to liquidate
      * @param auctioneer The address of the desired auctioneer contract
@@ -312,21 +253,21 @@ contract VaultEngine is Stateful, Eventful {
         Vault storage vault = vaults[assetId][user];
         Asset storage asset = assets[assetId];
 
-        vault.collateral = add(vault.collateral, collateralAmount);
-        vault.debt = add(vault.debt, debtAmount);
-        asset.normDebt = add(asset.normDebt, debtAmount);
-        int256 fundraiseTarget = mul(asset.debtAccumulator, debtAmount);
-        totalDebt = add(totalDebt, fundraiseTarget);
+        vault.collateral = Math.add(vault.collateral, collateralAmount);
+        vault.debt = Math.add(vault.debt, debtAmount);
+        asset.normDebt = Math.add(asset.normDebt, debtAmount);
+        int256 fundraiseTarget = Math.mul(asset.debtAccumulator, debtAmount);
+        totalDebt = Math.add(totalDebt, fundraiseTarget);
 
-        vaults[assetId][auctioneer].standby = sub(vaults[assetId][auctioneer].standby, collateralAmount);
-        unbackedDebt[reservePool] = sub(unbackedDebt[reservePool], fundraiseTarget);
-        totalUnbackedDebt = sub(totalUnbackedDebt, fundraiseTarget);
+        vaults[assetId][auctioneer].standby = Math.sub(vaults[assetId][auctioneer].standby, collateralAmount);
+        systemDebt[reservePool] = Math.sub(systemDebt[reservePool], fundraiseTarget);
+        totalSystemDebt = Math.sub(totalSystemDebt, fundraiseTarget);
 
-        emit Log("vault", "liquidateDebtPosition", msg.sender);
+        emit DebtLiquidated(user, collateralAmount, debtAmount);
     }
 
     /**
-     * @notice Liquidates an undercollateralized equity position
+     * @notice Liquidates an equity position
      * @dev Returns underlying asset to user vault with penalty
      * @param assetId The ID of the vault asset type
      * @param user The address of the vault to liquidate
@@ -341,21 +282,22 @@ contract VaultEngine is Stateful, Eventful {
         address auctioneer,
         int256 assetToAuction,
         int256 assetToReturn,
-        int256 equityAmount
+        int256 equityAmount,
+        int256 initialEquityAmount
     ) external onlyByProbity {
         Vault storage vault = vaults[assetId][user];
         Asset storage asset = assets[assetId];
 
-        vault.underlying = add(vault.underlying, assetToReturn);
-        vault.standby = sub(vault.standby, assetToReturn);
-        vault.equity = add(vault.equity, equityAmount);
-        vault.initialEquity = add(vault.initialEquity, mul(RAY, equityAmount));
-        asset.normEquity = add(asset.normEquity, equityAmount);
+        vault.underlying = Math.add(vault.underlying, assetToReturn);
+        vault.standby = Math.sub(vault.standby, assetToReturn);
+        vault.equity = Math.add(vault.equity, equityAmount);
+        vault.initialEquity = Math.add(vault.initialEquity, initialEquityAmount);
+        asset.normEquity = Math.add(asset.normEquity, equityAmount);
 
-        vaults[assetId][auctioneer].standby = sub(vaults[assetId][auctioneer].standby, assetToAuction);
-        totalEquity = add(totalEquity, mul(RAY, equityAmount));
+        vaults[assetId][auctioneer].standby = Math.sub(vaults[assetId][auctioneer].standby, assetToAuction);
+        totalEquity = Math.add(totalEquity, Math.mul(RAY, equityAmount));
 
-        emit Log("vault", "liquidateEquityPosition", msg.sender);
+        emit EquityLiquidated(user, assetToAuction, assetToReturn, equityAmount);
     }
 
     /**
@@ -364,9 +306,10 @@ contract VaultEngine is Stateful, Eventful {
      */
     function settle(uint256 amount) external onlyByProbity {
         stablecoin[msg.sender] -= amount;
-        unbackedDebt[msg.sender] -= amount;
+        systemDebt[msg.sender] -= amount;
         totalStablecoin -= amount;
-        emit Log("vault", "settle", msg.sender);
+
+        emit SystemDebtSettled(msg.sender, amount);
     }
 
     /**
@@ -376,9 +319,10 @@ contract VaultEngine is Stateful, Eventful {
      */
     function increaseSystemDebt(uint256 amount) external onlyByProbity {
         stablecoin[msg.sender] += amount;
-        unbackedDebt[msg.sender] += amount;
+        systemDebt[msg.sender] += amount;
         totalStablecoin += amount;
-        emit Log("vault", "increaseSystemDebt", msg.sender);
+
+        emit SystemDebtIncreased(msg.sender, amount);
     }
 
     /// Admin-related functions
@@ -434,10 +378,6 @@ contract VaultEngine is Stateful, Eventful {
         uint256 newDebt = asset.normDebt * debtRateIncrease;
         uint256 newEquity = asset.normEquity * equityRateIncrease;
 
-        totalEquity += newEquity;
-        totalDebt += newDebt;
-        totalStablecoin += newDebt;
-
         asset.debtAccumulator += debtRateIncrease;
         asset.equityAccumulator += equityRateIncrease;
 
@@ -463,6 +403,88 @@ contract VaultEngine is Stateful, Eventful {
     // Internal Functions
     /////////////////////////////////////////
 
+    function _modifyEquity(
+        bytes32 assetId,
+        address treasuryAddress,
+        int256 underlyingAmount,
+        int256 equityAmount
+    ) internal {
+        require(registry.checkRole("treasury", treasuryAddress), "Vault/modifyEquity: Treasury address is not valid");
+
+        if (!vaultExists[msg.sender]) {
+            vaultList.push(msg.sender);
+            vaultExists[msg.sender] = true;
+        }
+
+        Vault storage vault = vaults[assetId][msg.sender];
+        vault.standby = Math.sub(vault.standby, underlyingAmount);
+        vault.underlying = Math.add(vault.underlying, underlyingAmount);
+        int256 equityCreated = Math.mul(assets[assetId].equityAccumulator, equityAmount);
+        vault.equity = Math.add(vault.equity, equityAmount);
+        vault.initialEquity = Math.add(vault.initialEquity, equityCreated);
+
+        assets[assetId].normEquity = Math.add(assets[assetId].normEquity, equityAmount);
+
+        totalEquity = Math.add(totalEquity, equityCreated);
+
+        require(totalEquity <= assets[assetId].ceiling, "Vault/modifyEquity: Supply ceiling reached");
+        require(
+            vault.equity == 0 || (vault.equity * RAY) > assets[assetId].floor,
+            "Vault/modifyEquity: Equity smaller than floor"
+        );
+        certifyEquityPosition(assetId, vault);
+
+        stablecoin[treasuryAddress] = Math.add(stablecoin[treasuryAddress], equityCreated);
+
+        emit EquityModified(msg.sender, underlyingAmount, equityCreated);
+    }
+
+    function _modifyDebt(
+        bytes32 assetId,
+        address treasuryAddress,
+        int256 collAmount,
+        int256 debtAmount
+    ) internal {
+        require(registry.checkRole("treasury", treasuryAddress), "Vault/modifyDebt: Treasury address is not valid");
+
+        if (!vaultExists[msg.sender]) {
+            vaultList.push(msg.sender);
+            vaultExists[msg.sender] = true;
+        }
+
+        if (debtAmount > 0) {
+            require(
+                stablecoin[treasuryAddress] >= uint256(debtAmount),
+                "Vault/modifyDebt: Treasury doesn't have enough equity to loan this amount"
+            );
+        }
+
+        Vault memory vault = vaults[assetId][msg.sender];
+        vault.standby = Math.sub(vault.standby, collAmount);
+        vault.collateral = Math.add(vault.collateral, collAmount);
+        int256 debtCreated = Math.mul(assets[assetId].debtAccumulator, debtAmount);
+        vault.debt = Math.add(vault.debt, debtAmount);
+
+        assets[assetId].normDebt = Math.add(assets[assetId].normDebt, debtAmount);
+
+        totalDebt = Math.add(totalDebt, debtCreated);
+        totalStablecoin = Math.add(totalStablecoin, debtCreated);
+
+        require(totalDebt <= assets[assetId].ceiling, "Vault/modifyDebt: Debt ceiling reached");
+        require(
+            vault.debt == 0 || (vault.debt * RAY) > assets[assetId].floor,
+            "Vault/modifyDebt: Debt smaller than floor"
+        );
+        certifyDebtPosition(assetId, vault);
+
+        stablecoin[msg.sender] = Math.add(stablecoin[msg.sender], debtCreated);
+        stablecoin[treasuryAddress] = Math.sub(stablecoin[treasuryAddress], debtCreated);
+
+        vaults[assetId][msg.sender] = vault;
+
+        emit DebtModified(msg.sender, collAmount, debtCreated);
+    }
+
     /**
      * @dev Certifies that the vault meets the asset requirement
      * @param assetId The asset type ID
@@ -485,31 +507,5 @@ contract VaultEngine is Stateful, Eventful {
             (vault.debt * assets[assetId].debtAccumulator) <= vault.collateral * assets[assetId].adjustedPrice,
             "Vault/certify: Not enough collateral"
         );
-    }
-
-    function sub(uint256 a, int256 b) internal pure returns (uint256 c) {
-        unchecked {
-            c = a - uint256(b);
-        }
-        require(b <= 0 || c <= a, "Vault/sub: sub op failed");
-        require(b >= 0 || c >= a, "Vault/sub: sub op failed");
-    }
-
-    function add(uint256 a, int256 b) internal pure returns (uint256 c) {
-        unchecked {
-            c = a + uint256(b);
-        }
-        require(b >= 0 || c <= a, "Vault/add: add op failed");
-        require(b <= 0 || c >= a, "Vault/add: add op failed");
-    }
-
-    function div(int256 a, uint256 b) internal pure returns (int256 c) {
-        c = a / int256(b);
-    }
-
-    function mul(uint256 a, int256 b) internal pure returns (int256 c) {
-        c = int256(a) * b;
-        require(int256(a) >= 0, "Vault/mul: mul op failed");
-        require(b == 0 || c / b == int256(a), "Vault/mul: mul op failed");
     }
 }

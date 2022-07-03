@@ -50,7 +50,11 @@ describe("ReservePool Unit Tests", function () {
     liquidator = signers.charlie;
     gov = signers.don;
 
-    await registry.setupAddress(bytes32("liquidator"), liquidator.address);
+    await registry.setupAddress(
+      bytes32("liquidator"),
+      liquidator.address,
+      true
+    );
   });
 
   describe("updateDebtThreshold Unit Tests", function () {
@@ -81,12 +85,12 @@ describe("ReservePool Unit Tests", function () {
         reservePool.connect(user).addAuctionDebt(AUCTION_DEBT_TO_ADD),
         "AccessControl/onlyBy: Caller does not have permission"
       );
-      await registry.setupAddress(bytes32("liquidator"), user.address);
+      await registry.setupAddress(bytes32("liquidator"), user.address, true);
       await reservePool.connect(user).addAuctionDebt(AUCTION_DEBT_TO_ADD);
     });
 
     it("tests that values are properly set", async () => {
-      await registry.setupAddress(bytes32("liquidator"), user.address);
+      await registry.setupAddress(bytes32("liquidator"), user.address, true);
 
       const before = await reservePool.debtOnAuction();
       await reservePool.connect(user).addAuctionDebt(AUCTION_DEBT_TO_ADD);
@@ -108,7 +112,7 @@ describe("ReservePool Unit Tests", function () {
         reservePool.connect(user).reduceAuctionDebt(AUCTION_DEBT_TO_REDUCE),
         "AccessControl/onlyBy: Caller does not have permission"
       );
-      await registry.setupAddress(bytes32("liquidator"), user.address);
+      await registry.setupAddress(bytes32("liquidator"), user.address, true);
       await reservePool.connect(user).reduceAuctionDebt(AUCTION_DEBT_TO_REDUCE);
     });
 
@@ -128,7 +132,7 @@ describe("ReservePool Unit Tests", function () {
     const AMOUNT_TO_SETTLE = RAD.mul(287);
 
     beforeEach(async function () {
-      await vaultEngine.setUnbackedDebt(
+      await vaultEngine.setsystemDebt(
         reservePool.address,
         UNBACKED_DEBT_TO_SET
       );
@@ -142,11 +146,11 @@ describe("ReservePool Unit Tests", function () {
         reservePool.connect(user).settle(AMOUNT_TO_SETTLE),
         "AccessControl/onlyByProbity: Caller must be from Probity system contract"
       );
-      await registry.setupAddress(bytes32("liquidator"), user.address);
+      await registry.setupAddress(bytes32("liquidator"), user.address, true);
       await reservePool.connect(user).settle(AMOUNT_TO_SETTLE);
     });
 
-    it("fails if amountToSettle is more than unBackedDebt", async () => {
+    it("fails if amountToSettle is more than systemDebt", async () => {
       await assertRevert(
         reservePool.connect(liquidator).settle(UNBACKED_DEBT_TO_SET.add(1)),
         "ReservePool/settle: Settlement amount is more than the debt"
@@ -166,9 +170,9 @@ describe("ReservePool Unit Tests", function () {
     });
 
     it("calls vault Engine's settle is called with correct parameter", async () => {
-      const before = await vaultEngine.unbackedDebt(reservePool.address);
+      const before = await vaultEngine.systemDebt(reservePool.address);
       await reservePool.connect(liquidator).settle(AMOUNT_TO_SETTLE);
-      const after = await vaultEngine.unbackedDebt(reservePool.address);
+      const after = await vaultEngine.systemDebt(reservePool.address);
       expect(after.sub(before).abs()).to.equal(AMOUNT_TO_SETTLE);
     });
   });
@@ -180,16 +184,16 @@ describe("ReservePool Unit Tests", function () {
         reservePool.connect(user).increaseSystemDebt(AMOUNT_TO_INCREASE),
         "AccessControl/onlyByProbity: Caller must be from Probity system contract"
       );
-      await registry.setupAddress(bytes32("liquidator"), user.address);
+      await registry.setupAddress(bytes32("liquidator"), user.address, true);
       await reservePool.connect(user).increaseSystemDebt(AMOUNT_TO_INCREASE);
     });
 
     it("calls vault Engine's increaseSystemDebt is called with correct parameter", async () => {
-      const before = await vaultEngine.unbackedDebt(reservePool.address);
+      const before = await vaultEngine.systemDebt(reservePool.address);
       await reservePool
         .connect(liquidator)
         .increaseSystemDebt(AMOUNT_TO_INCREASE);
-      const after = await vaultEngine.unbackedDebt(reservePool.address);
+      const after = await vaultEngine.systemDebt(reservePool.address);
       expect(after.sub(before).abs()).to.equal(AMOUNT_TO_INCREASE);
     });
   });
@@ -207,14 +211,14 @@ describe("ReservePool Unit Tests", function () {
         reservePool.connect(user).sendStablecoin(owner.address, AMOUNT_TO_SEND),
         "AccessControl/onlyBy: Caller does not have permission"
       );
-      await registry.setupAddress(bytes32("gov"), user.address);
+      await registry.setupAddress(bytes32("gov"), user.address, true);
       await reservePool
         .connect(user)
         .sendStablecoin(owner.address, AMOUNT_TO_SEND);
     });
 
     it("tests that values are properly set", async () => {
-      await registry.setupAddress(bytes32("gov"), user.address);
+      await registry.setupAddress(bytes32("gov"), user.address, true);
 
       const before = await vaultEngine.stablecoin(owner.address);
       await reservePool
@@ -231,7 +235,7 @@ describe("ReservePool Unit Tests", function () {
       await reservePool.updateDebtThreshold(DEBT_THRESHOLD);
       await vaultEngine
         .connect(liquidator)
-        .setUnbackedDebt(reservePool.address, DEBT_THRESHOLD.mul(2));
+        .setsystemDebt(reservePool.address, DEBT_THRESHOLD.mul(2));
     });
 
     it("fails if caller is not by reservePool", async () => {
@@ -239,14 +243,14 @@ describe("ReservePool Unit Tests", function () {
         reservePool.connect(user).startSale(),
         "AccessControl/onlyByProbity: Caller must be from Probity system contract"
       );
-      await registry.setupAddress(bytes32("gov"), user.address);
+      await registry.setupAddress(bytes32("gov"), user.address, true);
       await reservePool.connect(user).startSale();
     });
 
     it("fails if debt threshold has not been crossed yet", async () => {
       await vaultEngine
         .connect(liquidator)
-        .setUnbackedDebt(reservePool.address, DEBT_THRESHOLD.sub(1));
+        .setsystemDebt(reservePool.address, DEBT_THRESHOLD.sub(1));
 
       await assertRevert(
         reservePool.connect(liquidator).startSale(),
@@ -254,7 +258,7 @@ describe("ReservePool Unit Tests", function () {
       );
       await vaultEngine
         .connect(liquidator)
-        .setUnbackedDebt(reservePool.address, DEBT_THRESHOLD.add(1));
+        .setsystemDebt(reservePool.address, DEBT_THRESHOLD.add(1));
       await reservePool.connect(liquidator).startSale();
     });
 

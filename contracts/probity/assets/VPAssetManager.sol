@@ -20,7 +20,7 @@ contract VPAssetManager is Delegatable {
         bytes32 collateralHash,
         FtsoManagerLike ftsoManagerAddress,
         FtsoRewardManagerLike rewardManagerAddress,
-        VPAssetManagerLike tokenAddress,
+        VPTokenManagerLike tokenAddress,
         VaultEngineLike vaultEngineAddress
     )
         Delegatable(
@@ -40,11 +40,13 @@ contract VPAssetManager is Delegatable {
     // External Functions
     /////////////////////////////////////////
 
-    function deposit(uint256 amount) external onlyWhen("paused", false) onlyByWhiteListed {
+    function deposit(uint256 amount) external onlyWhen("paused", false) onlyBy("whitelisted") {
         require(token.transferFrom(msg.sender, address(this), amount), "VPAssetManager/deposit: transfer failed");
         vaultEngine.modifyStandbyAsset(assetId, msg.sender, int256(amount));
+        uint256 currentRewardEpoch = ftsoManager.getCurrentRewardEpoch();
         recentDeposits[msg.sender][ftsoManager.getCurrentRewardEpoch()] += amount;
         recentTotalDeposit[msg.sender] += amount;
+        totalDepositsForEpoch[currentRewardEpoch] += int256(amount);
 
         emit DepositVPAssetManager(msg.sender, amount, address(token));
     }
@@ -53,6 +55,10 @@ contract VPAssetManager is Delegatable {
         require(token.transfer(msg.sender, amount), "VPAssetManager/withdraw: transfer failed");
 
         vaultEngine.modifyStandbyAsset(assetId, msg.sender, -int256(amount));
+
+        uint256 currentRewardEpoch = ftsoManager.getCurrentRewardEpoch();
+        totalDepositsForEpoch[currentRewardEpoch] -= int256(amount);
+
         // only reduce recentDeposits if it exists
         if (recentDeposits[msg.sender][ftsoManager.getCurrentRewardEpoch()] >= amount) {
             recentDeposits[msg.sender][ftsoManager.getCurrentRewardEpoch()] -= amount;

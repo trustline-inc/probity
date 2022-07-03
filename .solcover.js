@@ -1,8 +1,9 @@
 module.exports = {
   skipFiles: [
     "mocks",
-    "interfaces",
     "probity/token",
-    "dependencies/SafeMath.sol",
+    "dependencies/LowAPR.sol",
+    "dependencies/HighAPR.sol",
+    "dependencies/Math.sol",
   ],
 };
