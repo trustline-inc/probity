@@ -100,6 +100,7 @@ contract VaultEngine is Stateful, Eventful {
     {
         Vault storage vault = vaults[assetId][user];
         Asset storage asset = assets[assetId];
+
         return (
             vault.underlying * asset.adjustedPrice,
             vault.collateral * asset.adjustedPrice,

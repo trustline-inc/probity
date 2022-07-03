@@ -77,9 +77,9 @@ describe("Liquidator Unit Tests", function () {
     it("fails if asset has already been initialized", async () => {
       const EXPECTED_AUCTIONEER_ADDRESS = user.address;
 
-      await liquidator.initAsset(ASSET_ID["FLR"], EXPECTED_AUCTIONEER_ADDRESS);
+      await liquidator.initAsset(ASSET_ID.FLR, EXPECTED_AUCTIONEER_ADDRESS);
       await assertRevert(
-        liquidator.initAsset(ASSET_ID["FLR"], EXPECTED_AUCTIONEER_ADDRESS),
+        liquidator.initAsset(ASSET_ID.FLR, EXPECTED_AUCTIONEER_ADDRESS),
         "Liquidator/initAsset: This asset has already been initialized"
       );
     });
@@ -89,14 +89,14 @@ describe("Liquidator Unit Tests", function () {
       const EXPECTED_DEBT_PENALTY_FEE = WAD.mul(117).div(100);
       const EXPECTED_SUPP_PENALTY_FEE = WAD.mul(5).div(100);
 
-      const before = await liquidator.assets(ASSET_ID["FLR"]);
+      const before = await liquidator.assets(ASSET_ID.FLR);
       expect(before.auctioneer).to.equal(ADDRESS_ZERO);
       expect(before.debtPenaltyFee).to.equal(0);
       expect(before.equityPenaltyFee).to.equal(0);
 
-      await liquidator.initAsset(ASSET_ID["FLR"], EXPECTED_AUCTIONEER_ADDRESS);
+      await liquidator.initAsset(ASSET_ID.FLR, EXPECTED_AUCTIONEER_ADDRESS);
 
-      const after = await liquidator.assets(ASSET_ID["FLR"]);
+      const after = await liquidator.assets(ASSET_ID.FLR);
       expect(after.auctioneer).to.equal(EXPECTED_AUCTIONEER_ADDRESS);
       expect(after.debtPenaltyFee).to.equal(EXPECTED_DEBT_PENALTY_FEE);
       expect(after.equityPenaltyFee).to.equal(EXPECTED_SUPP_PENALTY_FEE);
@@ -107,23 +107,23 @@ describe("Liquidator Unit Tests", function () {
     const DEFAULT_DEBT_PENALTY_FEE = WAD.mul(117).div(100);
     const DEFAULT_SUPP_PENALTY_FEE = WAD.mul(5).div(100);
     beforeEach(async function () {
-      await liquidator.initAsset(ASSET_ID["FLR"], auctioneer.address);
+      await liquidator.initAsset(ASSET_ID.FLR, auctioneer.address);
     });
 
     it("tests that penaltyFees are updated correctly", async () => {
       const NEW_DEBT_PENALTY_FEE = RAY.mul(123).div(100);
       const NEW_SUPP_PENALTY_FEE = RAY.mul(107).div(100);
-      const before = await liquidator.assets(ASSET_ID["FLR"]);
+      const before = await liquidator.assets(ASSET_ID.FLR);
       expect(before.debtPenaltyFee).to.equal(DEFAULT_DEBT_PENALTY_FEE);
       expect(before.equityPenaltyFee).to.equal(DEFAULT_SUPP_PENALTY_FEE);
 
       await liquidator.updatePenalties(
-        ASSET_ID["FLR"],
+        ASSET_ID.FLR,
         NEW_DEBT_PENALTY_FEE,
         NEW_SUPP_PENALTY_FEE
       );
 
-      const after = await liquidator.assets(ASSET_ID["FLR"]);
+      const after = await liquidator.assets(ASSET_ID.FLR);
       expect(after.debtPenaltyFee).to.equal(NEW_DEBT_PENALTY_FEE);
       expect(after.equityPenaltyFee).to.equal(NEW_SUPP_PENALTY_FEE);
     });
@@ -131,28 +131,25 @@ describe("Liquidator Unit Tests", function () {
 
   describe("updateAuctioneer Unit Tests", function () {
     beforeEach(async function () {
-      await liquidator.initAsset(ASSET_ID["FLR"], auctioneer.address);
+      await liquidator.initAsset(ASSET_ID.FLR, auctioneer.address);
     });
 
     it("tests that auctioneer address is updated correctly", async () => {
       const DEFAULT_AUCTIONEER_ADDRESS = auctioneer.address;
       const NEW_AUCTIONEER_ADDRESS = owner.address;
-      const before = await liquidator.assets(ASSET_ID["FLR"]);
+      const before = await liquidator.assets(ASSET_ID.FLR);
       expect(before.auctioneer).to.equal(DEFAULT_AUCTIONEER_ADDRESS);
 
-      await liquidator.updateAuctioneer(
-        ASSET_ID["FLR"],
-        NEW_AUCTIONEER_ADDRESS
-      );
+      await liquidator.updateAuctioneer(ASSET_ID.FLR, NEW_AUCTIONEER_ADDRESS);
 
-      const after = await liquidator.assets(ASSET_ID["FLR"]);
+      const after = await liquidator.assets(ASSET_ID.FLR);
       expect(after.auctioneer).to.equal(NEW_AUCTIONEER_ADDRESS);
     });
   });
 
   describe("reduceAuctionDebt Unit Tests", function () {
     beforeEach(async function () {
-      await liquidator.initAsset(ASSET_ID["FLR"], auctioneer.address);
+      await liquidator.initAsset(ASSET_ID.FLR, auctioneer.address);
     });
 
     it("tests that reservePool's reduceAuctionDebt is called with correct parameters", async () => {
@@ -176,9 +173,9 @@ describe("Liquidator Unit Tests", function () {
     const PRICE = RAY;
 
     beforeEach(async function () {
-      await liquidator.initAsset(ASSET_ID["FLR"], auctioneer.address);
+      await liquidator.initAsset(ASSET_ID.FLR, auctioneer.address);
       await vaultEngine.updateAsset(
-        ASSET_ID["FLR"],
+        ASSET_ID.FLR,
         PRICE,
         DEBT,
         EQUITY,
@@ -186,14 +183,14 @@ describe("Liquidator Unit Tests", function () {
         0
       );
       await vaultEngine.updateAccumulators(
-        ASSET_ID["FLR"],
+        ASSET_ID.FLR,
         reservePool.address,
         DEBT_ACCUMULATOR,
         EQUITY_ACCUMULATOR,
         0
       );
       await vaultEngine.updateVault(
-        ASSET_ID["FLR"],
+        ASSET_ID.FLR,
         user.address,
         0,
         UNDERLYING,
@@ -209,7 +206,7 @@ describe("Liquidator Unit Tests", function () {
 
     it("fails if vault has nothing to liquidate", async () => {
       await vaultEngine.updateVault(
-        ASSET_ID["FLR"],
+        ASSET_ID.FLR,
         user.address,
         0,
         0,
@@ -220,12 +217,12 @@ describe("Liquidator Unit Tests", function () {
       );
 
       await assertRevert(
-        liquidator.liquidateVault(ASSET_ID["FLR"], user.address),
+        liquidator.liquidateVault(ASSET_ID.FLR, user.address),
         "Lidquidator: Nothing to liquidate"
       );
 
       await vaultEngine.updateVault(
-        ASSET_ID["FLR"],
+        ASSET_ID.FLR,
         user.address,
         0,
         UNDERLYING,
@@ -235,13 +232,13 @@ describe("Liquidator Unit Tests", function () {
         EQUITY.mul(RAY)
       );
 
-      await liquidator.liquidateVault(ASSET_ID["FLR"], user.address);
+      await liquidator.liquidateVault(ASSET_ID.FLR, user.address);
     });
 
     it("fails if vault is not undercollateralized ", async () => {
       // 1000 underlying, 1000 FLR collateral, 500 debt, 500 equity, 150% L.R.
       await vaultEngine.updateVault(
-        ASSET_ID["FLR"],
+        ASSET_ID.FLR,
         user.address,
         0,
         UNDERLYING.add(WAD.mul(1)),
@@ -252,12 +249,12 @@ describe("Liquidator Unit Tests", function () {
       );
 
       await assertRevert(
-        liquidator.liquidateVault(ASSET_ID["FLR"], user.address),
+        liquidator.liquidateVault(ASSET_ID.FLR, user.address),
         "Liquidator: Vault both equity and debt positions are above the liquidation ratio"
       );
 
       await vaultEngine.updateVault(
-        ASSET_ID["FLR"],
+        ASSET_ID.FLR,
         user.address,
         0,
         UNDERLYING,
@@ -267,7 +264,57 @@ describe("Liquidator Unit Tests", function () {
         EQUITY.mul(RAY)
       );
 
-      await liquidator.liquidateVault(ASSET_ID["FLR"], user.address);
+      await liquidator.liquidateVault(ASSET_ID.FLR, user.address);
+    });
+
+    it("fails if treasury has not enough funds when liquidating equity position ", async () => {
+      await vaultEngine.updateVault(
+        ASSET_ID.FLR,
+        user.address,
+        0,
+        UNDERLYING,
+        COLLATERAL,
+        DEBT,
+        EQUITY,
+        EQUITY.mul(RAY)
+      );
+
+      await vaultEngine.setStablecoin(treasury.address, 0);
+
+      await assertRevert(
+        liquidator.liquidateVault(ASSET_ID.FLR, user.address),
+        "VaultEngine/liquidateEquityPosition: Not enough treasury funds"
+      );
+
+      await vaultEngine.setStablecoin(treasury.address, RAD.mul(100000));
+      await liquidator.liquidateVault(ASSET_ID.FLR, user.address);
+    });
+
+    it("test that when underlying is less than assetToAuction, all of underlying is auctioned off", async () => {
+      await vaultEngine.updateVault(
+        ASSET_ID.FLR,
+        user.address,
+        0,
+        WAD,
+        0,
+        0,
+        EQUITY,
+        EQUITY.mul(RAY)
+      );
+
+      await vaultEngine.updateAsset(
+        ASSET_ID.FLR,
+        PRICE.div(1000),
+        DEBT,
+        EQUITY,
+        RAD.mul(1_000_000),
+        0
+      );
+
+      await liquidator.liquidateVault(ASSET_ID.FLR, user.address);
+
+      const after = await vaultEngine.lastLiquidateEquityPositionCall();
+      expect(after.assetToAuction.abs()).to.equal(WAD);
     });
 
     it("adds reserve pool auction debt", async () => {
@@ -275,7 +322,7 @@ describe("Liquidator Unit Tests", function () {
 
       const before = await reservePool.lastAddAuctionDebtAmount();
       expect(before).to.equal(0);
-      await liquidator.liquidateVault(ASSET_ID["FLR"], user.address);
+      await liquidator.liquidateVault(ASSET_ID.FLR, user.address);
 
       const after = await reservePool.lastAddAuctionDebtAmount();
       expect(after).to.equal(EXPECTED_AUCTION_DEBT);
@@ -300,10 +347,10 @@ describe("Liquidator Unit Tests", function () {
       expect(before.collateralAmount).to.equal(0);
       expect(before.debtAmount).to.equal(0);
 
-      await liquidator.liquidateVault(ASSET_ID["FLR"], user.address);
+      await liquidator.liquidateVault(ASSET_ID.FLR, user.address);
 
       const after = await vaultEngine.lastLiquidateDebtPositionCall();
-      expect(after.assetId).to.equal(ASSET_ID["FLR"]);
+      expect(after.assetId).to.equal(ASSET_ID.FLR);
       expect(after.user).to.equal(user.address);
       expect(after.auctioneer).to.equal(auctioneer.address);
       expect(after.reservePool).to.equal(reservePool.address);
@@ -312,7 +359,7 @@ describe("Liquidator Unit Tests", function () {
 
       const lastEquityLiquidateCall =
         await vaultEngine.lastLiquidateEquityPositionCall();
-      expect(lastEquityLiquidateCall.assetId).to.equal(ASSET_ID["FLR"]);
+      expect(lastEquityLiquidateCall.assetId).to.equal(ASSET_ID.FLR);
       expect(lastEquityLiquidateCall.user).to.equal(user.address);
       expect(lastEquityLiquidateCall.auctioneer).to.equal(auctioneer.address);
 
@@ -335,7 +382,7 @@ describe("Liquidator Unit Tests", function () {
       expect(before.beneficiary).to.equal(ADDRESS_ZERO);
 
       await vaultEngine.updateVault(
-        ASSET_ID["FLR"],
+        ASSET_ID.FLR,
         user.address,
         0,
         0,
@@ -345,17 +392,17 @@ describe("Liquidator Unit Tests", function () {
         0
       );
 
-      await liquidator.liquidateVault(ASSET_ID["FLR"], user.address);
+      await liquidator.liquidateVault(ASSET_ID.FLR, user.address);
 
       let after = await auctioneer.lastStartAuctionCall();
-      expect(after.assetId).to.equal(ASSET_ID["FLR"]);
+      expect(after.assetId).to.equal(ASSET_ID.FLR);
       expect(after.lotSize).to.equal(COLLATERAL);
       expect(after.debtSize).to.equal(EXPECTED_DEBT_SIZE);
       expect(after.owner).to.equal(user.address);
       expect(after.beneficiary).to.equal(reservePool.address);
 
       await vaultEngine.updateVault(
-        ASSET_ID["FLR"],
+        ASSET_ID.FLR,
         user.address,
         0,
         UNDERLYING,
@@ -365,10 +412,10 @@ describe("Liquidator Unit Tests", function () {
         EQUITY.mul(RAY)
       );
 
-      await liquidator.liquidateVault(ASSET_ID["FLR"], user.address);
+      await liquidator.liquidateVault(ASSET_ID.FLR, user.address);
 
       after = await auctioneer.lastStartAuctionCall();
-      expect(after.assetId).to.equal(ASSET_ID["FLR"]);
+      expect(after.assetId).to.equal(ASSET_ID.FLR);
       expect(after.lotSize).to.equal(EQUITY.mul(5).div(100));
       expect(after.debtSize).to.equal(EQUITY.mul(RAY).mul(5).div(100));
       expect(after.owner).to.equal(reservePool.address);
@@ -379,7 +426,7 @@ describe("Liquidator Unit Tests", function () {
       const EXPECTED_DIFF = EQUITY.mul(RAY);
 
       const before = await vaultEngine.stablecoin(treasury.address);
-      await liquidator.liquidateVault(ASSET_ID["FLR"], user.address);
+      await liquidator.liquidateVault(ASSET_ID.FLR, user.address);
 
       const after = await vaultEngine.stablecoin(treasury.address);
       expect(before.sub(after)).to.equal(EXPECTED_DIFF);

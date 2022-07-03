@@ -33,8 +33,6 @@ let teller: Teller;
 let priceFeed: PriceFeed;
 let treasury: Treasury;
 
-let flrAssetId = bytes32("FLR");
-
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
 describe("Vault Engine Unrestricted Unit Tests", function () {
@@ -69,19 +67,19 @@ describe("Vault Engine Unrestricted Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.connect(gov).initAsset(ASSET_ID["FLR"]);
+      await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR);
       await vaultEngine
         .connect(gov)
-        .updateCeiling(ASSET_ID["FLR"], RAD.mul(10_000_000));
+        .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
       await registry
         .connect(gov)
         .setupAddress(bytes32("assetManager"), assetManager.address, true);
       await vaultEngine
         .connect(gov)
-        .updateAdjustedPrice(ASSET_ID["FLR"], RAY.mul(1));
+        .updateAdjustedPrice(ASSET_ID.FLR, RAY.mul(1));
       await vaultEngine
         .connect(assetManager)
-        .modifyStandbyAsset(ASSET_ID["FLR"], owner.address, STANDBY_AMOUNT);
+        .modifyStandbyAsset(ASSET_ID.FLR, owner.address, STANDBY_AMOUNT);
     });
 
     it("tests that non whitelisted user can call modifyEquity", async () => {
@@ -90,7 +88,7 @@ describe("Vault Engine Unrestricted Unit Tests", function () {
         .setupAddress(bytes32("notWhitelisted"), owner.address, true);
 
       await vaultEngine.modifyEquity(
-        ASSET_ID["FLR"],
+        ASSET_ID.FLR,
         treasury.address,
         UNDERLYING_AMOUNT,
         EQUITY_AMOUNT
@@ -110,26 +108,22 @@ describe("Vault Engine Unrestricted Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.connect(gov).initAsset(ASSET_ID["FLR"]);
+      await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR);
       await vaultEngine
         .connect(gov)
-        .updateCeiling(ASSET_ID["FLR"], RAD.mul(10_000_000));
+        .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
       await registry
         .connect(gov)
         .setupAddress(bytes32("assetManager"), assetManager.address, true);
       await vaultEngine
         .connect(gov)
-        .updateAdjustedPrice(ASSET_ID["FLR"], RAY.mul(1));
+        .updateAdjustedPrice(ASSET_ID.FLR, RAY.mul(1));
       await vaultEngine
         .connect(assetManager)
-        .modifyStandbyAsset(
-          ASSET_ID["FLR"],
-          owner.address,
-          STANDBY_AMOUNT.mul(2)
-        );
+        .modifyStandbyAsset(ASSET_ID.FLR, owner.address, STANDBY_AMOUNT.mul(2));
 
       await vaultEngine.modifyEquity(
-        ASSET_ID["FLR"],
+        ASSET_ID.FLR,
         treasury.address,
         UNDERLYING_AMOUNT,
         EQUITY_AMOUNT
@@ -142,7 +136,7 @@ describe("Vault Engine Unrestricted Unit Tests", function () {
         .setupAddress(bytes32("notWhitelisted"), owner.address, false);
 
       await vaultEngine.modifyDebt(
-        ASSET_ID["FLR"],
+        ASSET_ID.FLR,
         treasury.address,
         COLL_AMOUNT,
         DEBT_AMOUNT

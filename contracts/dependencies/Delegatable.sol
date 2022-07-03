@@ -140,11 +140,14 @@ contract Delegatable is Stateful {
                     totalDepositsForEpoch[epochId]
                 );
             } else {
-                // at epoch 0, totalDepositsForEpoch could not become negative
+                // at epoch 0, totalDepositsForEpoch should not be negative
                 totalBalanceAtEpoch[epochId] = uint256(totalDepositsForEpoch[epochId]);
             }
 
-            rewardPerUnitForEpoch[epochId] = Math.rdiv(rewardAmount, totalBalanceAtEpoch[epochId]);
+            // reward would be zero if totalBalanceAtEpoch is zero
+            if (totalBalanceAtEpoch[epochId] != 0) {
+                rewardPerUnitForEpoch[epochId] = Math.rdiv(rewardAmount, totalBalanceAtEpoch[epochId]);
+            }
         }
 
         lastClaimedEpoch = endEpochId;

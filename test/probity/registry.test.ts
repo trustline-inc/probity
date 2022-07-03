@@ -6,7 +6,7 @@ import { Registry } from "../../typechain";
 import { deployTest, probity } from "../../lib/deployer";
 import { ethers } from "hardhat";
 import * as chai from "chai";
-import { bytes32, BYTES32_ZERO } from "../utils/constants";
+import { ADDRESS_ZERO, bytes32, BYTES32_ZERO } from "../utils/constants";
 import assertRevert from "../utils/assertRevert";
 import parseEvents from "../utils/parseEvents";
 const expect = chai.expect;
@@ -14,6 +14,7 @@ const expect = chai.expect;
 // Wallets
 let user: SignerWithAddress;
 let gov: SignerWithAddress;
+let user2: SignerWithAddress;
 
 // Contracts
 let registry: Registry;
@@ -28,6 +29,7 @@ describe("Registry Unit Tests", function () {
 
     gov = signers.owner;
     user = signers.alice;
+    user2 = signers.charlie;
   });
 
   describe("setUpAddress Unit Tests", function () {
@@ -118,6 +120,63 @@ describe("Registry Unit Tests", function () {
 
       expect(parsedEvents[0].args[0]).to.equal(ROLE_NAME);
       expect(parsedEvents[0].args[1]).to.equal(ADDRESS);
+    });
+  });
+
+  describe("checkIfProbitySystem Unit Tests", function () {
+    const ROLE_NAME = bytes32("very very special role");
+    const PROBITY_SYSTEM_NAME = bytes32("probity system role");
+    let ADDRESS;
+    let PROBITY_SYSTEM_ADDRESS;
+
+    beforeEach(async function () {
+      ADDRESS = user.address;
+      PROBITY_SYSTEM_ADDRESS = user2.address;
+
+      await registry.setupAddress(ROLE_NAME, ADDRESS, false);
+      await registry.setupAddress(
+        PROBITY_SYSTEM_NAME,
+        PROBITY_SYSTEM_ADDRESS,
+        true
+      );
+    });
+
+    it("tests that it return false for non registered address", async () => {
+      const isProbitySystem = await registry.checkIfProbitySystem(ADDRESS_ZERO);
+      expect(isProbitySystem).to.equal(false);
+    });
+
+    it("tests that it return false for registered but non probity address", async () => {
+      const isProbitySystem = await registry.checkIfProbitySystem(ADDRESS);
+      expect(isProbitySystem).to.equal(false);
+    });
+
+    it("tests that it return true for registered probity system address", async () => {
+      const isProbitySystem = await registry.checkIfProbitySystem(
+        PROBITY_SYSTEM_ADDRESS
+      );
+      expect(isProbitySystem).to.equal(true);
+    });
+  });
+
+  describe("checkIfRegistered Unit Tests", function () {
+    const ROLE_NAME = bytes32("very very special role");
+    let ADDRESS;
+
+    beforeEach(async function () {
+      ADDRESS = user.address;
+
+      await registry.setupAddress(ROLE_NAME, ADDRESS, false);
+    });
+
+    it("tests that it return false for non registered address", async () => {
+      const isProbitySystem = await registry.checkIfRegistered(ADDRESS_ZERO);
+      expect(isProbitySystem).to.equal(false);
+    });
+
+    it("tests that it return true for registered address", async () => {
+      const isProbitySystem = await registry.checkIfRegistered(ADDRESS);
+      expect(isProbitySystem).to.equal(true);
     });
   });
 });
