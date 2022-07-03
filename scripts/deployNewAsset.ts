@@ -67,7 +67,7 @@ async function main() {
         registry: process.env.REGISTRY,
         assetId,
         vaultEngine: process.env.VAULT_ENGINE,
-        mockErc20Token: process.env.ERC20,
+        mockErc20Token: process.env.MOCK_ERC20_TOKEN,
       });
       break;
     case "VPToken":
@@ -95,7 +95,7 @@ async function main() {
 
   let ftso;
   // deploy FTSO - if needed
-  if (process.env.DEPLOY_FTSO) {
+  if (Boolean(process.env.DEPLOY_FTSO)) {
     console.info("Deploying Mock FTSO");
     const deployed = await mock.deployMockFtso();
     ftso = deployed.ftso.address;
@@ -109,20 +109,23 @@ async function main() {
   await probity.deployAuctioneer();
 
   await execute(
-    contracts.vaultEngine.initAsset(assetId),
+    contracts.vaultEngine.initAsset(assetId, { gasLimit: 300000 }),
     "Initializing Asset on VaultEngine"
   );
 
   await execute(
     contracts.teller.initAsset(
       assetId,
-      ethers.utils.parseEther(process.env.LIQUIDATION_RATIO)
+      ethers.utils.parseEther(process.env.LIQUIDATION_RATIO),
+      { gasLimit: 300000 }
     ),
     "Initializing Asset on teller"
   );
 
   await execute(
-    contracts.liquidator.initAsset(assetId, contracts.auctioneer.address),
+    contracts.liquidator.initAsset(assetId, contracts.auctioneer.address, {
+      gasLimit: 300000,
+    }),
     "Initializing Asset on liquidator"
   );
 
@@ -130,13 +133,14 @@ async function main() {
     contracts.priceFeed.initAsset(
       assetId,
       ethers.utils.parseEther(process.env.LIQUIDATION_RATIO),
-      ftso
+      ftso,
+      { gasLimit: 300000 }
     ),
     "Initializing Asset on priceFeed"
   );
 
   await execute(
-    contracts.priceFeed.updateAdjustedPrice(assetId),
+    contracts.priceFeed.updateAdjustedPrice(assetId, { gasLimit: 300000 }),
     "Updating Adjusted Price on priceFeed"
   );
 }

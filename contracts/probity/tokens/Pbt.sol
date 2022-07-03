@@ -6,11 +6,11 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../../dependencies/Stateful.sol";
 
 /**
- * @title Phi token contract
- * @notice Phi ERC20 Token Contract
+ * @title Probity token contract
+ * @notice PBT ERC20 Token Contract a non transferable token
  */
-contract Phi is ERC20, Stateful {
-    constructor(address registryAddress) Stateful(registryAddress) ERC20("Phi", "PHI") {}
+contract PBT is ERC20, Stateful {
+    constructor(address registryAddress) Stateful(registryAddress) ERC20("Trustline Credit Network Token", "PBT") {}
 
     /**
      * @dev minting capability for Treasury module
@@ -31,16 +31,24 @@ contract Phi is ERC20, Stateful {
     }
 
     /**
-     * @dev check if contract is in paused state before transferring
-     * @param from the address to transfer tokens for
-     * @param to the address to transfer tokens to
-     * @param amount of tokens to transfer
+     * @dev disable approve function of Pbt token
      */
-    function _beforeTokenTransfer(
-        address from,
-        address to,
-        uint256 amount
-    ) internal override onlyWhen("paused", false) {
-        super._beforeTokenTransfer(from, to, amount);
+    function _approve(
+        address,
+        address,
+        uint256
+    ) internal pure override {
+        revert("Approve is disabled for PBT token");
+    }
+
+    /**
+     * @dev disable transfer of Pbt Token
+     */
+    function _transfer(
+        address,
+        address,
+        uint256
+    ) internal pure override {
+        revert("Transfer is disabled for PBT token");
     }
 }

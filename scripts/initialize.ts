@@ -89,7 +89,7 @@ const init = async () => {
     await tx.wait();
     console.log(`Vault: ${nativeToken} initialized`);
 
-    // Limit songbird vault to 1000 AUR
+    // Limit songbird vault to 1000 USD
     if (networkName === "songbird") {
       const limit = 1000;
       tx = await vaultEngine
@@ -101,7 +101,7 @@ const init = async () => {
       console.log(`Vault: individual limit set to ${limit} ${nativeToken}`);
     }
 
-    // Update vault debt ceiling to 10M AUR
+    // Update vault debt ceiling to 10M USD
     const ceiling = 10_000_000;
     tx = await vaultEngine
       .connect(owner)
@@ -111,7 +111,7 @@ const init = async () => {
     await tx.wait();
     console.log(`Vault: ceiling updated to ${ceiling} ${nativeToken}`);
 
-    // Update vault debt floor to 1 AUR
+    // Update vault debt floor to 1 USD
     const floor = 1;
     tx = await vaultEngine
       .connect(owner)

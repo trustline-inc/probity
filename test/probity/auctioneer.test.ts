@@ -355,7 +355,7 @@ describe("Auctioneer Unit Tests", function () {
       expect(auctionAfter.price).to.equal(EXPECTED_BID_PRICE);
     });
 
-    it("tests that proper amount of aurei is transferred from bidder's vault", async () => {
+    it("tests that proper amount of usd is transferred from bidder's vault", async () => {
       const BID_LOT_SIZE = LOT_SIZE.div(10);
       const EXEPCTED_AUREI_AMOUNT_TRANSFERRED = RAY.mul(BID_LOT_SIZE);
 
@@ -519,7 +519,7 @@ describe("Auctioneer Unit Tests", function () {
       );
     });
 
-    it("tests that correct amount of Aurei is retrieved from user", async () => {
+    it("tests that correct amount of USD is retrieved from user", async () => {
       const BID_LOT_SIZE = LOT_SIZE.div(10);
       const EXEPCTED_AUREI_AMOUNT_TRANSFERRED = RAY.mul(12)
         .div(10)
