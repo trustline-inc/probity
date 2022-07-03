@@ -116,9 +116,9 @@ interface LiquidatorLike {
 }
 
 interface BondIssuerLike {
-    function vouchers(address user) external returns (uint256 balance);
+    function tokens(address user) external returns (uint256 balance);
 
-    function totalVouchers() external returns (uint256);
+    function totalTokens() external returns (uint256);
 
     function shutdownRedemption(address user, uint256 amount) external;
 
@@ -217,7 +217,7 @@ contract Shutdown is Stateful, Eventful {
     event RedemptionRatioCalculated(bytes32 assetId, uint256 redemptionRatio);
     event StablecoinReturned(address user, uint256 amount);
     event AssetRedeemed(bytes32 assetId, address user, uint256 amountRedeemed);
-    event BondsVoucherRedeemed(address user, uint256 amount);
+    event BondTokensRedeemed(address user, uint256 amount);
 
     /////////////////////////////////////////
     // Constructor
@@ -510,7 +510,7 @@ contract Shutdown is Stateful, Eventful {
      * @notice Set the final stablecoin balance of reserve pool (if non-zero)
      */
     function setFinalSystemReserve() external {
-        require(finalStablecoinBalance != 0, "shutdown/redeemVouchers: finalStablecoinBalance must be set first");
+        require(finalStablecoinBalance != 0, "shutdown/redeemTokens: finalStablecoinBalance must be set first");
 
         uint256 totalSystemReserve = vaultEngine.stablecoin(address(reservePool));
         require(totalSystemReserve != 0, "shutdown/setFinalSystemReserve: system reserve is zero");
@@ -519,26 +519,26 @@ contract Shutdown is Stateful, Eventful {
     }
 
     /**
-     * @notice Allows bondsVoucher holders to redeem for a share of stablecoin held by reserve Pool
-     *         up to the voucher amount
+     * @notice Allows bond holders to redeem for a share of stablecoin held by ReservePool
+     *         up to the token amount
      */
-    function redeemVouchers() external {
-        require(finalTotalReserve != 0, "shutdown/redeemVouchers: finalTotalReserve must be set first");
+    function redeemTokens() external {
+        require(finalTotalReserve != 0, "shutdown/redeemTokens: finalTotalReserve must be set first");
 
-        uint256 userVouchers = bondIssuer.vouchers(msg.sender);
-        uint256 totalVouchers = bondIssuer.totalVouchers();
+        uint256 userTokens = bondIssuer.tokens(msg.sender);
+        uint256 totalTokens = bondIssuer.totalTokens();
 
-        require(userVouchers != 0 && totalVouchers != 0, "shutdown/redeemVouchers: no vouchers to redeem");
+        require(userTokens != 0 && totalTokens != 0, "shutdown/redeemTokens: no tokens to redeem");
 
-        uint256 percentageOfBonds = Math.rdiv(userVouchers, totalVouchers);
+        uint256 percentageOfBonds = Math.rdiv(userTokens, totalTokens);
         uint256 shareOfStablecoin = Math.rmul(percentageOfBonds, finalTotalReserve);
 
-        if (shareOfStablecoin > userVouchers) {
-            shareOfStablecoin = userVouchers;
+        if (shareOfStablecoin > userTokens) {
+            shareOfStablecoin = userTokens;
         }
 
         bondIssuer.shutdownRedemption(msg.sender, shareOfStablecoin);
 
-        emit BondsVoucherRedeemed(msg.sender, shareOfStablecoin);
+        emit BondTokensRedeemed(msg.sender, shareOfStablecoin);
     }
 }

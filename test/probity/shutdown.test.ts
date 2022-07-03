@@ -1178,7 +1178,7 @@ describe("Shutdown Unit Tests", function () {
 
       await assertRevert(
         shutdown.setFinalSystemReserve(),
-        "shutdown/redeemVouchers: finalStablecoinBalance must be set first"
+        "shutdown/redeemTokens: finalStablecoinBalance must be set first"
       );
       await shutdown.setFinalStablecoinBalance();
 
@@ -1218,7 +1218,7 @@ describe("Shutdown Unit Tests", function () {
     });
   });
 
-  describe("redeemVouchers Unit Tests", function () {
+  describe("redeemTokens Unit Tests", function () {
     const TOTAL_DEBT_TO_SET = RAD.mul(150);
 
     beforeEach(async function () {
@@ -1229,43 +1229,43 @@ describe("Shutdown Unit Tests", function () {
       await increaseTime(172800 * 2);
       await increaseTime(172800);
       await shutdown.setFinalStablecoinBalance();
-      await bondIssuer.setTotalVouchers(RAD);
+      await bondIssuer.setTotalTokens(RAD);
       await vaultEngine.setStablecoin(reservePool.address, RAD.mul(1000));
     });
 
     it("fails if finalTotalReserve is not set", async () => {
-      await bondIssuer.setVouchers(owner.address, RAD);
+      await bondIssuer.setTokens(owner.address, RAD);
       await assertRevert(
-        shutdown.redeemVouchers(),
-        "shutdown/redeemVouchers: finalTotalReserve must be set first"
+        shutdown.redeemTokens(),
+        "shutdown/redeemTokens: finalTotalReserve must be set first"
       );
       await shutdown.setFinalSystemReserve();
 
-      await shutdown.redeemVouchers();
+      await shutdown.redeemTokens();
     });
 
-    it("fails if user's amount of vouchers is zero", async () => {
+    it("fails if user's amount of tokens is zero", async () => {
       await shutdown.setFinalSystemReserve();
 
       await assertRevert(
-        shutdown.redeemVouchers(),
-        "shutdown/redeemVouchers: no vouchers to redeem"
+        shutdown.redeemTokens(),
+        "shutdown/redeemTokens: no tokens to redeem"
       );
-      await bondIssuer.setVouchers(owner.address, RAD);
-      await shutdown.redeemVouchers();
+      await bondIssuer.setTokens(owner.address, RAD);
+      await shutdown.redeemTokens();
     });
 
-    it("fails if total vouchers are zero", async () => {
+    it("fails if total tokens are zero", async () => {
       await shutdown.setFinalSystemReserve();
-      await bondIssuer.setVouchers(owner.address, RAD);
-      await bondIssuer.setTotalVouchers(0);
+      await bondIssuer.setTokens(owner.address, RAD);
+      await bondIssuer.setTotalTokens(0);
 
       await assertRevert(
-        shutdown.redeemVouchers(),
-        "shutdown/redeemVouchers: no vouchers to redeem"
+        shutdown.redeemTokens(),
+        "shutdown/redeemTokens: no tokens to redeem"
       );
-      await bondIssuer.setTotalVouchers(RAD);
-      await shutdown.redeemVouchers();
+      await bondIssuer.setTotalTokens(RAD);
+      await shutdown.redeemTokens();
     });
 
     it("tests that shutdownRedemption is called with correct parameter", async () => {
@@ -1280,10 +1280,10 @@ describe("Shutdown Unit Tests", function () {
         rdiv(USER_IOU, TOTAL_IOU),
         finalTotalReserve
       );
-      await bondIssuer.setVouchers(owner.address, USER_IOU);
-      await bondIssuer.setTotalVouchers(TOTAL_IOU);
+      await bondIssuer.setTokens(owner.address, USER_IOU);
+      await bondIssuer.setTotalTokens(TOTAL_IOU);
 
-      await shutdown.redeemVouchers();
+      await shutdown.redeemTokens();
 
       const lastCall = await bondIssuer.lastRedemptionCall();
       expect(lastCall.user).to.equal(owner.address);

@@ -58,7 +58,7 @@ describe("BondIssuer Unit Tests", function () {
     await registry.setupAddress(bytes32("shutdown"), shutdown.address, true);
   });
 
-  describe("vouchersPerStablecoin Unit Tests", function () {
+  describe("tokensPerStablecoin Unit Tests", function () {
     const OFFER_AMOUNT = RAD.mul(500000);
     beforeEach(async function () {
       await bondIssuer.connect(reservePool).newOffering(OFFER_AMOUNT);
@@ -66,17 +66,17 @@ describe("BondIssuer Unit Tests", function () {
 
     it("tests that price increase correctly at each steps", async () => {
       const EXPECTED_INITIAL = WAD;
-      const initialStep = await bondIssuer.vouchersPerStablecoin();
+      const initialStep = await bondIssuer.tokensPerStablecoin();
       expect(initialStep).to.equal(EXPECTED_INITIAL);
 
       await increaseTime(DEFAULT_SALE_STEP_PERIOD);
-      const secondStep = await bondIssuer.vouchersPerStablecoin();
+      const secondStep = await bondIssuer.tokensPerStablecoin();
       expect(secondStep).to.equal(
         EXPECTED_INITIAL.add(DEFAULT_PER_STEP_INCREASE)
       );
 
       await increaseTime(DEFAULT_SALE_STEP_PERIOD);
-      const thirdStep = await bondIssuer.vouchersPerStablecoin();
+      const thirdStep = await bondIssuer.tokensPerStablecoin();
       expect(thirdStep).to.equal(
         EXPECTED_INITIAL.add(DEFAULT_PER_STEP_INCREASE).add(
           DEFAULT_PER_STEP_INCREASE
@@ -88,11 +88,11 @@ describe("BondIssuer Unit Tests", function () {
       const EXPECTED_INITIAL = WAD;
       const EXPECTED_MAX = WAD.mul(15).div(10);
 
-      const initialStep = await bondIssuer.vouchersPerStablecoin();
+      const initialStep = await bondIssuer.tokensPerStablecoin();
       expect(initialStep).to.equal(EXPECTED_INITIAL);
 
       await increaseTime(DEFAULT_SALE_STEP_PERIOD * 20);
-      const nextStep = await bondIssuer.vouchersPerStablecoin();
+      const nextStep = await bondIssuer.tokensPerStablecoin();
       expect(nextStep).to.equal(EXPECTED_MAX);
     });
   });
@@ -250,7 +250,7 @@ describe("BondIssuer Unit Tests", function () {
       await vaultEngine.setStablecoin(owner.address, RESERVE_BAL);
       await vaultEngine.setStablecoin(user.address, RESERVE_BAL);
 
-      await bondIssuer.purchaseVouchers(BUY_AMOUNT);
+      await bondIssuer.purchaseBond(BUY_AMOUNT);
     });
 
     it("fails if not in shutdown state", async () => {
@@ -295,14 +295,14 @@ describe("BondIssuer Unit Tests", function () {
         .shutdownRedemption(owner.address, BUY_AMOUNT);
     });
 
-    it("fails if user doesn't have enough vouchers to redeem", async () => {
+    it("fails if user doesn't have enough tokens to redeem", async () => {
       await bondIssuer.connect(shutdown).setShutdownState();
 
       await assertRevert(
         bondIssuer
           .connect(shutdown)
           .shutdownRedemption(user.address, BUY_AMOUNT),
-        "ReservePool/processRedemption: User doesn't have enough vouchers to redeem this amount"
+        "ReservePool/processRedemption: User doesn't have enough tokens to redeem this amount"
       );
       await bondIssuer
         .connect(shutdown)
@@ -312,11 +312,11 @@ describe("BondIssuer Unit Tests", function () {
     it("tests that values are properly updated", async () => {
       await bondIssuer.connect(shutdown).setShutdownState();
 
-      const before = await bondIssuer.vouchers(owner.address);
+      const before = await bondIssuer.tokens(owner.address);
       await bondIssuer
         .connect(shutdown)
         .shutdownRedemption(owner.address, BUY_AMOUNT);
-      const after = await bondIssuer.vouchers(owner.address);
+      const after = await bondIssuer.tokens(owner.address);
 
       expect(after.sub(before).abs()).to.equal(BUY_AMOUNT);
     });
@@ -334,7 +334,7 @@ describe("BondIssuer Unit Tests", function () {
     });
   });
 
-  describe("purchaseVouchers Unit Tests", function () {
+  describe("purchaseBond Unit Tests", function () {
     const OFFER_AMOUNT = RAD.mul(10000);
     const STABLECOIN_BAL = RAD.mul(1000000);
 
@@ -344,27 +344,27 @@ describe("BondIssuer Unit Tests", function () {
 
     it("fails if offering is not active", async () => {
       await assertRevert(
-        bondIssuer.purchaseVouchers(OFFER_AMOUNT.div(2)),
-        "ReservePool/purchaseVouchers: vouchers are not currently on sale"
+        bondIssuer.purchaseBond(OFFER_AMOUNT.div(2)),
+        "ReservePool/purchaseBond: tokens are not currently on sale"
       );
       await bondIssuer.connect(reservePool).newOffering(OFFER_AMOUNT);
-      await bondIssuer.purchaseVouchers(OFFER_AMOUNT.div(2));
+      await bondIssuer.purchaseBond(OFFER_AMOUNT.div(2));
     });
 
     it("fails if purchase amount is higher than offering amount", async () => {
       await bondIssuer.connect(reservePool).newOffering(OFFER_AMOUNT);
 
       await assertRevert(
-        bondIssuer.purchaseVouchers(OFFER_AMOUNT.add(1)),
-        "ReservePool/purchaseVouchers: Can't purchase more vouchers than amount available"
+        bondIssuer.purchaseBond(OFFER_AMOUNT.add(1)),
+        "ReservePool/purchaseBond: Can't purchase more tokens than amount available"
       );
-      await bondIssuer.purchaseVouchers(OFFER_AMOUNT);
+      await bondIssuer.purchaseBond(OFFER_AMOUNT);
     });
 
     it("tests that correct amount of stablecoins are transferred", async () => {
       await bondIssuer.connect(reservePool).newOffering(OFFER_AMOUNT);
       const before = await vaultEngine.stablecoin(owner.address);
-      await bondIssuer.purchaseVouchers(OFFER_AMOUNT);
+      await bondIssuer.purchaseBond(OFFER_AMOUNT);
       const after = await vaultEngine.stablecoin(owner.address);
 
       expect(after.sub(before).abs()).to.equal(OFFER_AMOUNT);
@@ -378,27 +378,25 @@ describe("BondIssuer Unit Tests", function () {
       await bondIssuer.connect(reservePool).newOffering(OFFER_AMOUNT);
       await increaseTime(DEFAULT_SALE_STEP_PERIOD * 2);
 
-      const price = await bondIssuer.vouchersPerStablecoin();
+      const price = await bondIssuer.tokensPerStablecoin();
       expect(price).to.equal(WAD.add(DEFAULT_PER_STEP_INCREASE.mul(2)));
 
       const offeringBefore = await bondIssuer.offering();
-      const vouchersBefore = await bondIssuer.vouchers(owner.address);
-      const totalVouchersBefore = await bondIssuer.totalVouchers();
+      const tokensBefore = await bondIssuer.tokens(owner.address);
+      const totalTokensBefore = await bondIssuer.totalTokens();
 
-      await bondIssuer.purchaseVouchers(BUY_AMOUNT);
+      await bondIssuer.purchaseBond(BUY_AMOUNT);
 
-      const totalVouchersAfter = await bondIssuer.totalVouchers();
-      const vouchersAfter = await bondIssuer.vouchers(owner.address);
+      const totalTokensAfter = await bondIssuer.totalTokens();
+      const tokensAfter = await bondIssuer.tokens(owner.address);
       const offeringAfter = await bondIssuer.offering();
 
       expect(offeringAfter.active).to.equal(true);
       expect(offeringAfter.amount.sub(offeringBefore.amount).abs()).to.equal(
         BUY_AMOUNT
       );
-      expect(vouchersAfter.sub(vouchersBefore).abs()).to.equal(
-        EXPECTED_VOUCHERS
-      );
-      expect(totalVouchersAfter.sub(totalVouchersBefore).abs()).to.equal(
+      expect(tokensAfter.sub(tokensBefore).abs()).to.equal(EXPECTED_VOUCHERS);
+      expect(totalTokensAfter.sub(totalTokensBefore).abs()).to.equal(
         EXPECTED_VOUCHERS
       );
     });
@@ -409,14 +407,14 @@ describe("BondIssuer Unit Tests", function () {
       const before = await bondIssuer.offering();
       expect(before.active).to.equal(true);
 
-      await bondIssuer.purchaseVouchers(OFFER_AMOUNT);
+      await bondIssuer.purchaseBond(OFFER_AMOUNT);
 
       const after = await bondIssuer.offering();
       expect(after.active).to.equal(false);
     });
   });
 
-  describe("redeemVouchers Unit Tests", function () {
+  describe("redeemTokens Unit Tests", function () {
     const OFFER_AMOUNT = RAD.mul(10000);
     const RESERVE_BAL = RAD.mul(10000000);
     const BUY_AMOUNT = OFFER_AMOUNT.div(10);
@@ -426,39 +424,39 @@ describe("BondIssuer Unit Tests", function () {
       await vaultEngine.setStablecoin(owner.address, RESERVE_BAL);
       await vaultEngine.setStablecoin(user.address, RESERVE_BAL);
 
-      await bondIssuer.purchaseVouchers(BUY_AMOUNT);
+      await bondIssuer.purchaseBond(BUY_AMOUNT);
     });
 
     it("fails if reservePool doesn't have enough funds to redeem", async () => {
       await vaultEngine.setStablecoin(reservePool.address, 0);
       await assertRevert(
-        bondIssuer.redeemVouchers(BUY_AMOUNT),
+        bondIssuer.redeemTokens(BUY_AMOUNT),
         "ReservePool/processRedemption: The reserve pool doesn't have enough funds"
       );
       await vaultEngine.setStablecoin(reservePool.address, RESERVE_BAL);
-      await bondIssuer.redeemVouchers(BUY_AMOUNT);
+      await bondIssuer.redeemTokens(BUY_AMOUNT);
     });
 
-    it("fails if user doesn't have enough vouchers to redeem", async () => {
+    it("fails if user doesn't have enough tokens to redeem", async () => {
       await assertRevert(
-        bondIssuer.connect(user).redeemVouchers(BUY_AMOUNT),
-        "ReservePool/processRedemption: User doesn't have enough vouchers to redeem this amount"
+        bondIssuer.connect(user).redeemTokens(BUY_AMOUNT),
+        "ReservePool/processRedemption: User doesn't have enough tokens to redeem this amount"
       );
-      await bondIssuer.connect(user).purchaseVouchers(BUY_AMOUNT);
-      await bondIssuer.connect(user).redeemVouchers(BUY_AMOUNT);
+      await bondIssuer.connect(user).purchaseBond(BUY_AMOUNT);
+      await bondIssuer.connect(user).redeemTokens(BUY_AMOUNT);
     });
 
     it("tests that values are properly updated", async () => {
-      const before = await bondIssuer.vouchers(owner.address);
-      await bondIssuer.redeemVouchers(BUY_AMOUNT);
-      const after = await bondIssuer.vouchers(owner.address);
+      const before = await bondIssuer.tokens(owner.address);
+      await bondIssuer.redeemTokens(BUY_AMOUNT);
+      const after = await bondIssuer.tokens(owner.address);
 
       expect(after.sub(before).abs()).to.equal(BUY_AMOUNT);
     });
 
     it("tests that correct amount of stablecoin is transferred", async () => {
       const before = await vaultEngine.stablecoin(owner.address);
-      await bondIssuer.redeemVouchers(BUY_AMOUNT);
+      await bondIssuer.redeemTokens(BUY_AMOUNT);
       const after = await vaultEngine.stablecoin(owner.address);
 
       expect(after.sub(before).abs()).to.equal(BUY_AMOUNT);

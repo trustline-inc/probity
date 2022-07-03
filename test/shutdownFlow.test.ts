@@ -397,29 +397,29 @@ describe("Shutdown Flow Test", function () {
     balances.bob["USD"] = balances.bob["USD"].add(newDebtThreshold);
     await expectBalancesToMatch(bob, balances.bob);
 
-    // Charlie purchases 5000 * 0.75 = 3750 vouchers
+    // Charlie purchases 5000 * 0.75 = 3750 tokens
     await reserve.startSale();
-    let amountOfVouchers = DEBT_THRESHOLD.mul(3).div(4);
-    await bondIssuer.connect(charlie).purchaseVouchers(amountOfVouchers);
-    await reserve.settle(amountOfVouchers);
+    let amountOfTokens = DEBT_THRESHOLD.mul(3).div(4);
+    await bondIssuer.connect(charlie).purchaseBond(amountOfTokens);
+    await reserve.settle(amountOfTokens);
     reserveBalances.debtToCover =
-      reserveBalances.debtToCover.sub(amountOfVouchers);
+      reserveBalances.debtToCover.sub(amountOfTokens);
     await checkReserveBalances(reserveBalances);
 
     // Expect Charlie's stablecoin balance to decrease after purchase
-    balances.charlie["USD"] = balances.charlie["USD"].sub(amountOfVouchers);
+    balances.charlie["USD"] = balances.charlie["USD"].sub(amountOfTokens);
     await expectBalancesToMatch(charlie, balances.charlie);
 
-    // Bob purchases 5000 * 0.25 = 1250 vouchers; all bad debt has been covered
-    amountOfVouchers = DEBT_THRESHOLD.div(4);
-    await bondIssuer.connect(bob).purchaseVouchers(amountOfVouchers);
-    await reserve.settle(amountOfVouchers);
+    // Bob purchases 5000 * 0.25 = 1250 tokens; all bad debt has been covered
+    amountOfTokens = DEBT_THRESHOLD.div(4);
+    await bondIssuer.connect(bob).purchaseBond(amountOfTokens);
+    await reserve.settle(amountOfTokens);
     reserveBalances.debtToCover =
-      reserveBalances.debtToCover.sub(amountOfVouchers);
+      reserveBalances.debtToCover.sub(amountOfTokens);
     await checkReserveBalances(reserveBalances);
 
     // Expect Bob's stablecoin balance to decrease after purchase
-    balances.bob["USD"] = balances.bob["USD"].sub(amountOfVouchers);
+    balances.bob["USD"] = balances.bob["USD"].sub(amountOfTokens);
     await expectBalancesToMatch(bob, balances.bob);
 
     /**
@@ -610,10 +610,10 @@ describe("Shutdown Flow Test", function () {
         .lte(RAD.div(100))
     ).to.equal(true);
 
-    // Bob redeems his vouchers
-    before = await bondIssuer.vouchers(bob.address);
-    await shutdown.connect(bob).redeemVouchers();
-    after = await bondIssuer.vouchers(bob.address);
+    // Bob redeems his tokens
+    before = await bondIssuer.tokens(bob.address);
+    await shutdown.connect(bob).redeemTokens();
+    after = await bondIssuer.tokens(bob.address);
     const EXPECTED_IOU_BALANCE_CHANGE = DEBT_THRESHOLD.div(4);
     expect(before.sub(after)).to.equal(EXPECTED_IOU_BALANCE_CHANGE);
   });

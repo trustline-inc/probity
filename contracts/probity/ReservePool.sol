@@ -38,8 +38,8 @@ contract ReservePool is Stateful, Eventful {
     VaultEngineLike public immutable vaultEngine;
     BondIssuerLike public immutable bondSeller;
 
-    uint256 public debtOnAuction; // Debt currently on Auction
-    uint256 public debtThreshold; // The bad debt threshold, after which to start issuing vouchers
+    uint256 public debtOnAuction; // Debt currently on auction
+    uint256 public debtThreshold; // The bad debt threshold, after which to start issuing bonds
 
     /////////////////////////////////////////
     // Events
