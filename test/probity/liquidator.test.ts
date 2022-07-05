@@ -86,7 +86,7 @@ describe("Liquidator Unit Tests", function () {
 
     it("tests that collateral type is properly initialized", async () => {
       const EXPECTED_AUCTIONEER_ADDRESS = user.address;
-      const EXPECTED_DEBT_PENALTY_FEE = WAD.mul(117).div(100);
+      const EXPECTED_DEBT_PENALTY_FEE = WAD.mul(17).div(100);
       const EXPECTED_SUPP_PENALTY_FEE = WAD.mul(5).div(100);
 
       const before = await liquidator.assets(ASSET_ID.FLR);
@@ -104,7 +104,7 @@ describe("Liquidator Unit Tests", function () {
   });
 
   describe("updatePenalties Unit Tests", function () {
-    const DEFAULT_DEBT_PENALTY_FEE = WAD.mul(117).div(100);
+    const DEFAULT_DEBT_PENALTY_FEE = WAD.mul(17).div(100);
     const DEFAULT_SUPP_PENALTY_FEE = WAD.mul(5).div(100);
     beforeEach(async function () {
       await liquidator.initAsset(ASSET_ID.FLR, auctioneer.address);
