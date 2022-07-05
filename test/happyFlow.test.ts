@@ -767,7 +767,7 @@ describe("Probity happy flow", function () {
     expect(_debtThreshold).to.equal(debtThreshold);
 
     // Start an IOU sale (systemDebt - debtOnAuction > debtThreshold)
-    await reserve.connect(gov).startSale();
+    await reserve.connect(gov).startBondSale();
 
     await ethers.provider.send("evm_increaseTime", [21601]);
     await ethers.provider.send("evm_mine", []);
