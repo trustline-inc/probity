@@ -131,7 +131,7 @@ contract Liquidator is Stateful, Eventful {
             "Liquidator/initAsset: This asset has already been initialized"
         );
         assets[assetId].auctioneer = auctioneer;
-        assets[assetId].debtPenaltyFee = 1.17E18;
+        assets[assetId].debtPenaltyFee = 1.7E17;
         assets[assetId].equityPenaltyFee = 5E16;
     }
 
@@ -208,7 +208,9 @@ contract Liquidator is Stateful, Eventful {
                 -int256(debt)
             );
 
-            uint256 fundraiseTarget = (debt * debtAccumulator * asset.debtPenaltyFee) / WAD;
+            uint256 debtPosition = debt * debtAccumulator;
+            uint256 fundraiseTarget = debtPosition + ((debtPosition * asset.debtPenaltyFee) / WAD);
+
             assets[assetId].auctioneer.startAuction(
                 assetId,
                 collateral,
