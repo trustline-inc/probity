@@ -152,12 +152,32 @@ describe("Liquidator Unit Tests", function () {
       await liquidator.initAsset(ASSET_ID.FLR, auctioneer.address);
     });
 
+    it("fail if caller is not auctioneer contract", async () => {
+      const REDUCE_AUCTION_DEBT_AMOUNT = RAD.mul(2837);
+
+      await assertRevert(
+        liquidator.connect(user).reduceAuctionDebt(REDUCE_AUCTION_DEBT_AMOUNT),
+        "AccessControl/onlyBy: Caller does not have permission"
+      );
+
+      await registry.setupAddress(bytes32("auctioneer"), user.address, true);
+
+      await liquidator
+        .connect(user)
+        .reduceAuctionDebt(REDUCE_AUCTION_DEBT_AMOUNT);
+    });
+
     it("tests that reservePool's reduceAuctionDebt is called with correct parameters", async () => {
+      await registry.setupAddress(bytes32("auctioneer"), user.address, true);
+
       const REDUCE_AUCTION_DEBT_AMOUNT = RAD.mul(2837);
 
       const before = await reservePool.lastReduceAuctionDebtAmount();
+
       expect(before).to.equal(0);
-      await liquidator.reduceAuctionDebt(REDUCE_AUCTION_DEBT_AMOUNT);
+      await liquidator
+        .connect(user)
+        .reduceAuctionDebt(REDUCE_AUCTION_DEBT_AMOUNT);
       const after = await reservePool.lastReduceAuctionDebtAmount();
       expect(after).to.equal(REDUCE_AUCTION_DEBT_AMOUNT);
     });
