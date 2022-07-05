@@ -287,7 +287,7 @@ describe("BondIssuer Unit Tests", function () {
         bondIssuer
           .connect(shutdown)
           .shutdownRedemption(owner.address, BUY_AMOUNT),
-        "ReservePool/processRedemption: The reserve pool doesn't have enough funds"
+        "BondIssuer/processRedemption: The reserve pool doesn't have enough funds"
       );
       await vaultEngine.setStablecoin(reservePool.address, RESERVE_BAL);
       await bondIssuer
@@ -302,7 +302,7 @@ describe("BondIssuer Unit Tests", function () {
         bondIssuer
           .connect(shutdown)
           .shutdownRedemption(user.address, BUY_AMOUNT),
-        "ReservePool/processRedemption: User doesn't have enough vouchers to redeem this amount"
+        "BondIssuer/processRedemption: User doesn't have enough vouchers to redeem this amount"
       );
       await bondIssuer
         .connect(shutdown)
@@ -433,7 +433,7 @@ describe("BondIssuer Unit Tests", function () {
       await vaultEngine.setStablecoin(reservePool.address, 0);
       await assertRevert(
         bondIssuer.redeemVouchers(BUY_AMOUNT),
-        "ReservePool/processRedemption: The reserve pool doesn't have enough funds"
+        "BondIssuer/processRedemption: The reserve pool doesn't have enough funds"
       );
       await vaultEngine.setStablecoin(reservePool.address, RESERVE_BAL);
       await bondIssuer.redeemVouchers(BUY_AMOUNT);
@@ -442,7 +442,7 @@ describe("BondIssuer Unit Tests", function () {
     it("fails if user doesn't have enough vouchers to redeem", async () => {
       await assertRevert(
         bondIssuer.connect(user).redeemVouchers(BUY_AMOUNT),
-        "ReservePool/processRedemption: User doesn't have enough vouchers to redeem this amount"
+        "BondIssuer/processRedemption: User doesn't have enough vouchers to redeem this amount"
       );
       await bondIssuer.connect(user).purchaseVouchers(BUY_AMOUNT);
       await bondIssuer.connect(user).redeemVouchers(BUY_AMOUNT);

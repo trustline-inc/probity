@@ -308,7 +308,7 @@ contract Shutdown is Stateful, Eventful {
         uint256 totalDebt = vaultEngine.totalDebt();
         uint256 totalEquity = vaultEngine.totalEquity();
         if (totalEquity != 0) {
-            finalUtilizationRatio = Math.min(Math.wdiv(totalDebt, totalEquity), WAD);
+            finalUtilizationRatio = Math._min(Math._wdiv(totalDebt, totalEquity), WAD);
         }
 
         emit ShutdownInitiated();
@@ -337,7 +337,7 @@ contract Shutdown is Stateful, Eventful {
         (uint256 debtAccumulator, , , , , , ) = vaultEngine.assets(assetId);
 
         uint256 required = (debt * debtAccumulator) / assets[assetId].finalPrice;
-        uint256 amountToGrab = Math.min(collateral, required);
+        uint256 amountToGrab = Math._min(collateral, required);
         uint256 gap = required - amountToGrab;
         assets[assetId].gap += gap;
         stablecoinGap += gap * assets[assetId].finalPrice;
@@ -382,7 +382,7 @@ contract Shutdown is Stateful, Eventful {
             "shutdown/writeOffFromReserves: the system debt needs to be zero before write off can happen"
         );
         uint256 reserveBalance = vaultEngine.stablecoin(address(reservePool));
-        uint256 amountToMove = Math.min(stablecoinGap, reserveBalance);
+        uint256 amountToMove = Math._min(stablecoinGap, reserveBalance);
         vaultEngine.moveStablecoin(address(reservePool), address(this), amountToMove);
         stablecoinGap -= amountToMove;
     }
@@ -406,7 +406,7 @@ contract Shutdown is Stateful, Eventful {
             "shutdown/calculateInvestorObligation: system reserve or stablecoin gap must be zero"
         );
         uint256 stablecoinUtilized = (vaultEngine.totalEquity() / WAD) * finalUtilizationRatio;
-        investorObligationRatio = Math.min((stablecoinGap * WAD) / stablecoinUtilized, WAD);
+        investorObligationRatio = Math._min((stablecoinGap * WAD) / stablecoinUtilized, WAD);
 
         emit InvestorObligationCalculated(investorObligationRatio);
     }
@@ -423,7 +423,7 @@ contract Shutdown is Stateful, Eventful {
         uint256 hookedSuppliedAmount = (initialEquity / WAD) * finalUtilizationRatio;
         uint256 investorObligation = ((hookedSuppliedAmount * investorObligationRatio) / WAD) /
             assets[assetId].finalPrice;
-        uint256 amountToGrab = Math.min(underlying, investorObligation);
+        uint256 amountToGrab = Math._min(underlying, investorObligation);
 
         if (amountToGrab > assets[assetId].gap) {
             amountToGrab = assets[assetId].gap;
@@ -530,8 +530,8 @@ contract Shutdown is Stateful, Eventful {
 
         require(userVouchers != 0 && totalVouchers != 0, "shutdown/redeemVouchers: no vouchers to redeem");
 
-        uint256 percentageOfBonds = Math.rdiv(userVouchers, totalVouchers);
-        uint256 shareOfStablecoin = Math.rmul(percentageOfBonds, finalTotalReserve);
+        uint256 percentageOfBonds = Math._rdiv(userVouchers, totalVouchers);
+        uint256 shareOfStablecoin = Math._rmul(percentageOfBonds, finalTotalReserve);
 
         if (shareOfStablecoin > userVouchers) {
             shareOfStablecoin = userVouchers;

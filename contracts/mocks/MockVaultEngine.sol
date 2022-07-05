@@ -228,26 +228,4 @@ contract MockVaultEngine {
         vaults[collateral][from].standby -= amount;
         vaults[collateral][to].standby += amount;
     }
-
-    function sub(uint256 a, int256 b) internal pure returns (uint256 c) {
-        unchecked {
-            c = a - uint256(b);
-        }
-        require(b <= 0 || c <= a, "Vault/sub: sub op failed");
-        require(b >= 0 || c >= a, "Vault/sub: sub op failed");
-    }
-
-    function add(uint256 a, int256 b) internal pure returns (uint256 c) {
-        unchecked {
-            c = a + uint256(b);
-        }
-        require(b >= 0 || c <= a, "Math/add: add op failed");
-        require(b <= 0 || c >= a, "Math/add: add op failed");
-    }
-
-    function mul(uint256 a, int256 b) internal pure returns (int256 c) {
-        c = int256(a) * b;
-        require(int256(a) >= 0, "Vault/mul: mul op failed");
-        require(b == 0 || c / b == int256(a), "Vault/mul: mul op failed");
-    }
 }
