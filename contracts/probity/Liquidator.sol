@@ -173,7 +173,7 @@ contract Liquidator is Stateful, Eventful {
      * @notice reduces debt that's currently on auction
      * @param amount The amount to reduce the ReservePool debt by
      */
-    function reduceAuctionDebt(uint256 amount) external {
+    function reduceAuctionDebt(uint256 amount) external onlyBy("auctioneer") {
         reserve.reduceAuctionDebt(amount);
     }
 
