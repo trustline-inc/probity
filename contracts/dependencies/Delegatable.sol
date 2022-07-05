@@ -135,7 +135,7 @@ contract Delegatable is Stateful {
             );
 
             if (epochId != 0) {
-                totalBalanceAtEpoch[epochId] = Math.add(
+                totalBalanceAtEpoch[epochId] = Math._add(
                     totalBalanceAtEpoch[epochId - 1],
                     totalDepositsForEpoch[epochId]
                 );
@@ -146,7 +146,7 @@ contract Delegatable is Stateful {
 
             // reward would be zero if totalBalanceAtEpoch is zero
             if (totalBalanceAtEpoch[epochId] != 0) {
-                rewardPerUnitForEpoch[epochId] = Math.rdiv(rewardAmount, totalBalanceAtEpoch[epochId]);
+                rewardPerUnitForEpoch[epochId] = Math._rdiv(rewardAmount, totalBalanceAtEpoch[epochId]);
             }
         }
 
