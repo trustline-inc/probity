@@ -110,7 +110,7 @@ describe("Treasury Unit Tests", function () {
     it("fails when user doesn't have enough aur to be withdrawn", async () => {
       await assertRevert(
         treasury.connect(user).withdrawStablecoin(AMOUNT_TO_WITHDRAW),
-        "Transaction reverted without a reason string"
+        "reverted with panic code 0x11"
       );
       await treasury.withdrawStablecoin(AMOUNT_TO_WITHDRAW);
     });
