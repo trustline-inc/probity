@@ -245,7 +245,7 @@ contract Auctioneer is Stateful, Eventful {
             prev = nextHighestBidder[auctionId][prev];
         }
 
-        removeBid(auctionId, msg.sender, prev);
+        _removeBid(auctionId, msg.sender, prev);
     }
 
     /**
