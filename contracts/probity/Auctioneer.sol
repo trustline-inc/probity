@@ -72,7 +72,7 @@ contract Auctioneer is Stateful, Eventful {
     LiquidatorLike public liquidator;
     PriceCalc public immutable priceCalc;
 
-    uint256 public auctionCount;
+    uint256 public totalAuctions;
     uint256 public nextBidRatio = 1.03E18; // the next bid must be 103% of current bid or higher
     uint256 public priceBuffer = 1.10E18; // buffer to starting price, 110% of current price
     mapping(uint256 => Auction) public auctions;
@@ -161,7 +161,7 @@ contract Auctioneer is Stateful, Eventful {
     ) external onlyBy("liquidator") {
         uint256 currentPrice = priceFeed.getPrice(assetId);
         uint256 startPrice = (currentPrice * priceBuffer) / ONE;
-        uint256 auctionId = auctionCount++;
+        uint256 auctionId = totalAuctions++;
         auctions[auctionId] = Auction(
             assetId,
             lotSize,
@@ -228,6 +228,24 @@ contract Auctioneer is Stateful, Eventful {
 
         emit BidPlaced(auctions[auctionId].assetId, auctionId, msg.sender, bidPrice, bidLot);
         _cancelOldBids(auctionId, totalBidValue, totalBidLot, indexToAdd);
+    }
+
+    /**
+     * @notice cancel the existing bid on an auction
+     * @param auctionId The ID of the auction
+     */
+    function cancelBid(uint256 auctionId) external {
+        require(bids[auctionId][msg.sender].price > 0, "Auctioneer/cancelBid: No bids exists for the caller");
+
+        address prev = HEAD;
+        while (nextHighestBidder[auctionId][prev] != address(0)) {
+            if (nextHighestBidder[auctionId][prev] == msg.sender) {
+                break;
+            }
+            prev = nextHighestBidder[auctionId][prev];
+        }
+
+        _removeBid(auctionId, msg.sender, prev);
     }
 
     /**
