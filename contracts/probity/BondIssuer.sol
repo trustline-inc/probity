@@ -133,7 +133,7 @@ contract BondIssuer is Stateful, Eventful {
      * @param amount The amount to redeem
      */
     function shutdownRedemption(address user, uint256 amount) external onlyWhen("shutdown", true) onlyBy("shutdown") {
-        processRedemption(user, amount);
+        _processRedemption(user, amount);
     }
 
     /**
@@ -171,16 +171,16 @@ contract BondIssuer is Stateful, Eventful {
      * @param user The user to process a redemption for
      * @param amount The amount to redeem
      */
-    function processRedemption(address user, uint256 amount) internal {
+    function _processRedemption(address user, uint256 amount) internal {
         require(
             vaultEngine.balance(address(reservePoolAddress)) - vaultEngine.systemDebt(address(reservePoolAddress)) >=
                 amount,
-            "ReservePool/processRedemption: The reserve pool doesn't have enough funds"
+            "BondIssuer/processRedemption: The reserve pool doesn't have enough funds"
         );
 
         require(
-            tokens[user] >= amount,
-            "ReservePool/processRedemption: User doesn't have enough tokens to redeem this amount"
+            vouchers[user] >= amount,
+            "BondIssuer/processRedemption: User doesn't have enough vouchers to redeem this amount"
         );
 
         tokens[user] -= amount;

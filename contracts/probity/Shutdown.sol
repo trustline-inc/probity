@@ -337,7 +337,7 @@ contract Shutdown is Stateful, Eventful {
         (uint256 debtAccumulator, , , , , , ) = vaultEngine.assets(assetId);
 
         uint256 required = (debt * debtAccumulator) / assets[assetId].finalPrice;
-        uint256 amountToGrab = Math.min(collateral, required);
+        uint256 amountToGrab = Math._min(collateral, required);
         uint256 gap = required - amountToGrab;
         assets[assetId].gap += gap;
         stablecoinGap += gap * assets[assetId].finalPrice;
@@ -406,7 +406,7 @@ contract Shutdown is Stateful, Eventful {
             "shutdown/calculateInvestorObligation: system reserve or stablecoin gap must be zero"
         );
         uint256 stablecoinUtilized = (vaultEngine.totalEquity() / WAD) * finalUtilizationRatio;
-        investorObligationRatio = Math.min((stablecoinGap * WAD) / stablecoinUtilized, WAD);
+        investorObligationRatio = Math._min((stablecoinGap * WAD) / stablecoinUtilized, WAD);
 
         emit InvestorObligationCalculated(investorObligationRatio);
     }
@@ -423,7 +423,7 @@ contract Shutdown is Stateful, Eventful {
         uint256 hookedSuppliedAmount = (initialEquity / WAD) * finalUtilizationRatio;
         uint256 investorObligation = ((hookedSuppliedAmount * investorObligationRatio) / WAD) /
             assets[assetId].finalPrice;
-        uint256 amountToGrab = Math.min(underlying, investorObligation);
+        uint256 amountToGrab = Math._min(underlying, investorObligation);
 
         if (amountToGrab > assets[assetId].gap) {
             amountToGrab = assets[assetId].gap;

@@ -36,6 +36,6 @@ contract LinearDecrease is PriceCalc {
         returns (uint256 calculatedPrice)
     {
         if (timeElapsed >= timeToZero) return 0;
-        return Math.rmul(startingPrice, Math.mul(timeToZero - timeElapsed, RAY) / timeToZero);
+        return Math._rmul(startingPrice, Math._mul(timeToZero - timeElapsed, RAY) / timeToZero);
     }
 }

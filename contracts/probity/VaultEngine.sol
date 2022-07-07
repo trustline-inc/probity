@@ -276,9 +276,9 @@ contract VaultEngine is Stateful, Eventful {
         int256 fundraiseTarget = Math.mul(asset.debtAccumulator, debtAmount);
         totalUserDebt = Math.add(totalUserDebt, fundraiseTarget);
 
-        vaults[assetId][auctioneer].standby = Math.sub(vaults[assetId][auctioneer].standby, collateralAmount);
-        systemDebt[reservePool] = Math.sub(systemDebt[reservePool], fundraiseTarget);
-        totalSystemDebt = Math.sub(totalSystemDebt, fundraiseTarget);
+        vaults[assetId][auctioneer].standby = Math._sub(vaults[assetId][auctioneer].standby, collateralAmount);
+        systemDebt[reservePool] = Math._sub(systemDebt[reservePool], fundraiseTarget);
+        totalSystemDebt = Math._sub(totalSystemDebt, fundraiseTarget);
 
         emit DebtLiquidated(account, collateralAmount, debtAmount);
     }
@@ -305,14 +305,14 @@ contract VaultEngine is Stateful, Eventful {
         Vault storage vault = vaults[assetId][account];
         Asset storage asset = assets[assetId];
 
-        vault.underlying = Math.add(vault.underlying, assetToReturn);
-        vault.standby = Math.sub(vault.standby, assetToReturn);
-        vault.equity = Math.add(vault.equity, equityAmount);
-        vault.initialEquity = Math.add(vault.initialEquity, initialEquityAmount);
-        asset.normEquity = Math.add(asset.normEquity, equityAmount);
+        vault.underlying = Math._add(vault.underlying, assetToReturn);
+        vault.standby = Math._sub(vault.standby, assetToReturn);
+        vault.equity = Math._add(vault.equity, equityAmount);
+        vault.initialEquity = Math._add(vault.initialEquity, initialEquityAmount);
+        asset.normEquity = Math._add(asset.normEquity, equityAmount);
 
-        vaults[assetId][auctioneer].standby = Math.sub(vaults[assetId][auctioneer].standby, assetToAuction);
-        totalEquity = Math.add(totalEquity, Math.mul(RAY, equityAmount));
+        vaults[assetId][auctioneer].standby = Math._sub(vaults[assetId][auctioneer].standby, assetToAuction);
+        totalEquity = Math._add(totalEquity, Math._mul(RAY, equityAmount));
 
         emit EquityLiquidated(account, assetToAuction, assetToReturn, equityAmount);
     }
@@ -453,22 +453,22 @@ contract VaultEngine is Stateful, Eventful {
         }
 
         Vault storage vault = vaults[assetId][msg.sender];
-        vault.standby = Math.sub(vault.standby, underlyingAmount);
-        vault.underlying = Math.add(vault.underlying, underlyingAmount);
-        int256 equityCreated = Math.mul(assets[assetId].equityAccumulator, equityAmount);
-        vault.equity = Math.add(vault.equity, equityAmount);
-        vault.initialEquity = Math.add(vault.initialEquity, equityCreated);
+        vault.standby = Math._sub(vault.standby, underlyingAmount);
+        vault.underlying = Math._add(vault.underlying, underlyingAmount);
+        int256 equityCreated = Math._mul(assets[assetId].equityAccumulator, equityAmount);
+        vault.equity = Math._add(vault.equity, equityAmount);
+        vault.initialEquity = Math._add(vault.initialEquity, equityCreated);
 
-        assets[assetId].normEquity = Math.add(assets[assetId].normEquity, equityAmount);
+        assets[assetId].normEquity = Math._add(assets[assetId].normEquity, equityAmount);
 
-        totalEquity = Math.add(totalEquity, equityCreated);
+        totalEquity = Math._add(totalEquity, equityCreated);
 
         require(totalEquity <= assets[assetId].ceiling, "Vault/modifyEquity: Supply ceiling reached");
         require(
             vault.equity == 0 || (vault.equity * RAY) > assets[assetId].floor,
             "Vault/modifyEquity: Equity smaller than floor"
         );
-        certifyEquityPosition(assetId, vault);
+        _certifyEquityPosition(assetId, vault);
 
         balance[treasuryAddress] = Math.add(balance[treasuryAddress], equityCreated);
 
@@ -496,12 +496,12 @@ contract VaultEngine is Stateful, Eventful {
         }
 
         Vault memory vault = vaults[assetId][msg.sender];
-        vault.standby = Math.sub(vault.standby, collAmount);
-        vault.collateral = Math.add(vault.collateral, collAmount);
-        int256 debtCreated = Math.mul(assets[assetId].debtAccumulator, debtAmount);
-        vault.debt = Math.add(vault.debt, debtAmount);
+        vault.standby = Math._sub(vault.standby, collAmount);
+        vault.collateral = Math._add(vault.collateral, collAmount);
+        int256 debtCreated = Math._mul(assets[assetId].debtAccumulator, debtAmount);
+        vault.debt = Math._add(vault.debt, debtAmount);
 
-        assets[assetId].normDebt = Math.add(assets[assetId].normDebt, debtAmount);
+        assets[assetId].normDebt = Math._add(assets[assetId].normDebt, debtAmount);
 
         totalUserDebt = Math.add(totalUserDebt, debtCreated);
         totalSupply = Math.add(totalSupply, debtCreated);
@@ -511,7 +511,7 @@ contract VaultEngine is Stateful, Eventful {
             vault.debt == 0 || (vault.debt * RAY) > assets[assetId].floor,
             "Vault/modifyDebt: Debt smaller than floor"
         );
-        certifyDebtPosition(assetId, vault);
+        _certifyDebtPosition(assetId, vault);
 
         balance[msg.sender] = Math.add(balance[msg.sender], debtCreated);
         balance[treasuryAddress] = Math.sub(balance[treasuryAddress], debtCreated);
@@ -526,7 +526,7 @@ contract VaultEngine is Stateful, Eventful {
      * @param assetId The asset type ID
      * @param vault The vault to certify
      */
-    function certifyEquityPosition(bytes32 assetId, Vault memory vault) internal view {
+    function _certifyEquityPosition(bytes32 assetId, Vault memory vault) internal view {
         require(
             vault.initialEquity <= vault.underlying * assets[assetId].adjustedPrice,
             "Vault/certify: Not enough underlying"
@@ -538,7 +538,7 @@ contract VaultEngine is Stateful, Eventful {
      * @param assetId The asset type ID
      * @param vault The vault to certify
      */
-    function certifyDebtPosition(bytes32 assetId, Vault memory vault) internal view {
+    function _certifyDebtPosition(bytes32 assetId, Vault memory vault) internal view {
         require(
             (vault.debt * assets[assetId].debtAccumulator) <= vault.collateral * assets[assetId].adjustedPrice,
             "Vault/certify: Not enough collateral"

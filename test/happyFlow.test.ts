@@ -29,6 +29,7 @@ const expect = chai.expect;
 // Wallets
 let owner: SignerWithAddress;
 let user: SignerWithAddress;
+let userWithRole: SignerWithAddress;
 let gov: SignerWithAddress;
 
 // Contracts
@@ -82,8 +83,14 @@ describe("Probity happy flow", function () {
     owner = signers.owner;
     user = signers.alice;
     gov = signers.charlie;
+    userWithRole = signers.don;
 
     await registry.setupAddress(bytes32("gov"), gov.address, true);
+    await registry.setupAddress(
+      bytes32("auctioneer"),
+      userWithRole.address,
+      true
+    );
     await registry.setupAddress(bytes32("whitelisted"), user.address, false);
     await registry.setupAddress(bytes32("whitelisted"), owner.address, false);
   });
@@ -752,7 +759,7 @@ describe("Probity happy flow", function () {
 
     // Reduce auction debt by 20 USD (from 100 to 80)
     const debtToReduce = RAD.mul(20);
-    await liquidator.reduceAuctionDebt(debtToReduce);
+    await liquidator.connect(userWithRole).reduceAuctionDebt(debtToReduce);
 
     // Expect debt to be reduced
     const debtOnAuction = await reserve.debtOnAuction();
@@ -767,7 +774,7 @@ describe("Probity happy flow", function () {
     expect(_debtThreshold).to.equal(debtThreshold);
 
     // Start an IOU sale (systemDebt - debtOnAuction > debtThreshold)
-    await reserve.connect(gov).startSale();
+    await reserve.connect(gov).startBondSale();
 
     await ethers.provider.send("evm_increaseTime", [21601]);
     await ethers.provider.send("evm_mine", []);

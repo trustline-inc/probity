@@ -132,20 +132,20 @@ contract Teller is Stateful, Eventful {
         require(totalEquity > 0, "Teller/updateAccumulators: Total equity cannot be zero");
 
         // Update debt accumulator
-        uint256 utilization = Math.wdiv(totalDebt, totalEquity);
-        uint256 debtRateIncrease = Math.rmul(Math.rpow(mpr, (block.timestamp - asset.lastUpdated)), debtAccumulator) -
+        uint256 utilization = Math._wdiv(totalDebt, totalEquity);
+        uint256 debtRateIncrease = Math._rmul(Math._rpow(mpr, (block.timestamp - asset.lastUpdated)), debtAccumulator) -
             debtAccumulator;
 
         uint256 exponentiated;
         {
             // Update equity accumulator
-            uint256 multipliedByUtilization = Math.rmul(mpr - RAY, utilization * 1e9);
+            uint256 multipliedByUtilization = Math._rmul(mpr - RAY, utilization * 1e9);
             uint256 multipliedByUtilizationPlusOne = multipliedByUtilization + RAY;
 
-            exponentiated = Math.rpow(multipliedByUtilizationPlusOne, (block.timestamp - asset.lastUpdated));
+            exponentiated = Math._rpow(multipliedByUtilizationPlusOne, (block.timestamp - asset.lastUpdated));
         }
 
-        uint256 equityAccumulatorDiff = Math.rmul(exponentiated, equityAccumulator) - equityAccumulator;
+        uint256 equityAccumulatorDiff = Math._rmul(exponentiated, equityAccumulator) - equityAccumulator;
         uint256 protocolFeeRate = 0;
         if (assets[assetId].protocolFee != 0) {
             protocolFeeRate = (equityAccumulatorDiff * assets[assetId].protocolFee) / WAD;
@@ -158,7 +158,7 @@ contract Teller is Stateful, Eventful {
             apr = MAX_APR;
         } else {
             uint256 oneMinusUtilization = RAY - (utilization * 1e9);
-            uint256 oneDividedByOneMinusUtilization = Math.rdiv(10**27 * 0.01, oneMinusUtilization);
+            uint256 oneDividedByOneMinusUtilization = Math._rdiv(10**27 * 0.01, oneMinusUtilization);
 
             uint256 round = 0.0025 * 10**27;
             apr = oneDividedByOneMinusUtilization + RAY;

@@ -100,7 +100,7 @@ contract PriceFeed is Stateful, Eventful {
      */
     function getPrice(bytes32 assetId) public collateralExists(assetId) returns (uint256 price) {
         (price, ) = assets[assetId].ftso.getCurrentPrice();
-        price = Math.rdiv(price, 1e5);
+        price = Math._rdiv(price, 1e5);
     }
 
     /**
@@ -111,7 +111,7 @@ contract PriceFeed is Stateful, Eventful {
     function updateAdjustedPrice(bytes32 assetId) external {
         require(address(assets[assetId].ftso) != address(0), "PriceFeed/UpdatePrice: Asset is not initialized");
         uint256 price = this.getPrice(assetId);
-        uint256 adjustedPrice = Math.rdiv(price, assets[assetId].liquidationRatio * 1e9);
+        uint256 adjustedPrice = Math._rdiv(price, assets[assetId].liquidationRatio * 1e9);
         vaultEngine.updateAdjustedPrice(assetId, adjustedPrice);
     }
 }

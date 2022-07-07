@@ -137,7 +137,7 @@ contract ReservePool is Stateful, Eventful {
     /**
      * @notice Starts a sale for future reserve pool profits
      */
-    function startSale() external onlyByProbity {
+    function startBondSale() external onlyByProbity {
         require(
             vaultEngine.systemDebt(address(this)) - debtOnAuction > debtThreshold,
             "ReservePool/startSale: Debt threshold is not yet crossed"

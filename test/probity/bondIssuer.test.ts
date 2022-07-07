@@ -287,7 +287,7 @@ describe("BondIssuer Unit Tests", function () {
         bondIssuer
           .connect(shutdown)
           .shutdownRedemption(owner.address, BUY_AMOUNT),
-        "ReservePool/processRedemption: The reserve pool doesn't have enough funds"
+        "BondIssuer/processRedemption: The reserve pool doesn't have enough funds"
       );
       await vaultEngine.setStablecoin(reservePool.address, RESERVE_BAL);
       await bondIssuer
@@ -302,7 +302,7 @@ describe("BondIssuer Unit Tests", function () {
         bondIssuer
           .connect(shutdown)
           .shutdownRedemption(user.address, BUY_AMOUNT),
-        "ReservePool/processRedemption: User doesn't have enough tokens to redeem this amount"
+        "BondIssuer/processRedemption: User doesn't have enough vouchers to redeem this amount"
       );
       await bondIssuer
         .connect(shutdown)
@@ -430,8 +430,8 @@ describe("BondIssuer Unit Tests", function () {
     it("fails if reservePool doesn't have enough funds to redeem", async () => {
       await vaultEngine.setStablecoin(reservePool.address, 0);
       await assertRevert(
-        bondIssuer.redeemTokens(BUY_AMOUNT),
-        "ReservePool/processRedemption: The reserve pool doesn't have enough funds"
+        bondIssuer.redeemVouchers(BUY_AMOUNT),
+        "BondIssuer/processRedemption: The reserve pool doesn't have enough funds"
       );
       await vaultEngine.setStablecoin(reservePool.address, RESERVE_BAL);
       await bondIssuer.redeemTokens(BUY_AMOUNT);
@@ -439,8 +439,8 @@ describe("BondIssuer Unit Tests", function () {
 
     it("fails if user doesn't have enough tokens to redeem", async () => {
       await assertRevert(
-        bondIssuer.connect(user).redeemTokens(BUY_AMOUNT),
-        "ReservePool/processRedemption: User doesn't have enough tokens to redeem this amount"
+        bondIssuer.connect(user).redeemVouchers(BUY_AMOUNT),
+        "BondIssuer/processRedemption: User doesn't have enough vouchers to redeem this amount"
       );
       await bondIssuer.connect(user).purchaseBond(BUY_AMOUNT);
       await bondIssuer.connect(user).redeemTokens(BUY_AMOUNT);

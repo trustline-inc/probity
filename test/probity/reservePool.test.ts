@@ -229,7 +229,7 @@ describe("ReservePool Unit Tests", function () {
     });
   });
 
-  describe("startSale Unit Tests", function () {
+  describe("startBondSale Unit Tests", function () {
     const DEBT_THRESHOLD = RAD.mul(20000);
     beforeEach(async function () {
       await reservePool.updateDebtThreshold(DEBT_THRESHOLD);
@@ -240,11 +240,11 @@ describe("ReservePool Unit Tests", function () {
 
     it("fails if caller is not by reservePool", async () => {
       await assertRevert(
-        reservePool.connect(user).startSale(),
+        reservePool.connect(user).startBondSale(),
         "AccessControl/onlyByProbity: Caller must be from Probity system contract"
       );
       await registry.setupAddress(bytes32("gov"), user.address, true);
-      await reservePool.connect(user).startSale();
+      await reservePool.connect(user).startBondSale();
     });
 
     it("fails if debt threshold has not been crossed yet", async () => {
@@ -253,13 +253,13 @@ describe("ReservePool Unit Tests", function () {
         .setsystemDebt(reservePool.address, DEBT_THRESHOLD.sub(1));
 
       await assertRevert(
-        reservePool.connect(liquidator).startSale(),
+        reservePool.connect(liquidator).startBondSale(),
         "ReservePool/startSale: Debt threshold is not yet crossed"
       );
       await vaultEngine
         .connect(liquidator)
         .setsystemDebt(reservePool.address, DEBT_THRESHOLD.add(1));
-      await reservePool.connect(liquidator).startSale();
+      await reservePool.connect(liquidator).startBondSale();
     });
 
     it("fails reservePool's stablecoin balance is still positive", async () => {
@@ -268,19 +268,19 @@ describe("ReservePool Unit Tests", function () {
         .setStablecoin(reservePool.address, RAD);
 
       await assertRevert(
-        reservePool.connect(liquidator).startSale(),
+        reservePool.connect(liquidator).startBondSale(),
         "ReservePool/startSale: Stablecoin balance is still positive"
       );
       await vaultEngine
         .connect(liquidator)
         .setStablecoin(reservePool.address, 0);
-      await reservePool.connect(liquidator).startSale();
+      await reservePool.connect(liquidator).startBondSale();
     });
 
     it("tests that values are properly set", async () => {
       const before = await bondIssuer.lastOfferingAmount();
       expect(before).to.equal(0);
-      await reservePool.connect(liquidator).startSale();
+      await reservePool.connect(liquidator).startBondSale();
       const after = await bondIssuer.lastOfferingAmount();
       expect(after).to.equal(DEBT_THRESHOLD);
     });

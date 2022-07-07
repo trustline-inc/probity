@@ -449,6 +449,67 @@ describe("Auctioneer Unit Tests", function () {
     });
   });
 
+  describe("cancelBid Unit Test", function () {
+    beforeEach(async function () {
+      await auctioneer
+        .connect(liquidatorCaller)
+        .startAuction(
+          ASSET_ID.FLR,
+          LOT_SIZE,
+          DEBT_SIZE,
+          user1.address,
+          reservePool.address,
+          false
+        );
+
+      await vaultEngine.updateVault(
+        ASSET_ID.FLR,
+        auctioneer.address,
+        LOT_SIZE,
+        0,
+        0,
+        0,
+        0,
+        0
+      );
+      await vaultEngine.addStablecoin(owner.address, RAD.mul(1000000));
+      await vaultEngine.addStablecoin(user1.address, RAD.mul(1000000));
+      await vaultEngine.addStablecoin(user2.address, RAD.mul(1000000));
+      await vaultEngine.addStablecoin(user3.address, RAD.mul(1000000));
+    });
+
+    it("fails if bid doesn't exists for caller", async () => {
+      await assertRevert(
+        auctioneer.cancelBid(0),
+        "Auctioneer/cancelBid: No bids exists for the caller"
+      );
+
+      await auctioneer.placeBid(0, RAY, LOT_SIZE.div(10));
+
+      await auctioneer.cancelBid(0);
+    });
+
+    it("tests that bid is removed correctly", async () => {
+      await auctioneer.placeBid(0, RAY, LOT_SIZE.div(10));
+
+      const bidBefore = await auctioneer.bids(0, owner.address);
+      const nextBidderBefore = await auctioneer.nextHighestBidder(0, HEAD);
+
+      expect(bidBefore.price).to.equal(RAY);
+      expect(bidBefore.lot).to.equal(LOT_SIZE.div(10));
+      expect(nextBidderBefore).to.equal(owner.address);
+
+      await auctioneer.cancelBid(0);
+
+      const bidAfter = await auctioneer.bids(0, owner.address);
+      const nextBidderAfter = await auctioneer.nextHighestBidder(0, HEAD);
+
+      expect(bidAfter.price).to.equal(0);
+      expect(bidAfter.lot).to.equal(0);
+      expect(nextBidderAfter).to.equal(ADDRESS_ZERO);
+    });
+  });
+
   describe("buyItNow Unit Test", function () {
     beforeEach(async function () {
       await priceCalc.setPrice(RAY.mul(12).div(10));

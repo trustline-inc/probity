@@ -72,7 +72,7 @@ contract Auctioneer is Stateful, Eventful {
     LiquidatorLike public liquidator;
     PriceCalc public immutable priceCalc;
 
-    uint256 public auctionCount;
+    uint256 public totalAuctions;
     uint256 public nextBidRatio = 1.03E18; // the next bid must be 103% of current bid or higher
     uint256 public priceBuffer = 1.10E18; // buffer to starting price, 110% of current price
     mapping(uint256 => Auction) public auctions;
@@ -161,7 +161,7 @@ contract Auctioneer is Stateful, Eventful {
     ) external onlyBy("liquidator") {
         uint256 currentPrice = priceFeed.getPrice(assetId);
         uint256 startPrice = (currentPrice * priceBuffer) / ONE;
-        uint256 auctionId = auctionCount++;
+        uint256 auctionId = totalAuctions++;
         auctions[auctionId] = Auction(
             assetId,
             lotSize,
@@ -217,7 +217,7 @@ contract Auctioneer is Stateful, Eventful {
             bidLot
         );
 
-        biddableLot = Math.min(bidLot, biddableLot);
+        biddableLot = Math._min(bidLot, biddableLot);
         uint256 bidValue = biddableLot * bidPrice;
 
         vaultEngine.moveStablecoin(msg.sender, address(this), bidValue);
@@ -227,7 +227,25 @@ contract Auctioneer is Stateful, Eventful {
         bids[auctionId][msg.sender] = Bid(bidPrice, biddableLot);
 
         emit BidPlaced(auctions[auctionId].assetId, auctionId, msg.sender, bidPrice, bidLot);
-        cancelOldBids(auctionId, totalBidValue, totalBidLot, indexToAdd);
+        _cancelOldBids(auctionId, totalBidValue, totalBidLot, indexToAdd);
+    }
+
+    /**
+     * @notice cancel the existing bid on an auction
+     * @param auctionId The ID of the auction
+     */
+    function cancelBid(uint256 auctionId) external {
+        require(bids[auctionId][msg.sender].price > 0, "Auctioneer/cancelBid: No bids exists for the caller");
+
+        address prev = HEAD;
+        while (nextHighestBidder[auctionId][prev] != address(0)) {
+            if (nextHighestBidder[auctionId][prev] == msg.sender) {
+                break;
+            }
+            prev = nextHighestBidder[auctionId][prev];
+        }
+
+        _removeBid(auctionId, msg.sender, prev);
     }
 
     /**
@@ -251,7 +269,7 @@ contract Auctioneer is Stateful, Eventful {
         (uint256 biddableLot, , , address index) = getBiddableLot(auctionId, currentPrice, lot);
         require(biddableLot > 0, "Auctioneer/buyItNow: Price has reach a point where BuyItNow is no longer available");
 
-        uint256 lotToBuy = Math.min(lot, biddableLot);
+        uint256 lotToBuy = Math._min(lot, biddableLot);
         lotValue = lotToBuy * currentPrice;
         vaultEngine.moveStablecoin(msg.sender, auctions[auctionId].beneficiary, lotValue);
         vaultEngine.moveAsset(auctions[auctionId].assetId, address(this), msg.sender, lotToBuy);
@@ -265,9 +283,9 @@ contract Auctioneer is Stateful, Eventful {
             liquidator.reduceAuctionDebt(lotValue);
         }
 
-        endAuction(auctionId);
+        _endAuction(auctionId);
         emit Sale(auctions[auctionId].assetId, auctionId, msg.sender, currentPrice, lotToBuy);
-        cancelOldBids(auctionId, 0, 0, HEAD);
+        _cancelOldBids(auctionId, 0, 0, HEAD);
     }
 
     /**
@@ -290,7 +308,7 @@ contract Auctioneer is Stateful, Eventful {
 
         auctions[auctionId].lot -= bids[auctionId][msg.sender].lot;
 
-        removeIndex(auctionId, msg.sender);
+        _removeIndex(auctionId, msg.sender);
         emit Sale(
             auctions[auctionId].assetId,
             auctionId,
@@ -303,7 +321,7 @@ contract Auctioneer is Stateful, Eventful {
             liquidator.reduceAuctionDebt(buyAmount);
         }
 
-        endAuction(auctionId);
+        _endAuction(auctionId);
     }
 
     /**
@@ -336,7 +354,7 @@ contract Auctioneer is Stateful, Eventful {
         biddableLot = auction.lot - totalBidLot;
 
         if (biddableValue < bidPrice * bidLot) {
-            biddableLot = Math.min(biddableValue / bidPrice, biddableLot);
+            biddableLot = Math._min(biddableValue / bidPrice, biddableLot);
         }
 
         return (biddableLot, totalBidValue, totalBidLot, index);
@@ -360,7 +378,7 @@ contract Auctioneer is Stateful, Eventful {
     function cancelAuction(uint256 auctionId, address recipient) external onlyByProbity {
         Auction storage auction = auctions[auctionId];
 
-        cancelOldBids(auctionId, auction.debt, auction.lot, HEAD);
+        _cancelOldBids(auctionId, auction.debt, auction.lot, HEAD);
 
         liquidator.reduceAuctionDebt(auction.debt);
         vaultEngine.moveAsset(auction.assetId, address(this), recipient, auction.lot);
@@ -413,7 +431,7 @@ contract Auctioneer is Stateful, Eventful {
      * @notice Ends an auction if it is done
      * @param auctionId The ID of the auction
      */
-    function endAuction(uint256 auctionId) internal {
+    function _endAuction(uint256 auctionId) internal {
         Auction storage auction = auctions[auctionId];
 
         if (auction.lot == 0 || (auction.debt == 0 && !auction.sellAllLot)) {
@@ -444,7 +462,7 @@ contract Auctioneer is Stateful, Eventful {
      * @param startingLot allow the function to start at a predetermined lot instead of looping from beginning
      * @param prev address of the bidder in the linked list that holds the cumulative value and lot
      */
-    function cancelOldBids(
+    function _cancelOldBids(
         uint256 auctionId,
         uint256 startingValue,
         uint256 startingLot,
@@ -464,11 +482,11 @@ contract Auctioneer is Stateful, Eventful {
                     lotLeft -= bidLot;
                 } else if (lotLeft > 0) {
                     // lotLeft > 0 && lotLeft < bidLot
-                    modifyBid(auctionId, index, lotLeft);
+                    _modifyBid(auctionId, index, lotLeft);
                     lotLeft = 0;
                 } else {
                     // bidLeft left == 0, we remove the bidder and return the funds
-                    removeBid(auctionId, index, prev);
+                    _removeBid(auctionId, index, prev);
                     index = prev;
                 }
             } else {
@@ -478,16 +496,16 @@ contract Auctioneer is Stateful, Eventful {
                     lotLeft -= bidLot;
                 } else if (amountLeft > 0) {
                     uint256 buyableLot = (amountLeft / bidPrice);
-                    buyableLot = Math.min(lotLeft, buyableLot);
+                    buyableLot = Math._min(lotLeft, buyableLot);
                     if (buyableLot < bidLot) {
-                        modifyBid(auctionId, index, buyableLot);
+                        _modifyBid(auctionId, index, buyableLot);
                     }
 
                     lotLeft -= buyableLot;
                     amountLeft -= buyableLot * bidPrice;
                 } else {
                     // amount left == 0, we remove the bidder and return the funds
-                    removeBid(auctionId, index, prev);
+                    _removeBid(auctionId, index, prev);
                     index = prev;
                 }
             }
@@ -506,7 +524,7 @@ contract Auctioneer is Stateful, Eventful {
      * @param bidder address of the bidder
      * @param newLot new lot value for bidder
      */
-    function modifyBid(
+    function _modifyBid(
         uint256 auctionId,
         address bidder,
         uint256 newLot
@@ -538,7 +556,7 @@ contract Auctioneer is Stateful, Eventful {
      * @param bidder address of the bidder
      * @param prev index of the prev bidder in bids
      */
-    function removeBid(
+    function _removeBid(
         uint256 auctionId,
         address bidder,
         address prev
@@ -566,7 +584,7 @@ contract Auctioneer is Stateful, Eventful {
      * @param auctionId The ID of the auction
      * @param indexToRemove address of the bidder to remove from bids linked list
      */
-    function removeIndex(uint256 auctionId, address indexToRemove) internal {
+    function _removeIndex(uint256 auctionId, address indexToRemove) internal {
         bool removed = false;
         address index = HEAD;
         while (index != address(0)) {
@@ -578,6 +596,6 @@ contract Auctioneer is Stateful, Eventful {
 
             index = nextHighestBidder[auctionId][index];
         }
-        require(removed, "Auctioneer/removeIndex: The index could not be found");
+        require(removed, "Auctioneer/_removeIndex: The index could not be found");
     }
 }
