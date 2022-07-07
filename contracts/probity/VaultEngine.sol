@@ -42,7 +42,7 @@ contract VaultEngine is Stateful, Eventful {
     uint256 private constant RAY = 10**27;
 
     uint256 public totalDebt; // Total $ loan amount for all assets
-    uint256 public totalStablecoin; // Total stablecoin supply in circulation
+    uint256 public totalStablecoin; // Total stablecoin supply (includes non-circulating)
     uint256 public totalEquity; // Total equity position for all asset types
     uint256 public totalSystemDebt; // Total system debt
     address[] public vaultList; // List of vaults that had either equity and/or debt position
