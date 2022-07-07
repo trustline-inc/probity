@@ -308,7 +308,7 @@ contract Shutdown is Stateful, Eventful {
         uint256 totalUserDebt = vaultEngine.totalUserDebt();
         uint256 totalEquity = vaultEngine.totalEquity();
         if (totalEquity != 0) {
-            finalUtilizationRatio = Math.min(Math.wdiv(totalUserDebt, totalEquity), WAD);
+            finalUtilizationRatio = Math._min(Math._wdiv(totalUserDebt, totalEquity), WAD);
         }
 
         emit ShutdownInitiated();
@@ -382,7 +382,7 @@ contract Shutdown is Stateful, Eventful {
             "shutdown/writeOffFromReserves: the system debt needs to be zero before write off can happen"
         );
         uint256 reserveBalance = vaultEngine.balance(address(reservePool));
-        uint256 amountToMove = Math.min(stablecoinGap, reserveBalance);
+        uint256 amountToMove = Math._min(stablecoinGap, reserveBalance);
         vaultEngine.moveStablecoin(address(reservePool), address(this), amountToMove);
         stablecoinGap -= amountToMove;
     }
@@ -530,8 +530,8 @@ contract Shutdown is Stateful, Eventful {
 
         require(userTokens != 0 && totalTokens != 0, "shutdown/redeemTokens: no tokens to redeem");
 
-        uint256 percentageOfBonds = Math.rdiv(userTokens, totalTokens);
-        uint256 shareOfStablecoin = Math.rmul(percentageOfBonds, finalTotalReserve);
+        uint256 percentageOfBonds = Math._rdiv(userTokens, totalTokens);
+        uint256 shareOfStablecoin = Math._rmul(percentageOfBonds, finalTotalReserve);
 
         if (shareOfStablecoin > userTokens) {
             shareOfStablecoin = userTokens;
