@@ -1,16 +1,14 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import "@nomiclabs/hardhat-ethers";
 
-import { BondIssuer, MockVaultEngine, Registry, Teller } from "../../typechain";
+import { BondIssuer, MockVaultEngine, Registry } from "../../typechain";
 
-import { deployTest, probity, mock } from "../../lib/deployer";
+import { deployTest, probity } from "../../lib/deployer";
 import { ethers } from "hardhat";
 import * as chai from "chai";
-import { bytes32, RAD, WAD, RAY, ADDRESS_ZERO } from "../utils/constants";
+import { bytes32, RAD, WAD, ADDRESS_ZERO } from "../utils/constants";
 import assertRevert from "../utils/assertRevert";
 import increaseTime from "../utils/increaseTime";
-import { rmul, rpow, wdiv } from "../utils/math";
-import exp = require("constants");
 const expect = chai.expect;
 
 // Wallets
@@ -430,7 +428,7 @@ describe("BondIssuer Unit Tests", function () {
     it("fails if reservePool doesn't have enough funds to redeem", async () => {
       await vaultEngine.setStablecoin(reservePool.address, 0);
       await assertRevert(
-        bondIssuer.redeemVouchers(BUY_AMOUNT),
+        bondIssuer.redeemTokens(BUY_AMOUNT),
         "BondIssuer/processRedemption: The reserve pool doesn't have enough funds"
       );
       await vaultEngine.setStablecoin(reservePool.address, RESERVE_BAL);
@@ -439,7 +437,7 @@ describe("BondIssuer Unit Tests", function () {
 
     it("fails if user doesn't have enough tokens to redeem", async () => {
       await assertRevert(
-        bondIssuer.connect(user).redeemVouchers(BUY_AMOUNT),
+        bondIssuer.connect(user).redeemTokens(BUY_AMOUNT),
         "BondIssuer/processRedemption: User doesn't have enough vouchers to redeem this amount"
       );
       await bondIssuer.connect(user).purchaseBond(BUY_AMOUNT);
