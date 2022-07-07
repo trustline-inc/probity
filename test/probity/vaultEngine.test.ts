@@ -497,13 +497,13 @@ describe("Vault Engine Unit Tests", function () {
         .connect(gov)
         .setupAddress(bytes32("treasury"), user.address, true);
 
-      const before = await vaultEngine.stablecoin(user.address);
+      const before = await vaultEngine.balance(user.address);
 
       await vaultEngine
         .connect(user)
         .addStablecoin(user.address, AMOUNT_TO_ADD);
 
-      const after = await vaultEngine.stablecoin(user.address);
+      const after = await vaultEngine.balance(user.address);
       expect(after.sub(before)).to.equal(AMOUNT_TO_ADD);
     });
   });
@@ -1081,11 +1081,11 @@ describe("Vault Engine Unit Tests", function () {
     it("increases stablecoin balance", async () => {
       const EXPECTED_VALUE = EQUITY_TO_RAISE.mul(EQUITY_AMOUNT);
 
-      const before = await vaultEngine.stablecoin(owner.address);
+      const before = await vaultEngine.balance(owner.address);
       expect(before).to.equal(0);
       await vaultEngine.collectInterest(ASSET_ID.FLR);
 
-      const after = await vaultEngine.stablecoin(owner.address);
+      const after = await vaultEngine.balance(owner.address);
       expect(after).to.equal(EXPECTED_VALUE);
     });
 
@@ -1291,7 +1291,7 @@ describe("Vault Engine Unit Tests", function () {
     });
 
     it("updates total debt and total equity", async () => {
-      const totalDebtBefore = await vaultEngine.totalDebt();
+      const totalDebtBefore = await vaultEngine.totalUserDebt();
       const totalEquityBefore = await vaultEngine.totalEquity();
 
       const debtRateIncrease = BigNumber.from("251035088626883475473007");
@@ -1306,7 +1306,7 @@ describe("Vault Engine Unit Tests", function () {
           BigNumber.from(0)
         );
 
-      const totalDebtAfter = await vaultEngine.totalDebt();
+      const totalDebtAfter = await vaultEngine.totalUserDebt();
       const totalEquityAfter = await vaultEngine.totalEquity();
 
       expect(totalDebtAfter.sub(totalDebtBefore).gte(0)).to.equal(true);
@@ -1378,7 +1378,7 @@ describe("Vault Engine Unit Tests", function () {
 
       const EXPECTED_AMOUNT = protocolFee.mul(EQUITY_AMOUNT);
 
-      const reserveStablesBefore = await vaultEngine.stablecoin(
+      const reserveStablesBefore = await vaultEngine.balance(
         reservePool.address
       );
       await vaultEngine
@@ -1391,7 +1391,7 @@ describe("Vault Engine Unit Tests", function () {
           protocolFee
         );
 
-      const reserveStablesAfter = await vaultEngine.stablecoin(
+      const reserveStablesAfter = await vaultEngine.balance(
         reservePool.address
       );
       expect(reserveStablesAfter.sub(reserveStablesBefore)).to.equal(

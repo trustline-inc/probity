@@ -175,7 +175,7 @@ describe("Teller Unit Tests", function () {
     beforeEach(async function () {
       await teller.initAsset(ASSET_ID.FLR, 0);
       await vaultEngine.initAsset(ASSET_ID.FLR);
-      await vaultEngine.setTotalDebt(DEBT_TO_SET);
+      await vaultEngine.setTotalUserDebt(DEBT_TO_SET);
       await vaultEngine.setTotalEquity(EQUITY_TO_SET);
     });
 
@@ -201,35 +201,35 @@ describe("Teller Unit Tests", function () {
     });
 
     it("tests that APR is set properly", async () => {
-      await vaultEngine.setTotalDebt(RAD.mul(25));
+      await vaultEngine.setTotalUserDebt(RAD.mul(25));
       await vaultEngine.setTotalEquity(RAD.mul(100));
 
       await teller.updateAccumulators(ASSET_ID.FLR);
       let apr = await teller.apr();
       expect(apr).to.equal("1015000000000000000000000000");
 
-      await vaultEngine.setTotalDebt(RAD.mul(50));
+      await vaultEngine.setTotalUserDebt(RAD.mul(50));
       await vaultEngine.setTotalEquity(RAD.mul(100));
 
       await teller.updateAccumulators(ASSET_ID.FLR);
       apr = await teller.apr();
       expect(apr).to.equal("1020000000000000000000000000");
 
-      await vaultEngine.setTotalDebt(RAD.mul(75));
+      await vaultEngine.setTotalUserDebt(RAD.mul(75));
       await vaultEngine.setTotalEquity(RAD.mul(100));
 
       await teller.updateAccumulators(ASSET_ID.FLR);
       apr = await teller.apr();
       expect(apr).to.equal("1040000000000000000000000000");
 
-      await vaultEngine.setTotalDebt(RAD.mul(90));
+      await vaultEngine.setTotalUserDebt(RAD.mul(90));
       await vaultEngine.setTotalEquity(RAD.mul(100));
 
       await teller.updateAccumulators(ASSET_ID.FLR);
       apr = await teller.apr();
       expect(apr).to.equal("1100000000000000000000000000");
 
-      await vaultEngine.setTotalDebt(RAD.mul(95));
+      await vaultEngine.setTotalUserDebt(RAD.mul(95));
       await vaultEngine.setTotalEquity(RAD.mul(100));
 
       await teller.updateAccumulators(ASSET_ID.FLR);
@@ -238,28 +238,28 @@ describe("Teller Unit Tests", function () {
     });
 
     it("tests that APR won't go over MAX_APR", async () => {
-      await vaultEngine.setTotalDebt(RAD.mul(990));
+      await vaultEngine.setTotalUserDebt(RAD.mul(990));
       await vaultEngine.setTotalEquity(RAD.mul(1000));
 
       await teller.updateAccumulators(ASSET_ID.FLR);
       let apr = await teller.apr();
       expect(apr).to.equal("2000000000000000000000000000");
 
-      await vaultEngine.setTotalDebt(RAD.mul(995));
+      await vaultEngine.setTotalUserDebt(RAD.mul(995));
       await vaultEngine.setTotalEquity(RAD.mul(1000));
 
       await teller.updateAccumulators(ASSET_ID.FLR);
       apr = await teller.apr();
       expect(apr).to.equal("2000000000000000000000000000");
 
-      await vaultEngine.setTotalDebt(RAD.mul(1000));
+      await vaultEngine.setTotalUserDebt(RAD.mul(1000));
       await vaultEngine.setTotalEquity(RAD.mul(1000));
 
       await teller.updateAccumulators(ASSET_ID.FLR);
       apr = await teller.apr();
       expect(apr).to.equal("2000000000000000000000000000");
 
-      await vaultEngine.setTotalDebt(RAD.mul(1100));
+      await vaultEngine.setTotalUserDebt(RAD.mul(1100));
       await vaultEngine.setTotalEquity(RAD.mul(1000));
 
       await teller.updateAccumulators(ASSET_ID.FLR);
@@ -325,7 +325,7 @@ describe("Teller Unit Tests", function () {
 
       let lastUpdatedAfter = (await teller.assets(ASSET_ID.FLR))[0];
       let mpr = await teller.mpr();
-      let totalDebt = await vaultEngine.totalDebt();
+      let totalDebt = await vaultEngine.totalUserDebt();
       let totalEquity = await vaultEngine.totalEquity();
       let utilitization = wdiv(totalDebt, totalEquity);
       let multipledByUtilization = rmul(mpr.sub(RAY), utilitization.mul(1e9));
@@ -341,7 +341,7 @@ describe("Teller Unit Tests", function () {
 
       TIME_TO_INCREASE = 394000;
 
-      await vaultEngine.setTotalDebt(0);
+      await vaultEngine.setTotalUserDebt(0);
       mpr = await teller.mpr();
       await teller.updateAccumulators(ASSET_ID.FLR);
       vaultColl = await vaultEngine.assets(ASSET_ID.FLR);
@@ -350,7 +350,7 @@ describe("Teller Unit Tests", function () {
       await teller.updateAccumulators(ASSET_ID.FLR);
 
       lastUpdatedAfter = (await teller.assets(ASSET_ID.FLR))[0];
-      totalDebt = await vaultEngine.totalDebt();
+      totalDebt = await vaultEngine.totalUserDebt();
       totalEquity = await vaultEngine.totalEquity();
       utilitization = wdiv(totalDebt, totalEquity);
       multipledByUtilization = rmul(mpr.sub(RAY), utilitization.mul(1e9));
@@ -383,7 +383,7 @@ describe("Teller Unit Tests", function () {
 
       let lastUpdatedAfter = (await teller.assets(ASSET_ID.FLR))[0];
       let mpr = await teller.mpr();
-      let totalDebt = await vaultEngine.totalDebt();
+      let totalDebt = await vaultEngine.totalUserDebt();
       let totalEquity = await vaultEngine.totalEquity();
       let utilitization = wdiv(totalDebt, totalEquity);
       let multipledByUtilization = rmul(mpr.sub(RAY), utilitization.mul(1e9));

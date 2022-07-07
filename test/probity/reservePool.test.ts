@@ -220,11 +220,11 @@ describe("ReservePool Unit Tests", function () {
     it("tests that values are properly set", async () => {
       await registry.setupAddress(bytes32("gov"), user.address, true);
 
-      const before = await vaultEngine.stablecoin(owner.address);
+      const before = await vaultEngine.balance(owner.address);
       await reservePool
         .connect(user)
         .sendStablecoin(owner.address, AMOUNT_TO_SEND);
-      const after = await vaultEngine.stablecoin(owner.address);
+      const after = await vaultEngine.balance(owner.address);
       expect(after.sub(before).abs()).to.equal(AMOUNT_TO_SEND);
     });
   });

@@ -324,11 +324,11 @@ describe("BondIssuer Unit Tests", function () {
     it("tests that correct amount of stablecoin is transferred", async () => {
       await bondIssuer.connect(shutdown).setShutdownState();
 
-      const before = await vaultEngine.stablecoin(owner.address);
+      const before = await vaultEngine.balance(owner.address);
       await bondIssuer
         .connect(shutdown)
         .shutdownRedemption(owner.address, BUY_AMOUNT);
-      const after = await vaultEngine.stablecoin(owner.address);
+      const after = await vaultEngine.balance(owner.address);
 
       expect(after.sub(before).abs()).to.equal(BUY_AMOUNT);
     });
@@ -363,9 +363,9 @@ describe("BondIssuer Unit Tests", function () {
 
     it("tests that correct amount of stablecoins are transferred", async () => {
       await bondIssuer.connect(reservePool).newOffering(OFFER_AMOUNT);
-      const before = await vaultEngine.stablecoin(owner.address);
+      const before = await vaultEngine.balance(owner.address);
       await bondIssuer.purchaseBond(OFFER_AMOUNT);
-      const after = await vaultEngine.stablecoin(owner.address);
+      const after = await vaultEngine.balance(owner.address);
 
       expect(after.sub(before).abs()).to.equal(OFFER_AMOUNT);
     });
@@ -455,9 +455,9 @@ describe("BondIssuer Unit Tests", function () {
     });
 
     it("tests that correct amount of stablecoin is transferred", async () => {
-      const before = await vaultEngine.stablecoin(owner.address);
+      const before = await vaultEngine.balance(owner.address);
       await bondIssuer.redeemTokens(BUY_AMOUNT);
-      const after = await vaultEngine.stablecoin(owner.address);
+      const after = await vaultEngine.balance(owner.address);
 
       expect(after.sub(before).abs()).to.equal(BUY_AMOUNT);
     });

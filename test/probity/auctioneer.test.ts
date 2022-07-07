@@ -359,11 +359,11 @@ describe("Auctioneer Unit Tests", function () {
       const BID_LOT_SIZE = LOT_SIZE.div(10);
       const EXEPCTED_AUREI_AMOUNT_TRANSFERRED = RAY.mul(BID_LOT_SIZE);
 
-      const before = await vaultEngine.stablecoin(owner.address);
+      const before = await vaultEngine.balance(owner.address);
 
       await auctioneer.placeBid(0, RAY, BID_LOT_SIZE);
 
-      const after = await vaultEngine.stablecoin(owner.address);
+      const after = await vaultEngine.balance(owner.address);
       expect(before.sub(after)).to.equal(EXEPCTED_AUREI_AMOUNT_TRANSFERRED);
     });
 
@@ -525,11 +525,11 @@ describe("Auctioneer Unit Tests", function () {
         .div(10)
         .mul(BID_LOT_SIZE);
 
-      const before = await vaultEngine.stablecoin(owner.address);
+      const before = await vaultEngine.balance(owner.address);
 
       await auctioneer.buyItNow(0, RAY.mul(12).div(10), BID_LOT_SIZE);
 
-      const after = await vaultEngine.stablecoin(owner.address);
+      const after = await vaultEngine.balance(owner.address);
       expect(before.sub(after)).to.equal(EXEPCTED_AUREI_AMOUNT_TRANSFERRED);
     });
 

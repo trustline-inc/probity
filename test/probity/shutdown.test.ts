@@ -288,8 +288,8 @@ describe("Shutdown Unit Tests", function () {
       expect(utilRatio).to.equal(0);
 
       await vaultEngine.setTotalEquity(EQUITY_TO_SET);
-      await vaultEngine.setTotalDebt(DEBT_TO_SET);
-      await vaultEngine.setTotalStablecoin(DEBT_TO_SET);
+      await vaultEngine.setTotalUserDebt(DEBT_TO_SET);
+      await vaultEngine.setTotalSupply(DEBT_TO_SET);
 
       await shutdown.initiateShutdown();
 
@@ -320,8 +320,8 @@ describe("Shutdown Unit Tests", function () {
       expect(utilRatio).to.equal(0);
 
       await vaultEngine.setTotalEquity(EQUITY_TO_SET);
-      await vaultEngine.setTotalDebt(DEBT_TO_SET);
-      await vaultEngine.setTotalStablecoin(DEBT_TO_SET);
+      await vaultEngine.setTotalUserDebt(DEBT_TO_SET);
+      await vaultEngine.setTotalSupply(DEBT_TO_SET);
 
       await shutdown.initiateShutdown();
 
@@ -623,7 +623,7 @@ describe("Shutdown Unit Tests", function () {
     const TIME_TO_FORWARD = 172800;
 
     beforeEach(async function () {
-      await vaultEngine.setTotalDebt(TOTAL_DEBT_TO_SET);
+      await vaultEngine.setTotalUserDebt(TOTAL_DEBT_TO_SET);
       await vaultEngine.setTotalEquity(TOTAL_EQUITY_TO_SET);
       await shutdown.initiateShutdown();
       await priceFeed.setPrice(ASSET_ID.FLR, PRICE_TO_SET);
@@ -651,7 +651,7 @@ describe("Shutdown Unit Tests", function () {
         0
       );
 
-      await vaultEngine.setTotalStablecoin(TOTAL_DEBT_TO_SET);
+      await vaultEngine.setTotalSupply(TOTAL_DEBT_TO_SET);
       await vaultEngine.setsystemDebt(reservePool.address, SYSTEM_DEBT_TO_SET);
       await vaultEngine.setStablecoin(
         reservePool.address,
@@ -671,8 +671,8 @@ describe("Shutdown Unit Tests", function () {
       let suppObligation = await shutdown.investorObligationRatio();
       expect(stablecoinGap).to.equal(EXPECTED_AUR_GAP);
       expect(suppObligation).to.equal(0);
-      await vaultEngine.setTotalDebt(TOTAL_DEBT_TO_SET);
-      await vaultEngine.setTotalStablecoin(TOTAL_DEBT_TO_SET);
+      await vaultEngine.setTotalUserDebt(TOTAL_DEBT_TO_SET);
+      await vaultEngine.setTotalSupply(TOTAL_DEBT_TO_SET);
       await vaultEngine.setTotalEquity(TOTAL_EQUITY_TO_SET);
 
       await vaultEngine.setsystemDebt(reservePool.address, 0);
@@ -756,8 +756,8 @@ describe("Shutdown Unit Tests", function () {
     const SYSTEM_RESERVE_TO_SET = RAD.mul(60);
 
     beforeEach(async function () {
-      await vaultEngine.setTotalDebt(TOTAL_DEBT_TO_SET);
-      await vaultEngine.setTotalStablecoin(TOTAL_DEBT_TO_SET);
+      await vaultEngine.setTotalUserDebt(TOTAL_DEBT_TO_SET);
+      await vaultEngine.setTotalSupply(TOTAL_DEBT_TO_SET);
       await vaultEngine.setTotalEquity(TOTAL_EQUITY_TO_SET);
 
       await shutdown.initiateShutdown();
@@ -829,8 +829,8 @@ describe("Shutdown Unit Tests", function () {
     const DEBT_BALANCE = RAD.mul(21747);
 
     beforeEach(async function () {
-      await vaultEngine.setTotalDebt(DEBT_BALANCE);
-      await vaultEngine.setTotalStablecoin(DEBT_BALANCE);
+      await vaultEngine.setTotalUserDebt(DEBT_BALANCE);
+      await vaultEngine.setTotalSupply(DEBT_BALANCE);
 
       await shutdown.initiateShutdown();
     });
@@ -914,8 +914,8 @@ describe("Shutdown Unit Tests", function () {
         EQUITY_TO_SET.mul(RAY)
       );
 
-      await vaultEngine.setTotalDebt(TOTAL_DEBT_TO_SET);
-      await vaultEngine.setTotalStablecoin(TOTAL_DEBT_TO_SET);
+      await vaultEngine.setTotalUserDebt(TOTAL_DEBT_TO_SET);
+      await vaultEngine.setTotalSupply(TOTAL_DEBT_TO_SET);
       await vaultEngine.setTotalEquity(TOTAL_EQUITY_TO_SET);
       await vaultEngine.updateAsset(
         ASSET_ID.FLR,
@@ -975,13 +975,13 @@ describe("Shutdown Unit Tests", function () {
 
     it("tests that correct amount of usd are transferred", async () => {
       const AMOUNT_TO_RETURN = AUREI_AMOUNT_TO_SET.div(10);
-      const stablecoinBalanceBefore = await vaultEngine.stablecoin(
+      const stablecoinBalanceBefore = await vaultEngine.balance(
         shutdown.address
       );
 
       await shutdown.returnStablecoin(AMOUNT_TO_RETURN);
 
-      const stablecoinBalanceAfter = await vaultEngine.stablecoin(
+      const stablecoinBalanceAfter = await vaultEngine.balance(
         shutdown.address
       );
       expect(stablecoinBalanceAfter.sub(stablecoinBalanceBefore)).to.equal(
@@ -1033,8 +1033,8 @@ describe("Shutdown Unit Tests", function () {
         EQUITY_TO_SET.mul(RAY)
       );
 
-      await vaultEngine.setTotalDebt(TOTAL_DEBT_TO_SET);
-      await vaultEngine.setTotalStablecoin(TOTAL_DEBT_TO_SET);
+      await vaultEngine.setTotalUserDebt(TOTAL_DEBT_TO_SET);
+      await vaultEngine.setTotalSupply(TOTAL_DEBT_TO_SET);
       await vaultEngine.setTotalEquity(TOTAL_EQUITY_TO_SET);
       await vaultEngine.updateAsset(
         ASSET_ID.FLR,
@@ -1167,8 +1167,8 @@ describe("Shutdown Unit Tests", function () {
     beforeEach(async function () {
       await shutdown.initiateShutdown();
 
-      await vaultEngine.setTotalDebt(TOTAL_DEBT_TO_SET);
-      await vaultEngine.setTotalStablecoin(TOTAL_DEBT_TO_SET);
+      await vaultEngine.setTotalUserDebt(TOTAL_DEBT_TO_SET);
+      await vaultEngine.setTotalSupply(TOTAL_DEBT_TO_SET);
       await increaseTime(172800 * 2);
       await increaseTime(172800);
     });
@@ -1224,8 +1224,8 @@ describe("Shutdown Unit Tests", function () {
     beforeEach(async function () {
       await shutdown.initiateShutdown();
 
-      await vaultEngine.setTotalDebt(TOTAL_DEBT_TO_SET);
-      await vaultEngine.setTotalStablecoin(TOTAL_DEBT_TO_SET);
+      await vaultEngine.setTotalUserDebt(TOTAL_DEBT_TO_SET);
+      await vaultEngine.setTotalSupply(TOTAL_DEBT_TO_SET);
       await increaseTime(172800 * 2);
       await increaseTime(172800);
       await shutdown.setFinalStablecoinBalance();

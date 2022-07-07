@@ -41,13 +41,13 @@ contract VaultEngine is Stateful, Eventful {
     /////////////////////////////////////////
     uint256 private constant RAY = 10**27;
 
-    uint256 public totalDebt; // Total $ loan amount for all assets
-    uint256 public totalStablecoin; // Total stablecoin supply (includes non-circulating)
-    uint256 public totalEquity; // Total equity position for all asset types
-    uint256 public totalSystemDebt; // Total system debt
+    uint256 public totalSupply; // Total stablecoin supply (includes non-circulating supply)
+    uint256 public totalEquity; // Total shares of equity in the lending pool
+    uint256 public totalUserDebt; // The amount of stablecoins owed by borrowers
+    uint256 public totalSystemDebt; // Debt owed to users by Probity
     address[] public vaultList; // List of vaults that had either equity and/or debt position
     mapping(address => bool) public vaultExists; // Boolean indicating whether a vault exists for a given address
-    mapping(address => uint256) public stablecoin; // vault owner's stablecoin balance
+    mapping(address => uint256) public balance; // vault owner's stablecoin balance
     mapping(address => uint256) public pbt; // vault owner's governance token balance
     mapping(address => uint256) public systemDebt; // vault owner's share of system debt
     mapping(bytes32 => Asset) public assets; // assetId -> asset
@@ -152,8 +152,8 @@ contract VaultEngine is Stateful, Eventful {
         address to,
         uint256 amount
     ) external onlyByProbity {
-        stablecoin[from] -= amount;
-        stablecoin[to] += amount;
+        balance[from] -= amount;
+        balance[to] += amount;
     }
 
     /**
@@ -162,7 +162,7 @@ contract VaultEngine is Stateful, Eventful {
      * @param amount The amount of stablecoin to add
      */
     function addStablecoin(address account, uint256 amount) external onlyBy("treasury") {
-        stablecoin[account] += amount;
+        balance[account] += amount;
     }
 
     /**
@@ -171,7 +171,7 @@ contract VaultEngine is Stateful, Eventful {
      * @param amount The amount of stablecoin to remove
      */
     function removeStablecoin(address account, uint256 amount) external onlyByProbity {
-        stablecoin[account] -= amount;
+        balance[account] -= amount;
     }
 
     /**
@@ -192,9 +192,9 @@ contract VaultEngine is Stateful, Eventful {
         Asset memory asset = assets[assetId];
         uint256 interestAmount = vault.equity * asset.equityAccumulator - vault.initialEquity;
         pbt[msg.sender] += interestAmount;
-        stablecoin[msg.sender] += interestAmount;
+        balance[msg.sender] += interestAmount;
 
-        totalStablecoin += interestAmount;
+        totalSupply += interestAmount;
 
         // @todo evaluate how loss of precision can impact here
         vaults[assetId][msg.sender].equity -= interestAmount / asset.equityAccumulator;
@@ -274,7 +274,7 @@ contract VaultEngine is Stateful, Eventful {
         vault.debt = Math.add(vault.debt, debtAmount);
         asset.normDebt = Math.add(asset.normDebt, debtAmount);
         int256 fundraiseTarget = Math.mul(asset.debtAccumulator, debtAmount);
-        totalDebt = Math.add(totalDebt, fundraiseTarget);
+        totalUserDebt = Math.add(totalUserDebt, fundraiseTarget);
 
         vaults[assetId][auctioneer].standby = Math.sub(vaults[assetId][auctioneer].standby, collateralAmount);
         systemDebt[reservePool] = Math.sub(systemDebt[reservePool], fundraiseTarget);
@@ -322,9 +322,9 @@ contract VaultEngine is Stateful, Eventful {
      * @param amount The amount to settle
      */
     function settle(uint256 amount) external onlyByProbity {
-        stablecoin[msg.sender] -= amount;
+        balance[msg.sender] -= amount;
         systemDebt[msg.sender] -= amount;
-        totalStablecoin -= amount;
+        totalSupply -= amount;
 
         emit SystemDebtSettled(msg.sender, amount);
     }
@@ -335,9 +335,9 @@ contract VaultEngine is Stateful, Eventful {
      * @dev Called by ReservePool
      */
     function increaseSystemDebt(uint256 amount) external onlyByProbity {
-        stablecoin[msg.sender] += amount;
+        balance[msg.sender] += amount;
         systemDebt[msg.sender] += amount;
-        totalStablecoin += amount;
+        totalSupply += amount;
 
         emit SystemDebtIncreased(msg.sender, amount);
     }
@@ -403,7 +403,7 @@ contract VaultEngine is Stateful, Eventful {
             newEquity + protocolFeeToCollect <= newDebt,
             "VaultEngine/updateAccumulators: The equity rate increase is larger than the debt rate increase"
         );
-        stablecoin[reservePool] += protocolFeeToCollect;
+        balance[reservePool] += protocolFeeToCollect;
     }
 
     /**
@@ -433,10 +433,8 @@ contract VaultEngine is Stateful, Eventful {
             vaultExists[msg.sender] = true;
         }
 
-        Vault storage vault = vaults[assetId][account];
-        vault.underlying = Math.add(vault.underlying, amount);
-
-        stablecoin[account] = Math.add(stablecoin[account], amount);
+        balance[account] = Math.add(balance[account], amount);
+        totalSupply = Math.add(totalSupply, amount);
 
         emit SupplyModified(msg.sender, account, amount);
     }
@@ -472,7 +470,7 @@ contract VaultEngine is Stateful, Eventful {
         );
         certifyEquityPosition(assetId, vault);
 
-        stablecoin[treasuryAddress] = Math.add(stablecoin[treasuryAddress], equityCreated);
+        balance[treasuryAddress] = Math.add(balance[treasuryAddress], equityCreated);
 
         emit EquityModified(msg.sender, underlyingAmount, equityCreated);
     }
@@ -492,7 +490,7 @@ contract VaultEngine is Stateful, Eventful {
 
         if (debtAmount > 0) {
             require(
-                stablecoin[treasuryAddress] >= uint256(debtAmount),
+                balance[treasuryAddress] >= uint256(debtAmount),
                 "Vault/modifyDebt: Treasury doesn't have enough equity to loan this amount"
             );
         }
@@ -505,18 +503,18 @@ contract VaultEngine is Stateful, Eventful {
 
         assets[assetId].normDebt = Math.add(assets[assetId].normDebt, debtAmount);
 
-        totalDebt = Math.add(totalDebt, debtCreated);
-        totalStablecoin = Math.add(totalStablecoin, debtCreated);
+        totalUserDebt = Math.add(totalUserDebt, debtCreated);
+        totalSupply = Math.add(totalSupply, debtCreated);
 
-        require(totalDebt <= assets[assetId].ceiling, "Vault/modifyDebt: Debt ceiling reached");
+        require(totalUserDebt <= assets[assetId].ceiling, "Vault/modifyDebt: Debt ceiling reached");
         require(
             vault.debt == 0 || (vault.debt * RAY) > assets[assetId].floor,
             "Vault/modifyDebt: Debt smaller than floor"
         );
         certifyDebtPosition(assetId, vault);
 
-        stablecoin[msg.sender] = Math.add(stablecoin[msg.sender], debtCreated);
-        stablecoin[treasuryAddress] = Math.sub(stablecoin[treasuryAddress], debtCreated);
+        balance[msg.sender] = Math.add(balance[msg.sender], debtCreated);
+        balance[treasuryAddress] = Math.sub(balance[treasuryAddress], debtCreated);
 
         vaults[assetId][msg.sender] = vault;
 
