@@ -394,7 +394,7 @@ describe("Shutdown Flow Test", function () {
     await expectBalancesToMatch(bob, balances.bob);
 
     // Charlie purchases 5000 * 0.75 = 3750 tokens
-    await reserve.startSale();
+    await reserve.startBondSale();
     let amountOfTokens = DEBT_THRESHOLD.mul(3).div(4);
     await bondIssuer.connect(charlie).purchaseBond(amountOfTokens);
     await reserve.settle(amountOfTokens);

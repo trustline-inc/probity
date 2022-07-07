@@ -140,10 +140,13 @@ contract ReservePool is Stateful, Eventful {
     function startBondSale() external onlyByProbity {
         require(
             vaultEngine.systemDebt(address(this)) - debtOnAuction > debtThreshold,
-            "ReservePool/startSale: Debt threshold is not yet crossed"
+            "ReservePool/startBondSale: Debt threshold is not yet crossed"
         );
 
-        require(vaultEngine.balance(address(this)) == 0, "ReservePool/startSale: Stablecoin balance is still positive");
+        require(
+            vaultEngine.balance(address(this)) == 0,
+            "ReservePool/startBondSale: Stablecoin balance is still positive"
+        );
 
         bondSeller.newOffering(debtThreshold);
     }

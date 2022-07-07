@@ -254,7 +254,7 @@ describe("ReservePool Unit Tests", function () {
 
       await assertRevert(
         reservePool.connect(liquidator).startBondSale(),
-        "ReservePool/startSale: Debt threshold is not yet crossed"
+        "ReservePool/startBondSale: Debt threshold is not yet crossed"
       );
       await vaultEngine
         .connect(liquidator)
@@ -269,7 +269,7 @@ describe("ReservePool Unit Tests", function () {
 
       await assertRevert(
         reservePool.connect(liquidator).startBondSale(),
-        "ReservePool/startSale: Stablecoin balance is still positive"
+        "ReservePool/startBondSale: Stablecoin balance is still positive"
       );
       await vaultEngine
         .connect(liquidator)

@@ -216,7 +216,7 @@ describe("BondIssuer Unit Tests", function () {
       await bondIssuer.connect(user).newOffering(OFFER_AMOUNT);
       await assertRevert(
         bondIssuer.connect(user).newOffering(OFFER_AMOUNT),
-        "ReservePool/startSale: the current offering is not over yet"
+        "ReservePool/startBondSale: the current offering is not over yet"
       );
     });
 
@@ -300,7 +300,7 @@ describe("BondIssuer Unit Tests", function () {
         bondIssuer
           .connect(shutdown)
           .shutdownRedemption(user.address, BUY_AMOUNT),
-        "BondIssuer/processRedemption: User doesn't have enough vouchers to redeem this amount"
+        "BondIssuer/processRedemption: User doesn't have enough tokens to redeem this amount"
       );
       await bondIssuer
         .connect(shutdown)
@@ -438,7 +438,7 @@ describe("BondIssuer Unit Tests", function () {
     it("fails if user doesn't have enough tokens to redeem", async () => {
       await assertRevert(
         bondIssuer.connect(user).redeemTokens(BUY_AMOUNT),
-        "BondIssuer/processRedemption: User doesn't have enough vouchers to redeem this amount"
+        "BondIssuer/processRedemption: User doesn't have enough tokens to redeem this amount"
       );
       await bondIssuer.connect(user).purchaseBond(BUY_AMOUNT);
       await bondIssuer.connect(user).redeemTokens(BUY_AMOUNT);

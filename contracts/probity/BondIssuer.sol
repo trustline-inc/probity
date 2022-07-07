@@ -120,7 +120,7 @@ contract BondIssuer is Stateful, Eventful {
      * @param amount to be sold
      */
     function newOffering(uint256 amount) external onlyBy("reservePool") {
-        require(offering.active == false, "ReservePool/startSale: the current offering is not over yet");
+        require(offering.active == false, "ReservePool/startBondSale: the current offering is not over yet");
 
         offering.active = true;
         offering.startTime = block.timestamp;
