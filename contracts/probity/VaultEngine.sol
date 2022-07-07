@@ -121,7 +121,7 @@ contract VaultEngine is Stateful, Eventful {
         address account,
         int256 amount
     ) external onlyByProbity {
-        vaults[asset][account].standby = Math.add(vaults[asset][account].standby, amount);
+        vaults[asset][account].standby = Math._add(vaults[asset][account].standby, amount);
     }
 
     /**
@@ -270,11 +270,11 @@ contract VaultEngine is Stateful, Eventful {
         Vault storage vault = vaults[assetId][account];
         Asset storage asset = assets[assetId];
 
-        vault.collateral = Math.add(vault.collateral, collateralAmount);
-        vault.debt = Math.add(vault.debt, debtAmount);
-        asset.normDebt = Math.add(asset.normDebt, debtAmount);
-        int256 fundraiseTarget = Math.mul(asset.debtAccumulator, debtAmount);
-        totalUserDebt = Math.add(totalUserDebt, fundraiseTarget);
+        vault.collateral = Math._add(vault.collateral, collateralAmount);
+        vault.debt = Math._add(vault.debt, debtAmount);
+        asset.normDebt = Math._add(asset.normDebt, debtAmount);
+        int256 fundraiseTarget = Math._mul(asset.debtAccumulator, debtAmount);
+        totalUserDebt = Math._add(totalUserDebt, fundraiseTarget);
 
         vaults[assetId][auctioneer].standby = Math._sub(vaults[assetId][auctioneer].standby, collateralAmount);
         systemDebt[reservePool] = Math._sub(systemDebt[reservePool], fundraiseTarget);
@@ -433,8 +433,8 @@ contract VaultEngine is Stateful, Eventful {
             vaultExists[msg.sender] = true;
         }
 
-        balance[account] = Math.add(balance[account], amount);
-        totalSupply = Math.add(totalSupply, amount);
+        balance[account] = Math._add(balance[account], amount);
+        totalSupply = Math._add(totalSupply, amount);
 
         emit SupplyModified(msg.sender, account, amount);
     }
@@ -470,7 +470,7 @@ contract VaultEngine is Stateful, Eventful {
         );
         _certifyEquityPosition(assetId, vault);
 
-        balance[treasuryAddress] = Math.add(balance[treasuryAddress], equityCreated);
+        balance[treasuryAddress] = Math._add(balance[treasuryAddress], equityCreated);
 
         emit EquityModified(msg.sender, underlyingAmount, equityCreated);
     }
@@ -503,8 +503,8 @@ contract VaultEngine is Stateful, Eventful {
 
         assets[assetId].normDebt = Math._add(assets[assetId].normDebt, debtAmount);
 
-        totalUserDebt = Math.add(totalUserDebt, debtCreated);
-        totalSupply = Math.add(totalSupply, debtCreated);
+        totalUserDebt = Math._add(totalUserDebt, debtCreated);
+        totalSupply = Math._add(totalSupply, debtCreated);
 
         require(totalUserDebt <= assets[assetId].ceiling, "Vault/modifyDebt: Debt ceiling reached");
         require(
@@ -513,8 +513,8 @@ contract VaultEngine is Stateful, Eventful {
         );
         _certifyDebtPosition(assetId, vault);
 
-        balance[msg.sender] = Math.add(balance[msg.sender], debtCreated);
-        balance[treasuryAddress] = Math.sub(balance[treasuryAddress], debtCreated);
+        balance[msg.sender] = Math._add(balance[msg.sender], debtCreated);
+        balance[treasuryAddress] = Math._sub(balance[treasuryAddress], debtCreated);
 
         vaults[assetId][msg.sender] = vault;
 
