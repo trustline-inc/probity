@@ -3,11 +3,12 @@
  */
 import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-web3";
-import { artifacts, ethers, web3 } from "hardhat";
+import { artifacts, ethers } from "hardhat";
 import { Contract } from "ethers";
+import { RAD } from "../test/utils/constants";
 
 const account = "0x6310B7E8bDFD25EFbeDfB17987Ba69D9191a45bD";
-const amount = ethers.BigNumber.from("1000000000000000000");
+const amount = RAD;
 
 (async () => {
   let [owner] = await ethers.getSigners();
