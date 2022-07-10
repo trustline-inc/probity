@@ -16,6 +16,10 @@ LIQUIDATOR: {
   address: "${process.env.LIQUIDATOR}",
   abi: LiquidatorABI.abi
 },
+ERC20_ASSET_MANAGER: {
+  address: "${process.env.ERC20_ASSET_MANAGER}",
+  abi: ERC20AssetManagerABI.abi
+},
 PRICE_FEED: {
   address: "${process.env.PRICE_FEED}",
   abi: PriceFeedABI.abi
