@@ -17,6 +17,7 @@
     "createInitialTx": "npx hardhat run ./scripts/createInitialTx.ts --network",
     "rateUpdater": "npx hardhat run ./scripts/rateUpdater.ts --network",
     "priceUpdater": "npx hardhat run ./scripts/priceUpdater.ts --network",
+    "issuance": "npx hardhat run ./scripts/issuance.ts --network",
     "pauseProbity": "DELAY=20000 npx hardhat run ./scripts/pauseProbity.ts --network",
     "unpauseProbity": "DELAY=20000 npx hardhat run scripts/unpauseProbity.ts --network",
     "whitelistAddress": "npx hardhat run ./scripts/whitelistAddress.ts --network",
