@@ -204,18 +204,11 @@ contract VaultEngine is Stateful, Eventful {
 
     /**
      * @notice Issues stablecoins to an account
-     * @param assetId The ID of the asset type being modified
-     * @param treasuryAddress A registered treasury contract address
      * @param account The holder of the issued stablecoins
      * @param amount The amount to issue
      */
-    function modifySupply(
-        bytes32 assetId,
-        address treasuryAddress,
-        address account,
-        int256 amount
-    ) external virtual onlyBy("gov") {
-        _modifySupply(assetId, treasuryAddress, account, amount);
+    function modifySupply(address account, int256 amount) external virtual onlyBy("gov") {
+        _modifySupply(account, amount);
     }
 
     /**
@@ -420,14 +413,7 @@ contract VaultEngine is Stateful, Eventful {
     // Internal Functions
     /////////////////////////////////////////
 
-    function _modifySupply(
-        bytes32 assetId,
-        address treasuryAddress,
-        address account,
-        int256 amount
-    ) internal onlyBy("gov") {
-        require(registry.checkRole("treasury", treasuryAddress), "Vault/modifySupply: Treasury address is not valid");
-
+    function _modifySupply(address account, int256 amount) internal onlyBy("gov") {
         if (!vaultExists[msg.sender]) {
             vaultList.push(msg.sender);
             vaultExists[msg.sender] = true;
