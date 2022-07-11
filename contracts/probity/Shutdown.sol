@@ -118,7 +118,7 @@ interface LiquidatorLike {
 interface BondIssuerLike {
     function tokens(address user) external returns (uint256 balance);
 
-    function totalTokens() external returns (uint256);
+    function totalBondTokens() external returns (uint256);
 
     function shutdownRedemption(address user, uint256 amount) external;
 
@@ -526,11 +526,11 @@ contract Shutdown is Stateful, Eventful {
         require(finalTotalReserve != 0, "shutdown/redeemTokens: finalTotalReserve must be set first");
 
         uint256 userTokens = bondIssuer.tokens(msg.sender);
-        uint256 totalTokens = bondIssuer.totalTokens();
+        uint256 totalBondTokens = bondIssuer.totalBondTokens();
 
-        require(userTokens != 0 && totalTokens != 0, "shutdown/redeemTokens: no tokens to redeem");
+        require(userTokens != 0 && totalBondTokens != 0, "shutdown/redeemTokens: no tokens to redeem");
 
-        uint256 percentageOfBonds = Math._rdiv(userTokens, totalTokens);
+        uint256 percentageOfBonds = Math._rdiv(userTokens, totalBondTokens);
         uint256 shareOfStablecoin = Math._rmul(percentageOfBonds, finalTotalReserve);
 
         if (shareOfStablecoin > userTokens) {

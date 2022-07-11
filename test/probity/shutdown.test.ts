@@ -1229,7 +1229,7 @@ describe("Shutdown Unit Tests", function () {
       await increaseTime(172800 * 2);
       await increaseTime(172800);
       await shutdown.setFinalStablecoinBalance();
-      await bondIssuer.setTotalTokens(RAD);
+      await bondIssuer.setTotalBondTokens(RAD);
       await vaultEngine.setStablecoin(reservePool.address, RAD.mul(1000));
     });
 
@@ -1258,13 +1258,13 @@ describe("Shutdown Unit Tests", function () {
     it("fails if total tokens are zero", async () => {
       await shutdown.setFinalSystemReserve();
       await bondIssuer.setTokens(owner.address, RAD);
-      await bondIssuer.setTotalTokens(0);
+      await bondIssuer.setTotalBondTokens(0);
 
       await assertRevert(
         shutdown.redeemTokens(),
         "shutdown/redeemTokens: no tokens to redeem"
       );
-      await bondIssuer.setTotalTokens(RAD);
+      await bondIssuer.setTotalBondTokens(RAD);
       await shutdown.redeemTokens();
     });
 
@@ -1281,7 +1281,7 @@ describe("Shutdown Unit Tests", function () {
         finalTotalReserve
       );
       await bondIssuer.setTokens(owner.address, USER_IOU);
-      await bondIssuer.setTotalTokens(TOTAL_IOU);
+      await bondIssuer.setTotalBondTokens(TOTAL_IOU);
 
       await shutdown.redeemTokens();
 

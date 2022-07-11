@@ -381,11 +381,11 @@ describe("BondIssuer Unit Tests", function () {
 
       const offeringBefore = await bondIssuer.offering();
       const tokensBefore = await bondIssuer.tokens(owner.address);
-      const totalTokensBefore = await bondIssuer.totalTokens();
+      const totalBondTokensBefore = await bondIssuer.totalBondTokens();
 
       await bondIssuer.purchaseBond(BUY_AMOUNT);
 
-      const totalTokensAfter = await bondIssuer.totalTokens();
+      const totalBondTokensAfter = await bondIssuer.totalBondTokens();
       const tokensAfter = await bondIssuer.tokens(owner.address);
       const offeringAfter = await bondIssuer.offering();
 
@@ -394,7 +394,7 @@ describe("BondIssuer Unit Tests", function () {
         BUY_AMOUNT
       );
       expect(tokensAfter.sub(tokensBefore).abs()).to.equal(EXPECTED_VOUCHERS);
-      expect(totalTokensAfter.sub(totalTokensBefore).abs()).to.equal(
+      expect(totalBondTokensAfter.sub(totalBondTokensBefore).abs()).to.equal(
         EXPECTED_VOUCHERS
       );
     });

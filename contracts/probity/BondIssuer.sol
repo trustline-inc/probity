@@ -49,7 +49,7 @@ contract BondIssuer is Stateful, Eventful {
     uint256 public maxDiscount = 1.5E18; // 150% of stablecoin (50% discount)
 
     mapping(address => uint256) public bondTokens;
-    uint256 public totalTokens;
+    uint256 public totalBondTokens;
 
     /////////////////////////////////////////
     // Constructor
@@ -150,7 +150,7 @@ contract BondIssuer is Stateful, Eventful {
         vaultEngine.moveStablecoin(msg.sender, reservePoolAddress, value);
         uint256 amountToBuy = ((value * tokensPerStablecoin()) / ONE);
         bondTokens[msg.sender] += amountToBuy;
-        totalTokens += amountToBuy;
+        totalBondTokens += amountToBuy;
         offering.amount = offering.amount - value;
         if (offering.amount == 0) {
             offering.active = false;
