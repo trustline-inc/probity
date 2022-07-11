@@ -606,10 +606,10 @@ describe("Shutdown Flow Test", function () {
         .lte(RAD.div(100))
     ).to.equal(true);
 
-    // Bob redeems his tokens
-    before = await bondIssuer.tokens(bob.address);
-    await shutdown.connect(bob).redeemTokens();
-    after = await bondIssuer.tokens(bob.address);
+    // Bob redeems his bond tokens
+    before = await bondIssuer.bondTokens(bob.address);
+    await shutdown.connect(bob).redeemBondTokens();
+    after = await bondIssuer.bondTokens(bob.address);
     const EXPECTED_IOU_BALANCE_CHANGE = DEBT_THRESHOLD.div(4);
     expect(before.sub(after)).to.equal(EXPECTED_IOU_BALANCE_CHANGE);
   });

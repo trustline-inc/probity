@@ -161,7 +161,7 @@ contract BondIssuer is Stateful, Eventful {
      * @notice Redeems bondTokens for assets
      * @param amount The amount to redeem
      */
-    function redeemShares(uint256 amount) external {
+    function redeemBondTokens(uint256 amount) external {
         _processRedemption(msg.sender, amount);
     }
 
@@ -183,7 +183,7 @@ contract BondIssuer is Stateful, Eventful {
 
         require(
             bondTokens[user] >= amount,
-            "BondIssuer/processRedemption: User doesn't have enough bondTokens to redeem this amount"
+            "BondIssuer/processRedemption: User doesn't have enough bond tokens to redeem this amount"
         );
 
         bondTokens[user] -= amount;

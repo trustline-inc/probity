@@ -779,13 +779,13 @@ describe("Probity happy flow", function () {
     await ethers.provider.send("evm_increaseTime", [21601]);
     await ethers.provider.send("evm_mine", []);
 
-    // Purchase 10 tokens
+    // Purchase 10 bond tokens
     await bondIssuer.connect(user).purchaseBond(RAD.mul(10));
 
-    // Get the amount of tokens
-    let tokens = await bondIssuer.tokens(user.address);
+    // Get the amount of bond tokens
+    let bondTokens = await bondIssuer.bondTokens(user.address);
 
-    // Expect more than 10 tokens (?)
-    expect(tokens > RAD.mul(10)).to.equal(true);
+    // Expect more than 10 bondTokens (?)
+    expect(bondTokens > RAD.mul(10)).to.equal(true);
   });
 });

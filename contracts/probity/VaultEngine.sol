@@ -57,7 +57,6 @@ contract VaultEngine is Stateful, Eventful {
     // Events
     /////////////////////////////////////////
 
-    event SupplyModified(address indexed issuer, address indexed holder, int256 amount);
     event EquityModified(address indexed account, int256 underlyingAmount, int256 equityAmount);
     event DebtModified(address indexed account, int256 collAmount, int256 debtAmount);
     event InterestCollected(address indexed account, bytes32 assetId, uint256 interestAmount);
@@ -200,15 +199,6 @@ contract VaultEngine is Stateful, Eventful {
         vaults[assetId][msg.sender].equity -= interestAmount / asset.equityAccumulator;
 
         emit InterestCollected(msg.sender, assetId, interestAmount);
-    }
-
-    /**
-     * @notice Issues stablecoins to an account
-     * @param account The holder of the issued stablecoins
-     * @param amount The amount to issue
-     */
-    function modifySupply(address account, int256 amount) external virtual onlyBy("gov") {
-        _modifySupply(account, amount);
     }
 
     /**
@@ -412,18 +402,6 @@ contract VaultEngine is Stateful, Eventful {
     /////////////////////////////////////////
     // Internal Functions
     /////////////////////////////////////////
-
-    function _modifySupply(address account, int256 amount) internal onlyBy("gov") {
-        if (!vaultExists[msg.sender]) {
-            vaultList.push(msg.sender);
-            vaultExists[msg.sender] = true;
-        }
-
-        balance[account] = Math._add(balance[account], amount);
-        totalSupply = Math._add(totalSupply, amount);
-
-        emit SupplyModified(msg.sender, account, amount);
-    }
 
     function _modifyEquity(
         bytes32 assetId,

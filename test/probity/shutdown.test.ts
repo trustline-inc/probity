@@ -1178,7 +1178,7 @@ describe("Shutdown Unit Tests", function () {
 
       await assertRevert(
         shutdown.setFinalSystemReserve(),
-        "shutdown/redeemTokens: finalStablecoinBalance must be set first"
+        "shutdown/redeemBondTokens: finalStablecoinBalance must be set first"
       );
       await shutdown.setFinalStablecoinBalance();
 
@@ -1218,7 +1218,7 @@ describe("Shutdown Unit Tests", function () {
     });
   });
 
-  describe("redeemTokens Unit Tests", function () {
+  describe("redeemBondTokens Unit Tests", function () {
     const TOTAL_DEBT_TO_SET = RAD.mul(150);
 
     beforeEach(async function () {
@@ -1236,23 +1236,23 @@ describe("Shutdown Unit Tests", function () {
     it("fails if finalTotalReserve is not set", async () => {
       await bondIssuer.setTokens(owner.address, RAD);
       await assertRevert(
-        shutdown.redeemTokens(),
-        "shutdown/redeemTokens: finalTotalReserve must be set first"
+        shutdown.redeemBondTokens(),
+        "shutdown/redeemBondTokens: finalTotalReserve must be set first"
       );
       await shutdown.setFinalSystemReserve();
 
-      await shutdown.redeemTokens();
+      await shutdown.redeemBondTokens();
     });
 
     it("fails if user's amount of tokens is zero", async () => {
       await shutdown.setFinalSystemReserve();
 
       await assertRevert(
-        shutdown.redeemTokens(),
-        "shutdown/redeemTokens: no tokens to redeem"
+        shutdown.redeemBondTokens(),
+        "shutdown/redeemBondTokens: no bond tokens to redeem"
       );
       await bondIssuer.setTokens(owner.address, RAD);
-      await shutdown.redeemTokens();
+      await shutdown.redeemBondTokens();
     });
 
     it("fails if total tokens are zero", async () => {
@@ -1261,11 +1261,11 @@ describe("Shutdown Unit Tests", function () {
       await bondIssuer.setTotalBondTokens(0);
 
       await assertRevert(
-        shutdown.redeemTokens(),
-        "shutdown/redeemTokens: no tokens to redeem"
+        shutdown.redeemBondTokens(),
+        "shutdown/redeemBondTokens: no bond tokens to redeem"
       );
       await bondIssuer.setTotalBondTokens(RAD);
-      await shutdown.redeemTokens();
+      await shutdown.redeemBondTokens();
     });
 
     it("tests that shutdownRedemption is called with correct parameter", async () => {
@@ -1283,7 +1283,7 @@ describe("Shutdown Unit Tests", function () {
       await bondIssuer.setTokens(owner.address, USER_IOU);
       await bondIssuer.setTotalBondTokens(TOTAL_IOU);
 
-      await shutdown.redeemTokens();
+      await shutdown.redeemBondTokens();
 
       const lastCall = await bondIssuer.lastRedemptionCall();
       expect(lastCall.user).to.equal(owner.address);

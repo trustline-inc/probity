@@ -300,7 +300,7 @@ describe("BondIssuer Unit Tests", function () {
         bondIssuer
           .connect(shutdown)
           .shutdownRedemption(user.address, BUY_AMOUNT),
-        "BondIssuer/processRedemption: User doesn't have enough tokens to redeem this amount"
+        "BondIssuer/processRedemption: User doesn't have enough bond tokens to redeem this amount"
       );
       await bondIssuer
         .connect(shutdown)
@@ -310,11 +310,11 @@ describe("BondIssuer Unit Tests", function () {
     it("tests that values are properly updated", async () => {
       await bondIssuer.connect(shutdown).setShutdownState();
 
-      const before = await bondIssuer.tokens(owner.address);
+      const before = await bondIssuer.bondTokens(owner.address);
       await bondIssuer
         .connect(shutdown)
         .shutdownRedemption(owner.address, BUY_AMOUNT);
-      const after = await bondIssuer.tokens(owner.address);
+      const after = await bondIssuer.bondTokens(owner.address);
 
       expect(after.sub(before).abs()).to.equal(BUY_AMOUNT);
     });
@@ -380,13 +380,13 @@ describe("BondIssuer Unit Tests", function () {
       expect(price).to.equal(WAD.add(DEFAULT_PER_STEP_INCREASE.mul(2)));
 
       const offeringBefore = await bondIssuer.offering();
-      const tokensBefore = await bondIssuer.tokens(owner.address);
+      const tokensBefore = await bondIssuer.bondTokens(owner.address);
       const totalBondTokensBefore = await bondIssuer.totalBondTokens();
 
       await bondIssuer.purchaseBond(BUY_AMOUNT);
 
       const totalBondTokensAfter = await bondIssuer.totalBondTokens();
-      const tokensAfter = await bondIssuer.tokens(owner.address);
+      const tokensAfter = await bondIssuer.bondTokens(owner.address);
       const offeringAfter = await bondIssuer.offering();
 
       expect(offeringAfter.active).to.equal(true);
@@ -412,7 +412,7 @@ describe("BondIssuer Unit Tests", function () {
     });
   });
 
-  describe("redeemTokens Unit Tests", function () {
+  describe("redeemBondTokens Unit Tests", function () {
     const OFFER_AMOUNT = RAD.mul(10000);
     const RESERVE_BAL = RAD.mul(10000000);
     const BUY_AMOUNT = OFFER_AMOUNT.div(10);
@@ -428,33 +428,33 @@ describe("BondIssuer Unit Tests", function () {
     it("fails if reservePool doesn't have enough funds to redeem", async () => {
       await vaultEngine.setStablecoin(reservePool.address, 0);
       await assertRevert(
-        bondIssuer.redeemTokens(BUY_AMOUNT),
+        bondIssuer.redeemBondTokens(BUY_AMOUNT),
         "BondIssuer/processRedemption: The reserve pool doesn't have enough funds"
       );
       await vaultEngine.setStablecoin(reservePool.address, RESERVE_BAL);
-      await bondIssuer.redeemTokens(BUY_AMOUNT);
+      await bondIssuer.redeemBondTokens(BUY_AMOUNT);
     });
 
     it("fails if user doesn't have enough tokens to redeem", async () => {
       await assertRevert(
-        bondIssuer.connect(user).redeemTokens(BUY_AMOUNT),
-        "BondIssuer/processRedemption: User doesn't have enough tokens to redeem this amount"
+        bondIssuer.connect(user).redeemBondTokens(BUY_AMOUNT),
+        "BondIssuer/processRedemption: User doesn't have enough bond tokens to redeem this amount"
       );
       await bondIssuer.connect(user).purchaseBond(BUY_AMOUNT);
-      await bondIssuer.connect(user).redeemTokens(BUY_AMOUNT);
+      await bondIssuer.connect(user).redeemBondTokens(BUY_AMOUNT);
     });
 
     it("tests that values are properly updated", async () => {
-      const before = await bondIssuer.tokens(owner.address);
-      await bondIssuer.redeemTokens(BUY_AMOUNT);
-      const after = await bondIssuer.tokens(owner.address);
+      const before = await bondIssuer.bondTokens(owner.address);
+      await bondIssuer.redeemBondTokens(BUY_AMOUNT);
+      const after = await bondIssuer.bondTokens(owner.address);
 
       expect(after.sub(before).abs()).to.equal(BUY_AMOUNT);
     });
 
     it("tests that correct amount of stablecoin is transferred", async () => {
       const before = await vaultEngine.balance(owner.address);
-      await bondIssuer.redeemTokens(BUY_AMOUNT);
+      await bondIssuer.redeemBondTokens(BUY_AMOUNT);
       const after = await vaultEngine.balance(owner.address);
 
       expect(after.sub(before).abs()).to.equal(BUY_AMOUNT);

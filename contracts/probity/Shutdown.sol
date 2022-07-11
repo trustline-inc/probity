@@ -116,7 +116,7 @@ interface LiquidatorLike {
 }
 
 interface BondIssuerLike {
-    function tokens(address user) external returns (uint256 balance);
+    function bondTokens(address user) external returns (uint256 balance);
 
     function totalBondTokens() external returns (uint256);
 
@@ -510,7 +510,7 @@ contract Shutdown is Stateful, Eventful {
      * @notice Set the final stablecoin balance of reserve pool (if non-zero)
      */
     function setFinalSystemReserve() external {
-        require(finalStablecoinBalance != 0, "shutdown/redeemTokens: finalStablecoinBalance must be set first");
+        require(finalStablecoinBalance != 0, "shutdown/redeemBondTokens: finalStablecoinBalance must be set first");
 
         uint256 totalSystemReserve = vaultEngine.balance(address(reservePool));
         require(totalSystemReserve != 0, "shutdown/setFinalSystemReserve: system reserve is zero");
@@ -522,13 +522,13 @@ contract Shutdown is Stateful, Eventful {
      * @notice Allows bond holders to redeem for a share of stablecoin held by ReservePool
      *         up to the token amount
      */
-    function redeemTokens() external {
-        require(finalTotalReserve != 0, "shutdown/redeemTokens: finalTotalReserve must be set first");
+    function redeemBondTokens() external {
+        require(finalTotalReserve != 0, "shutdown/redeemBondTokens: finalTotalReserve must be set first");
 
-        uint256 userTokens = bondIssuer.tokens(msg.sender);
+        uint256 userTokens = bondIssuer.bondTokens(msg.sender);
         uint256 totalBondTokens = bondIssuer.totalBondTokens();
 
-        require(userTokens != 0 && totalBondTokens != 0, "shutdown/redeemTokens: no tokens to redeem");
+        require(userTokens != 0 && totalBondTokens != 0, "shutdown/redeemBondTokens: no bond tokens to redeem");
 
         uint256 percentageOfBonds = Math._rdiv(userTokens, totalBondTokens);
         uint256 shareOfStablecoin = Math._rmul(percentageOfBonds, finalTotalReserve);
