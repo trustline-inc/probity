@@ -42,23 +42,23 @@ contract MockVaultEngine {
     mapping(bytes32 => mapping(address => Vault)) public vaults;
     mapping(bytes32 => bool) public states;
     mapping(bytes32 => Asset) public assets;
-    mapping(address => uint256) public stablecoin;
+    mapping(address => uint256) public balance;
     mapping(address => uint256) public pbt;
     mapping(address => uint256) public systemDebt;
 
     uint256 public protocolFeeRates;
-    uint256 public totalDebt;
+    uint256 public totalUserDebt;
     uint256 public totalEquity;
-    uint256 public totalStablecoin;
+    uint256 public totalSupply;
     LiquidateDebtPositionCall public lastLiquidateDebtPositionCall;
     LiquidateEquityPositionCall public lastLiquidateEquityPositionCall;
 
     function addStablecoin(address user, uint256 amount) external {
-        stablecoin[user] += amount;
+        balance[user] += amount;
     }
 
     function removeStablecoin(address user, uint256 amount) external {
-        stablecoin[user] -= amount;
+        balance[user] -= amount;
     }
 
     function moveStablecoin(
@@ -66,12 +66,12 @@ contract MockVaultEngine {
         address to,
         uint256 amount
     ) external {
-        stablecoin[from] -= amount;
-        stablecoin[to] += amount;
+        balance[from] -= amount;
+        balance[to] += amount;
     }
 
     function setStablecoin(address user, uint256 amount) external {
-        stablecoin[user] = amount;
+        balance[user] = amount;
     }
 
     function setsystemDebt(address user, uint256 amount) external {
@@ -87,16 +87,16 @@ contract MockVaultEngine {
         pbt[user] += amount;
     }
 
-    function setTotalDebt(uint256 newTotalDebt) external {
-        totalDebt = newTotalDebt;
+    function setTotalUserDebt(uint256 newTotalUserDebt) external {
+        totalUserDebt = newTotalUserDebt;
     }
 
     function setTotalEquity(uint256 newTotalEquity) external {
         totalEquity = newTotalEquity;
     }
 
-    function setTotalStablecoin(uint256 newTotalStablecoin) external {
-        totalStablecoin = newTotalStablecoin;
+    function setTotalSupply(uint256 newtotalSupply) external {
+        totalSupply = newtotalSupply;
     }
 
     function initAsset(bytes32 assetId) external {
@@ -171,14 +171,14 @@ contract MockVaultEngine {
     }
 
     function settle(uint256 amount) external {
-        stablecoin[msg.sender] -= amount;
+        balance[msg.sender] -= amount;
         systemDebt[msg.sender] -= amount;
     }
 
     function increaseSystemDebt(uint256 amount) external {
-        stablecoin[msg.sender] += amount;
+        balance[msg.sender] += amount;
         systemDebt[msg.sender] += amount;
-        totalDebt += amount;
+        totalUserDebt += amount;
     }
 
     function liquidateDebtPosition(

@@ -8,18 +8,18 @@ contract MockBondIssuer {
 
     LastShutdownRedemptionCall public lastRedemptionCall;
     mapping(bytes32 => bool) public states;
-    mapping(address => uint256) public vouchers;
-    uint256 public totalVouchers;
+    mapping(address => uint256) public bondTokens;
+    uint256 public totalBondTokens;
     uint256 public lastReduceAuctionDebtAmount;
     uint256 public lastAddAuctionDebtAmount;
     uint256 public lastOfferingAmount;
 
-    function setVouchers(address user, uint256 amount) external {
-        vouchers[user] = amount;
+    function setTokens(address user, uint256 amount) external {
+        bondTokens[user] = amount;
     }
 
-    function setTotalVouchers(uint256 newTotal) external {
-        totalVouchers = newTotal;
+    function setTotalBondTokens(uint256 newTotal) external {
+        totalBondTokens = newTotal;
     }
 
     function shutdownRedemption(address user, uint256 amount) external {

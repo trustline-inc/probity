@@ -14,13 +14,13 @@ interface PriceFeedLike {
 interface VaultLike {
     function setShutdownState() external;
 
-    function stablecoin(address user) external returns (uint256 value);
+    function balance(address user) external returns (uint256 value);
 
     function systemDebt(address user) external returns (uint256 value);
 
-    function totalDebt() external returns (uint256 value);
+    function totalUserDebt() external returns (uint256 value);
 
-    function totalStablecoin() external returns (uint256 value);
+    function totalSupply() external returns (uint256 value);
 
     function totalEquity() external returns (uint256 value);
 
@@ -116,9 +116,9 @@ interface LiquidatorLike {
 }
 
 interface BondIssuerLike {
-    function vouchers(address user) external returns (uint256 balance);
+    function bondTokens(address user) external returns (uint256 balance);
 
-    function totalVouchers() external returns (uint256);
+    function totalBondTokens() external returns (uint256);
 
     function shutdownRedemption(address user, uint256 amount) external;
 
@@ -217,7 +217,7 @@ contract Shutdown is Stateful, Eventful {
     event RedemptionRatioCalculated(bytes32 assetId, uint256 redemptionRatio);
     event StablecoinReturned(address user, uint256 amount);
     event AssetRedeemed(bytes32 assetId, address user, uint256 amountRedeemed);
-    event BondsVoucherRedeemed(address user, uint256 amount);
+    event BondTokensRedeemed(address user, uint256 amount);
 
     /////////////////////////////////////////
     // Constructor
@@ -305,10 +305,10 @@ contract Shutdown is Stateful, Eventful {
         liquidator.setShutdownState();
         bondIssuer.setShutdownState();
 
-        uint256 totalDebt = vaultEngine.totalDebt();
+        uint256 totalUserDebt = vaultEngine.totalUserDebt();
         uint256 totalEquity = vaultEngine.totalEquity();
         if (totalEquity != 0) {
-            finalUtilizationRatio = Math._min(Math._wdiv(totalDebt, totalEquity), WAD);
+            finalUtilizationRatio = Math._min(Math._wdiv(totalUserDebt, totalEquity), WAD);
         }
 
         emit ShutdownInitiated();
@@ -381,7 +381,7 @@ contract Shutdown is Stateful, Eventful {
             vaultEngine.systemDebt(address(reservePool)) == 0,
             "shutdown/writeOffFromReserves: the system debt needs to be zero before write off can happen"
         );
-        uint256 reserveBalance = vaultEngine.stablecoin(address(reservePool));
+        uint256 reserveBalance = vaultEngine.balance(address(reservePool));
         uint256 amountToMove = Math._min(stablecoinGap, reserveBalance);
         vaultEngine.moveStablecoin(address(reservePool), address(this), amountToMove);
         stablecoinGap -= amountToMove;
@@ -402,7 +402,7 @@ contract Shutdown is Stateful, Eventful {
         );
 
         require(
-            stablecoinGap == 0 || vaultEngine.stablecoin(address(reservePool)) == 0,
+            stablecoinGap == 0 || vaultEngine.balance(address(reservePool)) == 0,
             "shutdown/calculateInvestorObligation: system reserve or stablecoin gap must be zero"
         );
         uint256 stablecoinUtilized = (vaultEngine.totalEquity() / WAD) * finalUtilizationRatio;
@@ -455,11 +455,11 @@ contract Shutdown is Stateful, Eventful {
             "shutdown/setFinalStablecoinBalance: Waiting for auctions to complete"
         );
         require(
-            vaultEngine.systemDebt(address(reservePool)) == 0 || vaultEngine.stablecoin(address(reservePool)) == 0,
+            vaultEngine.systemDebt(address(reservePool)) == 0 || vaultEngine.balance(address(reservePool)) == 0,
             "shutdown/setFinalStablecoinBalance: system reserve or debt must be zero"
         );
 
-        finalStablecoinBalance = vaultEngine.totalStablecoin();
+        finalStablecoinBalance = vaultEngine.totalSupply();
 
         emit FinalStablecoinBalanceSet(finalStablecoinBalance);
     }
@@ -510,35 +510,35 @@ contract Shutdown is Stateful, Eventful {
      * @notice Set the final stablecoin balance of reserve pool (if non-zero)
      */
     function setFinalSystemReserve() external {
-        require(finalStablecoinBalance != 0, "shutdown/redeemVouchers: finalStablecoinBalance must be set first");
+        require(finalStablecoinBalance != 0, "shutdown/redeemBondTokens: finalStablecoinBalance must be set first");
 
-        uint256 totalSystemReserve = vaultEngine.stablecoin(address(reservePool));
+        uint256 totalSystemReserve = vaultEngine.balance(address(reservePool));
         require(totalSystemReserve != 0, "shutdown/setFinalSystemReserve: system reserve is zero");
 
         finalTotalReserve = totalSystemReserve;
     }
 
     /**
-     * @notice Allows bondsVoucher holders to redeem for a share of stablecoin held by reserve Pool
-     *         up to the voucher amount
+     * @notice Allows bond holders to redeem for a share of stablecoin held by ReservePool
+     *         up to the token amount
      */
-    function redeemVouchers() external {
-        require(finalTotalReserve != 0, "shutdown/redeemVouchers: finalTotalReserve must be set first");
+    function redeemBondTokens() external {
+        require(finalTotalReserve != 0, "shutdown/redeemBondTokens: finalTotalReserve must be set first");
 
-        uint256 userVouchers = bondIssuer.vouchers(msg.sender);
-        uint256 totalVouchers = bondIssuer.totalVouchers();
+        uint256 userTokens = bondIssuer.bondTokens(msg.sender);
+        uint256 totalBondTokens = bondIssuer.totalBondTokens();
 
-        require(userVouchers != 0 && totalVouchers != 0, "shutdown/redeemVouchers: no vouchers to redeem");
+        require(userTokens != 0 && totalBondTokens != 0, "shutdown/redeemBondTokens: no bond tokens to redeem");
 
-        uint256 percentageOfBonds = Math._rdiv(userVouchers, totalVouchers);
+        uint256 percentageOfBonds = Math._rdiv(userTokens, totalBondTokens);
         uint256 shareOfStablecoin = Math._rmul(percentageOfBonds, finalTotalReserve);
 
-        if (shareOfStablecoin > userVouchers) {
-            shareOfStablecoin = userVouchers;
+        if (shareOfStablecoin > userTokens) {
+            shareOfStablecoin = userTokens;
         }
 
         bondIssuer.shutdownRedemption(msg.sender, shareOfStablecoin);
 
-        emit BondsVoucherRedeemed(msg.sender, shareOfStablecoin);
+        emit BondTokensRedeemed(msg.sender, shareOfStablecoin);
     }
 }

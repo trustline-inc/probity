@@ -4,11 +4,11 @@ import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
 
 interface VaultEngineLike {
-    function stablecoin(address user) external returns (uint256 balance);
+    function balance(address user) external returns (uint256);
 
-    function systemDebt(address user) external returns (uint256 balance);
+    function systemDebt(address user) external returns (uint256);
 
-    function settle(uint256 balance) external;
+    function settle(uint256) external;
 
     function increaseSystemDebt(uint256 amount) external;
 
@@ -21,7 +21,8 @@ interface VaultEngineLike {
 
 /**
  * @title BondIssuer contract
- * @notice A bond issuer system that allow user to purchase vouchers at redeemable when the probity reserve is positive
+ * @notice Sells zero-coupon bonds that are redeemable for excess reserves on a FIFO redemption basis.
+ * @dev Bonds are redeemable for excess USD reserves starting at a 1:1 and up to 1:1.5 rate (precision of 1e-18).
  */
 contract BondIssuer is Stateful, Eventful {
     /////////////////////////////////////////
@@ -42,13 +43,13 @@ contract BondIssuer is Stateful, Eventful {
 
     Offering public offering;
 
-    // Every saleStepPeriod, vouchers received per stablecoin goes up by X% until saleMaxPrice
-    uint256 public salePriceIncreasePerStep = 5E16; // 5%
-    uint256 public saleStepPeriod = 6 hours;
-    uint256 public saleMaxPrice = 1.5E18; // 150% of stablecoin
+    // Every stepPeriod, bondTokens received per stablecoin goes up by X% until maxDiscount
+    uint256 public discountIncreasePerStep = 5E16; // 5%
+    uint256 public stepPeriod = 6 hours;
+    uint256 public maxDiscount = 1.5E18; // 150% of stablecoin (50% discount)
 
-    mapping(address => uint256) public vouchers;
-    uint256 public totalVouchers;
+    mapping(address => uint256) public bondTokens;
+    uint256 public totalBondTokens;
 
     /////////////////////////////////////////
     // Constructor
@@ -61,16 +62,16 @@ contract BondIssuer is Stateful, Eventful {
     // Public functions
     /////////////////////////////////////////
     /**
-     * @notice Returns the amount of vouchers received per stablecoin
-     * @dev Stepwise price increases until max price is met
+     * @notice Returns the amount of bondTokens received per stablecoin
+     * @dev Stepwise discount increases until max discount is met
      */
-    function vouchersPerStablecoin() public view returns (uint256 price) {
-        uint256 steps = (block.timestamp - offering.startTime) / saleStepPeriod;
+    function tokensPerStablecoin() public view returns (uint256 discount) {
+        uint256 steps = (block.timestamp - offering.startTime) / stepPeriod;
 
-        if (ONE + (salePriceIncreasePerStep * steps) > saleMaxPrice) {
-            return saleMaxPrice;
+        if (ONE + (discountIncreasePerStep * steps) > maxDiscount) {
+            return maxDiscount;
         } else {
-            return ONE + (salePriceIncreasePerStep * steps);
+            return ONE + (discountIncreasePerStep * steps);
         }
     }
 
@@ -88,30 +89,30 @@ contract BondIssuer is Stateful, Eventful {
     }
 
     /**
-     * @notice Updates the maximum price for a sale
-     * @param newMaxPrice The maximum price to set
+     * @notice Updates the maximum discount for an issue
+     * @param newMaxDiscount The maximum discount to set
      */
-    function updateSaleMaxPrice(uint256 newMaxPrice) external onlyBy("gov") {
-        emit LogVarUpdate("reserve", "saleMaxPrice", saleMaxPrice, newMaxPrice);
-        saleMaxPrice = newMaxPrice;
+    function updateMaxDiscount(uint256 newMaxDiscount) external onlyBy("gov") {
+        emit LogVarUpdate("reserve", "maxDiscount", maxDiscount, newMaxDiscount);
+        maxDiscount = newMaxDiscount;
     }
 
     /**
-     * @notice Updates the sale step period
+     * @notice Updates the step period
      * @param newStepPeriod The new period of time per step
      */
-    function updateSaleStepPeriod(uint256 newStepPeriod) external onlyBy("gov") {
-        emit LogVarUpdate("reserve", "saleStepPeriod", saleStepPeriod, newStepPeriod);
-        saleStepPeriod = newStepPeriod;
+    function updateStepPeriod(uint256 newStepPeriod) external onlyBy("gov") {
+        emit LogVarUpdate("reserve", "stepPeriod", stepPeriod, newStepPeriod);
+        stepPeriod = newStepPeriod;
     }
 
     /**
-     * @notice Updates the sale price increase per step
-     * @param newPriceIncreasePerStep The new price increase per step
+     * @notice Updates the discount increase per step
+     * @param newDiscountIncreasePerStep The new discount increase per step
      */
-    function updateSalePriceIncreasePerStep(uint256 newPriceIncreasePerStep) external onlyBy("gov") {
-        emit LogVarUpdate("reserve", "salePriceIncreasePerStep", salePriceIncreasePerStep, newPriceIncreasePerStep);
-        salePriceIncreasePerStep = newPriceIncreasePerStep;
+    function updateDiscountIncreasePerStep(uint256 newDiscountIncreasePerStep) external onlyBy("gov") {
+        emit LogVarUpdate("reserve", "discountIncreasePerStep", discountIncreasePerStep, newDiscountIncreasePerStep);
+        discountIncreasePerStep = newDiscountIncreasePerStep;
     }
 
     /**
@@ -119,7 +120,7 @@ contract BondIssuer is Stateful, Eventful {
      * @param amount to be sold
      */
     function newOffering(uint256 amount) external onlyBy("reservePool") {
-        require(offering.active == false, "ReservePool/startSale: the current offering is not over yet");
+        require(offering.active == false, "ReservePool/startBondSale: the current offering is not over yet");
 
         offering.active = true;
         offering.startTime = block.timestamp;
@@ -136,31 +137,31 @@ contract BondIssuer is Stateful, Eventful {
     }
 
     /**
-     * @notice Purchases vouchers of an offering
-     * @param amount The amount to be purchased
+     * @notice Purchases a bond
+     * @param value The bond face value
      */
-    function purchaseVouchers(uint256 amount) external {
-        require(offering.active, "ReservePool/purchaseVouchers: vouchers are not currently on sale");
+    function purchaseBond(uint256 value) external {
+        require(offering.active, "ReservePool/purchaseBond: Bonds are not currently offered for sale");
         require(
-            offering.amount >= amount,
-            "ReservePool/purchaseVouchers: Can't purchase more vouchers than amount available"
+            offering.amount >= value,
+            "ReservePool/purchaseBond: Can't purchase more bondTokens than offering amount"
         );
 
-        vaultEngine.moveStablecoin(msg.sender, reservePoolAddress, amount);
-        uint256 amountToBuy = ((amount * vouchersPerStablecoin()) / ONE);
-        vouchers[msg.sender] += amountToBuy;
-        totalVouchers += amountToBuy;
-        offering.amount = offering.amount - amount;
+        vaultEngine.moveStablecoin(msg.sender, reservePoolAddress, value);
+        uint256 amountToBuy = ((value * tokensPerStablecoin()) / ONE);
+        bondTokens[msg.sender] += amountToBuy;
+        totalBondTokens += amountToBuy;
+        offering.amount = offering.amount - value;
         if (offering.amount == 0) {
             offering.active = false;
         }
     }
 
     /**
-     * @notice Redeems vouchers for assets
+     * @notice Redeems bondTokens for assets
      * @param amount The amount to redeem
      */
-    function redeemVouchers(uint256 amount) external {
+    function redeemBondTokens(uint256 amount) external {
         _processRedemption(msg.sender, amount);
     }
 
@@ -175,17 +176,17 @@ contract BondIssuer is Stateful, Eventful {
      */
     function _processRedemption(address user, uint256 amount) internal {
         require(
-            vaultEngine.stablecoin(address(reservePoolAddress)) - vaultEngine.systemDebt(address(reservePoolAddress)) >=
+            vaultEngine.balance(address(reservePoolAddress)) - vaultEngine.systemDebt(address(reservePoolAddress)) >=
                 amount,
             "BondIssuer/processRedemption: The reserve pool doesn't have enough funds"
         );
 
         require(
-            vouchers[user] >= amount,
-            "BondIssuer/processRedemption: User doesn't have enough vouchers to redeem this amount"
+            bondTokens[user] >= amount,
+            "BondIssuer/processRedemption: User doesn't have enough bond tokens to redeem this amount"
         );
 
-        vouchers[user] -= amount;
+        bondTokens[user] -= amount;
         vaultEngine.moveStablecoin(address(reservePoolAddress), user, amount);
     }
 }

@@ -6,11 +6,11 @@ import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
 
 interface VaultEngineLike {
-    function stablecoin(address user) external returns (uint256 balance);
+    function balance(address user) external returns (uint256);
 
-    function systemDebt(address user) external returns (uint256 balance);
+    function systemDebt(address user) external returns (uint256);
 
-    function settle(uint256 balance) external;
+    function settle(uint256 amount) external;
 
     function increaseSystemDebt(uint256 amount) external;
 
@@ -38,8 +38,8 @@ contract ReservePool is Stateful, Eventful {
     VaultEngineLike public immutable vaultEngine;
     BondIssuerLike public immutable bondSeller;
 
-    uint256 public debtOnAuction; // Debt currently on Auction
-    uint256 public debtThreshold; // The bad debt threshold, after which to start issuing vouchers
+    uint256 public debtOnAuction; // Debt currently on auction
+    uint256 public debtThreshold; // The bad debt threshold, after which to start issuing bonds
 
     /////////////////////////////////////////
     // Events
@@ -104,7 +104,7 @@ contract ReservePool is Stateful, Eventful {
             "ReservePool/settle: Settlement amount is more than the debt"
         );
         require(
-            vaultEngine.stablecoin(address(this)) >= amountToSettle,
+            vaultEngine.balance(address(this)) >= amountToSettle,
             "ReservePool/settle: Not enough balance to settle"
         );
 
@@ -140,12 +140,12 @@ contract ReservePool is Stateful, Eventful {
     function startBondSale() external onlyByProbity {
         require(
             vaultEngine.systemDebt(address(this)) - debtOnAuction > debtThreshold,
-            "ReservePool/startSale: Debt threshold is not yet crossed"
+            "ReservePool/startBondSale: Debt threshold is not yet crossed"
         );
 
         require(
-            vaultEngine.stablecoin(address(this)) == 0,
-            "ReservePool/startSale: Stablecoin balance is still positive"
+            vaultEngine.balance(address(this)) == 0,
+            "ReservePool/startBondSale: Stablecoin balance is still positive"
         );
 
         bondSeller.newOffering(debtThreshold);

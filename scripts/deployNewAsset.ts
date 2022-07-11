@@ -46,9 +46,9 @@ async function main() {
 
   await checkContractAddresses(contractsToCheck);
   await checkSettings();
-  await parseExistingContracts();
+  contracts = await parseExistingContracts();
 
-  const assetId = web3.utils.keccak256(process.env.ASSET_NAME);
+  const assetId = web3.utils.keccak256(process.env.ASSET_NAME!);
 
   // deploy the new assetManager Contracts
   console.info("Deploying Asset Manager");
@@ -62,6 +62,10 @@ async function main() {
       break;
     case "ERC20":
       await checkContractAddresses(["ERC20"]);
+
+      // TODO: fix deployERC20AssetManager erasing ftso address
+      if (contracts.ftso) var temp = contracts.ftso;
+
       // we need erc20 address
       contracts = await probity.deployERC20AssetManager({
         registry: process.env.REGISTRY,
@@ -69,6 +73,7 @@ async function main() {
         vaultEngine: process.env.VAULT_ENGINE,
         mockErc20Token: process.env.MOCK_ERC20_TOKEN,
       });
+      contracts.ftso = temp;
       break;
     case "VPToken":
       await checkContractAddresses([
@@ -95,10 +100,10 @@ async function main() {
 
   let ftso;
   // deploy FTSO - if needed
-  if (Boolean(process.env.DEPLOY_FTSO)) {
+  if (process.env.DEPLOY_FTSO === "true") {
     console.info("Deploying Mock FTSO");
     const deployed = await mock.deployMockFtso();
-    ftso = deployed.ftso.address;
+    ftso = deployed!.ftso.address;
   } else {
     console.info("Skipping Deploying FTSO");
     ftso = contracts.ftso.address;
@@ -116,7 +121,7 @@ async function main() {
   await execute(
     contracts.teller.initAsset(
       assetId,
-      ethers.utils.parseEther(process.env.LIQUIDATION_RATIO),
+      ethers.utils.parseEther(process.env.LIQUIDATION_RATIO!),
       { gasLimit: 300000 }
     ),
     "Initializing Asset on teller"
@@ -132,7 +137,7 @@ async function main() {
   await execute(
     contracts.priceFeed.initAsset(
       assetId,
-      ethers.utils.parseEther(process.env.LIQUIDATION_RATIO),
+      ethers.utils.parseEther(process.env.LIQUIDATION_RATIO!),
       ftso,
       { gasLimit: 300000 }
     ),
@@ -187,7 +192,7 @@ async function checkSettings() {
   }
 
   // ASSET_TYPE
-  if (!SUPPORTED_ASSET_TYPES.includes(process.env.ASSET_TYPE)) {
+  if (!SUPPORTED_ASSET_TYPES.includes(process.env.ASSET_TYPE!)) {
     logErrorAndExit(
       `Please provide a supported ASSET_TYPE (Native, VPToken, ERC20)`
     );

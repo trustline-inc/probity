@@ -9,7 +9,7 @@ import "../dependencies/Math.sol";
 interface VaultEngineLike {
     function assets(bytes32) external returns (uint256 debtAccumulator, uint256 equityAccumulator);
 
-    function totalDebt() external returns (uint256);
+    function totalUserDebt() external returns (uint256);
 
     function totalEquity() external returns (uint256);
 
@@ -126,13 +126,13 @@ contract Teller is Stateful, Eventful {
 
         Asset memory asset = assets[assetId];
         (uint256 debtAccumulator, uint256 equityAccumulator) = vaultEngine.assets(assetId);
-        uint256 totalDebt = vaultEngine.totalDebt();
+        uint256 totalUserDebt = vaultEngine.totalUserDebt();
         uint256 totalEquity = vaultEngine.totalEquity();
 
         require(totalEquity > 0, "Teller/updateAccumulators: Total equity cannot be zero");
 
         // Update debt accumulator
-        uint256 utilization = Math._wdiv(totalDebt, totalEquity);
+        uint256 utilization = Math._wdiv(totalUserDebt, totalEquity);
         uint256 debtRateIncrease = Math._rmul(Math._rpow(mpr, (block.timestamp - asset.lastUpdated)), debtAccumulator) -
             debtAccumulator;
 
