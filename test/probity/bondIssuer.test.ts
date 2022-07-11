@@ -343,7 +343,7 @@ describe("BondIssuer Unit Tests", function () {
     it("fails if offering is not active", async () => {
       await assertRevert(
         bondIssuer.purchaseBond(OFFER_AMOUNT.div(2)),
-        "ReservePool/purchaseBond: tokens are not currently on sale"
+        "ReservePool/purchaseBond: Bonds are not currently offered for sale"
       );
       await bondIssuer.connect(reservePool).newOffering(OFFER_AMOUNT);
       await bondIssuer.purchaseBond(OFFER_AMOUNT.div(2));
@@ -354,7 +354,7 @@ describe("BondIssuer Unit Tests", function () {
 
       await assertRevert(
         bondIssuer.purchaseBond(OFFER_AMOUNT.add(1)),
-        "ReservePool/purchaseBond: Can't purchase more tokens than offering value"
+        "ReservePool/purchaseBond: Can't purchase more bondTokens than offering amount"
       );
       await bondIssuer.purchaseBond(OFFER_AMOUNT);
     });

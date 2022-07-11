@@ -22,7 +22,7 @@ interface VaultEngineLike {
 /**
  * @title BondIssuer contract
  * @notice Sells zero-coupon bonds that are redeemable for excess reserves on a FIFO redemption basis.
- * @dev Tokens are redeemable for excess USD reserves at a 1:1 rate (with max precision of 1e-18).
+ * @dev Bonds are redeemable for excess USD reserves starting at a 1:1 and up to 1:1.5 rate (precision of 1e-18).
  */
 contract BondIssuer is Stateful, Eventful {
     /////////////////////////////////////////
@@ -43,12 +43,12 @@ contract BondIssuer is Stateful, Eventful {
 
     Offering public offering;
 
-    // Every stepPeriod, tokens received per stablecoin goes up by X% until maxDiscount
+    // Every stepPeriod, bondTokens received per stablecoin goes up by X% until maxDiscount
     uint256 public discountIncreasePerStep = 5E16; // 5%
     uint256 public stepPeriod = 6 hours;
     uint256 public maxDiscount = 1.5E18; // 150% of stablecoin (50% discount)
 
-    mapping(address => uint256) public tokens;
+    mapping(address => uint256) public bondTokens;
     uint256 public totalTokens;
 
     /////////////////////////////////////////
@@ -62,7 +62,7 @@ contract BondIssuer is Stateful, Eventful {
     // Public functions
     /////////////////////////////////////////
     /**
-     * @notice Returns the amount of tokens received per stablecoin
+     * @notice Returns the amount of bondTokens received per stablecoin
      * @dev Stepwise discount increases until max discount is met
      */
     function tokensPerStablecoin() public view returns (uint256 discount) {
@@ -141,12 +141,15 @@ contract BondIssuer is Stateful, Eventful {
      * @param value The bond face value
      */
     function purchaseBond(uint256 value) external {
-        require(offering.active, "ReservePool/purchaseBond: tokens are not currently on sale");
-        require(offering.amount >= value, "ReservePool/purchaseBond: Can't purchase more tokens than offering value");
+        require(offering.active, "ReservePool/purchaseBond: Bonds are not currently offered for sale");
+        require(
+            offering.amount >= value,
+            "ReservePool/purchaseBond: Can't purchase more bondTokens than offering amount"
+        );
 
         vaultEngine.moveStablecoin(msg.sender, reservePoolAddress, value);
         uint256 amountToBuy = ((value * tokensPerStablecoin()) / ONE);
-        tokens[msg.sender] += amountToBuy;
+        bondTokens[msg.sender] += amountToBuy;
         totalTokens += amountToBuy;
         offering.amount = offering.amount - value;
         if (offering.amount == 0) {
@@ -155,10 +158,10 @@ contract BondIssuer is Stateful, Eventful {
     }
 
     /**
-     * @notice Redeems tokens for assets
+     * @notice Redeems bondTokens for assets
      * @param amount The amount to redeem
      */
-    function redeemTokens(uint256 amount) external {
+    function redeemShares(uint256 amount) external {
         _processRedemption(msg.sender, amount);
     }
 
@@ -179,11 +182,11 @@ contract BondIssuer is Stateful, Eventful {
         );
 
         require(
-            tokens[user] >= amount,
-            "BondIssuer/processRedemption: User doesn't have enough tokens to redeem this amount"
+            bondTokens[user] >= amount,
+            "BondIssuer/processRedemption: User doesn't have enough bondTokens to redeem this amount"
         );
 
-        tokens[user] -= amount;
+        bondTokens[user] -= amount;
         vaultEngine.moveStablecoin(address(reservePoolAddress), user, amount);
     }
 }
