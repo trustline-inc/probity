@@ -10,7 +10,7 @@ import "../../dependencies/Stateful.sol";
  * @notice PBT ERC20 Token Contract a non transferable token
  */
 contract PBT is ERC20, Stateful {
-    constructor(address registryAddress) Stateful(registryAddress) ERC20("Trustline Credit Network Token", "PBT") {}
+    constructor(address registryAddress) Stateful(registryAddress) ERC20("Probity", "PBT") {}
 
     /**
      * @dev minting capability for Treasury module
