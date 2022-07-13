@@ -45,7 +45,7 @@ contract VaultEngine is Stateful, Eventful {
     uint256 public lendingPoolSupply; // Total system currency lending pool supply
     uint256 public lendingPoolEquity; // Total shares of equity in the lending pool
     uint256 public lendingPoolDebt; // The amount of system currency owed by borrowers
-    uint256 public systemTotalLiabilities; // Total amount owed to users by Probity
+    uint256 public totalSystemDebt; // Total amount owed to users by Probity
     address[] public vaultList; // List of vaults that had either equity and/or debt position
     mapping(address => bool) public vaultExists; // Boolean indicating whether a vault exists for a given address
     mapping(address => uint256) public systemCurrency; // vault owner's system currency balance
@@ -267,12 +267,15 @@ contract VaultEngine is Stateful, Eventful {
         vault.collateral = Math._add(vault.collateral, collateralAmount);
         vault.debt = Math._add(vault.debt, debtAmount);
         asset.normDebt = Math._add(asset.normDebt, debtAmount);
+
+        // Auction off collateral expecting to raise at least fundraiseTarget amount
         int256 fundraiseTarget = Math._mul(asset.debtAccumulator, debtAmount);
         lendingPoolDebt = Math._add(lendingPoolDebt, fundraiseTarget);
-
         vaults[assetId][auctioneer].standby = Math._sub(vaults[assetId][auctioneer].standby, collateralAmount);
+
+        // Assign the vault debt to the reservePool
         systemDebt[reservePool] = Math._sub(systemDebt[reservePool], fundraiseTarget);
-        systemTotalLiabilities = Math._add(systemTotalLiabilities, fundraiseTarget);
+        totalSystemDebt = Math._sub(totalSystemDebt, fundraiseTarget);
 
         emit DebtLiquidated(account, collateralAmount, debtAmount);
     }
@@ -416,7 +419,7 @@ contract VaultEngine is Stateful, Eventful {
 
     function _modifySupply(address account, int256 amount) internal onlyBy("gov") {
         systemCurrency[account] = Math._add(systemCurrency[account], amount);
-        systemTotalLiabilities = Math._add(systemTotalLiabilities, amount);
+        totalSystemDebt = Math._add(totalSystemDebt, amount);
         emit SupplyModified(msg.sender, account, amount);
     }
 
