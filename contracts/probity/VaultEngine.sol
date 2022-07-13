@@ -45,7 +45,7 @@ contract VaultEngine is Stateful, Eventful {
     uint256 public totalSupply; // Total system currency lending pool supply
     uint256 public totalEquity; // Total shares of equity in the lending pool
     uint256 public totalUserDebt; // The amount of system currency owed by borrowers
-    uint256 public totalSystemDebt; // Debt owed to users by Probity
+    uint256 public systemLiability; // Amount owed to users by Probity
     address[] public vaultList; // List of vaults that had either equity and/or debt position
     mapping(address => bool) public vaultExists; // Boolean indicating whether a vault exists for a given address
     mapping(address => uint256) public balance; // vault owner's system currency balance
@@ -272,7 +272,7 @@ contract VaultEngine is Stateful, Eventful {
 
         vaults[assetId][auctioneer].standby = Math._sub(vaults[assetId][auctioneer].standby, collateralAmount);
         systemDebt[reservePool] = Math._sub(systemDebt[reservePool], fundraiseTarget);
-        totalSystemDebt = Math._sub(totalSystemDebt, fundraiseTarget);
+        systemLiability = Math._add(systemLiability, fundraiseTarget);
 
         emit DebtLiquidated(account, collateralAmount, debtAmount);
     }
@@ -416,7 +416,7 @@ contract VaultEngine is Stateful, Eventful {
 
     function _modifySupply(address account, int256 amount) internal onlyBy("gov") {
         balance[account] = Math._add(balance[account], amount);
-        totalSystemDebt = Math._add(totalSystemDebt, amount);
+        systemLiability = Math._add(systemLiability, amount);
         emit SupplyModified(msg.sender, account, amount);
     }
 
