@@ -13,7 +13,7 @@
  *      - TELLER
  *      - LIQUIDATOR
  *      - FTSO (if DEPLOY_FTSO=false)
- *       - ERC20 (if ASSET_TYPE=ERC20)
+ *      - ERC20 (if ASSET_TYPE=ERC20)
  *      - FTSO_MANAGER (if ASSET_TYPE=VPToken)
  *      - FTSO_REWARD_MANAGER (if ASSET_TYPE=VPToken)
  *      - VP_TOKEN (if ASSET_TYPE=VPToken)

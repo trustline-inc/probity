@@ -25,7 +25,7 @@ interface VaultEngineLike {
             uint256 adjustedPrice
         );
 
-    function balance(address user) external returns (uint256);
+    function systemCurrency(address user) external returns (uint256);
 
     function removeStablecoin(address user, uint256 amount) external;
 
@@ -223,7 +223,7 @@ contract Liquidator is Stateful, Eventful {
 
         if (underlying * adjustedPrice < equity * RAY) {
             require(
-                vaultEngine.balance(treasuryAddress) >= equity,
+                vaultEngine.systemCurrency(treasuryAddress) >= equity,
                 "VaultEngine/liquidateEquityPosition: Not enough treasury funds"
             );
 

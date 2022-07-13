@@ -975,13 +975,13 @@ describe("Shutdown Unit Tests", function () {
 
     it("tests that correct amount of usd are transferred", async () => {
       const AMOUNT_TO_RETURN = AUREI_AMOUNT_TO_SET.div(10);
-      const stablecoinBalanceBefore = await vaultEngine.balance(
+      const stablecoinBalanceBefore = await vaultEngine.systemCurrency(
         shutdown.address
       );
 
       await shutdown.returnStablecoin(AMOUNT_TO_RETURN);
 
-      const stablecoinBalanceAfter = await vaultEngine.balance(
+      const stablecoinBalanceAfter = await vaultEngine.systemCurrency(
         shutdown.address
       );
       expect(stablecoinBalanceAfter.sub(stablecoinBalanceBefore)).to.equal(

@@ -71,7 +71,7 @@ async function expectBalancesToMatch(
   balance: UserBalances[string]
 ) {
   if (balance["USD"] !== undefined) {
-    let stablecoin = await vaultEngine.balance(user.address);
+    let stablecoin = await vaultEngine.systemCurrency(user.address);
 
     expect(stablecoin).to.equal(balance["USD"]);
   }
@@ -108,7 +108,7 @@ async function expectBalancesToMatch(
 }
 
 async function checkReserveBalances(reserveBalances: ReserveBalances) {
-  expect(await vaultEngine.balance(reserve.address)).to.equal(
+  expect(await vaultEngine.systemCurrency(reserve.address)).to.equal(
     reserveBalances.reserve
   );
   expect(await vaultEngine.systemDebt(reserve.address)).to.equal(
@@ -330,8 +330,10 @@ describe("Shutdown Flow Test", function () {
     await expectBalancesToMatch(don, balances.don);
 
     // Total debt should be 291,000 USD
-    expect(await vaultEngine.totalUserDebt()).to.equal(expectedTotalDebt);
-    expect(await vaultEngine.totalSupply()).to.equal(expectedTotalStablecoin);
+    expect(await vaultEngine.lendingPoolDebt()).to.equal(expectedTotalDebt);
+    expect(await vaultEngine.lendingPoolSupply()).to.equal(
+      expectedTotalStablecoin
+    );
 
     // Drop prices (FLR: $1.10 => $0.60), FXRP: ($2.78 => $1.23)
     await ftsoFlr.setCurrentPrice(RAY.div(RAY).mul(1e5).mul(60).div(100));
@@ -348,7 +350,7 @@ describe("Shutdown Flow Test", function () {
     let newDebtToCover = balances.bob["FLR"].debt?.mul(RAY)!;
     reserveBalances.debtToCover = newDebtToCover;
     expectedTotalDebt = expectedTotalDebt.sub(newDebtToCover);
-    expect(await vaultEngine.totalUserDebt()).to.equal(expectedTotalDebt);
+    expect(await vaultEngine.lendingPoolDebt()).to.equal(expectedTotalDebt);
     await checkReserveBalances(reserveBalances);
 
     // Liquidate Bob's FXRP vault ($184,500 backing 135,000 USD)
@@ -357,7 +359,7 @@ describe("Shutdown Flow Test", function () {
     expectedTotalDebt = expectedTotalDebt.sub(newDebtToCover);
     reserveBalances.debtToCover =
       reserveBalances.debtToCover.add(newDebtToCover);
-    expect(await vaultEngine.totalUserDebt()).to.equal(expectedTotalDebt);
+    expect(await vaultEngine.lendingPoolDebt()).to.equal(expectedTotalDebt);
     await checkReserveBalances(reserveBalances);
 
     // Update expected balances
@@ -377,7 +379,9 @@ describe("Shutdown Flow Test", function () {
     const newDebtThreshold = DEBT_THRESHOLD.mul(12).div(10);
     await reserve.connect(owner).increaseSystemDebt(newDebtThreshold);
     expectedTotalStablecoin = expectedTotalStablecoin.add(newDebtThreshold);
-    expect(await vaultEngine.totalSupply()).to.equal(expectedTotalStablecoin);
+    expect(await vaultEngine.lendingPoolSupply()).to.equal(
+      expectedTotalStablecoin
+    );
     reserveBalances.reserve = newDebtThreshold;
     reserveBalances.debtToCover =
       reserveBalances.debtToCover.add(newDebtThreshold);
@@ -526,7 +530,7 @@ describe("Shutdown Flow Test", function () {
 
     // Set the finalized unbacked debt balance due after processing borrowers
     await shutdown.setFinalStablecoinBalance();
-    const res = await vaultEngine.totalSupply();
+    const res = await vaultEngine.lendingPoolSupply();
     const EXPECTED_FINAL_STABLECOIN_BALANCE = RAD.mul(154_500);
 
     // Calculate the investor obligation
@@ -789,10 +793,10 @@ describe("Shutdown Flow Test", function () {
     balances.lender["USD"] = RAD.mul(1_200_000 + 1500);
     await expectBalancesToMatch(lender, balances.lender);
 
-    const totalDebt = await vaultEngine.totalUserDebt();
-    const totalEquity = await vaultEngine.totalEquity();
+    const totalDebt = await vaultEngine.lendingPoolDebt();
+    const lendingPoolEquity = await vaultEngine.lendingPoolEquity();
     expect(totalDebt).to.equal(expectedTotalDebt);
-    expect(totalEquity).to.equal(expectedTotalEquity);
+    expect(lendingPoolEquity).to.equal(expectedTotalEquity);
 
     // New collateral ratio: 175%
     // Drop prices FLR: $3.60, FXRP: $4.48
@@ -1121,7 +1125,7 @@ describe("Shutdown Flow Test", function () {
 
     // return stablecoin
     await shutdown.connect(bob).returnStablecoin(RAD.mul(1_099_000));
-    expect(await vaultEngine.balance(bob.address)).to.equal(0);
+    expect(await vaultEngine.systemCurrency(bob.address)).to.equal(0);
 
     // redeem collateral
     let before = (await vaultEngine.vaults(ASSET_ID.FLR, bob.address)).standby;

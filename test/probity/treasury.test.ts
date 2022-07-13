@@ -65,9 +65,9 @@ describe("Treasury Unit Tests", function () {
     });
 
     it("tests that deposit calls vaultEngine.addStablecoin function", async () => {
-      const aurBalanceBefore = await vaultEngine.balance(owner.address);
+      const aurBalanceBefore = await vaultEngine.systemCurrency(owner.address);
       await treasury.depositStablecoin(AMOUNT_TO_MINT);
-      const aurBalanceAfter = await vaultEngine.balance(owner.address);
+      const aurBalanceAfter = await vaultEngine.systemCurrency(owner.address);
       expect(aurBalanceAfter.sub(aurBalanceBefore)).to.equal(
         AMOUNT_TO_MINT.mul(RAY)
       );
@@ -99,9 +99,9 @@ describe("Treasury Unit Tests", function () {
     });
 
     it("tests that withdrawStablecoin calls vaultEngine.removeStablecoin function", async () => {
-      const aurBalanceBefore = await vaultEngine.balance(owner.address);
+      const aurBalanceBefore = await vaultEngine.systemCurrency(owner.address);
       await treasury.withdrawStablecoin(AMOUNT_TO_WITHDRAW);
-      const aurBalanceAfter = await vaultEngine.balance(owner.address);
+      const aurBalanceAfter = await vaultEngine.systemCurrency(owner.address);
       expect(aurBalanceBefore.sub(aurBalanceAfter).div(RAY)).to.equal(
         AMOUNT_TO_WITHDRAW
       );
@@ -142,9 +142,13 @@ describe("Treasury Unit Tests", function () {
     });
 
     it("tests that transferStablecoin call vaultEngine.moveStablecoin function", async () => {
-      const stablecoinBalanceBefore = await vaultEngine.balance(user.address);
+      const stablecoinBalanceBefore = await vaultEngine.systemCurrency(
+        user.address
+      );
       await treasury.transferStablecoin(user.address, AMOUNT_TO_MINT);
-      const stablecoinBalanceAfter = await vaultEngine.balance(user.address);
+      const stablecoinBalanceAfter = await vaultEngine.systemCurrency(
+        user.address
+      );
       expect(
         stablecoinBalanceAfter.sub(stablecoinBalanceBefore).div(RAY)
       ).to.equal(AMOUNT_TO_MINT);

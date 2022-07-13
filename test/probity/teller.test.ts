@@ -189,7 +189,7 @@ describe("Teller Unit Tests", function () {
       await teller.updateAccumulators(newCollId);
     });
 
-    it("fail if totalEquity is 0", async () => {
+    it("fail if lendingPoolEquity is 0", async () => {
       await vaultEngine.setTotalEquity(0);
       await assertRevert(
         teller.updateAccumulators(ASSET_ID.FLR),
@@ -325,9 +325,9 @@ describe("Teller Unit Tests", function () {
 
       let lastUpdatedAfter = (await teller.assets(ASSET_ID.FLR))[0];
       let mpr = await teller.mpr();
-      let totalDebt = await vaultEngine.totalUserDebt();
-      let totalEquity = await vaultEngine.totalEquity();
-      let utilitization = wdiv(totalDebt, totalEquity);
+      let totalDebt = await vaultEngine.lendingPoolDebt();
+      let lendingPoolEquity = await vaultEngine.lendingPoolEquity();
+      let utilitization = wdiv(totalDebt, lendingPoolEquity);
       let multipledByUtilization = rmul(mpr.sub(RAY), utilitization.mul(1e9));
       let exponentiated = rpow(
         multipledByUtilization.add(RAY),
@@ -350,9 +350,9 @@ describe("Teller Unit Tests", function () {
       await teller.updateAccumulators(ASSET_ID.FLR);
 
       lastUpdatedAfter = (await teller.assets(ASSET_ID.FLR))[0];
-      totalDebt = await vaultEngine.totalUserDebt();
-      totalEquity = await vaultEngine.totalEquity();
-      utilitization = wdiv(totalDebt, totalEquity);
+      totalDebt = await vaultEngine.lendingPoolDebt();
+      lendingPoolEquity = await vaultEngine.lendingPoolEquity();
+      utilitization = wdiv(totalDebt, lendingPoolEquity);
       multipledByUtilization = rmul(mpr.sub(RAY), utilitization.mul(1e9));
       exponentiated = rpow(
         multipledByUtilization.add(RAY),
@@ -383,9 +383,9 @@ describe("Teller Unit Tests", function () {
 
       let lastUpdatedAfter = (await teller.assets(ASSET_ID.FLR))[0];
       let mpr = await teller.mpr();
-      let totalDebt = await vaultEngine.totalUserDebt();
-      let totalEquity = await vaultEngine.totalEquity();
-      let utilitization = wdiv(totalDebt, totalEquity);
+      let totalDebt = await vaultEngine.lendingPoolDebt();
+      let lendingPoolEquity = await vaultEngine.lendingPoolEquity();
+      let utilitization = wdiv(totalDebt, lendingPoolEquity);
       let multipledByUtilization = rmul(mpr.sub(RAY), utilitization.mul(1e9));
       let exponentiated = rpow(
         multipledByUtilization.add(RAY),

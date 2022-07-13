@@ -42,23 +42,23 @@ contract MockVaultEngine {
     mapping(bytes32 => mapping(address => Vault)) public vaults;
     mapping(bytes32 => bool) public states;
     mapping(bytes32 => Asset) public assets;
-    mapping(address => uint256) public balance;
+    mapping(address => uint256) public systemCurrency;
     mapping(address => uint256) public pbt;
     mapping(address => uint256) public systemDebt;
 
     uint256 public protocolFeeRates;
-    uint256 public totalUserDebt;
-    uint256 public totalEquity;
-    uint256 public totalSupply;
+    uint256 public lendingPoolDebt;
+    uint256 public lendingPoolEquity;
+    uint256 public lendingPoolSupply;
     LiquidateDebtPositionCall public lastLiquidateDebtPositionCall;
     LiquidateEquityPositionCall public lastLiquidateEquityPositionCall;
 
     function addStablecoin(address user, uint256 amount) external {
-        balance[user] += amount;
+        systemCurrency[user] += amount;
     }
 
     function removeStablecoin(address user, uint256 amount) external {
-        balance[user] -= amount;
+        systemCurrency[user] -= amount;
     }
 
     function moveStablecoin(
@@ -66,12 +66,12 @@ contract MockVaultEngine {
         address to,
         uint256 amount
     ) external {
-        balance[from] -= amount;
-        balance[to] += amount;
+        systemCurrency[from] -= amount;
+        systemCurrency[to] += amount;
     }
 
     function setStablecoin(address user, uint256 amount) external {
-        balance[user] = amount;
+        systemCurrency[user] = amount;
     }
 
     function setsystemDebt(address user, uint256 amount) external {
@@ -88,15 +88,15 @@ contract MockVaultEngine {
     }
 
     function setTotalUserDebt(uint256 newTotalUserDebt) external {
-        totalUserDebt = newTotalUserDebt;
+        lendingPoolDebt = newTotalUserDebt;
     }
 
     function setTotalEquity(uint256 newTotalEquity) external {
-        totalEquity = newTotalEquity;
+        lendingPoolEquity = newTotalEquity;
     }
 
-    function setTotalSupply(uint256 newtotalSupply) external {
-        totalSupply = newtotalSupply;
+    function setTotalSupply(uint256 newlendingPoolSupply) external {
+        lendingPoolSupply = newlendingPoolSupply;
     }
 
     function initAsset(bytes32 assetId) external {
@@ -171,14 +171,14 @@ contract MockVaultEngine {
     }
 
     function settle(uint256 amount) external {
-        balance[msg.sender] -= amount;
+        systemCurrency[msg.sender] -= amount;
         systemDebt[msg.sender] -= amount;
     }
 
     function increaseSystemDebt(uint256 amount) external {
-        balance[msg.sender] += amount;
+        systemCurrency[msg.sender] += amount;
         systemDebt[msg.sender] += amount;
-        totalUserDebt += amount;
+        lendingPoolDebt += amount;
     }
 
     function liquidateDebtPosition(
