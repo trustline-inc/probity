@@ -34,7 +34,7 @@ async function main() {
 
   console.log("Contracts deployed!");
 
-  const addresses = [];
+  const addresses: any[] = [];
   let fileOutput = "";
   for (let contractName in contracts) {
     if (contracts[contractName] == null) continue;
