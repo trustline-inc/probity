@@ -419,6 +419,7 @@ contract VaultEngine is Stateful, Eventful {
 
     function _modifySupply(address account, int256 amount) internal onlyBy("gov") {
         systemCurrency[account] = Math._add(systemCurrency[account], amount);
+        systemCurrencyIssued = Math._add(systemCurrencyIssued, amount);
         totalSystemDebt = Math._add(totalSystemDebt, amount);
         emit SupplyModified(msg.sender, account, amount);
     }
