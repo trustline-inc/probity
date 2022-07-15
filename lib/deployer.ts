@@ -29,7 +29,7 @@ import {
   LinearDecrease,
   Liquidator,
   ReservePool,
-  MockERC20AssetManager,
+  MockErc20AssetManager,
   VPAssetManager,
   LowAPR,
   HighAPR,
@@ -67,7 +67,8 @@ import {
   Shutdown__factory,
   Stateful__factory,
   Liquidator__factory,
-  MockERC20AssetManager__factory,
+  MockErc20AssetManager__factory,
+  MockErc20Token__factory,
   MockVPToken__factory,
   MockVaultEngine__factory,
   MockFtso__factory,
@@ -127,9 +128,8 @@ interface ContractDict {
   linearDecrease?: LinearDecrease;
   liquidator?: Liquidator;
   reservePool?: ReservePool;
-  mockErc20Token?: {
-    [key: string]: MockErc20Token;
-  };
+  mockErc20AssetManager?: MockErc20AssetManager;
+  mockErc20Token?: MockErc20Token;
   shutdown?: Shutdown;
   stateful?: Stateful;
   mockVpToken?: MockVPToken;
@@ -215,6 +215,7 @@ const contracts: ContractDict = {
   mockReserve: undefined,
   mockPriceCalc: undefined,
   mockBondIssuer: undefined,
+  mockErc20AssetManager: undefined,
   mockErc20Token: undefined,
 };
 
@@ -1259,7 +1260,7 @@ const deployLiquidator = async (param?: {
 
 const deployMockErc20Token = async () => {
   if (
-    contracts.erc20AssetManager !== undefined &&
+    contracts.mockErc20Token !== undefined &&
     process.env.NODE_ENV !== "test"
   ) {
     console.info("mockErc20Token contract has already been deployed, skipping");
@@ -1268,11 +1269,11 @@ const deployMockErc20Token = async () => {
 
   const signers = await getSigners();
   const mockErc20TokenFactory = (await ethers.getContractFactory(
-    "MockERC20AssetManager",
+    "MockErc20Token",
     signers.owner
-  )) as MockERC20AssetManager__factory;
+  )) as MockErc20Token__factory;
   contracts.mockErc20Token = await mockErc20TokenFactory.deploy();
-  await contracts.mockErc20Token.deployed();
+  await contracts.mockErc20Token!?.deployed();
   return contracts;
 };
 
