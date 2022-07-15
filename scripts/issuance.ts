@@ -3,7 +3,7 @@
  */
 import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-web3";
-import { artifacts, ethers, web3 } from "hardhat";
+import { artifacts, ethers } from "hardhat";
 import { Contract } from "ethers";
 import { RAD } from "../test/utils/constants";
 

@@ -71,7 +71,7 @@ async function main() {
         registry: process.env.REGISTRY,
         assetId,
         vaultEngine: process.env.VAULT_ENGINE,
-        mockErc20Token: process.env.MOCK_ERC20_TOKEN,
+        erc20: process.env.USD,
       });
       contracts.ftso = temp;
       break;
@@ -103,7 +103,7 @@ async function main() {
   if (process.env.DEPLOY_FTSO === "true") {
     console.info("Deploying Mock FTSO");
     const deployed = await mock.deployMockFtso();
-    ftso = deployed!.ftso.address;
+    ftso = deployed!.ftso?.address;
   } else {
     console.info("Skipping Deploying FTSO");
     ftso = contracts.ftso.address;

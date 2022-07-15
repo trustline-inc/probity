@@ -10,10 +10,11 @@ async function main() {
   if (
     !process.env.ERC20 ||
     !process.env.VAULT_ENGINE ||
-    !process.env.REGISTRY
+    !process.env.REGISTRY ||
+    !process.env.ASSET_NAME
   ) {
     console.error(
-      "Please provide ERC20, VAULT_ENGINE and REGISTRY contract addresses in .env"
+      "Please provide ERC20, ASSET_NAME, VAULT_ENGINE, and REGISTRY contract addresses in .env"
     );
     process.exit(1);
   }
@@ -26,6 +27,7 @@ async function main() {
   const param = {
     registry,
     vaultEngine: process.env.VAULT_ENGINE,
+    assetId: ethers.utils.id(process.env.ASSET_NAME!),
     erc20: process.env.ERC20,
   };
 
