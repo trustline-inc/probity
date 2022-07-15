@@ -168,12 +168,12 @@ FLARE_DIR=~/Desktop/flare yarn run initialize <network>
 
 ## Administrator Tools
 
-### Config Generator
+### System Info
 
 Use this command to paste the output into [probity-ui](https://github.com/trustline-inc/probity-ui):
 
 ```
-yarn run generateUiObject <network>
+yarn run getSystemInfo <network>
 ```
 
 ### Rate Updater
