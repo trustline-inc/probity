@@ -160,11 +160,11 @@ If you get the error `ProviderError: err: Invalid value for block.coinbase`, tha
 
 You can use a script to initialize the system with a new asset type.
 
+> Override the native token on the `local` or `internal` networks with `NATIVE_TOKEN=<CFLR|SGB|FLR>`.
+
 ```
 FLARE_DIR=~/Desktop/flare yarn run initialize <network>
 ```
-
-You can override the native token in the `local` or `internal` networks with `NATIVE_TOKEN=<CFLR|SGB|FLR>`.
 
 ## Administrator Tools
 

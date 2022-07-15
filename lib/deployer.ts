@@ -46,6 +46,7 @@ import {
   MockLiquidator,
   MockReservePool,
   MockBondIssuer,
+  MockErc20Token,
   USD__factory,
   Registry__factory,
   BondIssuer__factory,
@@ -111,8 +112,12 @@ interface ContractDict {
   vaultEngineLimited?: VaultEngineLimited;
   vaultEngineUnrestricted?: VaultEngineUnrestricted;
   nativeAssetManager?: NativeAssetManager;
-  erc20AssetManager?: ERC20AssetManager;
-  erc20?: ERC20[];
+  erc20AssetManager?: {
+    [key: string]: ERC20AssetManager;
+  };
+  erc20?: {
+    [key: string]: ERC20;
+  };
   ftsoManager?: MockFtsoManager;
   ftsoRewardManager?: MockFtsoRewardManager;
   teller?: Teller;
@@ -122,7 +127,9 @@ interface ContractDict {
   linearDecrease?: LinearDecrease;
   liquidator?: Liquidator;
   reservePool?: ReservePool;
-  mockErc20Token?: MockERC20AssetManager;
+  mockErc20Token?: {
+    [key: string]: MockErc20Token;
+  };
   shutdown?: Shutdown;
   stateful?: Stateful;
   mockVpToken?: MockVPToken;
@@ -158,7 +165,7 @@ const artifactNameMap = {
   linearDecrease: "LinearDecrease",
   liquidator: "Liquidator",
   reservePool: "ReservePool",
-  mockErc20Token: "MockERC20AssetManager",
+  mockErc20Token: "MockErc20Token",
   mockVpToken: "MockVPToken",
   vpAssetManager: "VPAssetManager",
   shutdown: "Shutdown",
@@ -185,7 +192,7 @@ const contracts: ContractDict = {
   vaultEngineUnrestricted: undefined,
   nativeAssetManager: undefined,
   erc20AssetManager: undefined,
-  erc20: [],
+  erc20: undefined,
   ftsoManager: undefined,
   ftsoRewardManager: undefined,
   teller: undefined,
@@ -208,6 +215,7 @@ const contracts: ContractDict = {
   mockReserve: undefined,
   mockPriceCalc: undefined,
   mockBondIssuer: undefined,
+  mockErc20Token: undefined,
 };
 
 interface SignerDict {
@@ -249,7 +257,7 @@ const getSigners = async () => {
   return signers;
 };
 
-const bytes32 = (string) => ethers.utils.formatBytes32String(string);
+const bytes32 = (string: string) => ethers.utils.formatBytes32String(string);
 
 /**
  * @function parseExistingContracts
@@ -641,17 +649,17 @@ const deployERC20AssetManager = async (param?: {
     "ERC20AssetManager",
     signers.owner
   )) as ERC20AssetManager__factory;
-  contracts.erc20AssetManager = await erc20AssetManagerFactory.deploy(
+  contracts.erc20AssetManager![assetId] = await erc20AssetManagerFactory.deploy(
     registry!,
     assetId,
     erc20,
     vaultEngine!
   );
-  await contracts.erc20AssetManager.deployed();
+  await contracts.erc20AssetManager![assetId].deployed();
   if (process.env.NODE_ENV !== "test") {
     console.info("erc20AssetManager deployed ✓");
     console.info({
-      address: contracts.erc20AssetManager.address,
+      address: contracts.erc20AssetManager![assetId].address,
       params: {
         registry,
         assetId,
@@ -663,7 +671,7 @@ const deployERC20AssetManager = async (param?: {
 
   await contracts.registry?.setupAddress(
     bytes32("assetManager"),
-    contracts.erc20AssetManager.address,
+    contracts.erc20AssetManager![assetId].address,
     true
   );
 

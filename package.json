@@ -28,7 +28,7 @@
     "deployERC20AssetManager": "npx hardhat local run ./scripts/deployERC20AssetManager.ts --network",
     "deployVpToken": "npx hardhat run ./scripts/deployVpToken.ts --network",
     "deploySafe": "npx hardhat run ./scripts/admin/deploySafe.ts --network",
-    "generateUiObject": "npx hardhat run ./scripts/generateUiObject.ts --network",
+    "getSystemInfo": "npx hardhat run ./scripts/getSystemInfo.ts --network",
     "test": "NODE_ENV=test npx hardhat test --network hardhat",
     "test:happy": "NODE_ENV=test npx hardhat test test/happyFlow.test.ts --network hardhat",
     "coverage": "npm run build && export NODE_ENV=test && npx hardhat coverage --temp artifacts --network hardhat --solcoverjs ./.solcover.js"

@@ -34,7 +34,7 @@ import { ethers, web3 } from "hardhat";
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
 async function main() {
-  let contracts;
+  let contracts: any;
 
   const contractsToCheck = [
     "REGISTRY",
