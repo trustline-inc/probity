@@ -48,9 +48,9 @@ contract VaultEngine is Stateful, Eventful {
     uint256 public totalSystemDebt; // Total amount owed to users by Probity
     address[] public vaultList; // List of vaults that had either equity and/or debt position
     mapping(address => bool) public vaultExists; // Boolean indicating whether a vault exists for a given address
-    mapping(address => uint256) public systemCurrency; // vault owner's system currency balance
-    mapping(address => uint256) public pbt; // vault owner's governance token balance
-    mapping(address => uint256) public systemDebt; // vault owner's share of system debt
+    mapping(address => uint256) public systemCurrency; // Vault owner's system currency balance
+    mapping(address => uint256) public pbt; // Vault owner's governance token balance
+    mapping(address => uint256) public systemDebt; // Vault owner's share of system debt
     mapping(bytes32 => Asset) public assets; // assetId -> asset
     mapping(bytes32 => mapping(address => Vault)) public vaults; // assetId -> vault owner's address -> vault
 
