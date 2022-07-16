@@ -16,7 +16,7 @@ import {
   Liquidator,
   ReservePool,
   Registry,
-  MockERC20AssetManager,
+  MockErc20Token,
   BondIssuer,
 } from "../typechain";
 import { deployTest } from "../lib/deployer";
@@ -36,8 +36,8 @@ let gov: SignerWithAddress;
 let usd: USD;
 let vaultEngine: VaultEngine;
 let registry: Registry;
-let flrWallet: NativeAssetManager;
-let fxrpWallet: ERC20AssetManager;
+let flrAssetManager: NativeAssetManager;
+let erc20AssetManager: ERC20AssetManager;
 let teller: Teller;
 let treasury: Treasury;
 let ftso: MockFtso;
@@ -45,7 +45,7 @@ let priceFeed: PriceFeed;
 let auctioneer: Auctioneer;
 let liquidator: Liquidator;
 let reserve: ReservePool;
-let erc20: MockERC20AssetManager;
+let erc20: MockErc20Token;
 let bondIssuer: BondIssuer;
 
 const STANDBY_AMOUNT = WAD.mul(1000);
@@ -65,25 +65,25 @@ describe("Probity happy flow", function () {
     const { contracts, signers } = await deployTest();
 
     // Set contracts
-    vaultEngine = contracts.vaultEngine;
-    flrWallet = contracts.nativeAssetManager;
-    fxrpWallet = contracts.erc20AssetManager;
-    usd = contracts.usd;
-    teller = contracts.teller;
-    treasury = contracts.treasury;
-    ftso = contracts.ftso;
-    priceFeed = contracts.priceFeed;
-    auctioneer = contracts.auctioneer;
-    liquidator = contracts.liquidator;
-    reserve = contracts.reservePool;
-    registry = contracts.registry;
-    erc20 = contracts.mockErc20Token;
-    bondIssuer = contracts.bondIssuer;
+    vaultEngine = contracts.vaultEngine!;
+    flrAssetManager = contracts.nativeAssetManager!;
+    erc20AssetManager = contracts.erc20AssetManager!["FXRP"]!;
+    usd = contracts.usd!;
+    teller = contracts.teller!;
+    treasury = contracts.treasury!;
+    ftso = contracts.ftso!;
+    priceFeed = contracts.priceFeed!;
+    auctioneer = contracts.auctioneer!;
+    liquidator = contracts.liquidator!;
+    reserve = contracts.reservePool!;
+    registry = contracts.registry!;
+    erc20 = contracts.mockErc20Token!;
+    bondIssuer = contracts.bondIssuer!;
 
-    owner = signers.owner;
-    user = signers.alice;
-    gov = signers.charlie;
-    userWithRole = signers.don;
+    owner = signers.owner!;
+    user = signers.alice!;
+    gov = signers.charlie!;
+    userWithRole = signers.don!;
 
     await registry.setupAddress(bytes32("gov"), gov.address, true);
     await registry.setupAddress(
@@ -103,7 +103,7 @@ describe("Probity happy flow", function () {
     let [standby0] = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
 
     // Deposit native token (FLR)
-    await flrWallet.deposit({ value: STANDBY_AMOUNT });
+    await flrAssetManager.deposit({ value: STANDBY_AMOUNT });
 
     // Balances after native token deposit
     let balance1 = await ethers.provider.getBalance(owner.address);
@@ -117,7 +117,7 @@ describe("Probity happy flow", function () {
     let [standby2] = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
 
     // Withdraw native token (FLR)
-    await flrWallet.withdraw(WITHDRAW_AMOUNT);
+    await flrAssetManager.withdraw(WITHDRAW_AMOUNT);
 
     // Balances after native token withdrawal
     let balance3 = await ethers.provider.getBalance(owner.address);
@@ -132,14 +132,14 @@ describe("Probity happy flow", function () {
 
     // Mint FXRP to user wallet
     await erc20.mint(owner.address, STANDBY_AMOUNT);
-    await erc20.approve(fxrpWallet.address, STANDBY_AMOUNT);
+    await erc20.approve(erc20AssetManager.address, STANDBY_AMOUNT);
 
     // Balances before ERC20 token deposit
     let balance0 = await erc20.balanceOf(owner.address);
     let [standby0] = await vaultEngine.vaults(ASSET_ID["FXRP"], owner.address);
 
     // Deposit ERC20 token (FXRP)
-    await fxrpWallet.deposit(STANDBY_AMOUNT);
+    await erc20AssetManager.deposit(STANDBY_AMOUNT);
 
     // Balances after ERC20 token deposit
     let balance1 = await erc20.balanceOf(owner.address);
@@ -153,7 +153,7 @@ describe("Probity happy flow", function () {
     let [standby2] = await vaultEngine.vaults(ASSET_ID["FXRP"], owner.address);
 
     // Withdraw ERC20 token (FXRP)
-    await fxrpWallet.withdraw(WITHDRAW_AMOUNT);
+    await erc20AssetManager.withdraw(WITHDRAW_AMOUNT);
 
     // Balances after ERC20 token deposit
     let balance3 = await erc20.balanceOf(owner.address);
@@ -165,7 +165,7 @@ describe("Probity happy flow", function () {
 
   it("increases equity, increases debt, and allows stablecoin withdrawal", async () => {
     // Deposit native token (FLR)
-    await flrWallet.deposit({ value: STANDBY_AMOUNT });
+    await flrAssetManager.deposit({ value: STANDBY_AMOUNT });
 
     // Initialize the FLR asset
     await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR);
@@ -237,7 +237,7 @@ describe("Probity happy flow", function () {
 
   it("allows debt repayment", async () => {
     // Deposit native token (FLR)
-    await flrWallet.deposit({ value: STANDBY_AMOUNT });
+    await flrAssetManager.deposit({ value: STANDBY_AMOUNT });
 
     // Initialize the FLR asset
     await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR);
@@ -309,7 +309,7 @@ describe("Probity happy flow", function () {
 
   it("allows underlying asset redemption", async () => {
     // Deposit native token (FLR)
-    await flrWallet.deposit({ value: STANDBY_AMOUNT });
+    await flrAssetManager.deposit({ value: STANDBY_AMOUNT });
 
     // Initialize the FLR asset
     await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR);
@@ -369,7 +369,7 @@ describe("Probity happy flow", function () {
 
   it("updates the price feed", async () => {
     // Deposit native token (FLR)
-    await flrWallet.deposit({ value: STANDBY_AMOUNT });
+    await flrAssetManager.deposit({ value: STANDBY_AMOUNT });
 
     // Initialize the FLR asset
     await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR);
@@ -390,7 +390,7 @@ describe("Probity happy flow", function () {
 
   it("updates the accumulators + protocol fees", async () => {
     // Deposit native token (FLR)
-    await flrWallet.deposit({ value: STANDBY_AMOUNT });
+    await flrAssetManager.deposit({ value: STANDBY_AMOUNT });
 
     // Initialize the FLR asset
     await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR);
@@ -461,7 +461,7 @@ describe("Probity happy flow", function () {
 
   it("liquidates unhealthy vaults", async () => {
     // Deposit native token (FLR)
-    await flrWallet.deposit({ value: STANDBY_AMOUNT.mul(2) });
+    await flrAssetManager.deposit({ value: STANDBY_AMOUNT.mul(2) });
 
     // Initialize the FLR asset
     await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR);
@@ -513,7 +513,7 @@ describe("Probity happy flow", function () {
 
   it("creates an auction and allows a user to buy the collateral", async () => {
     // Deposit native token (FLR)
-    await flrWallet.deposit({ value: STANDBY_AMOUNT.mul(2) });
+    await flrAssetManager.deposit({ value: STANDBY_AMOUNT.mul(2) });
 
     // Initialize the FLR asset
     await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR);
@@ -551,7 +551,7 @@ describe("Probity happy flow", function () {
     await liquidator.liquidateVault(ASSET_ID.FLR, owner.address);
 
     // Deposit FLR as a secondary user
-    await flrWallet.connect(user).deposit({ value: WAD.mul(50_000) });
+    await flrAssetManager.connect(user).deposit({ value: WAD.mul(50_000) });
 
     // Increase equity as user
     await vaultEngine
@@ -606,7 +606,7 @@ describe("Probity happy flow", function () {
 
   it("creates an auction by liquidating equity position and allows a users to buy collateral", async () => {
     // Deposit native token (FLR)
-    await flrWallet.deposit({ value: STANDBY_AMOUNT.mul(2) });
+    await flrAssetManager.deposit({ value: STANDBY_AMOUNT.mul(2) });
 
     // Initialize the FLR asset
     await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR);
@@ -635,7 +635,7 @@ describe("Probity happy flow", function () {
     // Liquidate the vault
     await liquidator.liquidateVault(ASSET_ID.FLR, owner.address);
     // Deposit FLR as a secondary user
-    await flrWallet.connect(user).deposit({ value: WAD.mul(50_000) });
+    await flrAssetManager.connect(user).deposit({ value: WAD.mul(50_000) });
 
     // Increase equity as user
     await vaultEngine
@@ -692,7 +692,7 @@ describe("Probity happy flow", function () {
 
   it("runs an IOU sale", async () => {
     // Deposit native token (FLR)
-    await flrWallet.deposit({ value: STANDBY_AMOUNT.mul(2) });
+    await flrAssetManager.deposit({ value: STANDBY_AMOUNT.mul(2) });
 
     // Initialize the FLR asset
     await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR);
@@ -736,7 +736,7 @@ describe("Probity happy flow", function () {
     expect(auction.debt).to.equal(LOAN_AMOUNT.add(penalty).mul(RAY));
 
     // Deposit FLR as a secondary user
-    await flrWallet.connect(user).deposit({ value: WAD.mul(300_000) });
+    await flrAssetManager.connect(user).deposit({ value: WAD.mul(300_000) });
 
     // Increase equity as user
     await vaultEngine

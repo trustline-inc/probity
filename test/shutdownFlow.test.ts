@@ -16,7 +16,8 @@ import {
   Liquidator,
   ReservePool,
   Registry,
-  MockERC20AssetManager,
+  MockErc20AssetManager,
+  MockErc20Token,
   Shutdown,
   BondIssuer,
 } from "../typechain";
@@ -54,7 +55,7 @@ let auctioneerFlr: Auctioneer;
 let auctioneerFxrp: Auctioneer;
 let liquidator: Liquidator;
 let reserve: ReservePool;
-let erc20: MockERC20AssetManager;
+let erc20: MockErc20Token;
 let shutdown: Shutdown;
 let bondIssuer: BondIssuer;
 
@@ -148,35 +149,35 @@ describe("Shutdown Flow Test", function () {
     let { contracts, signers } = await deployTest();
 
     // Set contracts
-    vaultEngine = contracts.vaultEngine;
-    flrWallet = contracts.nativeAssetManager;
-    fxrpWallet = contracts.erc20AssetManager;
-    usd = contracts.usd;
-    teller = contracts.teller;
-    treasury = contracts.treasury;
-    ftsoFlr = contracts.ftso;
-    priceFeed = contracts.priceFeed;
-    auctioneerFlr = contracts.auctioneer;
-    liquidator = contracts.liquidator;
-    reserve = contracts.reservePool;
-    registry = contracts.registry;
-    erc20 = contracts.mockErc20Token;
-    shutdown = contracts.shutdown;
-    bondIssuer = contracts.bondIssuer;
+    vaultEngine = contracts.vaultEngine!;
+    flrWallet = contracts.nativeAssetManager!;
+    fxrpWallet = contracts.erc20AssetManager!["FXRP"];
+    usd = contracts.usd!;
+    teller = contracts.teller!;
+    treasury = contracts.treasury!;
+    ftsoFlr = contracts.ftso!;
+    priceFeed = contracts.priceFeed!;
+    auctioneerFlr = contracts.auctioneer!;
+    liquidator = contracts.liquidator!;
+    reserve = contracts.reservePool!;
+    registry = contracts.registry!;
+    erc20 = contracts.mockErc20Token!;
+    shutdown = contracts.shutdown!;
+    bondIssuer = contracts.bondIssuer!;
 
     contracts = (await mock.deployMockFtso()) as any;
-    ftsoFxrp = contracts.ftso;
+    ftsoFxrp = contracts.ftso!;
 
     contracts = await probity.deployAuctioneer();
-    auctioneerFxrp = contracts.auctioneer;
+    auctioneerFxrp = contracts.auctioneer!;
 
-    owner = signers.owner;
-    alice = signers.alice;
-    bob = signers.bob;
-    charlie = signers.charlie;
-    don = signers.don;
-    lender = signers.lender;
-    borrower = signers.borrower;
+    owner = signers.owner!;
+    alice = signers.alice!;
+    bob = signers.bob!;
+    charlie = signers.charlie!;
+    don = signers.don!;
+    lender = signers.lender!;
+    borrower = signers.borrower!;
 
     // Initialize FLR asset
     await vaultEngine.initAsset(ASSET_ID.FLR);

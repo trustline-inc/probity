@@ -5,7 +5,7 @@ import {
   VaultEngine,
   Registry,
   ERC20AssetManager,
-  MockERC20AssetManager,
+  MockErc20Token,
 } from "../../../typechain";
 
 import { deployTest } from "../../../lib/deployer";
@@ -24,7 +24,7 @@ let gov: SignerWithAddress;
 
 // Contracts
 let erc20AssetManager: ERC20AssetManager;
-let erc20: MockERC20AssetManager;
+let erc20: MockErc20Token;
 let vaultEngine: VaultEngine;
 let registry: Registry;
 
@@ -38,14 +38,14 @@ describe("ERC20 Asset Manager Unit Test", function () {
     const { contracts, signers } = await deployTest();
 
     // Set contracts
-    vaultEngine = contracts.vaultEngine;
-    registry = contracts.registry;
-    erc20 = contracts.mockErc20Token;
-    erc20AssetManager = contracts.erc20AssetManager;
+    vaultEngine = contracts.vaultEngine!;
+    registry = contracts.registry!;
+    erc20 = contracts.mockErc20Token!;
+    erc20AssetManager = contracts.erc20AssetManager!["FXRP"]!;
 
-    owner = signers.owner;
-    user = signers.alice;
-    gov = signers.bob;
+    owner = signers.owner!;
+    user = signers.alice!;
+    gov = signers.bob!;
 
     await registry.setupAddress(bytes32("gov"), gov.address, true);
     await registry

@@ -26,6 +26,11 @@ contract VaultEngine is Stateful, Eventful {
         uint256 initialEquity; // Tracks the amount of equity (less interest)
     }
 
+    enum Category {
+        UNDERLYING,
+        COLLATERAL
+    }
+
     struct Asset {
         uint256 debtAccumulator; // Cumulative debt rate
         uint256 equityAccumulator; // Cumulative equity rate
@@ -34,6 +39,7 @@ contract VaultEngine is Stateful, Eventful {
         uint256 normEquity; // Normalized equity amount
         uint256 ceiling; // Max. amount of asset that can be active in a position
         uint256 floor; // Min. amount of asset that must be active to open a position
+        Category category; // Type of asset (underlying or collateral)
     }
 
     /////////////////////////////////////////

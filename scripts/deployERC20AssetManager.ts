@@ -32,7 +32,7 @@ async function main() {
   };
 
   //@ts-ignore
-  let contracts = await probity.deployERC20AssetManager(param);
+  let contracts = await probity.deployErc20AssetManager(param);
 
   console.log("Contracts deployed!");
 

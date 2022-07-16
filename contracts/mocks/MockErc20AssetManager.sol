@@ -23,19 +23,18 @@ interface VaultEngineLike {
 }
 
 contract MockErc20AssetManager {
-    constructor(
-        bytes32 id,
-        TokenLike asset,
-        VaultEngineLike vaultEngineAddress
-    ) {
+    constructor(bytes32 id, TokenLike asset) {
         assetId = id;
-        vaultEngine = vaultEngineAddress;
         token = asset;
+    }
+
+    function setVaultEngine(VaultEngineLike _vaultEngine) external {
+        vaultEngine = _vaultEngine;
     }
 
     TokenLike public immutable token;
     bytes32 public immutable assetId;
-    VaultEngineLike public immutable vaultEngine;
+    VaultEngineLike public vaultEngine;
 
     function deposit(uint256 amount) external {
         require(token.transferFrom(msg.sender, address(this), amount), "ERC20AssetManager/deposit: transfer failed");

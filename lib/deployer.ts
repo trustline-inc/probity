@@ -29,7 +29,6 @@ import {
   LinearDecrease,
   Liquidator,
   ReservePool,
-  MockErc20AssetManager,
   VPAssetManager,
   LowAPR,
   HighAPR,
@@ -67,7 +66,6 @@ import {
   Shutdown__factory,
   Stateful__factory,
   Liquidator__factory,
-  MockErc20AssetManager__factory,
   MockErc20Token__factory,
   MockVPToken__factory,
   MockVaultEngine__factory,
@@ -82,8 +80,10 @@ import {
   MockBondIssuer__factory,
   VaultEngineLimited__factory,
   ERC20,
+  ERC20__factory,
 } from "../typechain";
 import { ADDRESS_ZERO } from "../test/utils/constants";
+import { ParamType } from "ethers/lib/utils";
 
 /**
  * Deployment targets and their native currency
@@ -113,12 +113,20 @@ interface ContractDict {
   vaultEngineLimited?: VaultEngineLimited;
   vaultEngineUnrestricted?: VaultEngineUnrestricted;
   nativeAssetManager?: NativeAssetManager;
-  erc20AssetManager?: {
-    [key: string]: ERC20AssetManager;
-  };
-  erc20?: {
-    [key: string]: ERC20;
-  };
+  erc20AssetManager?:
+    | {
+        USD?: ERC20AssetManager;
+        FXRP?: ERC20AssetManager;
+        UPXAU?: ERC20AssetManager;
+      }
+    | {};
+  erc20?:
+    | {
+        USD?: ERC20;
+        FXRP?: ERC20;
+        UPXAU?: ERC20;
+      }
+    | {};
   ftsoManager?: MockFtsoManager;
   ftsoRewardManager?: MockFtsoRewardManager;
   teller?: Teller;
@@ -128,7 +136,6 @@ interface ContractDict {
   linearDecrease?: LinearDecrease;
   liquidator?: Liquidator;
   reservePool?: ReservePool;
-  mockErc20AssetManager?: MockErc20AssetManager;
   mockErc20Token?: MockErc20Token;
   shutdown?: Shutdown;
   stateful?: Stateful;
@@ -191,8 +198,8 @@ const contracts: ContractDict = {
   vaultEngineLimited: undefined,
   vaultEngineUnrestricted: undefined,
   nativeAssetManager: undefined,
-  erc20AssetManager: undefined,
-  erc20: undefined,
+  erc20AssetManager: {},
+  erc20: {},
   ftsoManager: undefined,
   ftsoRewardManager: undefined,
   teller: undefined,
@@ -215,7 +222,6 @@ const contracts: ContractDict = {
   mockReserve: undefined,
   mockPriceCalc: undefined,
   mockBondIssuer: undefined,
-  mockErc20AssetManager: undefined,
   mockErc20Token: undefined,
 };
 
@@ -616,21 +622,46 @@ const deployVPAssetManager = async (param?: {
   return contracts;
 };
 
-const deployERC20AssetManager = async (param?: {
+const deployErc20Token = async (param?: { symbol: string; name: string }) => {
+  const symbol = param?.symbol || "FXRP";
+  const name = param?.name || "Flare XRP";
+
+  if (
+    contracts.erc20![symbol] !== undefined &&
+    process.env.NODE_ENV !== "test"
+  ) {
+    console.info("erc20Token contract has already been deployed, skipping");
+    return contracts;
+  }
+
+  const signers = await getSigners();
+  const erc20TokenFactory = (await ethers.getContractFactory(
+    "ERC20",
+    signers.owner
+  )) as ERC20__factory;
+  contracts.erc20![symbol] = await erc20TokenFactory.deploy(name, symbol);
+  await contracts.erc20![symbol].deployed();
+  if (process.env.NODE_ENV !== "test") {
+    console.info(`erc20Token.${symbol} deployed ✓`);
+  }
+  await checkDeploymentDelay();
+  return contracts;
+};
+
+const deployErc20AssetManager = async (param?: {
   registry?: string;
-  assetId?: string;
+  symbol?: string;
   erc20?: string;
   vaultEngine?: string;
 }) => {
-  const assetId =
-    param && param.assetId ? param.assetId : web3.utils.keccak256("USD");
+  const symbol = param?.symbol || "FXRP";
 
   if (
-    contracts[`erc20AssetManager_${assetId}`] !== undefined &&
+    contracts.erc20AssetManager![symbol] !== undefined &&
     process.env.NODE_ENV !== "test"
   ) {
     console.info(
-      `erc20AssetManager_${assetId} contract has already been deployed, skipping`
+      `erc20AssetManager[${symbol}] contract has already been deployed, skipping`
     );
     return contracts;
   }
@@ -638,7 +669,7 @@ const deployERC20AssetManager = async (param?: {
   const registry =
     param && param.registry ? param.registry : contracts.registry?.address;
   const erc20 =
-    param && param.erc20 ? param.erc20 : contracts.erc20![assetId]?.address;
+    param && param.erc20 ? param.erc20 : contracts.erc20![symbol]?.address;
   const vaultEngine =
     param && param.vaultEngine
       ? param.vaultEngine
@@ -650,20 +681,20 @@ const deployERC20AssetManager = async (param?: {
     "ERC20AssetManager",
     signers.owner
   )) as ERC20AssetManager__factory;
-  contracts.erc20AssetManager![assetId] = await erc20AssetManagerFactory.deploy(
+  contracts.erc20AssetManager![symbol] = await erc20AssetManagerFactory.deploy(
     registry!,
-    assetId,
+    web3.utils.keccak256(symbol),
     erc20,
     vaultEngine!
   );
-  await contracts.erc20AssetManager![assetId].deployed();
+  await contracts.erc20AssetManager![symbol].deployed();
   if (process.env.NODE_ENV !== "test") {
     console.info("erc20AssetManager deployed ✓");
     console.info({
-      address: contracts.erc20AssetManager![assetId].address,
+      address: contracts.erc20AssetManager![symbol].address,
       params: {
         registry,
-        assetId,
+        symbol,
         erc20,
         vaultEngine,
       },
@@ -672,7 +703,7 @@ const deployERC20AssetManager = async (param?: {
 
   await contracts.registry?.setupAddress(
     bytes32("assetManager"),
-    contracts.erc20AssetManager![assetId].address,
+    contracts.erc20AssetManager![symbol].address,
     true
   );
 
@@ -1272,7 +1303,10 @@ const deployMockErc20Token = async () => {
     "MockErc20Token",
     signers.owner
   )) as MockErc20Token__factory;
-  contracts.mockErc20Token = await mockErc20TokenFactory.deploy();
+  contracts.mockErc20Token = await mockErc20TokenFactory.deploy(
+    "Flare XRP",
+    "FXRP"
+  );
   await contracts.mockErc20Token!?.deployed();
   return contracts;
 };
@@ -1624,7 +1658,8 @@ const deployDev = async () => {
     await deployMocks();
     await deployProbity();
     await deployAuctioneer();
-    await deployERC20AssetManager();
+    await deployErc20Token();
+    await deployErc20AssetManager();
     await deployVPAssetManager();
   } catch (err) {
     console.error("Error occurred while deploying", err);
@@ -1643,7 +1678,8 @@ const deployTest = async (vaultEngineType?: string) => {
   if (vaultEngineType === "limited") await deployVaultEngineLimited();
   if (vaultEngineType === "unrestricted") await deployVaultEngineUnrestricted();
   await deployAuctioneer();
-  await deployERC20AssetManager();
+  await deployErc20Token();
+  await deployErc20AssetManager({ erc20: contracts.mockErc20Token!.address });
   await deployVPAssetManager();
   await deployMockVaultEngine();
   await deployMockPriceCalc();
@@ -1658,7 +1694,7 @@ const deployProd = async () => {
     if (network.name === "coston") await deployMocks();
     await deployProbity();
     await deployAuctioneer();
-    await deployERC20AssetManager();
+    await deployErc20AssetManager();
     await deployVPAssetManager();
   } catch (err) {
     console.error("Error occurred while deploying", err);
@@ -1674,7 +1710,7 @@ const probity = {
   deployApr,
   deployVaultEngine,
   deployNativeAssetManager,
-  deployERC20AssetManager,
+  deployErc20AssetManager,
   deployVPAssetManager,
   deployTeller,
   deployPriceCalc,

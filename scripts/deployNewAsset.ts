@@ -63,11 +63,11 @@ async function main() {
     case "ERC20":
       await checkContractAddresses(["ERC20"]);
 
-      // TODO: fix deployERC20AssetManager erasing ftso address
+      // TODO: fix deployErc20AssetManager erasing ftso address
       if (contracts.ftso) var temp = contracts.ftso;
 
       // we need erc20 address
-      contracts = await probity.deployERC20AssetManager({
+      contracts = await probity.deployErc20AssetManager({
         registry: process.env.REGISTRY,
         assetId,
         vaultEngine: process.env.VAULT_ENGINE,
