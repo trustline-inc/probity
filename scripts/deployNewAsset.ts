@@ -69,7 +69,7 @@ async function main() {
       // we need erc20 address
       contracts = await probity.deployErc20AssetManager({
         registry: process.env.REGISTRY,
-        assetId,
+        symbol: assetId,
         vaultEngine: process.env.VAULT_ENGINE,
         erc20: process.env.USD,
       });
@@ -113,15 +113,16 @@ async function main() {
   console.info("Deploying Auctioneer");
   await probity.deployAuctioneer();
 
+  const category = 0; // category for underlying assets is 0
   await execute(
-    contracts.vaultEngine.initAsset(assetId, { gasLimit: 300000 }),
+    contracts.vaultEngine.initAsset(assetId, category, { gasLimit: 300000 }),
     "Initializing Asset on VaultEngine"
   );
 
   await execute(
     contracts.teller.initAsset(
       assetId,
-      ethers.utils.parseEther(process.env.LIQUIDATION_RATIO!),
+      ethers.utils.parseEther(process.env.PROTOCOL_FEE!),
       { gasLimit: 300000 }
     ),
     "Initializing Asset on teller"

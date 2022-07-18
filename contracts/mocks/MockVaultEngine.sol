@@ -18,6 +18,7 @@ contract MockVaultEngine {
         uint256 normEquity; // Normalized equity amount
         uint256 ceiling; // Max. amount of asset that can be active in a position
         uint256 floor; // Min. amount of asset that must be active to open a position
+        Category category; // Type of asset (underlying or collateral)
     }
 
     struct LiquidateDebtPositionCall {
@@ -37,6 +38,12 @@ contract MockVaultEngine {
         int256 assetToReturn;
         int256 equity;
         int256 initialEquity;
+    }
+
+    enum Category {
+        UNDERLYING,
+        COLLATERAL,
+        BOTH
     }
 
     mapping(bytes32 => mapping(address => Vault)) public vaults;
@@ -99,9 +106,10 @@ contract MockVaultEngine {
         lendingPoolSupply = newlendingPoolSupply;
     }
 
-    function initAsset(bytes32 assetId) external {
+    function initAsset(bytes32 assetId, Category category) external {
         assets[assetId].debtAccumulator = 1e27;
         assets[assetId].equityAccumulator = 1e27;
+        assets[assetId].category = category;
     }
 
     function updateAdjustedPrice(bytes32 assetId, uint256 price) external {

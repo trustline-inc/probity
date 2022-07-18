@@ -59,15 +59,15 @@ describe("Shutdown Unit Tests", function () {
   beforeEach(async function () {
     let { contracts, signers } = await deployTest();
     // Set contracts
-    registry = contracts.registry;
-    vaultEngine = contracts.mockVaultEngine;
-    teller = contracts.teller;
-    priceFeed = contracts.mockPriceFeed;
-    treasury = contracts.treasury;
-    liquidator = contracts.mockLiquidator;
-    reservePool = contracts.mockReserve;
-    auctioneer = contracts.mockAuctioneer;
-    bondIssuer = contracts.mockBondIssuer;
+    registry = contracts.registry!;
+    vaultEngine = contracts.mockVaultEngine!;
+    teller = contracts.teller!;
+    priceFeed = contracts.mockPriceFeed!;
+    treasury = contracts.treasury!;
+    liquidator = contracts.mockLiquidator!;
+    reservePool = contracts.mockReserve!;
+    auctioneer = contracts.mockAuctioneer!;
+    bondIssuer = contracts.mockBondIssuer!;
 
     contracts = await probity.deployShutdown({
       vaultEngine: vaultEngine.address,
@@ -77,10 +77,10 @@ describe("Shutdown Unit Tests", function () {
       bondIssuer: bondIssuer.address,
     });
 
-    shutdown = contracts.shutdown;
+    shutdown = contracts.shutdown!;
 
-    owner = signers.owner;
-    user = signers.alice;
+    owner = signers.owner!;
+    user = signers.alice!;
     await liquidator.setAssetType(ASSET_ID.FLR, auctioneer.address);
   });
 
@@ -399,7 +399,7 @@ describe("Shutdown Unit Tests", function () {
       // Final price = $0.987
       await priceFeed.setPrice(ASSET_ID.FLR, PRICE_TO_SET);
 
-      await vaultEngine.initAsset(ASSET_ID.FLR);
+      await vaultEngine.initAsset(ASSET_ID.FLR, 2);
 
       // User vault is overcollateralized
       await vaultEngine.updateVault(
@@ -508,7 +508,7 @@ describe("Shutdown Unit Tests", function () {
       await shutdown.initiateShutdown();
       await priceFeed.setPrice(ASSET_ID.FLR, PRICE_TO_SET);
 
-      await vaultEngine.initAsset(ASSET_ID.FLR);
+      await vaultEngine.initAsset(ASSET_ID.FLR, 2);
 
       // Overcollateralized
       await vaultEngine.updateVault(
@@ -627,7 +627,7 @@ describe("Shutdown Unit Tests", function () {
       await vaultEngine.setTotalEquity(TOTAL_EQUITY_TO_SET);
       await shutdown.initiateShutdown();
       await priceFeed.setPrice(ASSET_ID.FLR, PRICE_TO_SET);
-      await vaultEngine.initAsset(ASSET_ID.FLR);
+      await vaultEngine.initAsset(ASSET_ID.FLR, 2);
       await shutdown.setFinalPrice(ASSET_ID.FLR);
 
       await vaultEngine.updateVault(
@@ -762,7 +762,7 @@ describe("Shutdown Unit Tests", function () {
 
       await shutdown.initiateShutdown();
       await priceFeed.setPrice(ASSET_ID.FLR, PRICE_TO_SET);
-      await vaultEngine.initAsset(ASSET_ID.FLR);
+      await vaultEngine.initAsset(ASSET_ID.FLR, 2);
       await shutdown.setFinalPrice(ASSET_ID.FLR);
 
       await vaultEngine.updateVault(
@@ -928,7 +928,7 @@ describe("Shutdown Unit Tests", function () {
 
       await shutdown.initiateShutdown();
       await priceFeed.setPrice(ASSET_ID.FLR, PRICE_TO_SET);
-      await vaultEngine.initAsset(ASSET_ID.FLR);
+      await vaultEngine.initAsset(ASSET_ID.FLR, 2);
       await shutdown.setFinalPrice(ASSET_ID.FLR);
 
       await increaseTime(172800);
@@ -1047,7 +1047,7 @@ describe("Shutdown Unit Tests", function () {
 
       await shutdown.initiateShutdown();
       await priceFeed.setPrice(ASSET_ID.FLR, PRICE_TO_SET);
-      await vaultEngine.initAsset(ASSET_ID.FLR);
+      await vaultEngine.initAsset(ASSET_ID.FLR, 2);
       await shutdown.setFinalPrice(ASSET_ID.FLR);
 
       await increaseTime(172800);
@@ -1118,7 +1118,7 @@ describe("Shutdown Unit Tests", function () {
       // Final price = $0.987
       await priceFeed.setPrice(ASSET_ID.FLR, PRICE_TO_SET);
 
-      await vaultEngine.initAsset(ASSET_ID.FLR);
+      await vaultEngine.initAsset(ASSET_ID.FLR, 2);
       await shutdown.setFinalPrice(ASSET_ID.FLR);
 
       // Owner vault is undercollateralized

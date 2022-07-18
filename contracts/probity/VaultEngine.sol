@@ -28,7 +28,8 @@ contract VaultEngine is Stateful, Eventful {
 
     enum Category {
         UNDERLYING,
-        COLLATERAL
+        COLLATERAL,
+        BOTH
     }
 
     struct Asset {
@@ -350,15 +351,17 @@ contract VaultEngine is Stateful, Eventful {
     /**
      * @dev Initializes a new asset type
      * @param assetId The asset type ID
+     * @param category The asset category
      */
-    function initAsset(bytes32 assetId) external onlyBy("gov") {
+    function initAsset(bytes32 assetId, Category category) external onlyBy("gov") {
         require(assets[assetId].debtAccumulator == 0, "VaultEngine/initAsset: This asset has already been initialized");
         assets[assetId].debtAccumulator = RAY;
         assets[assetId].equityAccumulator = RAY;
+        assets[assetId].category = category;
     }
 
     /**
-     * @dev Updates a asset's debt ceiling
+     * @dev Updates an asset's debt ceiling
      * @param assetId The asset type ID
      * @param ceiling The new ceiling amount
      */
@@ -368,7 +371,7 @@ contract VaultEngine is Stateful, Eventful {
     }
 
     /**
-     * @notice Updates a asset's debt floor
+     * @notice Updates an asset's debt floor
      * @dev Prevent accounts from creating multiple vaults with very low debt amount and asset
      * @param assetId The asset type ID
      * @param floor The new floor amount
@@ -436,6 +439,10 @@ contract VaultEngine is Stateful, Eventful {
         int256 underlyingAmount,
         int256 equityAmount
     ) internal {
+        require(
+            assets[assetId].category == Category.UNDERLYING || assets[assetId].category == Category.BOTH,
+            "Vault/modifyDebt: Asset not allowed as underlying"
+        );
         require(registry.checkRole("treasury", treasuryAddress), "Vault/modifyEquity: Treasury address is not valid");
 
         if (!vaultExists[msg.sender]) {
@@ -472,6 +479,10 @@ contract VaultEngine is Stateful, Eventful {
         int256 collAmount,
         int256 debtAmount
     ) internal {
+        require(
+            assets[assetId].category == Category.COLLATERAL || assets[assetId].category == Category.BOTH,
+            "Vault/modifyDebt: Asset not allowed as collateral"
+        );
         require(registry.checkRole("treasury", treasuryAddress), "Vault/modifyDebt: Treasury address is not valid");
 
         if (!vaultExists[msg.sender]) {

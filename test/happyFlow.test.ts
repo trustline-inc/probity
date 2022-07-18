@@ -168,7 +168,7 @@ describe("Probity happy flow", function () {
     await flrAssetManager.deposit({ value: STANDBY_AMOUNT });
 
     // Initialize the FLR asset
-    await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR);
+    await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR, 2);
     await vaultEngine
       .connect(gov)
       .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
@@ -240,7 +240,7 @@ describe("Probity happy flow", function () {
     await flrAssetManager.deposit({ value: STANDBY_AMOUNT });
 
     // Initialize the FLR asset
-    await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR);
+    await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR, 2);
     await vaultEngine
       .connect(gov)
       .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
@@ -312,7 +312,7 @@ describe("Probity happy flow", function () {
     await flrAssetManager.deposit({ value: STANDBY_AMOUNT });
 
     // Initialize the FLR asset
-    await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR);
+    await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR, 2);
     await vaultEngine
       .connect(gov)
       .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
@@ -372,7 +372,7 @@ describe("Probity happy flow", function () {
     await flrAssetManager.deposit({ value: STANDBY_AMOUNT });
 
     // Initialize the FLR asset
-    await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR);
+    await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR, 2);
     await vaultEngine
       .connect(gov)
       .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
@@ -393,7 +393,7 @@ describe("Probity happy flow", function () {
     await flrAssetManager.deposit({ value: STANDBY_AMOUNT });
 
     // Initialize the FLR asset
-    await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR);
+    await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR, 2);
     await vaultEngine
       .connect(gov)
       .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
@@ -464,7 +464,7 @@ describe("Probity happy flow", function () {
     await flrAssetManager.deposit({ value: STANDBY_AMOUNT.mul(2) });
 
     // Initialize the FLR asset
-    await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR);
+    await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR, 2);
     await vaultEngine
       .connect(gov)
       .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
@@ -516,7 +516,7 @@ describe("Probity happy flow", function () {
     await flrAssetManager.deposit({ value: STANDBY_AMOUNT.mul(2) });
 
     // Initialize the FLR asset
-    await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR);
+    await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR, 2);
     await vaultEngine
       .connect(gov)
       .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
@@ -609,7 +609,7 @@ describe("Probity happy flow", function () {
     await flrAssetManager.deposit({ value: STANDBY_AMOUNT.mul(2) });
 
     // Initialize the FLR asset
-    await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR);
+    await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR, 2);
     await vaultEngine
       .connect(gov)
       .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
@@ -695,7 +695,7 @@ describe("Probity happy flow", function () {
     await flrAssetManager.deposit({ value: STANDBY_AMOUNT.mul(2) });
 
     // Initialize the FLR asset
-    await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR);
+    await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR, 2);
     await vaultEngine
       .connect(gov)
       .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));

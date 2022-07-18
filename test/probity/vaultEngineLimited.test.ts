@@ -41,19 +41,19 @@ describe("Vault Engine Limited Unit Tests", function () {
   beforeEach(async function () {
     let { contracts, signers } = await deployTest("limited");
     // Set contracts
-    registry = contracts.registry;
-    vaultEngine = contracts.vaultEngineLimited;
-    reservePool = contracts.reservePool;
-    nativeAssetManager = contracts.nativeAssetManager;
-    teller = contracts.teller;
-    priceFeed = contracts.priceFeed;
-    ftso = contracts.ftso;
-    treasury = contracts.treasury;
+    registry = contracts.registry!;
+    vaultEngine = contracts.vaultEngineLimited!;
+    reservePool = contracts.reservePool!;
+    nativeAssetManager = contracts.nativeAssetManager!;
+    teller = contracts.teller!;
+    priceFeed = contracts.priceFeed!;
+    ftso = contracts.ftso!;
+    treasury = contracts.treasury!;
 
-    owner = signers.owner;
-    user = signers.alice;
-    gov = signers.charlie;
-    coll = signers.don;
+    owner = signers.owner!;
+    user = signers.alice!;
+    gov = signers.charlie!;
+    coll = signers.don!;
 
     await registry.setupAddress(bytes32("gov"), gov.address, true);
     await registry.setupAddress(bytes32("whitelisted"), user.address, false);
@@ -66,7 +66,7 @@ describe("Vault Engine Limited Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR);
+      await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR, 2);
       await vaultEngine
         .connect(gov)
         .updateCeiling(ASSET_ID.FLR, RAD.mul(10000000));

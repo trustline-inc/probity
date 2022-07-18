@@ -180,7 +180,7 @@ describe("Shutdown Flow Test", function () {
     borrower = signers.borrower!;
 
     // Initialize FLR asset
-    await vaultEngine.initAsset(ASSET_ID.FLR);
+    await vaultEngine.initAsset(ASSET_ID.FLR, 2);
     await vaultEngine.updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
     await teller.initAsset(ASSET_ID.FLR, 0);
     await priceFeed.initAsset(
@@ -191,7 +191,7 @@ describe("Shutdown Flow Test", function () {
     await liquidator.initAsset(ASSET_ID.FLR, auctioneerFlr.address);
 
     // Initialize FXRP asset
-    await vaultEngine.initAsset(ASSET_ID["FXRP"]);
+    await vaultEngine.initAsset(ASSET_ID["FXRP"], 2);
     await vaultEngine.updateCeiling(ASSET_ID["FXRP"], RAD.mul(10_000_000));
     await teller.initAsset(ASSET_ID["FXRP"], 0);
     await priceFeed.initAsset(

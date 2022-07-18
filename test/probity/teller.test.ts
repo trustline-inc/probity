@@ -32,17 +32,17 @@ describe("Teller Unit Tests", function () {
   beforeEach(async function () {
     let { contracts, signers } = await deployTest();
     // Set contracts
-    registry = contracts.registry;
+    registry = contracts.registry!;
 
     contracts = await probity.deployTeller({
-      vaultEngine: contracts.mockVaultEngine.address,
+      vaultEngine: contracts.mockVaultEngine?.address,
     });
-    vaultEngine = contracts.mockVaultEngine;
-    reservePoolAddress = contracts.reservePool.address;
-    teller = contracts.teller;
+    vaultEngine = contracts.mockVaultEngine!;
+    reservePoolAddress = contracts.reservePool?.address!;
+    teller = contracts.teller!;
 
-    owner = signers.owner;
-    user = signers.alice;
+    owner = signers.owner!;
+    user = signers.alice!;
   });
 
   describe("setReservePool Unit Tests", function () {
@@ -174,7 +174,7 @@ describe("Teller Unit Tests", function () {
   describe("updateAccumulator Unit Tests", function () {
     beforeEach(async function () {
       await teller.initAsset(ASSET_ID.FLR, 0);
-      await vaultEngine.initAsset(ASSET_ID.FLR);
+      await vaultEngine.initAsset(ASSET_ID.FLR, 2);
       await vaultEngine.setTotalUserDebt(DEBT_TO_SET);
       await vaultEngine.setTotalEquity(EQUITY_TO_SET);
     });

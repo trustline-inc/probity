@@ -92,9 +92,10 @@ const init = async () => {
 
     // Initialize the native token in VaultEngine
     console.log(`Initializing native token ${nativeToken}`);
+    const category = 1; // collateral category code
     let tx = await vaultEngine
       .connect(gov)
-      .initAsset(NATIVE_ASSETS[nativeToken], { gasLimit: 400000 });
+      .initAsset(NATIVE_ASSETS[nativeToken], category, { gasLimit: 400000 });
     await tx.wait();
     console.log(`Vault: ${nativeToken} initialized`);
 
