@@ -83,7 +83,6 @@ import {
   ERC20__factory,
 } from "../typechain";
 import { ADDRESS_ZERO } from "../test/utils/constants";
-import { ParamType } from "ethers/lib/utils";
 
 /**
  * Deployment targets and their native currency
@@ -198,8 +197,16 @@ const contracts: ContractDict = {
   vaultEngineLimited: undefined,
   vaultEngineUnrestricted: undefined,
   nativeAssetManager: undefined,
-  erc20AssetManager: {},
-  erc20: {},
+  erc20AssetManager: {
+    USD: undefined,
+    FXRP: undefined,
+    UPXAU: undefined,
+  },
+  erc20: {
+    USD: undefined,
+    FXRP: undefined,
+    UPXAU: undefined,
+  },
   ftsoManager: undefined,
   ftsoRewardManager: undefined,
   teller: undefined,
@@ -278,7 +285,6 @@ const parseExistingContracts = async () => {
       .split(/(?=[A-Z])/)
       .join("_")
       .toUpperCase();
-    if (contractDisplayName === "ERC20") continue;
     if (!!process.env[contractDisplayName]) {
       contracts[contractName] = new ethers.Contract(
         process.env[contractDisplayName]!,
@@ -627,7 +633,7 @@ const deployErc20Token = async (param?: { symbol: string; name: string }) => {
   const name = param?.name || "Flare XRP";
 
   if (
-    contracts.erc20![symbol] !== undefined &&
+    contracts[symbol.toLowerCase()] !== undefined &&
     process.env.NODE_ENV !== "test"
   ) {
     console.info("erc20Token contract has already been deployed, skipping");
@@ -639,10 +645,13 @@ const deployErc20Token = async (param?: { symbol: string; name: string }) => {
     "ERC20",
     signers.owner
   )) as ERC20__factory;
-  contracts.erc20![symbol] = await erc20TokenFactory.deploy(name, symbol);
-  await contracts.erc20![symbol].deployed();
+  contracts[symbol.toLowerCase()] = await erc20TokenFactory.deploy(
+    name,
+    symbol
+  );
+  await contracts[symbol.toLowerCase()].deployed();
   if (process.env.NODE_ENV !== "test") {
-    console.info(`erc20Token.${symbol} deployed ✓`);
+    console.info(`erc20[${symbol.toLowerCase()}] deployed ✓`);
   }
   await checkDeploymentDelay();
   return contracts;
@@ -657,7 +666,7 @@ const deployErc20AssetManager = async (param?: {
   const symbol = param?.symbol || "FXRP";
 
   if (
-    contracts.erc20AssetManager![symbol] !== undefined &&
+    contracts[`${symbol.toLowerCase()}Manager`] !== undefined &&
     process.env.NODE_ENV !== "test"
   ) {
     console.info(
@@ -669,7 +678,9 @@ const deployErc20AssetManager = async (param?: {
   const registry =
     param && param.registry ? param.registry : contracts.registry?.address;
   const erc20 =
-    param && param.erc20 ? param.erc20 : contracts.erc20![symbol]?.address;
+    param && param.erc20
+      ? param.erc20
+      : contracts[symbol.toLowerCase()]?.address;
   const vaultEngine =
     param && param.vaultEngine
       ? param.vaultEngine
@@ -681,17 +692,18 @@ const deployErc20AssetManager = async (param?: {
     "ERC20AssetManager",
     signers.owner
   )) as ERC20AssetManager__factory;
-  contracts.erc20AssetManager![symbol] = await erc20AssetManagerFactory.deploy(
-    registry!,
-    web3.utils.keccak256(symbol),
-    erc20,
-    vaultEngine!
-  );
-  await contracts.erc20AssetManager![symbol].deployed();
+  contracts[`${symbol.toLowerCase()}Manager`] =
+    await erc20AssetManagerFactory.deploy(
+      registry!,
+      web3.utils.keccak256(symbol),
+      erc20,
+      vaultEngine!
+    );
+  await contracts[`${symbol.toLowerCase()}Manager`].deployed();
   if (process.env.NODE_ENV !== "test") {
-    console.info("erc20AssetManager deployed ✓");
+    console.info(`erc20AssetManager${symbol.toLowerCase()} deployed ✓`);
     console.info({
-      address: contracts.erc20AssetManager![symbol].address,
+      address: contracts[`${symbol.toLowerCase()}Manager`].address,
       params: {
         registry,
         symbol,
@@ -703,7 +715,7 @@ const deployErc20AssetManager = async (param?: {
 
   await contracts.registry?.setupAddress(
     bytes32("assetManager"),
-    contracts.erc20AssetManager![symbol].address,
+    contracts[`${symbol.toLowerCase()}Manager`].address,
     true
   );
 
