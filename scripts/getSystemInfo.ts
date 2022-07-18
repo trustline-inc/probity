@@ -59,7 +59,7 @@ console.log(`
     "${process.env.LIQUIDATOR}": LiquidatorABI,
     "${process.env.PRICE_FEED}": PriceFeedABI,
     "${process.env.NATIVE_ASSET_MANAGER}": NativeAssetManagerABI,
-    "${process.env.ERC20_ASSET_MANAGER}": Erc20AssetManagerABI,
+    "${process.env.USD_MANAGER}": Erc20AssetManagerABI,
     "${process.env.REGISTRY}": RegistryABI,
     "${process.env.PBT}": PbtABI,
     "${process.env.RESERVE_POOL}": ReservePoolABI,
