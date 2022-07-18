@@ -50,6 +50,14 @@ describe("ERC20 Asset Manager Unit Test", function () {
     await registry
       .connect(gov)
       .setupAddress(bytes32("whitelisted"), owner.address, false);
+    await registry
+      .connect(gov)
+      .setupAddress(
+        bytes32("assetManager"),
+        mockErc20AssetManager.address,
+        true
+      );
+    await mockErc20AssetManager.setVaultEngine(vaultEngine.address);
   });
 
   it("fails if token transferFrom failed when depositing", async () => {

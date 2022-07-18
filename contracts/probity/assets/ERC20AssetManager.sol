@@ -59,7 +59,7 @@ contract ERC20AssetManager is Stateful {
         emit DepositToken(msg.sender, amount, address(token));
     }
 
-    function withdraw(uint256 amount) external onlyWhen("paused", false) {
+    function withdraw(uint256 amount) external onlyWhen("paused", false) onlyBy("whitelisted") {
         require(token.transfer(msg.sender, amount), "ERC20AssetManager/withdraw: transfer failed");
         vaultEngine.modifyStandbyAsset(assetId, msg.sender, -int256(amount));
         emit WithdrawToken(msg.sender, amount, address(token));

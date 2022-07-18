@@ -1345,6 +1345,7 @@ const deployMockErc20AssetManager = async () => {
     signers.owner
   )) as MockErc20AssetManager__factory;
   contracts.mockErc20AssetManager = await mockErc20AssetManagerFactory.deploy(
+    contracts.registry?.address,
     ethers.utils.id("FXRP"),
     contracts.mockErc20Token!.address
   );

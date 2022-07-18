@@ -233,6 +233,12 @@ describe("Shutdown Flow Test", function () {
       borrower.address,
       false
     );
+    await registry.setupAddress(
+      bytes32("assetManager"),
+      fxrpWallet.address,
+      true
+    );
+    await fxrpWallet.setVaultEngine(vaultEngine.address);
   });
 
   it("should shutdown when the system is solvent", async () => {
