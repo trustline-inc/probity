@@ -18,6 +18,7 @@ import {
   Registry,
   MockErc20Token,
   BondIssuer,
+  MockErc20AssetManager,
 } from "../typechain";
 import { deployTest } from "../lib/deployer";
 import { ethers } from "hardhat";
@@ -37,7 +38,7 @@ let usd: USD;
 let vaultEngine: VaultEngine;
 let registry: Registry;
 let flrAssetManager: NativeAssetManager;
-let erc20AssetManager: ERC20AssetManager;
+let mockErc20AssetManager: MockErc20AssetManager;
 let teller: Teller;
 let treasury: Treasury;
 let ftso: MockFtso;
@@ -67,7 +68,7 @@ describe("Probity happy flow", function () {
     // Set contracts
     vaultEngine = contracts.vaultEngine!;
     flrAssetManager = contracts.nativeAssetManager!;
-    erc20AssetManager = contracts.erc20AssetManager!["FXRP"]!;
+    mockErc20AssetManager = contracts.mockErc20AssetManager!;
     usd = contracts.usd!;
     teller = contracts.teller!;
     treasury = contracts.treasury!;
@@ -93,6 +94,14 @@ describe("Probity happy flow", function () {
     );
     await registry.setupAddress(bytes32("whitelisted"), user.address, false);
     await registry.setupAddress(bytes32("whitelisted"), owner.address, false);
+    await registry
+      .connect(gov)
+      .setupAddress(
+        bytes32("assetManager"),
+        mockErc20AssetManager.address,
+        true
+      );
+    await mockErc20AssetManager.setVaultEngine(vaultEngine.address);
   });
 
   it("deposits and withdraws native token to/from wallet", async () => {
@@ -132,14 +141,14 @@ describe("Probity happy flow", function () {
 
     // Mint FXRP to user wallet
     await erc20.mint(owner.address, STANDBY_AMOUNT);
-    await erc20.approve(erc20AssetManager.address, STANDBY_AMOUNT);
+    await erc20.approve(mockErc20AssetManager.address, STANDBY_AMOUNT);
 
     // Balances before ERC20 token deposit
     let balance0 = await erc20.balanceOf(owner.address);
     let [standby0] = await vaultEngine.vaults(ASSET_ID["FXRP"], owner.address);
 
     // Deposit ERC20 token (FXRP)
-    await erc20AssetManager.deposit(STANDBY_AMOUNT);
+    await mockErc20AssetManager.deposit(STANDBY_AMOUNT);
 
     // Balances after ERC20 token deposit
     let balance1 = await erc20.balanceOf(owner.address);
@@ -153,7 +162,7 @@ describe("Probity happy flow", function () {
     let [standby2] = await vaultEngine.vaults(ASSET_ID["FXRP"], owner.address);
 
     // Withdraw ERC20 token (FXRP)
-    await erc20AssetManager.withdraw(WITHDRAW_AMOUNT);
+    await mockErc20AssetManager.withdraw(WITHDRAW_AMOUNT);
 
     // Balances after ERC20 token deposit
     let balance3 = await erc20.balanceOf(owner.address);

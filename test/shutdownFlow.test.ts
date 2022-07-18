@@ -5,7 +5,6 @@ import "@nomiclabs/hardhat-web3";
 
 import {
   USD,
-  ERC20AssetManager,
   VaultEngine,
   NativeAssetManager,
   Teller,
@@ -45,7 +44,7 @@ let usd: USD;
 let vaultEngine: VaultEngine;
 let registry: Registry;
 let flrWallet: NativeAssetManager;
-let fxrpWallet: ERC20AssetManager;
+let fxrpWallet: MockErc20AssetManager;
 let teller: Teller;
 let treasury: Treasury;
 let ftsoFlr: MockFtso;
@@ -151,7 +150,7 @@ describe("Shutdown Flow Test", function () {
     // Set contracts
     vaultEngine = contracts.vaultEngine!;
     flrWallet = contracts.nativeAssetManager!;
-    fxrpWallet = contracts.erc20AssetManager!["FXRP"];
+    fxrpWallet = contracts.mockErc20AssetManager!;
     usd = contracts.usd!;
     teller = contracts.teller!;
     treasury = contracts.treasury!;

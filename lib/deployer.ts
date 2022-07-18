@@ -46,6 +46,7 @@ import {
   MockReservePool,
   MockBondIssuer,
   MockErc20Token,
+  MockErc20AssetManager,
   USD__factory,
   Registry__factory,
   BondIssuer__factory,
@@ -67,6 +68,7 @@ import {
   Stateful__factory,
   Liquidator__factory,
   MockErc20Token__factory,
+  MockErc20AssetManager__factory,
   MockVPToken__factory,
   MockVaultEngine__factory,
   MockFtso__factory,
@@ -136,6 +138,7 @@ interface ContractDict {
   liquidator?: Liquidator;
   reservePool?: ReservePool;
   mockErc20Token?: MockErc20Token;
+  mockErc20AssetManager?: MockErc20AssetManager;
   shutdown?: Shutdown;
   stateful?: Stateful;
   mockVpToken?: MockVPToken;
@@ -172,6 +175,7 @@ const artifactNameMap = {
   liquidator: "Liquidator",
   reservePool: "ReservePool",
   mockErc20Token: "MockErc20Token",
+  mockErc20AssetManager: "MockErc20AssetManager",
   mockVpToken: "MockVPToken",
   vpAssetManager: "VPAssetManager",
   shutdown: "Shutdown",
@@ -230,6 +234,7 @@ const contracts: ContractDict = {
   mockPriceCalc: undefined,
   mockBondIssuer: undefined,
   mockErc20Token: undefined,
+  mockErc20AssetManager: undefined,
 };
 
 interface SignerDict {
@@ -1323,6 +1328,30 @@ const deployMockErc20Token = async () => {
   return contracts;
 };
 
+const deployMockErc20AssetManager = async () => {
+  if (
+    contracts.mockErc20AssetManager !== undefined &&
+    process.env.NODE_ENV !== "test"
+  ) {
+    console.info(
+      "mockErc20AssetManager contract has already been deployed, skipping"
+    );
+    return contracts;
+  }
+
+  const signers = await getSigners();
+  const mockErc20AssetManagerFactory = (await ethers.getContractFactory(
+    "MockErc20AssetManager",
+    signers.owner
+  )) as MockErc20AssetManager__factory;
+  contracts.mockErc20AssetManager = await mockErc20AssetManagerFactory.deploy(
+    ethers.utils.id("FXRP"),
+    contracts.mockErc20Token!.address
+  );
+  await contracts.mockErc20AssetManager!?.deployed();
+  return contracts;
+};
+
 const deployMockVPToken = async () => {
   if (contracts.mockVpToken !== undefined && process.env.NODE_ENV !== "test") {
     console.info("mockVpToken contract has already been deployed, skipping");
@@ -1615,6 +1644,7 @@ const deployMockBondIssuer = async () => {
 const deployMocks = async () => {
   const signers = await getSigners();
   await deployMockErc20Token();
+  await deployMockErc20AssetManager();
   await deployMockVPToken();
   await deployMockFtso();
   await deployMockFtsoManager();
@@ -1690,8 +1720,6 @@ const deployTest = async (vaultEngineType?: string) => {
   if (vaultEngineType === "limited") await deployVaultEngineLimited();
   if (vaultEngineType === "unrestricted") await deployVaultEngineUnrestricted();
   await deployAuctioneer();
-  await deployErc20Token();
-  await deployErc20AssetManager({ erc20: contracts.mockErc20Token!.address });
   await deployVPAssetManager();
   await deployMockVaultEngine();
   await deployMockPriceCalc();
