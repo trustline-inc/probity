@@ -16,6 +16,7 @@ const NATIVE_ASSETS = {
 };
 
 const ERC20_ASSETS = {
+  FXRP: web3.utils.keccak256("FXRP"),
   USD: web3.utils.keccak256("USD"),
   XAU: web3.utils.keccak256("XAU"),
 };
@@ -91,13 +92,23 @@ const init = async () => {
     }
 
     // Initialize the native token in VaultEngine
-    console.log(`Initializing native token ${nativeToken}`);
-    const category = 1; // collateral category code
+    console.log(`Initializing native token collateral: ${nativeToken}`);
+    let category = 1; // collateral category code
     let tx = await vaultEngine
       .connect(gov)
       .initAsset(NATIVE_ASSETS[nativeToken], category, { gasLimit: 400000 });
     await tx.wait();
     console.log(`Vault: ${nativeToken} initialized`);
+
+    // Initialize erc20Token in VaultEngine
+    const erc20Token = "USD";
+    console.log(`Initializing ${erc20Token} token`);
+    category = 0; // underlying category code
+    tx = await vaultEngine
+      .connect(gov)
+      .initAsset(ERC20_ASSETS[erc20Token], category, { gasLimit: 400000 });
+    await tx.wait();
+    console.log(`Vault: ${erc20Token} initialized`);
 
     // Limit songbird vault to 1000 USD
     if (networkName === "songbird") {
@@ -121,6 +132,14 @@ const init = async () => {
     await tx.wait();
     console.log(`Vault: ceiling updated to ${ceiling} ${nativeToken}`);
 
+    tx = await vaultEngine
+      .connect(gov)
+      .updateCeiling(ERC20_ASSETS[erc20Token], RAD.mul(ceiling), {
+        gasLimit: 300000,
+      });
+    await tx.wait();
+    console.log(`Vault: ceiling updated to ${ceiling} ${erc20Token}`);
+
     // Update vault debt floor to 1 USD
     const floor = 1;
     tx = await vaultEngine
@@ -131,12 +150,27 @@ const init = async () => {
     await tx.wait();
     console.log(`Vault: floor updated to ${floor} ${nativeToken}`);
 
+    tx = await vaultEngine
+      .connect(gov)
+      .updateFloor(ERC20_ASSETS[erc20Token], WAD.mul(floor), {
+        gasLimit: 300000,
+      });
+    await tx.wait();
+    console.log(`Vault: floor updated to ${floor} ${erc20Token}`);
+
     // Initialize native token in Teller (sets default protocol fee)
     tx = await teller
       .connect(gov)
       .initAsset(NATIVE_ASSETS[nativeToken], 0, { gasLimit: 300000 });
     await tx.wait();
     console.log(`Teller: ${nativeToken} initialized`);
+
+    // Initialize erc20Token in Teller (sets default protocol fee)
+    tx = await teller
+      .connect(gov)
+      .initAsset(ERC20_ASSETS[erc20Token], 0, { gasLimit: 300000 });
+    await tx.wait();
+    console.log(`Teller: ${erc20Token} initialized`);
 
     // Initialize native token in Liquidator (sets default penalty fees)
     tx = await liquidator
