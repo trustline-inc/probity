@@ -7,11 +7,15 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 async function main() {
   const [owner]: SignerWithAddress[] = await ethers.getSigners();
 
+  const erc20 =
+    process.env.ERC20 || "0x60f8E563a7A1Ba3D62136f551E9169B3143C7672";
+  const assetName = process.env.ASSET_NAME || "USD";
+
   if (
-    !process.env.ERC20 ||
+    !erc20 ||
     !process.env.VAULT_ENGINE ||
     !process.env.REGISTRY ||
-    !process.env.ASSET_NAME
+    !assetName
   ) {
     console.error(
       "Please provide ERC20, ASSET_NAME, VAULT_ENGINE, and REGISTRY contract addresses in .env"
@@ -25,10 +29,10 @@ async function main() {
   );
 
   const param = {
-    registry,
+    registry: registry.address,
     vaultEngine: process.env.VAULT_ENGINE,
-    assetId: ethers.utils.id(process.env.ASSET_NAME!),
-    erc20: process.env.ERC20,
+    symbol: assetName,
+    erc20: erc20,
   };
 
   //@ts-ignore

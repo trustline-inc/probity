@@ -17,8 +17,8 @@ console.log(`
     address: "${process.env.LIQUIDATOR}",
     abi: LiquidatorABI.abi
   },
-  ERC20_ASSET_MANAGER: {
-    address: "${process.env.ERC20_ASSET_MANAGER}",
+  USD_MANAGER: {
+    address: "${process.env.USD_MANAGER}",
     abi: Erc20AssetManagerABI.abi
   },
   PRICE_FEED: {

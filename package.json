@@ -25,7 +25,7 @@
     "deploy:prod": "DEPLOYMENT_DELAY=20000 npx hardhat run ./scripts/deploy.ts --network",
     "deployAsset": "npx hardhat run ./scripts/deployNewAsset.ts --network",
     "deployAuction": "npx hardhat run ./scripts/deployAuction.ts --network",
-    "deployErc20AssetManager": "npx hardhat local run ./scripts/deployErc20AssetManager.ts --network",
+    "deployErc20AssetManager": "npx hardhat run ./scripts/deployErc20AssetManager.ts --network",
     "deployVpToken": "npx hardhat run ./scripts/deployVpToken.ts --network",
     "deploySafe": "npx hardhat run ./scripts/admin/deploySafe.ts --network",
     "getSystemInfo": "npx hardhat run ./scripts/getSystemInfo.ts --network",

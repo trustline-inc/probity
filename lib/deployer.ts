@@ -706,7 +706,7 @@ const deployErc20AssetManager = async (param?: {
     );
   await contracts[`${symbol.toLowerCase()}Manager`].deployed();
   if (process.env.NODE_ENV !== "test") {
-    console.info(`erc20AssetManager${symbol.toLowerCase()} deployed ✓`);
+    console.info(`erc20AssetManager[${symbol.toLowerCase()}] deployed ✓`);
     console.info({
       address: contracts[`${symbol.toLowerCase()}Manager`].address,
       params: {
@@ -1345,7 +1345,7 @@ const deployMockErc20AssetManager = async () => {
     signers.owner
   )) as MockErc20AssetManager__factory;
   contracts.mockErc20AssetManager = await mockErc20AssetManagerFactory.deploy(
-    contracts.registry?.address,
+    contracts.registry?.address!,
     ethers.utils.id("FXRP"),
     contracts.mockErc20Token!.address
   );
