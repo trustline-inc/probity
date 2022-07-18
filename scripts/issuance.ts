@@ -8,7 +8,7 @@ import { Contract } from "ethers";
 import { RAD } from "../test/utils/constants";
 
 const account = "0x6310B7E8bDFD25EFbeDfB17987Ba69D9191a45bD";
-const amount = RAD;
+const amount = RAD.mul(1_000_000);
 
 (async () => {
   let [owner] = await ethers.getSigners();
