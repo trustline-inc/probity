@@ -176,6 +176,14 @@ Use this command to paste the output into [probity-ui](https://github.com/trustl
 yarn run getSystemInfo <network>
 ```
 
+### Fiat Tokens
+
+The system admin (AKA "governance address") is able to issue fiat tokens for lending in Probity.
+
+```
+yarn run issuance <network>
+```
+
 ### Rate Updater
 
 Run this command to update the debt and equity rate accumulators every 5 seconds.
