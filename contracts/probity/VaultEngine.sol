@@ -243,15 +243,6 @@ contract VaultEngine is Stateful, Eventful {
     }
 
     /**
-     * @notice Issues system currency to an account
-     * @param account The holder of the issued system currency
-     * @param amount The amount to issue
-     */
-    function modifySupply(address account, int256 amount) external virtual onlyBy("gov") {
-        _modifySupply(account, amount);
-    }
-
-    /**
      * @notice Liquidates an debt position
      * @param assetId The ID of the vault asset type
      * @param account The address of the vault to liquidate
@@ -425,13 +416,6 @@ contract VaultEngine is Stateful, Eventful {
     /////////////////////////////////////////
     // Internal Functions
     /////////////////////////////////////////
-
-    function _modifySupply(address account, int256 amount) internal onlyBy("gov") {
-        systemCurrency[account] = Math._add(systemCurrency[account], amount);
-        systemCurrencyIssued = Math._add(systemCurrencyIssued, amount);
-        totalSystemDebt = Math._add(totalSystemDebt, amount);
-        emit SupplyModified(msg.sender, account, amount);
-    }
 
     function _modifyEquity(
         bytes32 assetId,
