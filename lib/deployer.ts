@@ -1740,8 +1740,13 @@ const deployDev = async () => {
     await deployMocks();
     await deployProbity();
     await deployAuctioneer();
-    await deployErc20Token();
-    await deployErc20AssetManager();
+    // await deployErc20Token();
+    await deployErc20AssetManager({
+      registry: contracts?.registry?.address,
+      symbol: "USD",
+      erc20: contracts?.usd?.address,
+      vaultEngine: contracts?.vaultEngine?.address,
+    });
     await deployVPAssetManager();
   } catch (err) {
     console.error("Error occurred while deploying", err);
@@ -1757,6 +1762,7 @@ const deployTest = async (vaultEngineType?: string) => {
   await deployMocks();
   await deployStateful();
   await deployProbity();
+  if (vaultEngineType === "issuer") await deployVaultEngineIssuer();
   if (vaultEngineType === "limited") await deployVaultEngineLimited();
   if (vaultEngineType === "unrestricted") await deployVaultEngineUnrestricted();
   await deployAuctioneer();
