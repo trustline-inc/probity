@@ -29,7 +29,7 @@ contract VaultEngineIssuer is VaultEngine {
         _modifySupply(account, amount);
     }
 
-    function _modifySupply(address account, int256 amount) internal onlyBy("gov") {
+    function _modifySupply(address account, int256 amount) internal {
         systemCurrency[account] = Math._add(systemCurrency[account], amount);
         systemCurrencyIssued = Math._add(systemCurrencyIssued, amount);
         totalSystemDebt = Math._add(totalSystemDebt, amount);
