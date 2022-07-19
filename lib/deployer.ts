@@ -18,6 +18,7 @@ import {
   Registry,
   PBT,
   VaultEngine,
+  VaultEngineIssuer,
   VaultEngineLimited,
   VaultEngineUnrestricted,
   NativeAssetManager,
@@ -54,6 +55,7 @@ import {
   LowAPR__factory,
   HighAPR__factory,
   VaultEngine__factory,
+  VaultEngineIssuer__factory,
   VaultEngineUnrestricted__factory,
   VPAssetManager__factory,
   ERC20AssetManager__factory,
@@ -111,6 +113,7 @@ interface ContractDict {
   registry?: Registry;
   pbt?: PBT;
   vaultEngine?: VaultEngine;
+  vaultEngineIssuer?: VaultEngineIssuer;
   vaultEngineLimited?: VaultEngineLimited;
   vaultEngineUnrestricted?: VaultEngineUnrestricted;
   nativeAssetManager?: NativeAssetManager;
@@ -161,6 +164,7 @@ const artifactNameMap = {
   registry: "Registry",
   pbt: "PBT",
   vaultEngine: "VaultEngine",
+  vaultEngineIssuer: "VaultEngineIssuer",
   vaultEngineLimited: "VaultEngineLimited",
   vaultEngineUnrestricted: "VaultEngineUnrestricted",
   nativeAssetManager: "NativeAssetManager",
@@ -198,6 +202,7 @@ const contracts: ContractDict = {
   registry: undefined,
   pbt: undefined,
   vaultEngine: undefined,
+  vaultEngineIssuer: undefined,
   vaultEngineLimited: undefined,
   vaultEngineUnrestricted: undefined,
   nativeAssetManager: undefined,
@@ -479,6 +484,39 @@ const deployVaultEngine = async (param?: { registry?: string }) => {
   await contracts.registry?.setupAddress(
     bytes32("vaultEngine"),
     contracts.vaultEngine?.address,
+    true
+  );
+  await checkDeploymentDelay();
+  return contracts;
+};
+
+const deployVaultEngineIssuer = async (param?: { registry?: string }) => {
+  if (
+    contracts.vaultEngineIssuer !== undefined &&
+    process.env.NODE_ENV !== "test"
+  ) {
+    console.info(
+      "vaultEngineIssuer contract has already been deployed, skipping"
+    );
+    return contracts;
+  }
+
+  const registry =
+    param && param.registry ? param.registry : contracts.registry?.address;
+  const signers = await getSigners();
+  const vaultEngineFactory = (await ethers.getContractFactory(
+    "VaultEngineIssuer",
+    signers.owner
+  )) as VaultEngineIssuer__factory;
+  contracts.vaultEngineIssuer = await vaultEngineFactory.deploy(registry!);
+  await contracts.vaultEngineIssuer.deployed();
+  if (process.env.NODE_ENV !== "test") {
+    console.info("vaultEngineIssuer deployed ✓");
+    console.info({ registry });
+  }
+  await contracts.registry?.setupAddress(
+    bytes32("vaultEngineIssuer"),
+    contracts.vaultEngineIssuer.address,
     true
   );
   await checkDeploymentDelay();
@@ -1666,7 +1704,8 @@ const deployProbity = async () => {
   await deployApr();
 
   // Deploy VaultEngine based on network
-  if (network.name === "coston") await deployVaultEngineUnrestricted();
+  if (network.name === "local") await deployVaultEngineIssuer();
+  else if (network.name === "coston") await deployVaultEngineUnrestricted();
   else if (network.name === "songbird") await deployVaultEngineLimited();
   else await deployVaultEngine();
 
