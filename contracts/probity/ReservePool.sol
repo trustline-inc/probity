@@ -6,7 +6,7 @@ import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
 
 interface VaultEngineLike {
-    function balance(address user) external returns (uint256);
+    function systemCurrency(address user) external returns (uint256);
 
     function systemDebt(address user) external returns (uint256);
 
@@ -104,7 +104,7 @@ contract ReservePool is Stateful, Eventful {
             "ReservePool/settle: Settlement amount is more than the debt"
         );
         require(
-            vaultEngine.balance(address(this)) >= amountToSettle,
+            vaultEngine.systemCurrency(address(this)) >= amountToSettle,
             "ReservePool/settle: Not enough balance to settle"
         );
 
@@ -144,7 +144,7 @@ contract ReservePool is Stateful, Eventful {
         );
 
         require(
-            vaultEngine.balance(address(this)) == 0,
+            vaultEngine.systemCurrency(address(this)) == 0,
             "ReservePool/startBondSale: Stablecoin balance is still positive"
         );
 

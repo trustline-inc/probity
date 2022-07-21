@@ -4,8 +4,8 @@ import "@nomiclabs/hardhat-ethers";
 import {
   VaultEngine,
   Registry,
-  ERC20AssetManager,
-  MockERC20AssetManager,
+  MockErc20AssetManager,
+  MockErc20Token,
 } from "../../../typechain";
 
 import { deployTest } from "../../../lib/deployer";
@@ -13,7 +13,6 @@ import { ethers } from "hardhat";
 import * as chai from "chai";
 import { bytes32, WAD } from "../../utils/constants";
 import parseEvents from "../../utils/parseEvents";
-import { sign } from "crypto";
 import assertRevert from "../../utils/assertRevert";
 const expect = chai.expect;
 
@@ -23,8 +22,8 @@ let user: SignerWithAddress;
 let gov: SignerWithAddress;
 
 // Contracts
-let erc20AssetManager: ERC20AssetManager;
-let erc20: MockERC20AssetManager;
+let mockErc20AssetManager: MockErc20AssetManager;
+let erc20: MockErc20Token;
 let vaultEngine: VaultEngine;
 let registry: Registry;
 
@@ -38,19 +37,27 @@ describe("ERC20 Asset Manager Unit Test", function () {
     const { contracts, signers } = await deployTest();
 
     // Set contracts
-    vaultEngine = contracts.vaultEngine;
-    registry = contracts.registry;
-    erc20 = contracts.mockErc20Token;
-    erc20AssetManager = contracts.erc20AssetManager;
+    vaultEngine = contracts.vaultEngine!;
+    registry = contracts.registry!;
+    erc20 = contracts.mockErc20Token!;
+    mockErc20AssetManager = contracts.mockErc20AssetManager!;
 
-    owner = signers.owner;
-    user = signers.alice;
-    gov = signers.bob;
+    owner = signers.owner!;
+    user = signers.alice!;
+    gov = signers.bob!;
 
     await registry.setupAddress(bytes32("gov"), gov.address, true);
     await registry
       .connect(gov)
       .setupAddress(bytes32("whitelisted"), owner.address, false);
+    await registry
+      .connect(gov)
+      .setupAddress(
+        bytes32("assetManager"),
+        mockErc20AssetManager.address,
+        true
+      );
+    await mockErc20AssetManager.setVaultEngine(vaultEngine.address);
   });
 
   it("fails if token transferFrom failed when depositing", async () => {
@@ -59,43 +66,43 @@ describe("ERC20 Asset Manager Unit Test", function () {
       .setupAddress(bytes32("whitelisted"), user.address, false);
 
     await assertRevert(
-      erc20AssetManager.connect(user).deposit(AMOUNT_TO_MINT),
+      mockErc20AssetManager.connect(user).deposit(AMOUNT_TO_MINT),
       "ERC20: insufficient allowance"
     );
 
     await erc20.mint(user.address, AMOUNT_TO_MINT);
     await erc20
       .connect(user)
-      .approve(erc20AssetManager.address, AMOUNT_TO_MINT);
+      .approve(mockErc20AssetManager.address, AMOUNT_TO_MINT);
 
-    await erc20AssetManager.connect(user).deposit(AMOUNT_TO_MINT);
+    await mockErc20AssetManager.connect(user).deposit(AMOUNT_TO_MINT);
   });
 
   it("fails if caller is not a whitelisted user", async () => {
     await erc20.mint(user.address, AMOUNT_TO_MINT);
     await erc20
       .connect(user)
-      .approve(erc20AssetManager.address, AMOUNT_TO_MINT);
+      .approve(mockErc20AssetManager.address, AMOUNT_TO_MINT);
 
     await assertRevert(
-      erc20AssetManager.connect(user).deposit(AMOUNT_TO_MINT),
+      mockErc20AssetManager.connect(user).deposit(AMOUNT_TO_MINT),
       "AccessControl/onlyBy: Caller does not have permission"
     );
 
     await registry
       .connect(gov)
       .setupAddress(bytes32("whitelisted"), user.address, false);
-    await erc20AssetManager.connect(user).deposit(AMOUNT_TO_MINT);
+    await mockErc20AssetManager.connect(user).deposit(AMOUNT_TO_MINT);
   });
 
   it("test DepositToken event is emitted properly", async () => {
     await erc20.mint(owner.address, AMOUNT_TO_MINT);
-    await erc20.approve(erc20AssetManager.address, AMOUNT_TO_MINT);
+    await erc20.approve(mockErc20AssetManager.address, AMOUNT_TO_MINT);
 
     let parsedEvents = await parseEvents(
-      erc20AssetManager.deposit(AMOUNT_TO_MINT),
+      mockErc20AssetManager.deposit(AMOUNT_TO_MINT),
       "DepositToken",
-      erc20AssetManager
+      mockErc20AssetManager
     );
 
     expect(parsedEvents[0].args[0]).to.equal(owner.address);
@@ -110,27 +117,27 @@ describe("ERC20 Asset Manager Unit Test", function () {
     await erc20.mint(user.address, AMOUNT_TO_MINT);
     await erc20
       .connect(user)
-      .approve(erc20AssetManager.address, AMOUNT_TO_MINT);
+      .approve(mockErc20AssetManager.address, AMOUNT_TO_MINT);
 
-    await erc20AssetManager.connect(user).deposit(AMOUNT_TO_MINT);
+    await mockErc20AssetManager.connect(user).deposit(AMOUNT_TO_MINT);
 
-    await erc20.burn(erc20AssetManager.address, AMOUNT_TO_MINT);
+    await erc20.burn(mockErc20AssetManager.address, AMOUNT_TO_MINT);
 
     await assertRevert(
-      erc20AssetManager.connect(user).withdraw(AMOUNT_TO_MINT),
+      mockErc20AssetManager.connect(user).withdraw(AMOUNT_TO_MINT),
       "ERC20: transfer amount exceeds balance"
     );
   });
 
   it("test WithdrawToken event is emitted properly", async () => {
     await erc20.mint(owner.address, AMOUNT_TO_MINT);
-    await erc20.approve(erc20AssetManager.address, AMOUNT_TO_MINT);
-    await erc20AssetManager.deposit(AMOUNT_TO_MINT);
+    await erc20.approve(mockErc20AssetManager.address, AMOUNT_TO_MINT);
+    await mockErc20AssetManager.deposit(AMOUNT_TO_MINT);
 
     let parsedEvents = await parseEvents(
-      erc20AssetManager.withdraw(AMOUNT_TO_WITHDRAW),
+      mockErc20AssetManager.withdraw(AMOUNT_TO_WITHDRAW),
       "WithdrawToken",
-      erc20AssetManager
+      mockErc20AssetManager
     );
     expect(parsedEvents[0].args[0]).to.equal(owner.address);
     expect(parsedEvents[0].args[1]).to.equal(AMOUNT_TO_WITHDRAW);

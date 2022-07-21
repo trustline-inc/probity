@@ -4,16 +4,18 @@ import * as fs from "fs";
 import { ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
+const bytes32 = (string: string) => ethers.utils.formatBytes32String(string);
+
 async function main() {
   const [owner]: SignerWithAddress[] = await ethers.getSigners();
 
-  if (
-    !process.env.ERC20 ||
-    !process.env.VAULT_ENGINE ||
-    !process.env.REGISTRY
-  ) {
+  const erc20 =
+    process.env.ERC20 || "0x60f8E563a7A1Ba3D62136f551E9169B3143C7672";
+  const symbol = process.env.ASSET_NAME || "USD";
+
+  if (!erc20 || !process.env.VAULT_ENGINE || !process.env.REGISTRY || !symbol) {
     console.error(
-      "Please provide ERC20, VAULT_ENGINE and REGISTRY contract addresses in .env"
+      "Please provide ERC20, ASSET_NAME, VAULT_ENGINE, and REGISTRY contract addresses in .env"
     );
     process.exit(1);
   }
@@ -24,28 +26,62 @@ async function main() {
   );
 
   const param = {
-    registry,
+    registry: registry.address,
     vaultEngine: process.env.VAULT_ENGINE,
-    erc20: process.env.ERC20,
+    symbol: symbol,
+    erc20: erc20,
   };
 
   //@ts-ignore
-  let contracts = await probity.deployERC20AssetManager(param);
+  let contracts = await probity.deployErc20AssetManager(param);
 
   console.log("Contracts deployed!");
 
-  const addresses = [];
+  const addresses: any[] = [];
   let fileOutput = "";
   for (let contractName in contracts) {
     if (contracts[contractName] == null) continue;
     // Convert contract identifiers from PascalCase to UPPER_CASE
-    const contractDisplayName = contractName
+    let contractDisplayName = contractName
       .split(/(?=[A-Z])/)
       .join("_")
       .toUpperCase();
+
+    let contractAddress = contracts[contractName].address;
+
+    if (contractName === "erc20") {
+      const contract = contracts[contractName];
+      if (typeof contract!["USD"] !== "undefined") {
+        contractAddress = contract!["USD"].address;
+        contractDisplayName = "USD";
+      } else if (typeof contract!["FXRP"] !== "undefined") {
+        contractAddress = contract!["FXRP"].address;
+        contractDisplayName = "FXRP";
+      } else if (typeof contract!["UPXAU"] !== "undefined") {
+        contractAddress = contract!["UPXAU"].address;
+        contractDisplayName = "UPXAU";
+      }
+      if (contractDisplayName === "ERC20") continue; // skip empty ERC20
+    }
+
+    if (contractName === "erc20AssetManager") {
+      const contract = contracts[contractName];
+      if (typeof contract!["USD_MANAGER"] !== "undefined") {
+        contractAddress = contract!["USD_MANAGER"].address;
+        contractDisplayName = "USD_MANAGER";
+      } else if (typeof contract!["FXRP_MANAGER"] !== "undefined") {
+        contractAddress = contract!["FXRP_MANAGER"].address;
+        contractDisplayName = "FXRP_MANAGER";
+      } else if (typeof contract!["UPXAU_MANAGER"] !== "undefined") {
+        contractAddress = contract!["UPXAU_MANAGER"].address;
+        contractDisplayName = "UPXAU_MANAGER";
+      }
+      if (contractDisplayName === "ERC20_ASSET_MANAGER") continue; // skip empty ERC20_ASSET_MANAGER
+    }
+
     addresses.push({
       Contract: contractDisplayName,
-      Address: contracts[contractName].address,
+      Address: contractAddress,
     });
     fileOutput += `${contractDisplayName}=${contracts[contractName].address}\n`;
   }

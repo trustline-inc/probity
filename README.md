@@ -8,6 +8,7 @@ You can view the contract code in the [`contracts`](./contracts) folder. We will
 
 <!--ts-->
 
+- [Overview](#overview)
 - [Installation](#installation)
 - [Usage](#usage)
 - [Development](#development)
@@ -28,7 +29,15 @@ You can view the contract code in the [`contracts`](./contracts) folder. We will
   - [Flare](#flare-network)
   <!--te-->
 
-## Installation
+## Overview
+
+This repository contains the source code for the Probity smart contract system (AKA "protocol") and examples to jumpstart development with Probity.
+
+## NodeJS Package
+
+The NodeJS package provides contract ABIs for Probity.
+
+### Installation
 
 This project uses [Node.js](https://nodejs.org/en/) and assumes you have it installed.
 
@@ -38,9 +47,9 @@ Add `@trustline-inc/probity` to your project with `npm` or `yarn`:
 npm install @trustline-inc/probity --save
 ```
 
-## Usage
+### Usage
 
-Below is a code snippet that shows how to import the contract ABIs and call a contract method using [`ethers`](https://docs.ethers.io/v5/).
+Below is a code snippet that shows how to import the contract ABI and call a contract method using [`ethers`](https://docs.ethers.io/v5/).
 
 ```javascript
 /**
@@ -63,6 +72,20 @@ console.log("Total supply:", totalSupply);
 
 ## Development
 
+### Recommended IDE
+
+[Visual Studio Code](https://code.visualstudio.com/) is the recommended IDE. Here's how to install Solidity language support:
+
+```
+code --install-extension JuanBlanco.solidity
+```
+
+Also, get the Prettier VSCode plugin:
+
+```
+code --install-extension esbenp.prettier-vscode
+```
+
 ### Installation
 
 **Solidity Installation**
@@ -81,26 +104,12 @@ You can verify the version with like so:
 solcjs --version
 ```
 
-**Install NPM Modules**
+**Install Project Dependencies**
 
 Install node dependencies:
 
 ```
 npm install
-```
-
-### IDE
-
-[Visual Studio Code](https://code.visualstudio.com/) is the recommended IDE. Here's how to install Solidity language support:
-
-```
-code --install-extension JuanBlanco.solidity
-```
-
-Also, get the Prettier VSCode plugin:
-
-```
-code --install-extension esbenp.prettier-vscode
 ```
 
 ### Testing
@@ -121,7 +130,7 @@ We use [GitHub Packages](https://docs.github.com/en/packages/working-with-a-gith
 
 3. [Create a new release](https://github.com/trustline-inc/probity/releases/new) for the tagged version
 
-## Running Locally
+### Running Locally
 
 Run a local [Flare](https://gitlab.com/flarenetwork/flare) node.
 
@@ -133,7 +142,7 @@ You should run an initial transaction before deploying contracts:
 npm run createInitialTx <network>
 ```
 
-## Deployment
+### Deployment
 
 Deploy the smart contract in the local network using the `deploy` script.
 
@@ -147,29 +156,37 @@ FLARE_DIR=~/Desktop/flare npm run deploy:<dev|prod> <network>
 
 If you get the error `ProviderError: err: Invalid value for block.coinbase`, that means you have to first run `npm run createInitialTx local`, which creates a genesis transaction in order for the network to start properly.
 
-## Initialization
+### Initialization
 
 You can use a script to initialize the system with a new asset type.
+
+> Override the native token on the `local` or `internal` networks with `NATIVE_TOKEN=<CFLR|SGB|FLR>`.
 
 ```
 FLARE_DIR=~/Desktop/flare yarn run initialize <network>
 ```
 
-You can override the native token in the `local` or `internal` networks with `NATIVE_TOKEN=<CFLR|SGB|FLR>`.
+## Administrator Tools
 
-## Utility Scripts
-
-### UI Object Generator
+### System Info
 
 Use this command to paste the output into [probity-ui](https://github.com/trustline-inc/probity-ui):
 
 ```
-yarn run generateUiObject <network>
+yarn run getSystemInfo <network>
+```
+
+### Fiat Tokens
+
+The system admin (AKA "governance address") is able to issue fiat tokens for lending in Probity when using `VaultEngineIssuer`.
+
+```
+yarn run issuance <network>
 ```
 
 ### Rate Updater
 
-Run this command to call update the rate accumulators every 5 seconds.
+Run this command to update the debt and equity rate accumulators every 5 seconds.
 
 ```
 yarn run rateUpdater <network>
@@ -193,7 +210,7 @@ Since we're running chain ID 16, the native token is `CFLR`.
 
 | Contract             | Address                                    |
 | -------------------- | ------------------------------------------ |
-| AUREI                | 0xCB0A71445F2791740054ED2208182512AbbdD795 |
+| USD                  | 0xCB0A71445F2791740054ED2208182512AbbdD795 |
 | BOND_ISSUER          | 0xdca77A48c628a50516a9cBeaB4F37c389956a1eb |
 | FTSO                 | 0xb446EA59ac7bbf0eFcab8629f087C19E8e011601 |
 | REGISTRY             | 0x03eA808a61c4b2000d0f17552bCc37F49c3A82ca |
@@ -228,7 +245,7 @@ The network native token is `CFLR`.
 
 | Contract             | Address                                    |
 | -------------------- | ------------------------------------------ |
-| AUREI                | 0x79b93027696D10e2872539730B0CF56171ae1f1c |
+| USD                  | 0x79b93027696D10e2872539730B0CF56171ae1f1c |
 | BOND_ISSUER          | 0xfa8Ae8Cf39902CF8953D0593a96B4b891C210474 |
 | FTSO                 | 0x6F3BCe778eDaa78DF55e32fAe68F2f3E2cd96bE8 |
 | REGISTRY             | 0xAaEd2f90a243B336f222c02f52C364c56a9ddff2 |
@@ -263,7 +280,7 @@ The network native token is `SGB`.
 
 | Contract             | Address                                    |
 | -------------------- | ------------------------------------------ |
-| AUREI                | 0x5322E9cE9DFc60372222F899D2B3683D45D9C167 |
+| USD                  | 0x5322E9cE9DFc60372222F899D2B3683D45D9C167 |
 | BOND_ISSUER          | 0x6A40Ed2aD0684a9C8ABAd1642a99EE1cd37B6B46 |
 | REGISTRY             | 0xCA33D13E5D03b262C06E98244cb47328d5f890f3 |
 | PBT_TOKEN            | 0x9E9600168c3b6FA0d3A779956969c41aaD21e1a1 |
