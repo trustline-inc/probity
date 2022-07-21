@@ -4,7 +4,7 @@ import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
 
 interface VaultEngineLike {
-    function balance(address user) external returns (uint256);
+    function systemCurrency(address user) external returns (uint256);
 
     function systemDebt(address user) external returns (uint256);
 
@@ -176,7 +176,8 @@ contract BondIssuer is Stateful, Eventful {
      */
     function _processRedemption(address user, uint256 amount) internal {
         require(
-            vaultEngine.balance(address(reservePoolAddress)) - vaultEngine.systemDebt(address(reservePoolAddress)) >=
+            vaultEngine.systemCurrency(address(reservePoolAddress)) -
+                vaultEngine.systemDebt(address(reservePoolAddress)) >=
                 amount,
             "BondIssuer/processRedemption: The reserve pool doesn't have enough funds"
         );

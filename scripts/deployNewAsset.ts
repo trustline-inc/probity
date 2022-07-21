@@ -13,7 +13,7 @@
  *      - TELLER
  *      - LIQUIDATOR
  *      - FTSO (if DEPLOY_FTSO=false)
- *       - ERC20 (if ASSET_TYPE=ERC20)
+ *      - ERC20 (if ASSET_TYPE=ERC20)
  *      - FTSO_MANAGER (if ASSET_TYPE=VPToken)
  *      - FTSO_REWARD_MANAGER (if ASSET_TYPE=VPToken)
  *      - VP_TOKEN (if ASSET_TYPE=VPToken)
@@ -34,7 +34,7 @@ import { ethers, web3 } from "hardhat";
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
 async function main() {
-  let contracts;
+  let contracts: any;
 
   const contractsToCheck = [
     "REGISTRY",
@@ -63,15 +63,15 @@ async function main() {
     case "ERC20":
       await checkContractAddresses(["ERC20"]);
 
-      // TODO: fix deployERC20AssetManager erasing ftso address
+      // TODO: fix deployErc20AssetManager erasing ftso address
       if (contracts.ftso) var temp = contracts.ftso;
 
       // we need erc20 address
-      contracts = await probity.deployERC20AssetManager({
+      contracts = await probity.deployErc20AssetManager({
         registry: process.env.REGISTRY,
-        assetId,
+        symbol: assetId,
         vaultEngine: process.env.VAULT_ENGINE,
-        mockErc20Token: process.env.MOCK_ERC20_TOKEN,
+        erc20: process.env.USD,
       });
       contracts.ftso = temp;
       break;
@@ -103,7 +103,7 @@ async function main() {
   if (process.env.DEPLOY_FTSO === "true") {
     console.info("Deploying Mock FTSO");
     const deployed = await mock.deployMockFtso();
-    ftso = deployed!.ftso.address;
+    ftso = deployed!.ftso?.address;
   } else {
     console.info("Skipping Deploying FTSO");
     ftso = contracts.ftso.address;
@@ -113,15 +113,16 @@ async function main() {
   console.info("Deploying Auctioneer");
   await probity.deployAuctioneer();
 
+  const category = 0; // category for underlying assets is 0
   await execute(
-    contracts.vaultEngine.initAsset(assetId, { gasLimit: 300000 }),
+    contracts.vaultEngine.initAsset(assetId, category, { gasLimit: 300000 }),
     "Initializing Asset on VaultEngine"
   );
 
   await execute(
     contracts.teller.initAsset(
       assetId,
-      ethers.utils.parseEther(process.env.LIQUIDATION_RATIO!),
+      ethers.utils.parseEther(process.env.PROTOCOL_FEE!),
       { gasLimit: 300000 }
     ),
     "Initializing Asset on teller"

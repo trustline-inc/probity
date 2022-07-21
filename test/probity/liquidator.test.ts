@@ -445,10 +445,10 @@ describe("Liquidator Unit Tests", function () {
     it("tests that removeStablecoin is called when liquidating Equity position", async () => {
       const EXPECTED_DIFF = EQUITY.mul(RAY);
 
-      const before = await vaultEngine.balance(treasury.address);
+      const before = await vaultEngine.systemCurrency(treasury.address);
       await liquidator.liquidateVault(ASSET_ID.FLR, user.address);
 
-      const after = await vaultEngine.balance(treasury.address);
+      const after = await vaultEngine.systemCurrency(treasury.address);
       expect(before.sub(after)).to.equal(EXPECTED_DIFF);
     });
   });

@@ -43,16 +43,16 @@ describe("VP AssetManager  Unit Test", function () {
     const { contracts, signers } = await deployTest();
 
     // Set contracts
-    vaultEngine = contracts.vaultEngine;
-    registry = contracts.registry;
-    vpAssetManager = contracts.vpAssetManager;
-    mockFtsoManager = contracts.ftsoManager;
-    mockFtsoRewardManager = contracts.ftsoRewardManager;
-    mockVpToken = contracts.mockVpToken;
+    vaultEngine = contracts.vaultEngine!;
+    registry = contracts.registry!;
+    vpAssetManager = contracts.vpAssetManager!;
+    mockFtsoManager = contracts.ftsoManager!;
+    mockFtsoRewardManager = contracts.ftsoRewardManager!;
+    mockVpToken = contracts.mockVpToken!;
 
-    owner = signers.owner;
-    user = signers.alice;
-    gov = signers.bob;
+    owner = signers.owner!;
+    user = signers.alice!;
+    gov = signers.bob!;
 
     await registry.setupAddress(bytes32("gov"), gov.address, true);
     await registry
