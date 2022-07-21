@@ -425,7 +425,7 @@ contract VaultEngine is Stateful, Eventful {
     ) internal {
         require(
             assets[assetId].category == Category.UNDERLYING || assets[assetId].category == Category.BOTH,
-            "Vault/modifyDebt: Asset not allowed as underlying"
+            "Vault/modifyEquity: Asset not allowed as underlying"
         );
         require(registry.checkRole("treasury", treasuryAddress), "Vault/modifyEquity: Treasury address is not valid");
 
