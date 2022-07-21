@@ -178,7 +178,7 @@ yarn run getSystemInfo <network>
 
 ### Fiat Tokens
 
-The system admin (AKA "governance address") is able to issue fiat tokens for lending in Probity.
+The system admin (AKA "governance address") is able to issue fiat tokens for lending in Probity when using `VaultEngineIssuer`.
 
 ```
 yarn run issuance <network>
