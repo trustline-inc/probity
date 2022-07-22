@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 contract MockVaultEngine {
     struct Vault {
-        uint256 standby; // Assets that are on standby
+        uint256 standbyAmount; // Asset amount on standby
         uint256 underlying; // Amount covering an equity position
         uint256 collateral; // Amount covering a debt position
         uint256 debt; // Vault debt balance
@@ -168,7 +168,7 @@ contract MockVaultEngine {
         uint256 initialEquity
     ) external {
         Vault storage vault = vaults[assetId][user];
-        vault.standby = standbyAmount;
+        vault.standbyAmount = standbyAmount;
         vault.underlying = underlyingAmount;
         vault.collateral = collateralAmount;
         vault.debt = debt;
@@ -230,12 +230,12 @@ contract MockVaultEngine {
     }
 
     function moveAsset(
-        bytes32 collateral,
+        bytes32 assetId,
         address from,
         address to,
         uint256 amount
     ) external {
-        vaults[collateral][from].standby -= amount;
-        vaults[collateral][to].standby += amount;
+        vaults[assetId][from].standbyAmount -= amount;
+        vaults[assetId][to].standbyAmount += amount;
     }
 }

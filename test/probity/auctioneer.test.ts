@@ -602,7 +602,9 @@ describe("Auctioneer Unit Tests", function () {
       await auctioneer.buyItNow(0, RAY.mul(12).div(10), EXPECTED_LOT_SIZE);
 
       const after = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
-      expect(before.standby.add(after.standby)).to.equal(EXPECTED_LOT_SIZE);
+      expect(before.standbyAmount.add(after.standbyAmount)).to.equal(
+        EXPECTED_LOT_SIZE
+      );
     });
 
     it("tests that if there are extra lot when auction ended, it will be returned to owner", async () => {
@@ -610,12 +612,12 @@ describe("Auctioneer Unit Tests", function () {
       await priceCalc.setPrice(PRICE_TO_SET);
 
       const before = await vaultEngine.vaults(ASSET_ID.FLR, user1.address);
-      expect(before.standby).to.equal(0);
+      expect(before.standbyAmount).to.equal(0);
 
       await auctioneer.buyItNow(0, PRICE_TO_SET.mul(2), LOT_SIZE);
 
       const after = await vaultEngine.vaults(ASSET_ID.FLR, user1.address);
-      expect(after.standby).to.not.equal(0);
+      expect(after.standbyAmount).to.not.equal(0);
     });
 
     it("tests that bids will be modified for existing bidder if buyItNow purchases a portion of it", async () => {
@@ -657,12 +659,12 @@ describe("Auctioneer Unit Tests", function () {
       await priceCalc.setPrice(RAY);
 
       const before = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
-      expect(before.standby).to.equal(0);
+      expect(before.standbyAmount).to.equal(0);
 
       await auctioneer.buyItNow(0, RAY.mul(11).div(10), LOT_SIZE);
 
       const after = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
-      expect(after.standby).to.equal(LOT_SIZE.div(4).mul(3));
+      expect(after.standbyAmount).to.equal(LOT_SIZE.div(4).mul(3));
     });
 
     it("tests auctionDebt is not reduced when sellAllLot Flag is on", async () => {
@@ -840,7 +842,9 @@ describe("Auctioneer Unit Tests", function () {
       await auctioneer.finalizeSale(0);
 
       const after = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
-      expect(before.standby.add(after.standby)).to.equal(EXPECTED_LOT_SIZE);
+      expect(before.standbyAmount.add(after.standbyAmount)).to.equal(
+        EXPECTED_LOT_SIZE
+      );
     });
 
     it("tests that it values are updated correctly", async () => {
@@ -1137,7 +1141,7 @@ describe("Auctioneer Unit Tests", function () {
       await auctioneer.cancelAuction(0, owner.address);
 
       const after = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
-      expect(before.standby.add(after.standby)).to.equal(LOT_SIZE);
+      expect(before.standbyAmount.add(after.standbyAmount)).to.equal(LOT_SIZE);
     });
 
     it("tests that all the bids are cancelled", async () => {

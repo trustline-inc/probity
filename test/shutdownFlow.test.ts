@@ -583,9 +583,11 @@ describe("Shutdown Flow Test", function () {
     );
 
     // Redeem collateral
-    let before = (await vaultEngine.vaults(ASSET_ID.FLR, bob.address)).standby;
+    let before = (await vaultEngine.vaults(ASSET_ID.FLR, bob.address))
+      .standbyAmount;
     await shutdown.connect(bob).redeemAsset(ASSET_ID.FLR);
-    let after = (await vaultEngine.vaults(ASSET_ID.FLR, bob.address)).standby;
+    let after = (await vaultEngine.vaults(ASSET_ID.FLR, bob.address))
+      .standbyAmount;
     // Redemption ratio * stablecoin returned
     // 0.0446601941 * 66500 = 2969.90290765
     const EXPECTED_FLR_COLL_REDEEMED = WAD.mul(296990290765).div(1e8);
@@ -594,9 +596,11 @@ describe("Shutdown Flow Test", function () {
       after.sub(before).sub(EXPECTED_FLR_COLL_REDEEMED).lte(WAD.div(100))
     ).to.equal(true);
 
-    before = (await vaultEngine.vaults(ASSET_ID["FXRP"], bob.address)).standby;
+    before = (await vaultEngine.vaults(ASSET_ID["FXRP"], bob.address))
+      .standbyAmount;
     await shutdown.connect(bob).redeemAsset(ASSET_ID["FXRP"]);
-    after = (await vaultEngine.vaults(ASSET_ID["FXRP"], bob.address)).standby;
+    after = (await vaultEngine.vaults(ASSET_ID["FXRP"], bob.address))
+      .standbyAmount;
 
     // Redemption ratio * stablecoins returned
     // 0.9425959091 * 66500 = 62682.6279552
@@ -1134,9 +1138,11 @@ describe("Shutdown Flow Test", function () {
     expect(await vaultEngine.systemCurrency(bob.address)).to.equal(0);
 
     // redeem collateral
-    let before = (await vaultEngine.vaults(ASSET_ID.FLR, bob.address)).standby;
+    let before = (await vaultEngine.vaults(ASSET_ID.FLR, bob.address))
+      .standbyAmount;
     await shutdown.connect(bob).redeemAsset(ASSET_ID.FLR);
-    let after = (await vaultEngine.vaults(ASSET_ID.FLR, bob.address)).standby;
+    let after = (await vaultEngine.vaults(ASSET_ID.FLR, bob.address))
+      .standbyAmount;
     // bob["AUR"] balance: 1099000
     //["AUR"] balance * flr Redeemed Asset
     // 1099000 * 0.00264924679 = 2911.52222221
@@ -1145,9 +1151,11 @@ describe("Shutdown Flow Test", function () {
       after.sub(before).sub(EXPECTED_FLR_COLL_REDEEMED).abs().lte(WAD.div(100))
     ).to.equal(true);
 
-    before = (await vaultEngine.vaults(ASSET_ID["FXRP"], bob.address)).standby;
+    before = (await vaultEngine.vaults(ASSET_ID["FXRP"], bob.address))
+      .standbyAmount;
     await shutdown.connect(bob).redeemAsset(ASSET_ID["FXRP"]);
-    after = (await vaultEngine.vaults(ASSET_ID["FXRP"], bob.address)).standby;
+    after = (await vaultEngine.vaults(ASSET_ID["FXRP"], bob.address))
+      .standbyAmount;
     // bob["USD"] balance: 1099000
     //["USD"] balance * flr Redeemed Asset
     // 1099000 * 0.333000333 = 365967.365967

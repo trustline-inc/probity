@@ -109,31 +109,43 @@ describe("Probity happy flow", function () {
 
     // Balances before native token deposit
     let balance0 = await ethers.provider.getBalance(owner.address);
-    let [standby0] = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
+    let [standbyAmount0] = await vaultEngine.vaults(
+      ASSET_ID.FLR,
+      owner.address
+    );
 
     // Deposit native token (FLR)
     await flrAssetManager.deposit({ value: STANDBY_AMOUNT });
 
     // Balances after native token deposit
     let balance1 = await ethers.provider.getBalance(owner.address);
-    let [standby1] = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
+    let [standbyAmount1] = await vaultEngine.vaults(
+      ASSET_ID.FLR,
+      owner.address
+    );
 
     expect(balance0.sub(balance1) >= STANDBY_AMOUNT).to.equal(true);
-    expect(standby1.sub(standby0)).to.equal(STANDBY_AMOUNT);
+    expect(standbyAmount1.sub(standbyAmount0)).to.equal(STANDBY_AMOUNT);
 
     // Balances before native token withdrawal
     let balance2 = await ethers.provider.getBalance(owner.address);
-    let [standby2] = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
+    let [standbyAmount2] = await vaultEngine.vaults(
+      ASSET_ID.FLR,
+      owner.address
+    );
 
     // Withdraw native token (FLR)
     await flrAssetManager.withdraw(WITHDRAW_AMOUNT);
 
     // Balances after native token withdrawal
     let balance3 = await ethers.provider.getBalance(owner.address);
-    let [standby3] = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
+    let [standbyAmount3] = await vaultEngine.vaults(
+      ASSET_ID.FLR,
+      owner.address
+    );
 
     expect(balance2.sub(balance3) < WITHDRAW_AMOUNT).to.equal(true);
-    expect(standby2.sub(standby3)).to.equal(WITHDRAW_AMOUNT);
+    expect(standbyAmount2.sub(standbyAmount3)).to.equal(WITHDRAW_AMOUNT);
   });
 
   it("deposits and withdraws ERC20 token to/from wallet", async () => {
@@ -145,31 +157,43 @@ describe("Probity happy flow", function () {
 
     // Balances before ERC20 token deposit
     let balance0 = await erc20.balanceOf(owner.address);
-    let [standby0] = await vaultEngine.vaults(ASSET_ID["FXRP"], owner.address);
+    let [standbyAmount0] = await vaultEngine.vaults(
+      ASSET_ID["FXRP"],
+      owner.address
+    );
 
     // Deposit ERC20 token (FXRP)
     await mockErc20AssetManager.deposit(STANDBY_AMOUNT);
 
     // Balances after ERC20 token deposit
     let balance1 = await erc20.balanceOf(owner.address);
-    let [standby1] = await vaultEngine.vaults(ASSET_ID["FXRP"], owner.address);
+    let [standbyAmount1] = await vaultEngine.vaults(
+      ASSET_ID["FXRP"],
+      owner.address
+    );
 
     expect(balance0.sub(balance1)).to.equal(STANDBY_AMOUNT);
-    expect(standby1.sub(standby0)).to.equal(STANDBY_AMOUNT);
+    expect(standbyAmount1.sub(standbyAmount0)).to.equal(STANDBY_AMOUNT);
 
     // Balances before ERC20 token deposit
     let balance2 = await erc20.balanceOf(owner.address);
-    let [standby2] = await vaultEngine.vaults(ASSET_ID["FXRP"], owner.address);
+    let [standbyAmount2] = await vaultEngine.vaults(
+      ASSET_ID["FXRP"],
+      owner.address
+    );
 
     // Withdraw ERC20 token (FXRP)
     await mockErc20AssetManager.withdraw(WITHDRAW_AMOUNT);
 
     // Balances after ERC20 token deposit
     let balance3 = await erc20.balanceOf(owner.address);
-    let [standby3] = await vaultEngine.vaults(ASSET_ID["FXRP"], owner.address);
+    let [standbyAmount3] = await vaultEngine.vaults(
+      ASSET_ID["FXRP"],
+      owner.address
+    );
 
     expect(balance3.sub(balance2)).to.equal(WITHDRAW_AMOUNT);
-    expect(standby2.sub(standby3)).to.equal(WITHDRAW_AMOUNT);
+    expect(standbyAmount2.sub(standbyAmount3)).to.equal(WITHDRAW_AMOUNT);
   });
 
   it("increases equity, increases debt, and allows stablecoin withdrawal", async () => {
@@ -210,10 +234,8 @@ describe("Probity happy flow", function () {
     expect(equity1.sub(equity0)).to.equal(EQUITY_AMOUNT);
 
     // Get balances before taking out a loan
-    let [standby0, , collateral0, debt0] = await vaultEngine.vaults(
-      ASSET_ID.FLR,
-      owner.address
-    );
+    let [standbyAmount0, , collateralAmount0, debtAmount0] =
+      await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
     let stablecoin0 = await vaultEngine.systemCurrency(owner.address);
 
     // Take out a loan
@@ -227,13 +249,11 @@ describe("Probity happy flow", function () {
     // Expect stablecoin and vault balances to be updated
     let stablecoin1 = await vaultEngine.systemCurrency(owner.address);
     expect(stablecoin1.sub(stablecoin0)).to.equal(LOAN_AMOUNT.mul(RAY));
-    let [standby1, , collateral1, debt1] = await vaultEngine.vaults(
-      ASSET_ID.FLR,
-      owner.address
-    );
-    expect(standby0.sub(standby1)).to.equal(COLL_AMOUNT);
-    expect(collateral1.sub(collateral0)).to.equal(COLL_AMOUNT);
-    expect(debt1.sub(debt0)).to.equal(LOAN_AMOUNT);
+    let [standbyAmount1, , collateralAmount1, debtAmount1] =
+      await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
+    expect(standbyAmount0.sub(standbyAmount1)).to.equal(COLL_AMOUNT);
+    expect(collateralAmount1.sub(collateralAmount0)).to.equal(COLL_AMOUNT);
+    expect(debtAmount1.sub(debtAmount0)).to.equal(LOAN_AMOUNT);
 
     // Withdraw stablecoins from vault to ERC20 tokens
     let balance0 = await usd.balanceOf(owner.address);
@@ -267,7 +287,7 @@ describe("Probity happy flow", function () {
       EQUITY_AMOUNT
     );
 
-    let [standby0, , , debt0] = await vaultEngine.vaults(
+    let [standbyAmount0, , , debtAmount0] = await vaultEngine.vaults(
       ASSET_ID.FLR,
       owner.address
     );
@@ -283,14 +303,14 @@ describe("Probity happy flow", function () {
 
     let stablecoin1 = await vaultEngine.systemCurrency(owner.address);
     expect(stablecoin1.sub(stablecoin0)).to.equal(LOAN_AMOUNT.mul(RAY));
-    let [standby1, , , debt1] = await vaultEngine.vaults(
+    let [standbyAmount1, , , debt1] = await vaultEngine.vaults(
       ASSET_ID.FLR,
       owner.address
     );
-    expect(standby0.sub(standby1)).to.equal(COLL_AMOUNT);
-    expect(debt1.sub(debt0)).to.equal(LOAN_AMOUNT);
+    expect(standbyAmount0.sub(standbyAmount1)).to.equal(COLL_AMOUNT);
+    expect(debt1.sub(debtAmount0)).to.equal(LOAN_AMOUNT);
 
-    let [standby2, , , debt2] = await vaultEngine.vaults(
+    let [standbyAmount2, , , debtAmount2] = await vaultEngine.vaults(
       ASSET_ID.FLR,
       owner.address
     );
@@ -308,12 +328,12 @@ describe("Probity happy flow", function () {
     expect(stablecoin3.sub(stablecoin2)).to.equal(
       LOAN_REPAY_DEBT_AMOUNT.mul(RAY)
     );
-    let [standby3, , , debt3] = await vaultEngine.vaults(
+    let [standbyAmount3, , , debtAmount3] = await vaultEngine.vaults(
       ASSET_ID.FLR,
       owner.address
     );
-    expect(standby2.sub(standby3)).to.equal(LOAN_REPAY_COLL_AMOUNT);
-    expect(debt3.sub(debt2)).to.equal(LOAN_REPAY_DEBT_AMOUNT);
+    expect(standbyAmount2.sub(standbyAmount3)).to.equal(LOAN_REPAY_COLL_AMOUNT);
+    expect(debtAmount3.sub(debtAmount2)).to.equal(LOAN_REPAY_DEBT_AMOUNT);
   });
 
   it("allows underlying asset redemption", async () => {
@@ -332,10 +352,8 @@ describe("Probity happy flow", function () {
     await priceFeed.updateAdjustedPrice(ASSET_ID.FLR);
 
     // Get balances before increasing equity
-    let [standby0, underlying0, , , equity0] = await vaultEngine.vaults(
-      ASSET_ID.FLR,
-      owner.address
-    );
+    let [standbyAmount0, underlyingAmount0, , , equity0] =
+      await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
 
     // Increase equity
     await vaultEngine.modifyEquity(
@@ -352,8 +370,8 @@ describe("Probity happy flow", function () {
     );
 
     // Expect balances to be updated
-    expect(standby0.sub(standby1)).to.equal(UNDERLYING_AMOUNT);
-    expect(underlying1.sub(underlying0)).to.equal(UNDERLYING_AMOUNT);
+    expect(standbyAmount0.sub(standby1)).to.equal(UNDERLYING_AMOUNT);
+    expect(underlying1.sub(underlyingAmount0)).to.equal(UNDERLYING_AMOUNT);
     expect(equity1.sub(equity0)).to.equal(EQUITY_AMOUNT);
 
     // Redeem underlying assets

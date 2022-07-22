@@ -94,7 +94,7 @@ describe("Vault Engine Limited Unit Tests", function () {
 
       await vaultEngine
         .connect(coll)
-        .modifyStandbyAsset(
+        .modifyStandbyAmount(
           ASSET_ID.FLR,
           owner.address,
           COLL_AMOUNT.add(UNDERLYING_AMOUNT)
@@ -133,7 +133,7 @@ describe("Vault Engine Limited Unit Tests", function () {
 
       await vaultEngine
         .connect(coll)
-        .modifyStandbyAsset(
+        .modifyStandbyAmount(
           ASSET_ID.FLR,
           owner.address,
           COLL_AMOUNT.add(UNDERLYING_AMOUNT)

@@ -12,14 +12,20 @@ const amount = RAD.mul(1_000_000);
 
 (async () => {
   let [owner] = await ethers.getSigners();
-  const VaultEngineABI = await artifacts.readArtifact("VaultEngine");
+  const VaultEngineIssuerABI = await artifacts.readArtifact(
+    "VaultEngineIssuer"
+  );
   const vaultEngine = new Contract(
     process.env.VAULT_ENGINE!,
-    VaultEngineABI.abi,
+    VaultEngineIssuerABI.abi,
     owner
   );
 
-  console.log("Issuing USD...");
+  console.log("Issuing USD...", {
+    account,
+    amount: amount.toString(),
+    vaultEngine: vaultEngine.address,
+  });
 
   try {
     // Use callStatic to check for errors

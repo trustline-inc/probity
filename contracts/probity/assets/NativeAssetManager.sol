@@ -5,8 +5,8 @@ pragma solidity ^0.8.0;
 import "../../dependencies/Stateful.sol";
 
 interface VaultEngineLike {
-    function modifyStandbyAsset(
-        bytes32 collateral,
+    function modifyStandbyAmount(
+        bytes32 assetId,
         address user,
         int256 amount
     ) external;
@@ -42,12 +42,12 @@ contract NativeAssetManager is Stateful {
     // External Functions
     /////////////////////////////////////////
     function deposit() external payable onlyWhen("paused", false) onlyBy("whitelisted") {
-        vaultEngine.modifyStandbyAsset(assetId, msg.sender, int256(msg.value));
+        vaultEngine.modifyStandbyAmount(assetId, msg.sender, int256(msg.value));
         emit DepositNativeCrypto(msg.sender, msg.value);
     }
 
     function withdraw(uint256 amount) external onlyWhen("paused", false) {
-        vaultEngine.modifyStandbyAsset(assetId, msg.sender, -int256(amount));
+        vaultEngine.modifyStandbyAmount(assetId, msg.sender, -int256(amount));
         require(payable(msg.sender).send(amount), "NativeAssetManager/withdraw: fail to send FLR");
         emit WithdrawNativeCrypto(msg.sender, amount);
     }

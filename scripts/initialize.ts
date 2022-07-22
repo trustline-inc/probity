@@ -44,6 +44,9 @@ const init = async () => {
   const VaultEngineLimitedABI = await artifacts.readArtifact(
     "VaultEngineLimited"
   );
+  const VaultEngineIssuerABI = await artifacts.readArtifact(
+    "VaultEngineIssuer"
+  );
 
   // Contracts
   const registry = new ethers.Contract(

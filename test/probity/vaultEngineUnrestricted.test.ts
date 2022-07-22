@@ -79,7 +79,7 @@ describe("Vault Engine Unrestricted Unit Tests", function () {
         .updateAdjustedPrice(ASSET_ID.FLR, RAY.mul(1));
       await vaultEngine
         .connect(assetManager)
-        .modifyStandbyAsset(ASSET_ID.FLR, owner.address, STANDBY_AMOUNT);
+        .modifyStandbyAmount(ASSET_ID.FLR, owner.address, STANDBY_AMOUNT);
     });
 
     it("tests that non whitelisted user can call modifyEquity", async () => {
@@ -120,7 +120,11 @@ describe("Vault Engine Unrestricted Unit Tests", function () {
         .updateAdjustedPrice(ASSET_ID.FLR, RAY.mul(1));
       await vaultEngine
         .connect(assetManager)
-        .modifyStandbyAsset(ASSET_ID.FLR, owner.address, STANDBY_AMOUNT.mul(2));
+        .modifyStandbyAmount(
+          ASSET_ID.FLR,
+          owner.address,
+          STANDBY_AMOUNT.mul(2)
+        );
 
       await vaultEngine.modifyEquity(
         ASSET_ID.FLR,

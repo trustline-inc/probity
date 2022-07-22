@@ -1103,7 +1103,9 @@ describe("Shutdown Unit Tests", function () {
       await shutdown.redeemAsset(ASSET_ID.FLR);
       const after = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
 
-      expect(after.standby.sub(before.standby)).to.equal(DEBT_TO_SET);
+      expect(after.standbyAmount.sub(before.standbyAmount)).to.equal(
+        DEBT_TO_SET
+      );
     });
   });
 

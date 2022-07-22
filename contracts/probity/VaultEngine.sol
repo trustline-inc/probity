@@ -17,8 +17,19 @@ contract VaultEngine is Stateful, Eventful {
     /////////////////////////////////////////
     // Type Declarations
     /////////////////////////////////////////
+    struct Asset {
+        uint256 debtAccumulator; // Cumulative debt rate
+        uint256 equityAccumulator; // Cumulative equity rate
+        uint256 adjustedPrice; // The asset price, adjusted for the asset liquidation ratio
+        uint256 normDebt; // Normalized debt amount
+        uint256 normEquity; // Normalized equity amount
+        uint256 ceiling; // Max. amount of asset that can be active in a position
+        uint256 floor; // Min. amount of asset that must be active to open a position
+        Category category; // Type of asset (underlying or collateral)
+    }
+
     struct Vault {
-        uint256 standby; // Assets that are on standby
+        uint256 standbyAmount; // Asset amount on standby
         uint256 underlying; // Amount covering an equity position
         uint256 collateral; // Amount covering a debt position
         uint256 debt; // Vault debt balance
@@ -30,17 +41,6 @@ contract VaultEngine is Stateful, Eventful {
         UNDERLYING,
         COLLATERAL,
         BOTH
-    }
-
-    struct Asset {
-        uint256 debtAccumulator; // Cumulative debt rate
-        uint256 equityAccumulator; // Cumulative equity rate
-        uint256 adjustedPrice; // The asset price, adjusted for the asset liquidation ratio
-        uint256 normDebt; // Normalized debt amount
-        uint256 normEquity; // Normalized equity amount
-        uint256 ceiling; // Max. amount of asset that can be active in a position
-        uint256 floor; // Min. amount of asset that must be active to open a position
-        Category category; // Type of asset (underlying or collateral)
     }
 
     /////////////////////////////////////////
@@ -120,33 +120,33 @@ contract VaultEngine is Stateful, Eventful {
 
     /**
      * @dev Modifies a vault's standby asset balance.
-     * @param asset The asset ID
+     * @param assetId The asset ID
      * @param account The address of the vault owner
      * @param amount The amount of asset to modify
      */
-    function modifyStandbyAsset(
-        bytes32 asset,
+    function modifyStandbyAmount(
+        bytes32 assetId,
         address account,
         int256 amount
     ) external onlyByProbity {
-        vaults[asset][account].standby = Math._add(vaults[asset][account].standby, amount);
+        vaults[assetId][account].standbyAmount = Math._add(vaults[assetId][account].standbyAmount, amount);
     }
 
     /**
      * @dev Moves asset between vaults.
-     * @param asset The asset ID
+     * @param assetId The asset ID
      * @param from The address of the originating vault owner
      * @param to The address of the beneficiary vault owner
      * @param amount The amount of asset to move
      */
     function moveAsset(
-        bytes32 asset,
+        bytes32 assetId,
         address from,
         address to,
         uint256 amount
     ) external onlyByProbity {
-        vaults[asset][from].standby -= amount;
-        vaults[asset][to].standby += amount;
+        vaults[assetId][from].standbyAmount -= amount;
+        vaults[assetId][to].standbyAmount += amount;
     }
 
     /**
@@ -269,7 +269,10 @@ contract VaultEngine is Stateful, Eventful {
         // Auction off collateral expecting to raise at least fundraiseTarget amount
         int256 fundraiseTarget = Math._mul(asset.debtAccumulator, debtAmount);
         lendingPoolDebt = Math._add(lendingPoolDebt, fundraiseTarget);
-        vaults[assetId][auctioneer].standby = Math._sub(vaults[assetId][auctioneer].standby, collateralAmount);
+        vaults[assetId][auctioneer].standbyAmount = Math._sub(
+            vaults[assetId][auctioneer].standbyAmount,
+            collateralAmount
+        );
 
         // Assign the vault debt to the reservePool
         systemDebt[reservePool] = Math._sub(systemDebt[reservePool], fundraiseTarget);
@@ -301,12 +304,15 @@ contract VaultEngine is Stateful, Eventful {
         Asset storage asset = assets[assetId];
 
         vault.underlying = Math._add(vault.underlying, assetToReturn);
-        vault.standby = Math._sub(vault.standby, assetToReturn);
+        vault.standbyAmount = Math._sub(vault.standbyAmount, assetToReturn);
         vault.equity = Math._add(vault.equity, equityAmount);
         vault.initialEquity = Math._add(vault.initialEquity, initialEquityAmount);
         asset.normEquity = Math._add(asset.normEquity, equityAmount);
 
-        vaults[assetId][auctioneer].standby = Math._sub(vaults[assetId][auctioneer].standby, assetToAuction);
+        vaults[assetId][auctioneer].standbyAmount = Math._sub(
+            vaults[assetId][auctioneer].standbyAmount,
+            assetToAuction
+        );
         lendingPoolEquity = Math._add(lendingPoolEquity, Math._mul(RAY, equityAmount));
 
         emit EquityLiquidated(account, assetToAuction, assetToReturn, equityAmount);
@@ -375,8 +381,10 @@ contract VaultEngine is Stateful, Eventful {
     /**
      * @dev Updates cumulative indices for the specified asset type
      * @param assetId The asset type ID
+     * @param reservePool The address of the reserve pool
      * @param debtRateIncrease The new rate to increase for debt
      * @param equityRateIncrease The new rate to increase for equity
+     * @param protocolFeeRates The new protocol fee rates
      */
     function updateAccumulators(
         bytes32 assetId,
@@ -389,17 +397,17 @@ contract VaultEngine is Stateful, Eventful {
         emit LogVarUpdate("Vault", assetId, "equityAccumulator", assets[assetId].equityAccumulator, equityRateIncrease);
 
         Asset storage asset = assets[assetId];
-        uint256 newDebt = asset.normDebt * debtRateIncrease;
-        uint256 newEquity = asset.normEquity * equityRateIncrease;
+        // uint256 newDebt = asset.normDebt * debtRateIncrease;
+        // uint256 newEquity = asset.normEquity * equityRateIncrease;
 
         asset.debtAccumulator += debtRateIncrease;
         asset.equityAccumulator += equityRateIncrease;
 
         uint256 protocolFeeToCollect = asset.normEquity * protocolFeeRates;
-        require(
-            newEquity + protocolFeeToCollect <= newDebt,
-            "VaultEngine/updateAccumulators: The equity rate increase is larger than the debt rate increase"
-        );
+        // require(
+        //     newEquity + protocolFeeToCollect <= newDebt,
+        //     "VaultEngine/updateAccumulators: The equity rate increase is larger than the debt rate increase"
+        // );
         systemCurrency[reservePool] += protocolFeeToCollect;
     }
 
@@ -435,7 +443,7 @@ contract VaultEngine is Stateful, Eventful {
         }
 
         Vault storage vault = vaults[assetId][msg.sender];
-        vault.standby = Math._sub(vault.standby, underlyingAmount);
+        vault.standbyAmount = Math._sub(vault.standbyAmount, underlyingAmount);
         vault.underlying = Math._add(vault.underlying, underlyingAmount);
         int256 equityCreated = Math._mul(assets[assetId].equityAccumulator, equityAmount);
         vault.equity = Math._add(vault.equity, equityAmount);
@@ -482,7 +490,7 @@ contract VaultEngine is Stateful, Eventful {
         }
 
         Vault memory vault = vaults[assetId][msg.sender];
-        vault.standby = Math._sub(vault.standby, collAmount);
+        vault.standbyAmount = Math._sub(vault.standbyAmount, collAmount);
         vault.collateral = Math._add(vault.collateral, collAmount);
         int256 debtCreated = Math._mul(assets[assetId].debtAccumulator, debtAmount);
         vault.debt = Math._add(vault.debt, debtAmount);

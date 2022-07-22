@@ -12,27 +12,42 @@ const nativeToken = getNativeToken();
 (async () => {
   let [owner] = await ethers.getSigners();
   const TellerABI = await artifacts.readArtifact("Teller");
-  const teller = new Contract(process.env.TELLER, TellerABI.abi, owner);
+  const teller = new Contract(process.env.TELLER!, TellerABI.abi, owner);
 
   setInterval(async () => {
     console.log("Updating rates...");
 
+    // Update rates for native token & USD token
     try {
-      // Use callStatic to check for errors
+      // Use callStatic to check for errors before signing
       await teller.callStatic.updateAccumulators(
         web3.utils.keccak256(nativeToken),
         {
-          gasLimit: 400000,
+          gasLimit: 300000,
+          maxFeePerGas: 25 * 1e9,
         }
       );
-      const tx = await teller.updateAccumulators(
+      let tx = await teller.updateAccumulators(
         web3.utils.keccak256(nativeToken),
         {
-          gasLimit: 400000,
+          gasLimit: 300000,
+          maxFeePerGas: 25 * 1e9,
         }
       );
       console.log(tx);
-      const result = await tx.wait();
+      let result = await tx.wait();
+      console.log(result);
+
+      await teller.callStatic.updateAccumulators(web3.utils.keccak256("USD"), {
+        gasLimit: 300000,
+        maxFeePerGas: 25 * 1e9,
+      });
+      tx = await teller.updateAccumulators(web3.utils.keccak256("USD"), {
+        gasLimit: 300000,
+        maxFeePerGas: 25 * 1e9,
+      });
+      console.log(tx);
+      result = await tx.wait();
       console.log(result);
     } catch (error) {
       console.log(error);

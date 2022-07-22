@@ -409,4 +409,33 @@ describe("Teller Unit Tests", function () {
       expect(protocolRate).to.equal(EXPECTED_PROTOCOL_FEE_RATE);
     });
   });
+
+  it("T0-BE-NAMED-LATER", async () => {
+    // Test case for https://github.com/trustline-inc/probity/issues/345
+    const debtRateIncrease = ethers.BigNumber.from("0");
+    let equityRateIncrease = debtRateIncrease.add("0");
+    await assertRevert(
+      vaultEngine
+        .connect(user)
+        .updateAccumulators(
+          ASSET_ID.FLR,
+          reservePoolAddress,
+          debtRateIncrease,
+          equityRateIncrease,
+          ethers.BigNumber.from(0)
+        ),
+      "VaultEngine/updateAccumulators: The equity rate increase is larger than the debt rate increase"
+    );
+
+    equityRateIncrease = ethers.BigNumber.from("0");
+    await vaultEngine
+      .connect(user)
+      .updateAccumulators(
+        ASSET_ID.FLR,
+        reservePoolAddress,
+        debtRateIncrease,
+        equityRateIncrease,
+        ethers.BigNumber.from(0)
+      );
+  });
 });

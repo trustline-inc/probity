@@ -89,7 +89,7 @@ describe("Vault Engine Unit Tests", function () {
         .updateAdjustedPrice(ASSET_ID.FLR, RAY.mul(1));
       await vaultEngine
         .connect(assetManager)
-        .modifyStandbyAsset(ASSET_ID.FLR, owner.address, STANDBY_AMOUNT);
+        .modifyStandbyAmount(ASSET_ID.FLR, owner.address, STANDBY_AMOUNT);
     });
 
     it("fails if treasury address provided is not registered as treasury", async () => {
@@ -194,7 +194,7 @@ describe("Vault Engine Unit Tests", function () {
 
     it("updates balances when called with positive values", async () => {
       const before = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
-      expect(before.standby).to.equal(STANDBY_AMOUNT);
+      expect(before.standbyAmount).to.equal(STANDBY_AMOUNT);
       expect(before.underlying).to.equal(0);
       expect(before.collateral).to.equal(0);
       expect(before.debt).to.equal(0);
@@ -210,7 +210,7 @@ describe("Vault Engine Unit Tests", function () {
       );
 
       const after = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
-      expect(after.standby).to.equal(0);
+      expect(after.standbyAmount).to.equal(0);
       expect(after.underlying).to.equal(UNDERLYING_AMOUNT);
       expect(after.collateral).to.equal(0);
       expect(after.debt).to.equal(0);
@@ -258,7 +258,7 @@ describe("Vault Engine Unit Tests", function () {
 
       // Get balances before decreasing equity
       const before = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
-      expect(before.standby).to.equal(0);
+      expect(before.standbyAmount).to.equal(0);
       expect(before.underlying).to.equal(UNDERLYING_AMOUNT);
       expect(before.collateral).to.equal(0);
       expect(before.debt).to.equal(0);
@@ -275,7 +275,7 @@ describe("Vault Engine Unit Tests", function () {
 
       // Expect balances to be updated
       const after = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
-      expect(after.standby).to.equal(UNDERLYING_AMOUNT.div(2));
+      expect(after.standbyAmount).to.equal(UNDERLYING_AMOUNT.div(2));
       expect(after.underlying).to.equal(UNDERLYING_AMOUNT.div(2));
       expect(after.collateral).to.equal(0);
       expect(after.debt).to.equal(0);
@@ -293,7 +293,7 @@ describe("Vault Engine Unit Tests", function () {
       // Add more standby FLR to wallet (20,000 total)
       await vaultEngine
         .connect(assetManager)
-        .modifyStandbyAsset(ASSET_ID.FLR, owner.address, STANDBY_AMOUNT);
+        .modifyStandbyAmount(ASSET_ID.FLR, owner.address, STANDBY_AMOUNT);
 
       // Increase equity (underlying = 10,000, equity = 2000)
       await vaultEngine.modifyEquity(
@@ -327,7 +327,7 @@ describe("Vault Engine Unit Tests", function () {
 
       // Expect balances to be updated
       const before = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
-      expect(before.standby).to.equal(STANDBY_AMOUNT.div(2));
+      expect(before.standbyAmount).to.equal(STANDBY_AMOUNT.div(2));
       expect(before.underlying).to.equal(UNDERLYING_AMOUNT);
       expect(before.collateral).to.equal(COLLATERAL_AMOUNT);
       expect(before.debt).to.equal(DEBT_AMOUNT);
@@ -344,7 +344,7 @@ describe("Vault Engine Unit Tests", function () {
 
       // Expect balances to be updated
       const after = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
-      expect(after.standby).to.equal(0);
+      expect(after.standbyAmount).to.equal(0);
       expect(after.underlying).to.equal(UNDERLYING_AMOUNT.mul(3).div(2));
       expect(after.collateral).to.equal(COLLATERAL_AMOUNT);
       expect(after.debt).to.equal(DEBT_AMOUNT);
@@ -530,7 +530,7 @@ describe("Vault Engine Unit Tests", function () {
 
       await vaultEngine
         .connect(assetManager)
-        .modifyStandbyAsset(ASSET_ID.FLR, owner.address, ASSET_AMOUNT.mul(2));
+        .modifyStandbyAmount(ASSET_ID.FLR, owner.address, ASSET_AMOUNT.mul(2));
 
       await vaultEngine
         .connect(owner)
@@ -620,11 +620,11 @@ describe("Vault Engine Unit Tests", function () {
 
       await vaultEngine
         .connect(assetManager)
-        .modifyStandbyAsset(ASSET_ID.FLR, owner.address, ASSET_AMOUNT);
+        .modifyStandbyAmount(ASSET_ID.FLR, owner.address, ASSET_AMOUNT);
 
       await vaultEngine
         .connect(assetManager)
-        .modifyStandbyAsset(ASSET_ID.FLR, user.address, ASSET_AMOUNT);
+        .modifyStandbyAmount(ASSET_ID.FLR, user.address, ASSET_AMOUNT);
 
       await vaultEngine
         .connect(user)
@@ -681,11 +681,11 @@ describe("Vault Engine Unit Tests", function () {
 
       await vaultEngine
         .connect(assetManager)
-        .modifyStandbyAsset(ASSET_ID.FLR, owner.address, ASSET_AMOUNT);
+        .modifyStandbyAmount(ASSET_ID.FLR, owner.address, ASSET_AMOUNT);
 
       await vaultEngine
         .connect(assetManager)
-        .modifyStandbyAsset(ASSET_ID.FLR, user.address, ASSET_AMOUNT);
+        .modifyStandbyAmount(ASSET_ID.FLR, user.address, ASSET_AMOUNT);
 
       await vaultEngine
         .connect(user)
@@ -817,7 +817,7 @@ describe("Vault Engine Unit Tests", function () {
 
     it("updates balances when called with positive values", async () => {
       const before = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
-      expect(before.standby).to.equal(COLLATERAL_AMOUNT);
+      expect(before.standbyAmount).to.equal(COLLATERAL_AMOUNT);
       expect(before.collateral).to.equal(0);
       expect(before.debt).to.equal(0);
       expect(before.equity).to.equal(0);
@@ -831,7 +831,7 @@ describe("Vault Engine Unit Tests", function () {
       );
 
       const after = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
-      expect(after.standby).to.equal(COLLATERAL_AMOUNT.sub(ASSET_AMOUNT));
+      expect(after.standbyAmount).to.equal(COLLATERAL_AMOUNT.sub(ASSET_AMOUNT));
       expect(after.collateral).to.equal(ASSET_AMOUNT);
       expect(after.debt).to.equal(DEBT_AMOUNT);
       expect(after.equity).to.equal(0);
@@ -873,7 +873,9 @@ describe("Vault Engine Unit Tests", function () {
       );
 
       const before = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
-      expect(before.standby).to.equal(COLLATERAL_AMOUNT.sub(ASSET_AMOUNT));
+      expect(before.standbyAmount).to.equal(
+        COLLATERAL_AMOUNT.sub(ASSET_AMOUNT)
+      );
       expect(before.collateral).to.equal(ASSET_AMOUNT);
       expect(before.debt).to.equal(DEBT_AMOUNT);
       expect(before.equity).to.equal(0);
@@ -887,7 +889,7 @@ describe("Vault Engine Unit Tests", function () {
       );
 
       const after = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
-      expect(after.standby).to.equal(
+      expect(after.standbyAmount).to.equal(
         COLLATERAL_AMOUNT.sub(ASSET_AMOUNT.div(2))
       );
       expect(after.collateral).to.equal(ASSET_AMOUNT.div(2));
@@ -925,7 +927,7 @@ describe("Vault Engine Unit Tests", function () {
 
       await vaultEngine
         .connect(assetManager)
-        .modifyStandbyAsset(ASSET_ID.FLR, owner.address, COLLATERAL_AMOUNT);
+        .modifyStandbyAmount(ASSET_ID.FLR, owner.address, COLLATERAL_AMOUNT);
 
       await vaultEngine.modifyDebt(
         ASSET_ID.FLR,
@@ -949,7 +951,7 @@ describe("Vault Engine Unit Tests", function () {
         );
 
       const before = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
-      expect(before.standby).to.equal(COLLATERAL_AMOUNT.mul(3).div(2));
+      expect(before.standbyAmount).to.equal(COLLATERAL_AMOUNT.mul(3).div(2));
       expect(before.collateral).to.equal(COLLATERAL_AMOUNT.div(2));
       expect(before.debt).to.equal(DEBT_AMOUNT);
       expect(before.equity).to.equal(0);
@@ -963,7 +965,7 @@ describe("Vault Engine Unit Tests", function () {
       );
 
       const after = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
-      expect(after.standby).to.equal(COLLATERAL_AMOUNT);
+      expect(after.standbyAmount).to.equal(COLLATERAL_AMOUNT);
       expect(after.collateral).to.equal(COLLATERAL_AMOUNT);
       expect(after.debt).to.equal(DEBT_AMOUNT.mul(3).div(2));
       expect(after.initialEquity).to.equal(0);
@@ -1036,11 +1038,11 @@ describe("Vault Engine Unit Tests", function () {
 
       await vaultEngine
         .connect(assetManager)
-        .modifyStandbyAsset(ASSET_ID.FLR, owner.address, COLL_AMOUNT);
+        .modifyStandbyAmount(ASSET_ID.FLR, owner.address, COLL_AMOUNT);
 
       await vaultEngine
         .connect(assetManager)
-        .modifyStandbyAsset(ASSET_ID.FLR, user.address, COLL_AMOUNT);
+        .modifyStandbyAmount(ASSET_ID.FLR, user.address, COLL_AMOUNT);
 
       await vaultEngine.modifyEquity(
         ASSET_ID.FLR,
@@ -1124,7 +1126,7 @@ describe("Vault Engine Unit Tests", function () {
         .setupAddress(bytes32("assetManager"), assetManager.address, true);
       await vaultEngine
         .connect(assetManager)
-        .modifyStandbyAsset(
+        .modifyStandbyAmount(
           ASSET_ID.FLR,
           owner.address,
           ASSET_AMOUNT.add(UNDERLYING_AMOUNT)
@@ -1215,7 +1217,7 @@ describe("Vault Engine Unit Tests", function () {
         .setupAddress(bytes32("assetManager"), assetManager.address, true);
       await vaultEngine
         .connect(assetManager)
-        .modifyStandbyAsset(
+        .modifyStandbyAmount(
           ASSET_ID.FLR,
           owner.address,
           ASSET_AMOUNT.add(UNDERLYING_AMOUNT)
