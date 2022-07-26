@@ -40,7 +40,7 @@ describe("Vault Engine Unrestricted Unit Tests", function () {
     let { contracts, signers } = await deployTest("unrestricted");
     // Set contracts
     registry = contracts.registry!;
-    vaultEngine = contracts.vaultEngineUnrestricted!;
+    vaultEngine = contracts.vaultEngine!;
     reservePool = contracts.reservePool!;
     nativeAssetManager = contracts.nativeAssetManager!;
     teller = contracts.teller!;

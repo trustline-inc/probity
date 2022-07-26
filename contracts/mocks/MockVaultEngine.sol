@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 pragma solidity ^0.8.0;
+import "hardhat/console.sol";
 
 contract MockVaultEngine {
     struct Vault {
@@ -138,14 +139,16 @@ contract MockVaultEngine {
     function updateAccumulators(
         bytes32 assetId,
         address reservePool,
-        uint256 debtAccumulator,
-        uint256 equityAccumulator,
+        uint256 debtRateIncrease,
+        uint256 equityRateIncrease,
         uint256 protocolFeeRates_
     ) external {
         Asset storage asset = assets[assetId];
-        asset.debtAccumulator += debtAccumulator;
-        asset.equityAccumulator += equityAccumulator;
+        asset.debtAccumulator += debtRateIncrease;
+        asset.equityAccumulator += equityRateIncrease;
         protocolFeeRates = protocolFeeRates_;
+        console.log("[vault]debtAccumulator: ", asset.debtAccumulator);
+        console.log("[vault]equityAccumulator: ", asset.equityAccumulator);
     }
 
     function updateNormValues(
@@ -167,6 +170,7 @@ contract MockVaultEngine {
         uint256 equity,
         uint256 initialEquity
     ) external {
+        console.log("updateVault==========================");
         Vault storage vault = vaults[assetId][user];
         vault.standbyAmount = standbyAmount;
         vault.underlying = underlyingAmount;
@@ -174,6 +178,12 @@ contract MockVaultEngine {
         vault.debt = debt;
         vault.equity = equity;
         vault.initialEquity = initialEquity;
+        Asset storage asset = assets[assetId];
+        // debt and equity params should be normalized already
+        asset.normDebt = asset.normDebt + debt;
+        asset.normEquity = asset.normEquity + equity;
+        console.log("[vault]normDebt:", asset.normDebt);
+        console.log("end updateVault==========================");
     }
 
     function setShutdownState() external {

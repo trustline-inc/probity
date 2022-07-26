@@ -1,24 +1,43 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import "@nomiclabs/hardhat-ethers";
 
-import { MockVaultEngine, Registry, Teller } from "../../typechain";
+import {
+  ERC20AssetManager,
+  MockVaultEngine,
+  Registry,
+  Teller,
+  Treasury,
+  USD,
+} from "../../typechain";
 
 import { deployTest, probity, mock } from "../../lib/deployer";
 import { ethers } from "hardhat";
 import * as chai from "chai";
-import { bytes32, RAD, WAD, RAY, ASSET_ID } from "../utils/constants";
+import {
+  bytes32,
+  RAD,
+  WAD,
+  RAY,
+  ASSET_ID,
+  APR_TO_MPR,
+} from "../utils/constants";
 import assertRevert from "../utils/assertRevert";
 import increaseTime from "../utils/increaseTime";
 import { rdiv, rmul, rpow, wdiv } from "../utils/math";
 import parseEvents from "../utils/parseEvents";
+import { BigNumber } from "ethers";
 const expect = chai.expect;
 
 // Wallets
 let owner: SignerWithAddress;
 let user: SignerWithAddress;
+let user2: SignerWithAddress;
 
 // Contracts
+let assetManager: ERC20AssetManager;
 let teller: Teller;
+let treasury: Treasury;
+let usd: USD;
 let vaultEngine: MockVaultEngine;
 let registry: Registry;
 let reservePoolAddress: string;
@@ -37,12 +56,26 @@ describe("Teller Unit Tests", function () {
     contracts = await probity.deployTeller({
       vaultEngine: contracts.mockVaultEngine?.address,
     });
+    contracts = await probity.deployTreasury({
+      vaultEngine: contracts.mockVaultEngine?.address,
+    });
+    contracts = await probity.deployErc20AssetManager({
+      erc20: contracts.usd?.address,
+      symbol: "USD",
+      vaultEngine: contracts.mockVaultEngine?.address,
+    });
+    usd = contracts.usd!;
+    assetManager = contracts?.usdManager!;
+    treasury = contracts.treasury!;
     vaultEngine = contracts.mockVaultEngine!;
     reservePoolAddress = contracts.reservePool?.address!;
     teller = contracts.teller!;
 
     owner = signers.owner!;
     user = signers.alice!;
+    user2 = signers.bob!;
+
+    await registry.setupAddress(bytes32("whitelisted"), user.address, false);
   });
 
   describe("setReservePool Unit Tests", function () {
@@ -310,8 +343,8 @@ describe("Teller Unit Tests", function () {
       expect(after[0]).to.equal(EXPECTED_DEBT_ACCUMULATOR);
     });
 
-    it("tests that suppAccumulator is calculated properly", async () => {
-      const DEFAULT_SUPP_ACCUMULATOR = RAY;
+    it("tests that equityAccumulator is calculated properly", async () => {
+      const DEFAULT_EQUITY_ACCUMULATOR = RAY;
       let TIME_TO_INCREASE = 400000;
 
       await teller.updateAccumulators(ASSET_ID.FLR);
@@ -319,7 +352,7 @@ describe("Teller Unit Tests", function () {
       let vaultColl = await vaultEngine.assets(ASSET_ID.FLR);
       let lastUpdatedBefore = (await teller.assets(ASSET_ID.FLR))[0];
       let before = await vaultEngine.assets(ASSET_ID.FLR);
-      expect(before[1]).to.equal(DEFAULT_SUPP_ACCUMULATOR);
+      expect(before[1]).to.equal(DEFAULT_EQUITY_ACCUMULATOR);
       await increaseTime(TIME_TO_INCREASE);
       await teller.updateAccumulators(ASSET_ID.FLR);
 
@@ -334,10 +367,10 @@ describe("Teller Unit Tests", function () {
         lastUpdatedAfter.sub(lastUpdatedBefore)
       );
 
-      let EXPECTED_SUPP_ACCUMULATOR = rmul(exponentiated, vaultColl[1]);
+      let EXPECTED_EQUITY_ACCUMULATOR = rmul(exponentiated, vaultColl[1]);
 
       let after = await vaultEngine.assets(ASSET_ID.FLR);
-      expect(after[1]).to.equal(EXPECTED_SUPP_ACCUMULATOR);
+      expect(after[1]).to.equal(EXPECTED_EQUITY_ACCUMULATOR);
 
       TIME_TO_INCREASE = 394000;
 
@@ -359,16 +392,16 @@ describe("Teller Unit Tests", function () {
         lastUpdatedAfter.sub(lastUpdatedBefore)
       );
 
-      EXPECTED_SUPP_ACCUMULATOR = rmul(exponentiated, vaultColl[1]);
+      EXPECTED_EQUITY_ACCUMULATOR = rmul(exponentiated, vaultColl[1]);
 
       after = await vaultEngine.assets(ASSET_ID.FLR);
-      expect(after[1]).to.equal(EXPECTED_SUPP_ACCUMULATOR);
+      expect(after[1]).to.equal(EXPECTED_EQUITY_ACCUMULATOR);
     });
 
     it("tests that protocolFeeRate is calculated properly", async () => {
       const PROTOCOL_FEE_TO_SET = WAD.div(10);
       await teller.setProtocolFee(ASSET_ID.FLR, PROTOCOL_FEE_TO_SET);
-      const DEFAULT_SUPP_ACCUMULATOR = RAY;
+      const DEFAULT_EQUITY_ACCUMULATOR = RAY;
       let TIME_TO_INCREASE = 400000;
       await teller.updateAccumulators(ASSET_ID.FLR);
 
@@ -377,7 +410,7 @@ describe("Teller Unit Tests", function () {
       let captialAccumulatorBefore = (await vaultEngine.assets(ASSET_ID.FLR))
         .equityAccumulator;
       let before = await vaultEngine.assets(ASSET_ID.FLR);
-      expect(before[1]).to.equal(DEFAULT_SUPP_ACCUMULATOR);
+      expect(before[1]).to.equal(DEFAULT_EQUITY_ACCUMULATOR);
       await increaseTime(TIME_TO_INCREASE);
       await teller.updateAccumulators(ASSET_ID.FLR);
 
@@ -391,51 +424,210 @@ describe("Teller Unit Tests", function () {
         multipledByUtilization.add(RAY),
         lastUpdatedAfter.sub(lastUpdatedBefore)
       );
-      let EXPECTED_SUPP_ACCUMULATOR = rmul(exponentiated, vaultColl[1]);
-      let EXPECTED_SUPP_ACCUMULATOR_RATE = EXPECTED_SUPP_ACCUMULATOR.sub(
+      let EXPECTED_EQUITY_ACCUMULATOR = rmul(exponentiated, vaultColl[1]);
+      let EXPECTED_EQUITY_ACCUMULATOR_RATE = EXPECTED_EQUITY_ACCUMULATOR.sub(
         captialAccumulatorBefore
       );
       let EXPECTED_PROTOCOL_FEE_RATE =
-        EXPECTED_SUPP_ACCUMULATOR_RATE.mul(PROTOCOL_FEE_TO_SET).div(WAD);
-      EXPECTED_SUPP_ACCUMULATOR_RATE = EXPECTED_SUPP_ACCUMULATOR_RATE.sub(
+        EXPECTED_EQUITY_ACCUMULATOR_RATE.mul(PROTOCOL_FEE_TO_SET).div(WAD);
+      EXPECTED_EQUITY_ACCUMULATOR_RATE = EXPECTED_EQUITY_ACCUMULATOR_RATE.sub(
         EXPECTED_PROTOCOL_FEE_RATE
       );
 
       let after = await vaultEngine.assets(ASSET_ID.FLR);
       expect(after[1]).to.equal(
-        captialAccumulatorBefore.add(EXPECTED_SUPP_ACCUMULATOR_RATE)
+        captialAccumulatorBefore.add(EXPECTED_EQUITY_ACCUMULATOR_RATE)
       );
       let protocolRate = await vaultEngine.protocolFeeRates();
       expect(protocolRate).to.equal(EXPECTED_PROTOCOL_FEE_RATE);
     });
   });
 
-  it("T0-BE-NAMED-LATER", async () => {
-    // Test case for https://github.com/trustline-inc/probity/issues/345
-    const debtRateIncrease = ethers.BigNumber.from("0");
-    let equityRateIncrease = debtRateIncrease.add("0");
-    await assertRevert(
-      vaultEngine
-        .connect(user)
-        .updateAccumulators(
-          ASSET_ID.FLR,
-          reservePoolAddress,
-          debtRateIncrease,
-          equityRateIncrease,
-          ethers.BigNumber.from(0)
-        ),
-      "VaultEngine/updateAccumulators: The equity rate increase is larger than the debt rate increase"
-    );
+  describe("issue-345", () => {
+    beforeEach(async function () {
+      let DEBT_TO_SET = WAD.mul(0);
+      let EQUITY_TO_SET = WAD.mul(0);
+      await vaultEngine.setTotalUserDebt(DEBT_TO_SET);
+      await vaultEngine.setTotalEquity(EQUITY_TO_SET);
 
-    equityRateIncrease = ethers.BigNumber.from("0");
-    await vaultEngine
-      .connect(user)
-      .updateAccumulators(
+      // Initialize assets
+      await teller.initAsset(ASSET_ID.USD, 0);
+      await teller.initAsset(ASSET_ID.FLR, 0);
+      await vaultEngine.initAsset(ASSET_ID.USD, 0);
+      await vaultEngine.initAsset(ASSET_ID.FLR, 1);
+    });
+
+    it.only("makes algorithmic loans correctly", async () => {
+      // Test case for https://github.com/trustline-inc/probity/issues/345
+
+      // issue 100 USD to user vault
+      await vaultEngine.setStablecoin(user.address, RAD.mul(100));
+
+      let FLR = await vaultEngine.assets(ASSET_ID.FLR);
+      let USD = await vaultEngine.assets(ASSET_ID.USD);
+
+      // Commit 100 USD to vault by using updateVault()
+      let underlying = WAD.mul(100);
+      let equity = RAD.mul(100).div(USD.equityAccumulator);
+      let initialEquity = WAD.mul(100);
+      console.log("updating user vault...");
+      vaultEngine.updateVault(
+        ASSET_ID.USD,
+        user.address,
+        0,
+        underlying,
+        0,
+        0,
+        equity,
+        initialEquity
+      );
+      vaultEngine.setTotalEquity(initialEquity);
+      vaultEngine.setTotalSupply(underlying);
+
+      let blockNum = await ethers.provider.getBlockNumber();
+      let block = await ethers.provider.getBlock(blockNum);
+      let timestamp = block.timestamp;
+      console.log("blockNum: ", blockNum);
+      console.log("timestamp:", timestamp);
+
+      // Update accumulators
+      console.log("updating USD accumulator");
+      await teller.updateAccumulators(ASSET_ID.USD);
+      blockNum = await ethers.provider.getBlockNumber();
+      block = await ethers.provider.getBlock(blockNum);
+      timestamp = block.timestamp;
+      console.log("blockNum: ", blockNum);
+      console.log("timestamp:", timestamp);
+
+      console.log("updating FLR accumulator");
+      await teller.updateAccumulators(ASSET_ID.FLR);
+      blockNum = await ethers.provider.getBlockNumber();
+      block = await ethers.provider.getBlock(blockNum);
+      timestamp = block.timestamp;
+      console.log("blockNum: ", blockNum);
+      console.log("timestamp:", timestamp);
+
+      let vault = await vaultEngine.vaults(ASSET_ID.USD, user.address);
+      console.log("user1 USD vault (before):", vault.toString());
+      blockNum = await ethers.provider.getBlockNumber();
+      block = await ethers.provider.getBlock(blockNum);
+      timestamp = block.timestamp;
+      console.log("blockNum: ", blockNum);
+      console.log("timestamp:", timestamp);
+
+      // Take out loan
+      let collateral = WAD.mul(175);
+      let principal = RAD.mul(50);
+      let normDebt = principal.div(FLR.debtAccumulator);
+      console.log("Taking out loan...");
+      console.log("loan normDebt:", normDebt.toString());
+      vaultEngine.updateVault(
+        ASSET_ID.FLR,
+        user2.address,
+        0,
+        0,
+        collateral,
+        normDebt,
+        0,
+        0
+      );
+
+      blockNum = await ethers.provider.getBlockNumber();
+      block = await ethers.provider.getBlock(blockNum);
+      timestamp = block.timestamp;
+      console.log("blockNum: ", blockNum);
+      console.log("timestamp:", timestamp);
+
+      vaultEngine.setTotalUserDebt(principal.div(RAY));
+
+      blockNum = await ethers.provider.getBlockNumber();
+      block = await ethers.provider.getBlock(blockNum);
+      timestamp = block.timestamp;
+      console.log("blockNum: ", blockNum);
+      console.log("timestamp:", timestamp);
+
+      // Increase time
+      let TIME_TO_INCREASE = 1;
+      await increaseTime(TIME_TO_INCREASE);
+
+      // Update accumulators
+      console.log("updating USD accumulator");
+      await teller.updateAccumulators(ASSET_ID.USD);
+
+      blockNum = await ethers.provider.getBlockNumber();
+      block = await ethers.provider.getBlock(blockNum);
+      timestamp = block.timestamp;
+      console.log("blockNum: ", blockNum);
+      console.log("timestamp:", timestamp);
+
+      console.log("updating FLR accumulator");
+      await teller.updateAccumulators(ASSET_ID.FLR);
+
+      blockNum = await ethers.provider.getBlockNumber();
+      block = await ethers.provider.getBlock(blockNum);
+      timestamp = block.timestamp;
+      console.log("blockNum: ", blockNum);
+      console.log("timestamp:", timestamp);
+
+      console.log("calling vaultEngine.updateAccumulators");
+      vaultEngine.updateAccumulators(
         ASSET_ID.FLR,
         reservePoolAddress,
-        debtRateIncrease,
-        equityRateIncrease,
-        ethers.BigNumber.from(0)
+        "2522455666012045795",
+        "2522455666012045795",
+        "0"
       );
+
+      USD = await vaultEngine.assets(ASSET_ID.USD);
+      FLR = await vaultEngine.assets(ASSET_ID.FLR);
+
+      // Expected debt
+      vault = await vaultEngine.vaults(ASSET_ID.FLR, user2.address);
+      console.log("user2 FLR vault (after):", vault.toString());
+      console.log(
+        "FLR normDebt:",
+        ethers.utils.formatUnits(FLR.normDebt, 18).toString()
+      );
+      console.log(
+        "FLR debt accumulator:",
+        ethers.utils.formatUnits(FLR.debtAccumulator, 27).toString()
+      );
+      console.log(
+        "vault debt:",
+        ethers.utils.formatUnits(vault.debt, 18).toString()
+      );
+      console.log(
+        "FLR debt:",
+        ethers.utils
+          .formatUnits(FLR.debtAccumulator.mul(vault.debt), 45)
+          .toString()
+      );
+
+      const apr = RAY.div(100).mul(2);
+      console.log("apr", ethers.utils.formatUnits(apr, 27).toString());
+      const mpr = APR_TO_MPR[apr.add(RAY).toString()];
+      console.log("mpr", ethers.utils.formatUnits(mpr, 27).toString());
+      // Expect 2% APR over TIME_TO_INCREASE seconds
+      // const interest = principal.mul(ethers.BigNumber.from(mpr).pow(TIME_TO_INCREASE)).div(RAY).sub(principal)
+      // console.log("interest:", ethers.utils.formatUnits(interest, 45).toString())
+      // expect(
+      //   vault.debt.mul(FLR.debtAccumulator).toString()
+      // ).to.equal(
+      //   RAD.mul(50).add(interest).toString()
+      // )
+
+      // // Expected equity
+      // vault = await vaultEngine.vaults(ASSET_ID.USD, user.address)
+      // console.log("user1 USD vault (after):", vault.toString())
+      // console.log("USD Equity:", ethers.utils.formatUnits(USD.equityAccumulator.mul(vault.equity), 45).toString())
+      // console.log("USD equity accumulator:", ethers.utils.formatUnits(USD.equityAccumulator, 27).toString())
+
+      // // Expect 2% APY over TIME_TO_INCREASE seconds
+      // expect(
+      //   vault.equity.mul(USD.equityAccumulator).toString()
+      // ).to.equal(
+      //   RAD.mul(100).add(WAD.mul(100).mul(BigNumber.from(TIME_TO_INCREASE)).div(BigNumber.from("31556926"))).toString()
+      // )
+    });
   });
 });

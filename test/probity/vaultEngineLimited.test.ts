@@ -42,7 +42,7 @@ describe("Vault Engine Limited Unit Tests", function () {
     let { contracts, signers } = await deployTest("limited");
     // Set contracts
     registry = contracts.registry!;
-    vaultEngine = contracts.vaultEngineLimited!;
+    vaultEngine = contracts.vaultEngine as VaultEngineLimited;
     reservePool = contracts.reservePool!;
     nativeAssetManager = contracts.nativeAssetManager!;
     teller = contracts.teller!;

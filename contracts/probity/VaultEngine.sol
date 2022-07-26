@@ -5,6 +5,7 @@ pragma solidity ^0.8.0;
 import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
 import "../dependencies/Math.sol";
+import "hardhat/console.sol";
 
 /**
  * @title VaultEngine contract
@@ -395,13 +396,16 @@ contract VaultEngine is Stateful, Eventful {
     ) external onlyBy("teller") {
         emit LogVarUpdate("Vault", assetId, "debtAccumulator", assets[assetId].debtAccumulator, debtRateIncrease);
         emit LogVarUpdate("Vault", assetId, "equityAccumulator", assets[assetId].equityAccumulator, equityRateIncrease);
-
+        console.log("debtRateIncrease", debtRateIncrease);
+        console.log("equityRateIncrease", equityRateIncrease);
         Asset storage asset = assets[assetId];
         // uint256 newDebt = asset.normDebt * debtRateIncrease;
         // uint256 newEquity = asset.normEquity * equityRateIncrease;
 
         asset.debtAccumulator += debtRateIncrease;
         asset.equityAccumulator += equityRateIncrease;
+        console.log("asset.debtAccumulator", asset.debtAccumulator);
+        console.log("asset.equityAccumulator", asset.equityAccumulator);
 
         uint256 protocolFeeToCollect = asset.normEquity * protocolFeeRates;
         // require(

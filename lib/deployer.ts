@@ -112,11 +112,16 @@ interface ContractDict {
   ftso?: MockFtso;
   registry?: Registry;
   pbt?: PBT;
-  vaultEngine?: VaultEngine;
+  vaultEngine?:
+    | VaultEngine
+    | VaultEngineLimited
+    | VaultEngineUnrestricted
+    | VaultEngineIssuer;
   vaultEngineIssuer?: VaultEngineIssuer;
   vaultEngineLimited?: VaultEngineLimited;
   vaultEngineUnrestricted?: VaultEngineUnrestricted;
   nativeAssetManager?: NativeAssetManager;
+  usdManager?: ERC20AssetManager;
   erc20AssetManager?:
     | {
         USD?: ERC20AssetManager;
@@ -206,6 +211,7 @@ const contracts: ContractDict = {
   vaultEngineLimited: undefined,
   vaultEngineUnrestricted: undefined,
   nativeAssetManager: undefined,
+  usdManager: undefined,
   erc20AssetManager: {
     USD: undefined,
     FXRP: undefined,
@@ -1720,15 +1726,20 @@ const deployProbity = async () => {
   return { contracts, signers };
 };
 
-////
-// Deployments by environment
-////
+/**
+ * @function checkDeploymentDelay
+ * @returns Promise<void>
+ */
 function checkDeploymentDelay() {
   if (process.env.DEPLOYMENT_DELAY === undefined) return;
   const delayTime = parseInt(process.env.DEPLOYMENT_DELAY);
   console.log(`sleeping for ${delayTime} ms`);
   return new Promise((resolve) => setTimeout(resolve, delayTime));
 }
+
+////
+// Deployments by environment
+////
 
 const deployDev = async () => {
   await parseExistingContracts();

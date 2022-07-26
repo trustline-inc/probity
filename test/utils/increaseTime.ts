@@ -1,7 +1,7 @@
 import { ethers } from "hardhat";
 
-async function increaseTime(timeToIncreaseInSecond) {
-  await ethers.provider.send("evm_increaseTime", [timeToIncreaseInSecond]);
+async function increaseTime(timeToIncreaseInSeconds: number) {
+  await ethers.provider.send("evm_increaseTime", [timeToIncreaseInSeconds]);
   await ethers.provider.send("evm_mine", []);
 }
 

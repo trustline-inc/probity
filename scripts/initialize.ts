@@ -199,7 +199,7 @@ const init = async () => {
     );
 
     // Initialize erc20 token price feed
-    liqRatio = WAD.mul(99).div(100); // 99%
+    liqRatio = WAD.mul(100).div(100); // must be < 100%
     tx = await priceFeed
       .connect(gov)
       .initAsset(ERC20_ASSETS[erc20Token], liqRatio, process.env.FTSO, {

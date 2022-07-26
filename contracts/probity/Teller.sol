@@ -5,9 +5,16 @@ pragma solidity ^0.8.0;
 import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
 import "../dependencies/Math.sol";
+import "hardhat/console.sol";
 
 interface VaultEngineLike {
-    function assets(bytes32) external returns (uint256 debtAccumulator, uint256 equityAccumulator);
+    function assets(bytes32)
+        external
+        returns (
+            uint256 debtAccumulator,
+            uint256 equityAccumulator,
+            uint256 normDebt
+        );
 
     function lendingPoolDebt() external returns (uint256);
 
@@ -122,36 +129,49 @@ contract Teller is Stateful, Eventful {
      * @param assetId of the asset to update accumulators
      */
     function updateAccumulators(bytes32 assetId) external {
+        console.log("====================== Update accumulators =======================");
         require(assets[assetId].lastUpdated != 0, "Teller/updateAccumulators: Asset not initialized");
 
         Asset memory asset = assets[assetId];
-        (uint256 debtAccumulator, uint256 equityAccumulator) = vaultEngine.assets(assetId);
+        (uint256 debtAccumulator, uint256 equityAccumulator, uint256 normDebt) = vaultEngine.assets(assetId);
+        console.log("debtAccumulator:", debtAccumulator);
+        console.log("equityAccumulator:", equityAccumulator);
         uint256 lendingPoolDebt = vaultEngine.lendingPoolDebt();
         uint256 lendingPoolEquity = vaultEngine.lendingPoolEquity();
 
         require(lendingPoolEquity > 0, "Teller/updateAccumulators: Total equity cannot be zero");
 
-        // Update debt accumulator
+        // Credit facility utilization ratio
         uint256 utilization = Math._wdiv(lendingPoolDebt, lendingPoolEquity);
+
+        // Update debt accumulator
+        console.log("block.timestamp:", block.timestamp);
+        console.log("asset.lastUpdated:", asset.lastUpdated);
         uint256 debtRateIncrease = Math._rmul(Math._rpow(mpr, (block.timestamp - asset.lastUpdated)), debtAccumulator) -
             debtAccumulator;
+        console.log("debtRateIncrease:", debtRateIncrease);
 
         uint256 exponentiated;
         {
             // Update equity accumulator
             uint256 multipliedByUtilization = Math._rmul(mpr - RAY, utilization * 1e9);
             uint256 multipliedByUtilizationPlusOne = multipliedByUtilization + RAY;
-
             exponentiated = Math._rpow(multipliedByUtilizationPlusOne, (block.timestamp - asset.lastUpdated));
         }
-
+        console.log("exponentiated:", exponentiated);
         uint256 equityAccumulatorDiff = Math._rmul(exponentiated, equityAccumulator) - equityAccumulator;
+        console.log("equityAccumulatorDiff:", equityAccumulatorDiff);
+
+        // Update protocol fee rate
         uint256 protocolFeeRate = 0;
         if (assets[assetId].protocolFee != 0) {
             protocolFeeRate = (equityAccumulatorDiff * assets[assetId].protocolFee) / WAD;
         }
+        console.log("protocolFeeRate:", protocolFeeRate);
 
+        // Update equity accumulator
         uint256 equityRateIncrease = equityAccumulatorDiff - protocolFeeRate;
+        console.log("equityRateIncrease:", equityRateIncrease);
 
         // Set new APR (round to nearest 0.25%)
         if (utilization >= 1e18) {
@@ -175,11 +195,14 @@ contract Teller is Stateful, Eventful {
             mpr = lowAprRate.APR_TO_MPR(apr);
         }
 
+        console.log("mpr:", mpr);
+
         // Update time index
         asset.lastUpdated = block.timestamp;
         vaultEngine.updateAccumulators(assetId, reservePool, debtRateIncrease, equityRateIncrease, protocolFeeRate);
 
         // Update asset info
         assets[assetId] = asset;
+        console.log("====================== end =======================");
     }
 }
