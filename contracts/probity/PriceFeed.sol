@@ -24,7 +24,7 @@ contract PriceFeed is Stateful, Eventful {
     // Type Declaration
     /////////////////////////////////////////
     struct Asset {
-        uint256 liquidationRatio;
+        uint256 liquidationRatio; // [WAD]
         FtsoLike ftso;
     }
 

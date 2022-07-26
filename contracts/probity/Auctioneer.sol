@@ -45,8 +45,8 @@ contract Auctioneer is Stateful, Eventful {
 
     struct Auction {
         bytes32 assetId;
-        uint256 lot;
-        uint256 debt;
+        uint256 lot; // [WAD]
+        uint256 debt; // [RAD]
         address owner; // leftover collateral will go back to this owner
         address beneficiary; // stablecoins will go to this address
         uint256 startPrice;
@@ -56,8 +56,8 @@ contract Auctioneer is Stateful, Eventful {
     }
 
     struct Bid {
-        uint256 price;
-        uint256 lot;
+        uint256 price; // [RAY]
+        uint256 lot; // [WAD]
     }
 
     /////////////////////////////////////////

@@ -33,7 +33,7 @@ contract BondIssuer is Stateful, Eventful {
     struct Offering {
         bool active;
         uint256 startTime;
-        uint256 amount;
+        uint256 amount; // [RAD]
     }
 
     /////////////////////////////////////////
@@ -50,8 +50,8 @@ contract BondIssuer is Stateful, Eventful {
     uint256 public stepPeriod = 6 hours;
     uint256 public maxDiscount = 1.5E18; // 150% of stablecoin (50% discount)
 
-    mapping(address => uint256) public bondTokens;
-    uint256 public totalBondTokens;
+    mapping(address => uint256) public bondTokens; // [RAD]
+    uint256 public totalBondTokens; // [RAD]
 
     /////////////////////////////////////////
     // Constructor
