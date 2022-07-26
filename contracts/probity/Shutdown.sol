@@ -145,10 +145,10 @@ contract Shutdown is Stateful, Eventful {
     /////////////////////////////////////////
 
     struct Asset {
-        uint256 finalPrice;
-        uint256 normDebt;
-        uint256 gap;
-        uint256 redemptionRatio;
+        uint256 finalPrice; // [RAY]
+        uint256 normDebt; // [WAD]
+        uint256 gap; // [WAD]
+        uint256 redemptionRatio; // [WAD]
     }
 
     /////////////////////////////////////////
@@ -173,13 +173,13 @@ contract Shutdown is Stateful, Eventful {
     mapping(bytes32 => Asset) public assets; // assetId -> Asset
     // assetId -> redeemer's address -> amount redeemed
     mapping(bytes32 => mapping(address => uint256)) public collRedeemed;
-    mapping(address => uint256) public stablecoin; // redeemer's address -> stablecoin balance already returned
-    uint256 public finalUtilizationRatio; // Total Equity Utilization Ratio at the moment shutdown is initiated
-    uint256 public stablecoinGap; // amount of stablecoin that doesn't have collateral backing
-    // ratio of equity position's underlying asset that will be used to cover the stablecoin Gap
+    mapping(address => uint256) public stablecoin; // redeemer's address -> stablecoin balance already returned [RAD]
+    uint256 public finalUtilizationRatio; // Total Equity Utilization Ratio at the moment shutdown is initiated [WAD]
+    uint256 public stablecoinGap; // amount of stablecoin that doesn't have collateral backing [RAD]
+    // ratio of equity position's underlying asset that will be used to cover the stablecoin Gap [WAD]
     uint256 public investorObligationRatio;
-    uint256 public finalStablecoinBalance; // final balance of how much stablecoin are in circulation
-    uint256 public finalTotalReserve; // final balance of the stablecoins held by reserve pool
+    uint256 public finalStablecoinBalance; // final balance of how much stablecoin are in circulation [RAD]
+    uint256 public finalTotalReserve; // final balance of the stablecoins held by reserve pool [RAD]
 
     /////////////////////////////////////////
     // Modifier

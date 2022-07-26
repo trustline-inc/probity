@@ -18,12 +18,12 @@ contract VaultEngine is Stateful, Eventful {
     // Type Declarations
     /////////////////////////////////////////
     struct Vault {
-        uint256 standby; // Assets that are on standby
-        uint256 underlying; // Amount covering an equity position
-        uint256 collateral; // Amount covering a debt position
-        uint256 debt; // Vault debt balance
-        uint256 equity; // Vault equity balance
-        uint256 initialEquity; // Tracks the amount of equity (less interest)
+        uint256 standby; // Assets that are on standby [WAD]
+        uint256 underlying; // Amount covering an equity position [WAD]
+        uint256 collateral; // Amount covering a debt position [WAD]
+        uint256 debt; // Vault debt balance [WAD]
+        uint256 equity; // Vault equity balance [WAD]
+        uint256 initialEquity; // Tracks the amount of equity (less interest) [RAD]
     }
 
     enum Category {
@@ -33,13 +33,13 @@ contract VaultEngine is Stateful, Eventful {
     }
 
     struct Asset {
-        uint256 debtAccumulator; // Cumulative debt rate
-        uint256 equityAccumulator; // Cumulative equity rate
-        uint256 adjustedPrice; // The asset price, adjusted for the asset liquidation ratio
-        uint256 normDebt; // Normalized debt amount
-        uint256 normEquity; // Normalized equity amount
-        uint256 ceiling; // Max. amount of asset that can be active in a position
-        uint256 floor; // Min. amount of asset that must be active to open a position
+        uint256 debtAccumulator; // Cumulative debt rate [RAY]
+        uint256 equityAccumulator; // Cumulative equity rate [RAY]
+        uint256 adjustedPrice; // The asset price, adjusted for the asset liquidation ratio [RAY]
+        uint256 normDebt; // Normalized debt amount [WAD]
+        uint256 normEquity; // Normalized equity amount [WAD]
+        uint256 ceiling; // Max. amount of asset that can be active in a position [RAD]
+        uint256 floor; // Min. amount of asset that must be active to open a position [RAD]
         Category category; // Type of asset (underlying or collateral)
     }
 
@@ -48,16 +48,16 @@ contract VaultEngine is Stateful, Eventful {
     /////////////////////////////////////////
     uint256 private constant RAY = 10**27;
 
-    uint256 public systemCurrencyIssued; // The amount of currency issued by the governance address
-    uint256 public lendingPoolSupply; // Total system currency lending pool supply
-    uint256 public lendingPoolEquity; // Total shares of equity in the lending pool
-    uint256 public lendingPoolDebt; // The amount of system currency owed by borrowers
-    uint256 public totalSystemDebt; // Total amount owed to users by Probity
+    uint256 public systemCurrencyIssued; // The amount of currency issued by the governance address [RAD]
+    uint256 public lendingPoolSupply; // Total system currency lending pool supply [RAD]
+    uint256 public lendingPoolEquity; // Total shares of equity in the lending pool [RAD]
+    uint256 public lendingPoolDebt; // The amount of system currency owed by borrowers [RAD]
+    uint256 public totalSystemDebt; // Total amount owed to users by Probity [RAD]
     address[] public vaultList; // List of vaults that had either equity and/or debt position
     mapping(address => bool) public vaultExists; // Boolean indicating whether a vault exists for a given address
-    mapping(address => uint256) public systemCurrency; // Vault owner's system currency balance
-    mapping(address => uint256) public pbt; // Vault owner's governance token balance
-    mapping(address => uint256) public systemDebt; // Vault owner's share of system debt
+    mapping(address => uint256) public systemCurrency; // Vault owner's system currency balance [RAD]
+    mapping(address => uint256) public pbt; // Vault owner's governance token balance [RAD]
+    mapping(address => uint256) public systemDebt; // Vault owner's share of system debt [RAD]
     mapping(bytes32 => Asset) public assets; // assetId -> asset
     mapping(bytes32 => mapping(address => Vault)) public vaults; // assetId -> vault owner's address -> vault
 

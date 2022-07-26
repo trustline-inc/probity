@@ -37,7 +37,7 @@ contract Teller is Stateful, Eventful {
     /////////////////////////////////////////
     struct Asset {
         uint256 lastUpdated;
-        uint256 protocolFee;
+        uint256 protocolFee; // [WAD]
     }
 
     /////////////////////////////////////////
