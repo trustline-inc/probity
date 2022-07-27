@@ -14,8 +14,6 @@ contract MockVaultEngine {
     }
 
     struct Asset {
-        uint256 debtAccumulator; // Cumulative debt rate
-        uint256 equityAccumulator; // Cumulative equity rate
         uint256 adjustedPrice; // The asset price, adjusted for the asset ratio
         uint256 normDebt; // Normalized debt amount
         uint256 normEquity; // Normalized equity amount
@@ -56,6 +54,11 @@ contract MockVaultEngine {
     mapping(address => uint256) public pbt;
     mapping(address => uint256) public systemDebt;
 
+    uint256 private constant RAY = 10**27;
+    uint256 public totalNormDebt = 0;
+    uint256 public totalNormEquity = 0;
+    uint256 public debtAccumulator = RAY; // Cumulative debt rate
+    uint256 public equityAccumulator = RAY; // Cumulative equity rate
     uint256 public protocolFeeRates;
     uint256 public lendingPoolDebt;
     uint256 public lendingPoolEquity;
@@ -110,13 +113,19 @@ contract MockVaultEngine {
     }
 
     function initAsset(bytes32 assetId, Category category) external {
-        assets[assetId].debtAccumulator = 1e27;
-        assets[assetId].equityAccumulator = 1e27;
         assets[assetId].category = category;
     }
 
     function updateAdjustedPrice(bytes32 assetId, uint256 price) external {
         assets[assetId].adjustedPrice = price;
+    }
+
+    function setTotalNormDebt(uint256 newTotalNormDebt) external {
+        totalNormDebt = newTotalNormDebt;
+    }
+
+    function setTotalNormEquity(uint256 newTotalNormEquity) external {
+        totalNormEquity = newTotalNormEquity;
     }
 
     function updateAsset(
@@ -128,7 +137,6 @@ contract MockVaultEngine {
         uint256 floor
     ) external {
         Asset storage asset = assets[assetId];
-
         asset.adjustedPrice = adjustedPrice;
         asset.normDebt = normDebt;
         asset.normEquity = normEquity;
@@ -143,12 +151,11 @@ contract MockVaultEngine {
         uint256 equityRateIncrease,
         uint256 protocolFeeRates_
     ) external {
-        Asset storage asset = assets[assetId];
-        asset.debtAccumulator += debtRateIncrease;
-        asset.equityAccumulator += equityRateIncrease;
+        debtAccumulator += debtRateIncrease;
+        equityAccumulator += equityRateIncrease;
         protocolFeeRates = protocolFeeRates_;
-        console.log("[vault]debtAccumulator: ", asset.debtAccumulator);
-        console.log("[vault]equityAccumulator: ", asset.equityAccumulator);
+        console.log("[vault]debtAccumulator: ", debtAccumulator);
+        console.log("[vault]equityAccumulator: ", equityAccumulator);
     }
 
     function updateNormValues(
@@ -160,6 +167,7 @@ contract MockVaultEngine {
         assets[assetId].normEquity = normEquity;
     }
 
+    /// @dev debt and equity params should be normalized already
     function updateVault(
         bytes32 assetId,
         address user,
@@ -170,7 +178,6 @@ contract MockVaultEngine {
         uint256 equity,
         uint256 initialEquity
     ) external {
-        console.log("updateVault==========================");
         Vault storage vault = vaults[assetId][user];
         vault.standbyAmount = standbyAmount;
         vault.underlying = underlyingAmount;
@@ -178,12 +185,6 @@ contract MockVaultEngine {
         vault.debt = debt;
         vault.equity = equity;
         vault.initialEquity = initialEquity;
-        Asset storage asset = assets[assetId];
-        // debt and equity params should be normalized already
-        asset.normDebt = asset.normDebt + debt;
-        asset.normEquity = asset.normEquity + equity;
-        console.log("[vault]normDebt:", asset.normDebt);
-        console.log("end updateVault==========================");
     }
 
     function setShutdownState() external {

@@ -462,15 +462,17 @@ describe("Vault Engine Unit Tests", function () {
     it("tests that variables are correctly initialized", async () => {
       const ASSET_ID = bytes32("new Asset ");
 
-      const before = await vaultEngine.assets(ASSET_ID);
-      expect(before.debtAccumulator).to.equal(0);
-      expect(before.equityAccumulator).to.equal(0);
+      const debtAccumulatorBefore = await vaultEngine.debtAccumulator();
+      const equityAccumulatorBefore = await vaultEngine.equityAccumulator();
+      expect(debtAccumulatorBefore).to.equal(0);
+      expect(equityAccumulatorBefore).to.equal(0);
 
       await vaultEngine.connect(gov).initAsset(ASSET_ID, 2);
 
-      const after = await vaultEngine.assets(ASSET_ID);
-      expect(after.debtAccumulator).to.equal(RAY);
-      expect(after.equityAccumulator).to.equal(RAY);
+      const debtAccumulatorAfter = await vaultEngine.debtAccumulator();
+      const equityAccumulatorAfter = await vaultEngine.equityAccumulator();
+      expect(debtAccumulatorAfter).to.equal(RAY);
+      expect(equityAccumulatorAfter).to.equal(RAY);
     });
   });
 
@@ -1270,7 +1272,8 @@ describe("Vault Engine Unit Tests", function () {
     });
 
     it("updates the debt and equity accumulators", async () => {
-      const assetBefore = await vaultEngine.assets(ASSET_ID.FLR);
+      const debtAccumulatorBefore = await vaultEngine.debtAccumulator();
+      const equityAccumulatorBefore = await vaultEngine.equityAccumulator();
       const debtRateIncrease = BigNumber.from("251035088626883475473007");
       const equityRateIncrease = BigNumber.from("125509667994754929166541");
       await vaultEngine
@@ -1283,12 +1286,13 @@ describe("Vault Engine Unit Tests", function () {
           BigNumber.from(0)
         );
 
-      const assetAfter = await vaultEngine.assets(ASSET_ID.FLR);
-      expect(assetBefore.debtAccumulator.add(debtRateIncrease)).to.equal(
-        assetAfter.debtAccumulator
+      const debtAccumulatorAfter = await vaultEngine.debtAccumulator();
+      const equityAccumulatorAfter = await vaultEngine.equityAccumulator();
+      expect(debtAccumulatorBefore.add(debtRateIncrease)).to.equal(
+        debtAccumulatorAfter
       );
-      expect(assetBefore.equityAccumulator.add(equityRateIncrease)).to.equal(
-        assetAfter.equityAccumulator
+      expect(equityAccumulatorBefore.add(equityRateIncrease)).to.equal(
+        equityAccumulatorAfter
       );
     });
 

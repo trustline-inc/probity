@@ -8,12 +8,18 @@ import "../dependencies/Math.sol";
 import "hardhat/console.sol";
 
 interface VaultEngineLike {
+    function debtAccumulator() external view returns (uint256);
+
+    function equityAccumulator() external view returns (uint256);
+
+    function totalNormDebt() external view returns (uint256);
+
     function assets(bytes32)
         external
         returns (
-            uint256 debtAccumulator,
-            uint256 equityAccumulator,
-            uint256 normDebt
+            uint256 adjustedPrice,
+            uint256 normDebt,
+            uint256 normEquity
         );
 
     function lendingPoolDebt() external returns (uint256);
@@ -45,6 +51,13 @@ contract Teller is Stateful, Eventful {
     struct Asset {
         uint256 lastUpdated;
         uint256 protocolFee;
+    }
+
+    struct CreditFacility {
+        uint256 utilization;
+        uint256 protocolFeeRate;
+        uint256 debtRateIncrease;
+        uint256 equityRateIncrease;
     }
 
     /////////////////////////////////////////
@@ -133,51 +146,45 @@ contract Teller is Stateful, Eventful {
         require(assets[assetId].lastUpdated != 0, "Teller/updateAccumulators: Asset not initialized");
 
         Asset memory asset = assets[assetId];
-        (uint256 debtAccumulator, uint256 equityAccumulator, uint256 normDebt) = vaultEngine.assets(assetId);
-        console.log("debtAccumulator:", debtAccumulator);
-        console.log("equityAccumulator:", equityAccumulator);
+        CreditFacility memory creditFacility;
+        uint256 debtAccumulator = vaultEngine.debtAccumulator();
+        uint256 equityAccumulator = vaultEngine.equityAccumulator();
+        uint256 totalNormDebt = vaultEngine.totalNormDebt();
+
         uint256 lendingPoolDebt = vaultEngine.lendingPoolDebt();
         uint256 lendingPoolEquity = vaultEngine.lendingPoolEquity();
 
         require(lendingPoolEquity > 0, "Teller/updateAccumulators: Total equity cannot be zero");
 
-        // Credit facility utilization ratio
-        uint256 utilization = Math._wdiv(lendingPoolDebt, lendingPoolEquity);
+        creditFacility.utilization = Math._wdiv(lendingPoolDebt, lendingPoolEquity);
 
         // Update debt accumulator
-        console.log("block.timestamp:", block.timestamp);
-        console.log("asset.lastUpdated:", asset.lastUpdated);
-        uint256 debtRateIncrease = Math._rmul(Math._rpow(mpr, (block.timestamp - asset.lastUpdated)), debtAccumulator) -
-            debtAccumulator;
-        console.log("debtRateIncrease:", debtRateIncrease);
-
-        uint256 exponentiated;
-        {
-            // Update equity accumulator
-            uint256 multipliedByUtilization = Math._rmul(mpr - RAY, utilization * 1e9);
-            uint256 multipliedByUtilizationPlusOne = multipliedByUtilization + RAY;
-            exponentiated = Math._rpow(multipliedByUtilizationPlusOne, (block.timestamp - asset.lastUpdated));
-        }
-        console.log("exponentiated:", exponentiated);
-        uint256 equityAccumulatorDiff = Math._rmul(exponentiated, equityAccumulator) - equityAccumulator;
-        console.log("equityAccumulatorDiff:", equityAccumulatorDiff);
+        uint256 rate = Math._rpow(mpr, (block.timestamp - asset.lastUpdated));
+        creditFacility.debtRateIncrease = Math._rmul(rate, debtAccumulator) - debtAccumulator;
+        console.log("debtRateIncrease:", creditFacility.debtRateIncrease);
+        console.log("debtAccumulator:", creditFacility.debtRateIncrease + debtAccumulator);
+        console.log("totalNormDebt:", totalNormDebt);
+        console.log("newDebt:", Math._rmul(creditFacility.debtRateIncrease + debtAccumulator, totalNormDebt));
 
         // Update protocol fee rate
-        uint256 protocolFeeRate = 0;
-        if (assets[assetId].protocolFee != 0) {
-            protocolFeeRate = (equityAccumulatorDiff * assets[assetId].protocolFee) / WAD;
-        }
-        console.log("protocolFeeRate:", protocolFeeRate);
+        // creditFacility.protocolFeeRate = 0;
+        // if (assets[assetId].protocolFee != 0) {
+        //     creditFacility.protocolFeeRate = (equityAccumulatorDiff * assets[assetId].protocolFee) / WAD;
+        // }
+        // console.log("creditFacility.protocolFeeRate:", creditFacility.protocolFeeRate);
 
         // Update equity accumulator
-        uint256 equityRateIncrease = equityAccumulatorDiff - protocolFeeRate;
-        console.log("equityRateIncrease:", equityRateIncrease);
+        creditFacility.equityRateIncrease =
+            Math._rmul(creditFacility.debtRateIncrease + debtAccumulator, totalNormDebt) -
+            Math._rmul(debtAccumulator, totalNormDebt);
+        console.log("equityRateIncrease:", creditFacility.equityRateIncrease);
+        console.log("equityAccumulator:", creditFacility.equityRateIncrease + equityAccumulator);
 
         // Set new APR (round to nearest 0.25%)
-        if (utilization >= 1e18) {
+        if (creditFacility.utilization >= 1e18) {
             apr = MAX_APR;
         } else {
-            uint256 oneMinusUtilization = RAY - (utilization * 1e9);
+            uint256 oneMinusUtilization = RAY - (creditFacility.utilization * 1e9);
             uint256 oneDividedByOneMinusUtilization = Math._rdiv(10**27 * 0.01, oneMinusUtilization);
 
             uint256 round = 0.0025 * 10**27;
@@ -197,12 +204,15 @@ contract Teller is Stateful, Eventful {
 
         console.log("mpr:", mpr);
 
-        // Update time index
+        // Update values
         asset.lastUpdated = block.timestamp;
-        vaultEngine.updateAccumulators(assetId, reservePool, debtRateIncrease, equityRateIncrease, protocolFeeRate);
-
-        // Update asset info
-        assets[assetId] = asset;
+        vaultEngine.updateAccumulators(
+            assetId,
+            reservePool,
+            creditFacility.debtRateIncrease,
+            creditFacility.equityRateIncrease,
+            creditFacility.protocolFeeRate
+        );
         console.log("====================== end =======================");
     }
 }

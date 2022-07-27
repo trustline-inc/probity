@@ -456,7 +456,8 @@ describe("Probity happy flow", function () {
     // increase time
     await increaseTime(5000);
 
-    const assetBefore = await vaultEngine.assets(ASSET_ID.FLR);
+    const debtAccumulatorBefore = await vaultEngine.debtAccumulator();
+    const equityAccumulatorBefore = await vaultEngine.equityAccumulator();
     const reserveBalBefore = await vaultEngine.systemCurrency(reserve.address);
     const totalDebtBefore = await vaultEngine.lendingPoolDebt();
     const lendingPoolEquityBefore = await vaultEngine.lendingPoolEquity();
@@ -464,20 +465,19 @@ describe("Probity happy flow", function () {
     // call teller.updateAccumulators
     await teller.updateAccumulators(ASSET_ID.FLR);
 
-    const assetAfter = await vaultEngine.assets(ASSET_ID.FLR);
+    const debtAccumulatorAfter = await vaultEngine.debtAccumulator();
+    const equityAccumulatorAfter = await vaultEngine.equityAccumulator();
     const reserveBalAfter = await vaultEngine.systemCurrency(reserve.address);
     const totalDebtAfter = await vaultEngine.lendingPoolDebt();
     const lendingPoolEquityAfter = await vaultEngine.lendingPoolEquity();
 
     // check the debt's accumulator update
-    const debtAccumulatorDiff = assetAfter.debtAccumulator.sub(
-      assetBefore.debtAccumulator
-    );
+    const debtAccumulatorDiff = debtAccumulatorAfter.sub(debtAccumulatorBefore);
     expect(debtAccumulatorDiff.gt(0)).to.equal(true);
 
     // check the equity's accumulator update
-    const equityAccumulatorDiff = assetAfter.equityAccumulator.sub(
-      assetBefore.equityAccumulator
+    const equityAccumulatorDiff = equityAccumulatorAfter.sub(
+      equityAccumulatorBefore
     );
     expect(equityAccumulatorDiff.gt(0)).to.equal(true);
 
