@@ -205,8 +205,8 @@ describe("Liquidator Unit Tests", function () {
       await vaultEngine.updateAccumulators(
         ASSET_ID.FLR,
         reservePool.address,
-        DEBT_ACCUMULATOR,
-        EQUITY_ACCUMULATOR,
+        0,
+        0,
         0
       );
       await vaultEngine.updateVault(
