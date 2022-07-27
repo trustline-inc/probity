@@ -67,7 +67,7 @@ contract VaultEngineLimited is VaultEngine {
      */
     function _enforceVaultLimit(bytes32 assetId, Vault memory vault) internal view {
         require(
-            (vault.debt * debtAccumulator) + vault.initialEquity <= vaultLimit,
+            (vault.normDebt * debtAccumulator) + vault.initialEquity <= vaultLimit,
             "Vault is over the individual vault limit"
         );
     }

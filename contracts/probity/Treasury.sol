@@ -87,7 +87,6 @@ contract Treasury is Stateful {
      * @param amount to exchange
      */
     function withdrawStablecoin(uint256 amount) external {
-        console.log("removing:", amount * 1e27);
         vaultEngine.removeStablecoin(msg.sender, amount * 1e27);
         stablecoin.mint(msg.sender, amount);
         emit WithdrawStablecoin(msg.sender, amount);

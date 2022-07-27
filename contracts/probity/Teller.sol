@@ -12,8 +12,6 @@ interface VaultEngineLike {
 
     function equityAccumulator() external view returns (uint256);
 
-    function totalNormDebt() external view returns (uint256);
-
     function assets(bytes32)
         external
         returns (
@@ -26,8 +24,11 @@ interface VaultEngineLike {
 
     function lendingPoolEquity() external returns (uint256);
 
+    function lendingPoolPrincipal() external returns (uint256);
+
+    function lendingPoolSupply() external returns (uint256);
+
     function updateAccumulators(
-        bytes32 assetId,
         address reservePool,
         uint256 debtRateIncrease,
         uint256 equityRateIncrease,
@@ -48,10 +49,6 @@ contract Teller is Stateful, Eventful {
     /////////////////////////////////////////
     // Type Declarations
     /////////////////////////////////////////
-    struct Asset {
-        uint256 lastUpdated;
-        uint256 protocolFee;
-    }
 
     struct CreditFacility {
         uint256 utilization;
@@ -75,7 +72,7 @@ contract Teller is Stateful, Eventful {
     address public reservePool; // reservePool address will be the recipient of the protocol fees calculated
     uint256 public apr; // Annualized percentage rate
     uint256 public mpr; // Momentized percentage rate
-    mapping(bytes32 => Asset) public assets; // assetId -> Asset
+    uint256 public lastUpdated; // Unix timestamp of last update
 
     /////////////////////////////////////////
     // Events
@@ -99,34 +96,12 @@ contract Teller is Stateful, Eventful {
         reservePool = reservePoolAddress;
         apr = RAY;
         mpr = RAY;
+        lastUpdated = block.timestamp;
     }
 
     /////////////////////////////////////////
     // External Functions
     /////////////////////////////////////////
-
-    /**
-     * @dev initialized a new asset
-     * @param assetId the asset ID
-     * @param protocolFee the protocolFee to take during accumulator calcuation
-     */
-    function initAsset(bytes32 assetId, uint256 protocolFee) external onlyBy("gov") {
-        require(assets[assetId].lastUpdated == 0, "Teller/initAsset: This asset has already been initialized");
-        assets[assetId].lastUpdated = block.timestamp;
-        assets[assetId].protocolFee = protocolFee;
-
-        emit AssetInitialized(assetId, protocolFee);
-    }
-
-    /**
-     * @dev update the protocol fee for an asset
-     * @param assetId to update
-     * @param protocolFee new protocolFee
-     */
-    function setProtocolFee(bytes32 assetId, uint256 protocolFee) external onlyBy("gov") {
-        emit LogVarUpdate(bytes32("teller"), assetId, bytes32("protocolFee"), assets[assetId].protocolFee, protocolFee);
-        assets[assetId].protocolFee = protocolFee;
-    }
 
     /**
      * @dev update the reservePool address
@@ -139,32 +114,27 @@ contract Teller is Stateful, Eventful {
 
     /**
      * @dev Updates the debt and equity rate accumulators
-     * @param assetId of the asset to update accumulators
      */
-    function updateAccumulators(bytes32 assetId) external {
-        console.log("====================== Update accumulators =======================");
-        require(assets[assetId].lastUpdated != 0, "Teller/updateAccumulators: Asset not initialized");
-
-        Asset memory asset = assets[assetId];
+    function updateAccumulators() external {
         CreditFacility memory creditFacility;
         uint256 debtAccumulator = vaultEngine.debtAccumulator();
-        uint256 equityAccumulator = vaultEngine.equityAccumulator();
-        uint256 totalNormDebt = vaultEngine.totalNormDebt();
 
+        // Normalized lending pool totals
         uint256 lendingPoolDebt = vaultEngine.lendingPoolDebt();
         uint256 lendingPoolEquity = vaultEngine.lendingPoolEquity();
 
+        // Actual totals
+        uint256 lendingPoolPrincipal = vaultEngine.lendingPoolPrincipal();
+        uint256 lendingPoolSupply = vaultEngine.lendingPoolSupply();
+
         require(lendingPoolEquity > 0, "Teller/updateAccumulators: Total equity cannot be zero");
 
-        creditFacility.utilization = Math._wdiv(lendingPoolDebt, lendingPoolEquity);
+        creditFacility.utilization = Math._wdiv(lendingPoolPrincipal, lendingPoolSupply);
 
         // Update debt accumulator
-        uint256 rate = Math._rpow(mpr, (block.timestamp - asset.lastUpdated));
-        creditFacility.debtRateIncrease = Math._rmul(rate, debtAccumulator) - debtAccumulator;
-        console.log("debtRateIncrease:", creditFacility.debtRateIncrease);
-        console.log("debtAccumulator:", creditFacility.debtRateIncrease + debtAccumulator);
-        console.log("totalNormDebt:", totalNormDebt);
-        console.log("newDebt:", Math._rmul(creditFacility.debtRateIncrease + debtAccumulator, totalNormDebt));
+        uint256 accumulatorDelta = Math._rpow(mpr, (block.timestamp - lastUpdated));
+        creditFacility.debtRateIncrease = Math._rmul(accumulatorDelta, debtAccumulator) - debtAccumulator;
+        debtAccumulator = Math._rmul(accumulatorDelta, debtAccumulator);
 
         // Update protocol fee rate
         // creditFacility.protocolFeeRate = 0;
@@ -174,11 +144,9 @@ contract Teller is Stateful, Eventful {
         // console.log("creditFacility.protocolFeeRate:", creditFacility.protocolFeeRate);
 
         // Update equity accumulator
-        creditFacility.equityRateIncrease =
-            Math._rmul(creditFacility.debtRateIncrease + debtAccumulator, totalNormDebt) -
-            Math._rmul(debtAccumulator, totalNormDebt);
-        console.log("equityRateIncrease:", creditFacility.equityRateIncrease);
-        console.log("equityAccumulator:", creditFacility.equityRateIncrease + equityAccumulator);
+        uint256 debtCreated = creditFacility.debtRateIncrease * lendingPoolDebt;
+        uint256 equityAccumulatorDiff = debtCreated / lendingPoolEquity;
+        creditFacility.equityRateIncrease = equityAccumulatorDiff;
 
         // Set new APR (round to nearest 0.25%)
         if (creditFacility.utilization >= 1e18) {
@@ -202,17 +170,13 @@ contract Teller is Stateful, Eventful {
             mpr = lowAprRate.APR_TO_MPR(apr);
         }
 
-        console.log("mpr:", mpr);
-
         // Update values
-        asset.lastUpdated = block.timestamp;
+        lastUpdated = block.timestamp;
         vaultEngine.updateAccumulators(
-            assetId,
             reservePool,
             creditFacility.debtRateIncrease,
             creditFacility.equityRateIncrease,
             creditFacility.protocolFeeRate
         );
-        console.log("====================== end =======================");
     }
 }

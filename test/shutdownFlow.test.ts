@@ -84,10 +84,10 @@ async function expectBalancesToMatch(
     }
 
     if (balance["FLR"].debt !== undefined) {
-      expect(vault.debt).to.equal(balance["FLR"].debt);
+      expect(vault.normDebt).to.equal(balance["FLR"].debt);
     }
     if (balance["FLR"].equity !== undefined) {
-      expect(vault.equity).to.equal(balance["FLR"].equity);
+      expect(vault.normEquity).to.equal(balance["FLR"].equity);
     }
   }
 
@@ -99,10 +99,10 @@ async function expectBalancesToMatch(
     }
 
     if (balance["FXRP"].debt !== undefined) {
-      expect(vault.debt).to.equal(balance["FXRP"].debt);
+      expect(vault.normDebt).to.equal(balance["FXRP"].debt);
     }
     if (balance["FXRP"].equity !== undefined) {
-      expect(vault.equity).to.equal(balance["FXRP"].equity);
+      expect(vault.normEquity).to.equal(balance["FXRP"].equity);
     }
   }
 }
@@ -181,7 +181,7 @@ describe("Shutdown Flow Test", function () {
     // Initialize FLR asset
     await vaultEngine.initAsset(ASSET_ID.FLR, 2);
     await vaultEngine.updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
-    await teller.initAsset(ASSET_ID.FLR, 0);
+    // await teller.initAsset(ASSET_ID.FLR, 0);
     await priceFeed.initAsset(
       ASSET_ID.FLR,
       WAD.mul(15).div(10),
@@ -192,7 +192,7 @@ describe("Shutdown Flow Test", function () {
     // Initialize FXRP asset
     await vaultEngine.initAsset(ASSET_ID["FXRP"], 2);
     await vaultEngine.updateCeiling(ASSET_ID["FXRP"], RAD.mul(10_000_000));
-    await teller.initAsset(ASSET_ID["FXRP"], 0);
+    // await teller.initAsset(ASSET_ID["FXRP"], 0);
     await priceFeed.initAsset(
       ASSET_ID["FXRP"],
       WAD.mul(15).div(10),
@@ -337,7 +337,7 @@ describe("Shutdown Flow Test", function () {
 
     // Total debt should be 291,000 USD
     expect(await vaultEngine.lendingPoolDebt()).to.equal(expectedTotalDebt);
-    expect(await vaultEngine.lendingPoolSupply()).to.equal(
+    expect(await vaultEngine.totalSystemCurrency()).to.equal(
       expectedTotalStablecoin
     );
 
@@ -385,7 +385,7 @@ describe("Shutdown Flow Test", function () {
     const newDebtThreshold = DEBT_THRESHOLD.mul(12).div(10);
     await reserve.connect(owner).increaseSystemDebt(newDebtThreshold);
     expectedTotalStablecoin = expectedTotalStablecoin.add(newDebtThreshold);
-    expect(await vaultEngine.lendingPoolSupply()).to.equal(
+    expect(await vaultEngine.totalSystemCurrency()).to.equal(
       expectedTotalStablecoin
     );
     reserveBalances.reserve = newDebtThreshold;
@@ -536,7 +536,7 @@ describe("Shutdown Flow Test", function () {
 
     // Set the finalized unbacked debt balance due after processing borrowers
     await shutdown.setFinalStablecoinBalance();
-    const res = await vaultEngine.lendingPoolSupply();
+    const res = await vaultEngine.totalSystemCurrency();
     const EXPECTED_FINAL_STABLECOIN_BALANCE = RAD.mul(154_500);
 
     // Calculate the investor obligation

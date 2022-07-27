@@ -8,8 +8,8 @@ contract MockVaultEngine {
         uint256 standbyAmount; // Asset amount on standby
         uint256 underlying; // Amount covering an equity position
         uint256 collateral; // Amount covering a debt position
-        uint256 debt; // Vault debt balance
-        uint256 equity; // Vault equity balance
+        uint256 normDebt; // Normalized debt balance
+        uint256 normEquity; // Normalized equity balance
         uint256 initialEquity; // Tracks the amount of equity (less interest)
     }
 
@@ -55,14 +55,14 @@ contract MockVaultEngine {
     mapping(address => uint256) public systemDebt;
 
     uint256 private constant RAY = 10**27;
-    uint256 public totalNormDebt = 0;
-    uint256 public totalNormEquity = 0;
     uint256 public debtAccumulator = RAY; // Cumulative debt rate
     uint256 public equityAccumulator = RAY; // Cumulative equity rate
     uint256 public protocolFeeRates;
+    uint256 public lendingPoolPrincipal;
+    uint256 public lendingPoolSupply;
     uint256 public lendingPoolDebt;
     uint256 public lendingPoolEquity;
-    uint256 public lendingPoolSupply;
+    uint256 public totalSystemCurrency;
     LiquidateDebtPositionCall public lastLiquidateDebtPositionCall;
     LiquidateEquityPositionCall public lastLiquidateEquityPositionCall;
 
@@ -87,7 +87,7 @@ contract MockVaultEngine {
         systemCurrency[user] = amount;
     }
 
-    function setsystemDebt(address user, uint256 amount) external {
+    function setSystemDebt(address user, uint256 amount) external {
         systemDebt[user] = amount;
     }
 
@@ -100,16 +100,24 @@ contract MockVaultEngine {
         pbt[user] += amount;
     }
 
-    function setTotalUserDebt(uint256 newTotalUserDebt) external {
-        lendingPoolDebt = newTotalUserDebt;
+    function setLendingPoolDebt(uint256 newLendingPoolDebt) external {
+        lendingPoolDebt = newLendingPoolDebt;
     }
 
-    function setTotalEquity(uint256 newTotalEquity) external {
-        lendingPoolEquity = newTotalEquity;
+    function setLendingPoolPrincipal(uint256 newLendingPoolPrincipal) external {
+        lendingPoolPrincipal = newLendingPoolPrincipal;
     }
 
-    function setTotalSupply(uint256 newlendingPoolSupply) external {
-        lendingPoolSupply = newlendingPoolSupply;
+    function setLendingPoolEquity(uint256 newLendingPoolEquity) external {
+        lendingPoolEquity = newLendingPoolEquity;
+    }
+
+    function setLendingPoolSupply(uint256 newLendingPoolSupply) external {
+        lendingPoolSupply = newLendingPoolSupply;
+    }
+
+    function setTotalSystemCurrency(uint256 newTotalSystemCurrency) external {
+        totalSystemCurrency = newTotalSystemCurrency;
     }
 
     function initAsset(bytes32 assetId, Category category) external {
@@ -118,14 +126,6 @@ contract MockVaultEngine {
 
     function updateAdjustedPrice(bytes32 assetId, uint256 price) external {
         assets[assetId].adjustedPrice = price;
-    }
-
-    function setTotalNormDebt(uint256 newTotalNormDebt) external {
-        totalNormDebt = newTotalNormDebt;
-    }
-
-    function setTotalNormEquity(uint256 newTotalNormEquity) external {
-        totalNormEquity = newTotalNormEquity;
     }
 
     function updateAsset(
@@ -145,17 +145,14 @@ contract MockVaultEngine {
     }
 
     function updateAccumulators(
-        bytes32 assetId,
         address reservePool,
-        uint256 debtRateIncrease,
-        uint256 equityRateIncrease,
+        uint256 debtAccumulatorIncrease,
+        uint256 equityAccumulatorIncrease,
         uint256 protocolFeeRates_
     ) external {
-        debtAccumulator += debtRateIncrease;
-        equityAccumulator += equityRateIncrease;
+        debtAccumulator += debtAccumulatorIncrease;
+        equityAccumulator += equityAccumulatorIncrease;
         protocolFeeRates = protocolFeeRates_;
-        console.log("[vault]debtAccumulator: ", debtAccumulator);
-        console.log("[vault]equityAccumulator: ", equityAccumulator);
     }
 
     function updateNormValues(
@@ -167,23 +164,22 @@ contract MockVaultEngine {
         assets[assetId].normEquity = normEquity;
     }
 
-    /// @dev debt and equity params should be normalized already
     function updateVault(
         bytes32 assetId,
         address user,
         uint256 standbyAmount,
         uint256 underlyingAmount,
         uint256 collateralAmount,
-        uint256 debt,
-        uint256 equity,
+        uint256 normDebt,
+        uint256 normEquity,
         uint256 initialEquity
     ) external {
         Vault storage vault = vaults[assetId][user];
         vault.standbyAmount = standbyAmount;
         vault.underlying = underlyingAmount;
         vault.collateral = collateralAmount;
-        vault.debt = debt;
-        vault.equity = equity;
+        vault.normDebt = normDebt;
+        vault.normEquity = normEquity;
         vault.initialEquity = initialEquity;
     }
 

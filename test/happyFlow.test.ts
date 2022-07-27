@@ -205,7 +205,7 @@ describe("Probity happy flow", function () {
     await vaultEngine
       .connect(gov)
       .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
-    await teller.connect(gov).initAsset(ASSET_ID.FLR, 0);
+    // await teller.connect(gov).initAsset(ASSET_ID.FLR, 0);
     await priceFeed
       .connect(gov)
       .initAsset(ASSET_ID.FLR, WAD.mul(15).div(10), ftso.address);
@@ -273,7 +273,7 @@ describe("Probity happy flow", function () {
     await vaultEngine
       .connect(gov)
       .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
-    await teller.connect(gov).initAsset(ASSET_ID.FLR, 0);
+    // await teller.connect(gov).initAsset(ASSET_ID.FLR, 0);
     await priceFeed
       .connect(gov)
       .initAsset(ASSET_ID.FLR, WAD.mul(15).div(10), ftso.address);
@@ -345,7 +345,7 @@ describe("Probity happy flow", function () {
     await vaultEngine
       .connect(gov)
       .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
-    await teller.connect(gov).initAsset(ASSET_ID.FLR, 0);
+    // await teller.connect(gov).initAsset(ASSET_ID.FLR, 0);
     await priceFeed
       .connect(gov)
       .initAsset(ASSET_ID.FLR, WAD.mul(15).div(10), ftso.address);
@@ -403,14 +403,15 @@ describe("Probity happy flow", function () {
     await vaultEngine
       .connect(gov)
       .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
-    await teller.connect(gov).initAsset(ASSET_ID.FLR, 0);
+    // await teller.connect(gov).initAsset(ASSET_ID.FLR, 0);
     await priceFeed
       .connect(gov)
       .initAsset(ASSET_ID.FLR, WAD.mul(15).div(10), ftso.address);
     await priceFeed.updateAdjustedPrice(ASSET_ID.FLR);
 
-    let [, , adjustedPrice] = await vaultEngine.assets(ASSET_ID.FLR);
+    let [adjustedPrice] = await vaultEngine.assets(ASSET_ID.FLR);
     let expectedPrice = RAY.div(3).mul(2);
+
     // As long as the expected price is within a buffer, call it success
     expect(adjustedPrice.sub(expectedPrice).toNumber() <= 10).to.equal(true);
   });
@@ -424,16 +425,16 @@ describe("Probity happy flow", function () {
     await vaultEngine
       .connect(gov)
       .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
-    await teller.connect(gov).initAsset(ASSET_ID.FLR, 0);
+    // await teller.connect(gov).initAsset(ASSET_ID.FLR, 0);
     await priceFeed
       .connect(gov)
       .initAsset(ASSET_ID.FLR, WAD.mul(15).div(10), ftso.address);
     await priceFeed.updateAdjustedPrice(ASSET_ID.FLR);
 
     // update protocol Fee
-    await teller
-      .connect(gov)
-      .setProtocolFee(ASSET_ID.FLR, ethers.utils.parseEther("0.02"));
+    // await teller
+    //   .connect(gov)
+    //   .setProtocolFee(ASSET_ID.FLR, ethers.utils.parseEther("0.02"));
 
     // increase equity
     await vaultEngine.modifyEquity(
@@ -451,7 +452,7 @@ describe("Probity happy flow", function () {
       LOAN_AMOUNT
     );
 
-    await teller.updateAccumulators(ASSET_ID.FLR);
+    await teller.updateAccumulators();
 
     // increase time
     await increaseTime(5000);
@@ -463,7 +464,7 @@ describe("Probity happy flow", function () {
     const lendingPoolEquityBefore = await vaultEngine.lendingPoolEquity();
 
     // call teller.updateAccumulators
-    await teller.updateAccumulators(ASSET_ID.FLR);
+    await teller.updateAccumulators();
 
     const debtAccumulatorAfter = await vaultEngine.debtAccumulator();
     const equityAccumulatorAfter = await vaultEngine.equityAccumulator();
@@ -495,7 +496,7 @@ describe("Probity happy flow", function () {
     await vaultEngine
       .connect(gov)
       .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
-    await teller.connect(gov).initAsset(ASSET_ID.FLR, 0);
+    // await teller.connect(gov).initAsset(ASSET_ID.FLR, 0);
     await liquidator.connect(gov).initAsset(ASSET_ID.FLR, auctioneer.address);
     await priceFeed.connect(gov).initAsset(ASSET_ID.FLR, WAD, ftso.address);
     await priceFeed.updateAdjustedPrice(ASSET_ID.FLR);
@@ -547,7 +548,7 @@ describe("Probity happy flow", function () {
     await vaultEngine
       .connect(gov)
       .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
-    await teller.connect(gov).initAsset(ASSET_ID.FLR, 0);
+    // await teller.connect(gov).initAsset(ASSET_ID.FLR, 0);
     await liquidator.connect(gov).initAsset(ASSET_ID.FLR, auctioneer.address);
     await priceFeed.connect(gov).initAsset(ASSET_ID.FLR, WAD, ftso.address);
     await priceFeed.updateAdjustedPrice(ASSET_ID.FLR);
@@ -640,7 +641,7 @@ describe("Probity happy flow", function () {
     await vaultEngine
       .connect(gov)
       .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
-    await teller.connect(gov).initAsset(ASSET_ID.FLR, 0);
+    // await teller.connect(gov).initAsset(ASSET_ID.FLR, 0);
     await liquidator.connect(gov).initAsset(ASSET_ID.FLR, auctioneer.address);
     await priceFeed.connect(gov).initAsset(ASSET_ID.FLR, WAD, ftso.address);
     await priceFeed.updateAdjustedPrice(ASSET_ID.FLR);
@@ -726,7 +727,7 @@ describe("Probity happy flow", function () {
     await vaultEngine
       .connect(gov)
       .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
-    await teller.connect(gov).initAsset(ASSET_ID.FLR, 0);
+    // await teller.connect(gov).initAsset(ASSET_ID.FLR, 0);
     await liquidator.connect(gov).initAsset(ASSET_ID.FLR, auctioneer.address);
     await priceFeed.connect(gov).initAsset(ASSET_ID.FLR, WAD, ftso.address);
     await priceFeed.updateAdjustedPrice(ASSET_ID.FLR);
