@@ -16,6 +16,7 @@
     "initialize": "npx hardhat run ./scripts/initialize.ts --network",
     "createInitialTx": "npx hardhat run ./scripts/createInitialTx.ts --network",
     "rateUpdater": "npx hardhat run ./scripts/rateUpdater.ts --network",
+    "testLending": "npx hardhat run ./scripts/testLending.ts --network local",
     "priceUpdater": "npx hardhat run ./scripts/priceUpdater.ts --network",
     "issuance": "npx hardhat run ./scripts/issuance.ts --network",
     "pauseProbity": "DELAY=20000 npx hardhat run ./scripts/pauseProbity.ts --network",
