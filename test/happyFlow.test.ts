@@ -196,7 +196,6 @@ describe("Probity happy flow", function () {
     // Mint stablecoins
     await vaultEngine.modifyEquity(
       ASSET_ID.FLR,
-      treasury.address,
       UNDERLYING_AMOUNT,
       EQUITY_AMOUNT
     );
@@ -217,12 +216,7 @@ describe("Probity happy flow", function () {
     let stablecoin0 = await vaultEngine.systemCurrency(owner.address);
 
     // Take out a loan
-    await vaultEngine.modifyDebt(
-      ASSET_ID.FLR,
-      treasury.address,
-      COLL_AMOUNT,
-      LOAN_AMOUNT
-    );
+    await vaultEngine.modifyDebt(ASSET_ID.FLR, COLL_AMOUNT, LOAN_AMOUNT);
 
     // Expect stablecoin and vault balances to be updated
     let stablecoin1 = await vaultEngine.systemCurrency(owner.address);
@@ -262,7 +256,6 @@ describe("Probity happy flow", function () {
     // Increase equity
     await vaultEngine.modifyEquity(
       ASSET_ID.FLR,
-      treasury.address,
       UNDERLYING_AMOUNT,
       EQUITY_AMOUNT
     );
@@ -274,12 +267,7 @@ describe("Probity happy flow", function () {
     let stablecoin0 = await vaultEngine.systemCurrency(owner.address);
 
     // Take out a loan
-    await vaultEngine.modifyDebt(
-      ASSET_ID.FLR,
-      treasury.address,
-      COLL_AMOUNT,
-      LOAN_AMOUNT
-    );
+    await vaultEngine.modifyDebt(ASSET_ID.FLR, COLL_AMOUNT, LOAN_AMOUNT);
 
     let stablecoin1 = await vaultEngine.systemCurrency(owner.address);
     expect(stablecoin1.sub(stablecoin0)).to.equal(LOAN_AMOUNT.mul(RAY));
@@ -299,7 +287,6 @@ describe("Probity happy flow", function () {
     // Repay loan
     await vaultEngine.modifyDebt(
       ASSET_ID.FLR,
-      treasury.address,
       LOAN_REPAY_COLL_AMOUNT,
       LOAN_REPAY_DEBT_AMOUNT
     );
@@ -340,7 +327,6 @@ describe("Probity happy flow", function () {
     // Increase equity
     await vaultEngine.modifyEquity(
       ASSET_ID.FLR,
-      treasury.address,
       UNDERLYING_AMOUNT,
       EQUITY_AMOUNT
     );
@@ -359,7 +345,6 @@ describe("Probity happy flow", function () {
     // Redeem underlying assets
     await vaultEngine.modifyEquity(
       ASSET_ID.FLR,
-      treasury.address,
       UNDERLYING_AMOUNT_TO_DECREASE,
       EQUITY_AMOUNT_TO_DECREASE
     );
@@ -421,7 +406,6 @@ describe("Probity happy flow", function () {
     // increase equity
     await vaultEngine.modifyEquity(
       ASSET_ID.FLR,
-      treasury.address,
       UNDERLYING_AMOUNT,
       EQUITY_AMOUNT
     );
@@ -429,7 +413,7 @@ describe("Probity happy flow", function () {
     // increase debt
     await vaultEngine.modifyDebt(
       ASSET_ID.FLR,
-      treasury.address,
+
       COLL_AMOUNT,
       LOAN_AMOUNT
     );
@@ -484,7 +468,7 @@ describe("Probity happy flow", function () {
     // Increase equity
     await vaultEngine.modifyEquity(
       ASSET_ID.FLR,
-      treasury.address,
+
       UNDERLYING_AMOUNT.mul(2),
       EQUITY_AMOUNT
     );
@@ -492,7 +476,7 @@ describe("Probity happy flow", function () {
     // Take out a loan
     await vaultEngine.modifyDebt(
       ASSET_ID.FLR,
-      treasury.address,
+
       COLL_AMOUNT,
       LOAN_AMOUNT
     );
@@ -536,7 +520,7 @@ describe("Probity happy flow", function () {
     // Increase equity
     await vaultEngine.modifyEquity(
       ASSET_ID.FLR,
-      treasury.address,
+
       UNDERLYING_AMOUNT.mul(2),
       EQUITY_AMOUNT
     );
@@ -544,7 +528,7 @@ describe("Probity happy flow", function () {
     // Take out a loan
     await vaultEngine.modifyDebt(
       ASSET_ID.FLR,
-      treasury.address,
+
       COLL_AMOUNT,
       LOAN_AMOUNT
     );
@@ -562,19 +546,17 @@ describe("Probity happy flow", function () {
     await flrAssetManager.connect(user).deposit({ value: WAD.mul(50_000) });
 
     // Increase equity as user
-    await vaultEngine
-      .connect(user)
-      .modifyEquity(
-        ASSET_ID.FLR,
-        treasury.address,
-        WAD.mul(20_000),
-        WAD.mul(1000)
-      );
+    await vaultEngine.connect(user).modifyEquity(
+      ASSET_ID.FLR,
+
+      WAD.mul(20_000),
+      WAD.mul(1000)
+    );
 
     // Take out a loan as user
     await vaultEngine
       .connect(user)
-      .modifyDebt(ASSET_ID.FLR, treasury.address, WAD.mul(20000), WAD.mul(600));
+      .modifyDebt(ASSET_ID.FLR, WAD.mul(20000), WAD.mul(600));
 
     // Place a bid on the collateral auction as user
     const auctionId = 0,
@@ -629,7 +611,7 @@ describe("Probity happy flow", function () {
     // Increase equity
     await vaultEngine.modifyEquity(
       ASSET_ID.FLR,
-      treasury.address,
+
       UNDERLYING_AMOUNT,
       EQUITY_AMOUNT
     );
@@ -646,19 +628,17 @@ describe("Probity happy flow", function () {
     await flrAssetManager.connect(user).deposit({ value: WAD.mul(50_000) });
 
     // Increase equity as user
-    await vaultEngine
-      .connect(user)
-      .modifyEquity(
-        ASSET_ID.FLR,
-        treasury.address,
-        WAD.mul(20_000),
-        WAD.mul(1000)
-      );
+    await vaultEngine.connect(user).modifyEquity(
+      ASSET_ID.FLR,
+
+      WAD.mul(20_000),
+      WAD.mul(1000)
+    );
 
     // Take out a loan as user
     await vaultEngine
       .connect(user)
-      .modifyDebt(ASSET_ID.FLR, treasury.address, WAD.mul(20000), WAD.mul(600));
+      .modifyDebt(ASSET_ID.FLR, WAD.mul(20000), WAD.mul(600));
 
     // Place a bid on the collateral auction as user
     const auctionId = 0,
@@ -715,7 +695,7 @@ describe("Probity happy flow", function () {
     // Increase equity
     await vaultEngine.modifyEquity(
       ASSET_ID.FLR,
-      treasury.address,
+
       UNDERLYING_AMOUNT.mul(2),
       EQUITY_AMOUNT
     );
@@ -723,7 +703,7 @@ describe("Probity happy flow", function () {
     // Take out a loan
     await vaultEngine.modifyDebt(
       ASSET_ID.FLR,
-      treasury.address,
+
       COLL_AMOUNT,
       LOAN_AMOUNT
     );
@@ -747,19 +727,17 @@ describe("Probity happy flow", function () {
     await flrAssetManager.connect(user).deposit({ value: WAD.mul(300_000) });
 
     // Increase equity as user
-    await vaultEngine
-      .connect(user)
-      .modifyEquity(
-        ASSET_ID.FLR,
-        treasury.address,
-        WAD.mul(20_000),
-        WAD.mul(1000)
-      );
+    await vaultEngine.connect(user).modifyEquity(
+      ASSET_ID.FLR,
+
+      WAD.mul(20_000),
+      WAD.mul(1000)
+    );
 
     // Take out a loan as user
     await vaultEngine
       .connect(user)
-      .modifyDebt(ASSET_ID.FLR, treasury.address, WAD.mul(9000), WAD.mul(600));
+      .modifyDebt(ASSET_ID.FLR, WAD.mul(9000), WAD.mul(600));
 
     // Expect unbacked debt to equal amount on auction (100)
     const systemDebt = await vaultEngine.systemDebt(reserve.address);

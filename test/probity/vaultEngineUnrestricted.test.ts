@@ -89,7 +89,6 @@ describe("Vault Engine Unrestricted Unit Tests", function () {
 
       await vaultEngine.modifyEquity(
         ASSET_ID.FLR,
-        treasury.address,
         UNDERLYING_AMOUNT,
         EQUITY_AMOUNT
       );
@@ -124,7 +123,6 @@ describe("Vault Engine Unrestricted Unit Tests", function () {
 
       await vaultEngine.modifyEquity(
         ASSET_ID.FLR,
-        treasury.address,
         UNDERLYING_AMOUNT,
         EQUITY_AMOUNT
       );
@@ -137,7 +135,7 @@ describe("Vault Engine Unrestricted Unit Tests", function () {
 
       await vaultEngine.modifyDebt(
         ASSET_ID.FLR,
-        treasury.address,
+
         COLL_AMOUNT,
         DEBT_AMOUNT
       );

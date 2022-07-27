@@ -135,20 +135,13 @@ contract Teller is Stateful, Eventful {
         require(lendingPoolEquity > 0, "Teller/updateAccumulators: Total equity cannot be zero");
 
         // Update debt accumulator
-        uint256 utilization = Math._wdiv(lendingPoolDebt, lendingPoolEquity);
+        uint256 utilization = Math._wdiv((lendingPoolDebt * debtAccumulator), (lendingPoolEquity * equityAccumulator));
         uint256 debtRateIncrease = Math._rmul(Math._rpow(mpr, (block.timestamp - asset.lastUpdated)), debtAccumulator) -
             debtAccumulator;
 
-        uint256 exponentiated;
-        {
-            // Update equity accumulator
-            uint256 multipliedByUtilization = Math._rmul(mpr - RAY, utilization * 1e9);
-            uint256 multipliedByUtilizationPlusOne = multipliedByUtilization + RAY;
+        uint256 debtCreated = debtRateIncrease * lendingPoolDebt;
+        uint256 equityAccumulatorDiff = debtCreated / lendingPoolEquity;
 
-            exponentiated = Math._rpow(multipliedByUtilizationPlusOne, (block.timestamp - asset.lastUpdated));
-        }
-
-        uint256 equityAccumulatorDiff = Math._rmul(exponentiated, equityAccumulator) - equityAccumulator;
         uint256 protocolFeeRate = 0;
         if (assets[assetId].protocolFee != 0) {
             protocolFeeRate = (equityAccumulatorDiff * assets[assetId].protocolFee) / WAD;

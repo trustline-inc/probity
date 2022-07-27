@@ -106,7 +106,7 @@ describe("Vault Engine Limited Unit Tests", function () {
       await assertRevert(
         vaultEngine.modifyEquity(
           ASSET_ID.FLR,
-          treasury.address,
+
           UNDERLYING_AMOUNT,
           EQUITY_AMOUNT
         ),
@@ -119,7 +119,7 @@ describe("Vault Engine Limited Unit Tests", function () {
 
       await vaultEngine.modifyEquity(
         ASSET_ID.FLR,
-        treasury.address,
+
         UNDERLYING_AMOUNT,
         EQUITY_AMOUNT
       );
@@ -146,7 +146,7 @@ describe("Vault Engine Limited Unit Tests", function () {
 
       await vaultEngine.modifyEquity(
         ASSET_ID.FLR,
-        treasury.address,
+
         UNDERLYING_AMOUNT,
         DEBT_AMOUNT
       );
@@ -154,7 +154,7 @@ describe("Vault Engine Limited Unit Tests", function () {
       await assertRevert(
         vaultEngine.modifyDebt(
           ASSET_ID.FLR,
-          treasury.address,
+
           UNDERLYING_AMOUNT,
           DEBT_AMOUNT
         ),
@@ -167,7 +167,7 @@ describe("Vault Engine Limited Unit Tests", function () {
 
       await vaultEngine.modifyDebt(
         ASSET_ID.FLR,
-        treasury.address,
+
         UNDERLYING_AMOUNT,
         DEBT_AMOUNT
       );

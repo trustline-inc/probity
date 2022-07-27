@@ -266,7 +266,7 @@ describe.skip("Shutdown Flow Test", function () {
     await flrWallet.connect(alice).deposit({ value: underlying });
     await vaultEngine
       .connect(alice)
-      .modifyEquity(ASSET_ID.FLR, treasury.address, underlying, equity);
+      .modifyEquity(ASSET_ID.FLR, underlying, equity);
     balances.alice["FLR"] = { underlying, equity };
 
     // Alice utilizes 1,000,000 FXRP ($2,780,000) to MINT 300,000 USD
@@ -274,16 +274,14 @@ describe.skip("Shutdown Flow Test", function () {
     await depositFxrp(alice, underlying);
     await vaultEngine
       .connect(alice)
-      .modifyEquity(ASSET_ID["FXRP"], treasury.address, underlying, equity);
+      .modifyEquity(ASSET_ID["FXRP"], underlying, equity);
     balances.alice["FXRP"] = { underlying, equity };
     await expectBalancesToMatch(alice, balances.alice);
 
     // Bob utilizes 2300 FLR ($2530) to BORROW 1500 USD
     (collateral = WAD.mul(2300)), (debt = WAD.mul(1500));
     await flrWallet.connect(bob).deposit({ value: collateral });
-    await vaultEngine
-      .connect(bob)
-      .modifyDebt(ASSET_ID.FLR, treasury.address, collateral, debt);
+    await vaultEngine.connect(bob).modifyDebt(ASSET_ID.FLR, collateral, debt);
     balances.bob["FLR"] = { collateral, debt };
     balances.bob["USD"] = RAY.mul(debt);
     expectedTotalDebt = expectedTotalDebt.add(debt);
@@ -295,7 +293,7 @@ describe.skip("Shutdown Flow Test", function () {
     await depositFxrp(bob, collateral);
     await vaultEngine
       .connect(bob)
-      .modifyDebt(ASSET_ID["FXRP"], treasury.address, collateral, debt);
+      .modifyDebt(ASSET_ID["FXRP"], collateral, debt);
     balances.bob["FXRP"] = { collateral, debt };
     balances.bob["USD"] = balances.bob["USD"].add(debt);
     expectedTotalDebt = expectedTotalDebt.add(debt);
@@ -307,7 +305,7 @@ describe.skip("Shutdown Flow Test", function () {
     await depositFxrp(charlie, underlying);
     await vaultEngine
       .connect(charlie)
-      .modifyEquity(ASSET_ID["FXRP"], treasury.address, underlying, equity);
+      .modifyEquity(ASSET_ID["FXRP"], underlying, equity);
     balances.charlie["FXRP"] = { underlying, equity };
     await expectBalancesToMatch(charlie, balances.charlie);
 
@@ -316,7 +314,7 @@ describe.skip("Shutdown Flow Test", function () {
     await depositFxrp(charlie, collateral);
     await vaultEngine
       .connect(charlie)
-      .modifyDebt(ASSET_ID["FXRP"], treasury.address, collateral, debt);
+      .modifyDebt(ASSET_ID["FXRP"], collateral, debt);
     balances.charlie["FXRP"] = { collateral, debt };
     balances.charlie["USD"] = debt;
     expectedTotalDebt = expectedTotalDebt.add(debt);
@@ -326,9 +324,7 @@ describe.skip("Shutdown Flow Test", function () {
     // Don utilizes 6900 FLR ($7590) to BORROW 4500 USD
     (collateral = WAD.mul(6900)), (debt = WAD.mul(4500));
     await flrWallet.connect(don).deposit({ value: collateral });
-    await vaultEngine
-      .connect(don)
-      .modifyDebt(ASSET_ID.FLR, treasury.address, collateral, debt);
+    await vaultEngine.connect(don).modifyDebt(ASSET_ID.FLR, collateral, debt);
     balances.don["FLR"] = { collateral, debt };
     balances.don["USD"] = RAY.mul(debt);
     expectedTotalDebt = expectedTotalDebt.add(debt);
@@ -639,28 +635,24 @@ describe.skip("Shutdown Flow Test", function () {
       .connect(alice)
       .deposit({ value: ethers.utils.parseEther("4500") });
     await depositFxrp(alice, WAD.mul(1000000));
-    await vaultEngine
-      .connect(alice)
-      .modifyEquity(
-        ASSET_ID.FLR,
-        treasury.address,
-        WAD.mul(4500),
-        WAD.mul(5000)
-      );
+    await vaultEngine.connect(alice).modifyEquity(
+      ASSET_ID.FLR,
+
+      WAD.mul(4500),
+      WAD.mul(5000)
+    );
     expectedTotalEquity = expectedTotalEquity.add(RAD.mul(5000));
     balances.alice["FLR"] = {
       underlying: WAD.mul(4500),
       equity: WAD.mul(5000),
     };
 
-    await vaultEngine
-      .connect(alice)
-      .modifyEquity(
-        ASSET_ID["FXRP"],
-        treasury.address,
-        WAD.mul(1000000),
-        WAD.mul(2000000)
-      );
+    await vaultEngine.connect(alice).modifyEquity(
+      ASSET_ID["FXRP"],
+
+      WAD.mul(1000000),
+      WAD.mul(2000000)
+    );
     expectedTotalEquity = expectedTotalEquity.add(RAD.mul(2000000));
     balances.alice["FXRP"] = {
       underlying: WAD.mul(1000000),
@@ -674,20 +666,18 @@ describe.skip("Shutdown Flow Test", function () {
     await depositFxrp(bob, WAD.mul(270000));
     await vaultEngine
       .connect(bob)
-      .modifyDebt(ASSET_ID.FLR, treasury.address, WAD.mul(2300), WAD.mul(6000));
+      .modifyDebt(ASSET_ID.FLR, WAD.mul(2300), WAD.mul(6000));
     expectedTotalDebt = expectedTotalDebt.add(RAD.mul(6000));
     balances.bob["FLR"] = {
       collateral: WAD.mul(2300),
       debt: WAD.mul(6000),
     };
-    await vaultEngine
-      .connect(bob)
-      .modifyDebt(
-        ASSET_ID["FXRP"],
-        treasury.address,
-        WAD.mul(270_000),
-        WAD.mul(1_100_000)
-      );
+    await vaultEngine.connect(bob).modifyDebt(
+      ASSET_ID["FXRP"],
+
+      WAD.mul(270_000),
+      WAD.mul(1_100_000)
+    );
     expectedTotalDebt = expectedTotalDebt.add(RAD.mul(1_100_000));
     balances.bob["FXRP"] = {
       collateral: WAD.mul(270_000),
@@ -699,18 +689,16 @@ describe.skip("Shutdown Flow Test", function () {
     await flrWallet
       .connect(charlie)
       .deposit({ value: ethers.utils.parseEther("9000") });
-    await vaultEngine
-      .connect(charlie)
-      .modifyDebt(
-        ASSET_ID.FLR,
-        treasury.address,
-        WAD.mul(9000),
-        WAD.mul(15_000)
-      );
+    await vaultEngine.connect(charlie).modifyDebt(
+      ASSET_ID.FLR,
+
+      WAD.mul(9000),
+      WAD.mul(15_000)
+    );
     expectedTotalDebt = expectedTotalDebt.add(RAD.mul(15_000));
     await vaultEngine
       .connect(charlie)
-      .modifyDebt(ASSET_ID.FLR, treasury.address, WAD.mul(0), WAD.mul(10_000));
+      .modifyDebt(ASSET_ID.FLR, WAD.mul(0), WAD.mul(10_000));
     expectedTotalDebt = expectedTotalDebt.add(RAD.mul(10_000));
     balances.charlie["FLR"] = {
       collateral: WAD.mul(9000),
@@ -720,23 +708,19 @@ describe.skip("Shutdown Flow Test", function () {
     await expectBalancesToMatch(charlie, balances.charlie);
 
     await depositFxrp(don, WAD.mul(1_020_000));
-    await vaultEngine
-      .connect(don)
-      .modifyEquity(
-        ASSET_ID["FXRP"],
-        treasury.address,
-        WAD.mul(20_000),
-        WAD.mul(1_000_000)
-      );
+    await vaultEngine.connect(don).modifyEquity(
+      ASSET_ID["FXRP"],
+
+      WAD.mul(20_000),
+      WAD.mul(1_000_000)
+    );
     expectedTotalEquity = expectedTotalEquity.add(RAD.mul(1_000_000));
-    await vaultEngine
-      .connect(don)
-      .modifyDebt(
-        ASSET_ID["FXRP"],
-        treasury.address,
-        WAD.mul(620_000),
-        WAD.mul(1_500_000)
-      );
+    await vaultEngine.connect(don).modifyDebt(
+      ASSET_ID["FXRP"],
+
+      WAD.mul(620_000),
+      WAD.mul(1_500_000)
+    );
     expectedTotalDebt = expectedTotalDebt.add(RAD.mul(1_500_000));
     balances.don["FXRP"] = {
       underlying: WAD.mul(20_000),
@@ -751,18 +735,16 @@ describe.skip("Shutdown Flow Test", function () {
       .connect(lender)
       .deposit({ value: ethers.utils.parseEther("2000") });
     await depositFxrp(lender, WAD.mul(3_830_000));
-    await vaultEngine
-      .connect(lender)
-      .modifyEquity(
-        ASSET_ID.FLR,
-        treasury.address,
-        WAD.mul(1000),
-        WAD.mul(1500)
-      );
+    await vaultEngine.connect(lender).modifyEquity(
+      ASSET_ID.FLR,
+
+      WAD.mul(1000),
+      WAD.mul(1500)
+    );
     expectedTotalEquity = expectedTotalEquity.add(RAD.mul(1500));
     await vaultEngine
       .connect(lender)
-      .modifyDebt(ASSET_ID.FLR, treasury.address, WAD.mul(1000), WAD.mul(1500));
+      .modifyDebt(ASSET_ID.FLR, WAD.mul(1000), WAD.mul(1500));
     expectedTotalDebt = expectedTotalDebt.add(RAD.mul(1500));
 
     balances.lender["FLR"] = {
@@ -772,23 +754,19 @@ describe.skip("Shutdown Flow Test", function () {
       equity: WAD.mul(1500),
     };
 
-    await vaultEngine
-      .connect(lender)
-      .modifyEquity(
-        ASSET_ID["FXRP"],
-        treasury.address,
-        WAD.mul(1_830_000),
-        WAD.mul(1_500_000)
-      );
+    await vaultEngine.connect(lender).modifyEquity(
+      ASSET_ID["FXRP"],
+
+      WAD.mul(1_830_000),
+      WAD.mul(1_500_000)
+    );
     expectedTotalEquity = expectedTotalEquity.add(RAD.mul(1_500_000));
-    await vaultEngine
-      .connect(lender)
-      .modifyDebt(
-        ASSET_ID["FXRP"],
-        treasury.address,
-        WAD.mul(1_830_000),
-        WAD.mul(1_200_000)
-      );
+    await vaultEngine.connect(lender).modifyDebt(
+      ASSET_ID["FXRP"],
+
+      WAD.mul(1_830_000),
+      WAD.mul(1_200_000)
+    );
     expectedTotalDebt = expectedTotalDebt.add(RAD.mul(1_200_000));
     balances.lender["FXRP"] = {
       underlying: WAD.mul(1_830_000),

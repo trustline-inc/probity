@@ -46,6 +46,7 @@ contract VaultEngine is Stateful, Eventful {
     /////////////////////////////////////////
     uint256 private constant RAY = 10**27;
 
+    address public treasury;
     uint256 public debtAccumulator; // Cumulative debt rate [RAY]
     uint256 public equityAccumulator; // Cumulative equity rate [RAY]
     uint256 public systemCurrencyIssued; // The amount of currency issued by the governance address [RAD]
@@ -93,6 +94,16 @@ contract VaultEngine is Stateful, Eventful {
      */
     function getVaultList() external view returns (address[] memory list) {
         return vaultList;
+    }
+
+    /**
+     * @dev update the treasuryAddress
+     * @param newTreasuryAddress to use
+     */
+    function updateTreasuryAddress(address newTreasuryAddress) external {
+        require(registry.checkRole("treasury", newTreasuryAddress), "Treasury address is not valid");
+
+        treasury = newTreasuryAddress;
     }
 
     /**
@@ -194,55 +205,52 @@ contract VaultEngine is Stateful, Eventful {
         pbt[account] -= amount;
     }
 
-    /**
-     * @dev Accrues vault interest and PBT
-     * @param assetId The ID of the vault asset type
-     */
-    function collectInterest(bytes32 assetId) public {
-        Vault memory vault = vaults[assetId][msg.sender];
-        Asset memory asset = assets[assetId];
-        uint256 interestAmount = vault.equity * equityAccumulator - vault.initialEquity;
-        pbt[msg.sender] += interestAmount;
-        systemCurrency[msg.sender] += interestAmount;
-
-        lendingPoolSupply += interestAmount;
-
-        // @todo evaluate how loss of precision can impact here
-        vaults[assetId][msg.sender].equity -= interestAmount / equityAccumulator;
-
-        emit InterestCollected(msg.sender, assetId, interestAmount);
-    }
+    //    @todo commented out to be re-assessed if this is still relevant
+    //    /**
+    //     * @dev Accrues vault interest and PBT
+    //     * @param assetId The ID of the vault asset type
+    //     */
+    //    function collectInterest(bytes32 assetId) public {
+    //        Vault memory vault = vaults[assetId][msg.sender];
+    //        Asset memory asset = assets[assetId];
+    //        uint256 interestAmount = vault.equity * equityAccumulator - vault.initialEquity;
+    //        pbt[msg.sender] += interestAmount;
+    //        systemCurrency[msg.sender] += interestAmount;
+    //
+    //        lendingPoolSupply += interestAmount;
+    //
+    //        // @todo evaluate how loss of precision can impact here
+    //        vaults[assetId][msg.sender].equity -= interestAmount / equityAccumulator;
+    //
+    //        emit InterestCollected(msg.sender, assetId, interestAmount);
+    //    }
 
     /**
      * @notice Adds equity to the caller's vault
      * @param assetId The ID of the asset type being modified
-     * @param treasuryAddress A registered treasury contract address
      * @param underlyingAmount The amount of asset to add
      * @param equityAmount The amount of equity to add
      */
     function modifyEquity(
         bytes32 assetId,
-        address treasuryAddress,
         int256 underlyingAmount,
         int256 equityAmount
     ) external virtual onlyBy("whitelisted") {
-        _modifyEquity(assetId, treasuryAddress, underlyingAmount, equityAmount);
+        _modifyEquity(assetId, underlyingAmount, equityAmount);
     }
 
     /**
      * @notice Modifies vault debt
      * @param assetId The ID of the vault asset type
-     * @param treasuryAddress The address of the desired treasury contract
      * @param collAmount Amount of asset supplied as loan security
      * @param debtAmount Amount of stablecoin to borrow
      */
     function modifyDebt(
         bytes32 assetId,
-        address treasuryAddress,
         int256 collAmount,
         int256 debtAmount
     ) external virtual onlyBy("whitelisted") {
-        _modifyDebt(assetId, treasuryAddress, collAmount, debtAmount);
+        _modifyDebt(assetId, collAmount, debtAmount);
     }
 
     /**
@@ -385,12 +393,13 @@ contract VaultEngine is Stateful, Eventful {
         uint256 equityRateIncrease,
         uint256 protocolFeeRates
     ) external onlyBy("teller") {
+        require(treasury != address(0), "VaultEngine/updateAccumulators: treasury address is not set");
         emit LogVarUpdate("Vault", assetId, "debtAccumulator", debtAccumulator, debtRateIncrease);
         emit LogVarUpdate("Vault", assetId, "equityAccumulator", equityAccumulator, equityRateIncrease);
 
         Asset storage asset = assets[assetId];
-        uint256 newDebt = asset.normDebt * debtRateIncrease;
-        uint256 newEquity = asset.normEquity * equityRateIncrease;
+        uint256 newDebt = lendingPoolDebt * debtRateIncrease;
+        uint256 newEquity = lendingPoolEquity * equityRateIncrease;
 
         debtAccumulator += debtRateIncrease;
         equityAccumulator += equityRateIncrease;
@@ -400,6 +409,8 @@ contract VaultEngine is Stateful, Eventful {
             newEquity + protocolFeeToCollect <= newDebt,
             "VaultEngine/updateAccumulators: The equity rate increase is larger than the debt rate increase"
         );
+
+        systemCurrency[treasury] += newEquity;
         systemCurrency[reservePool] += protocolFeeToCollect;
     }
 
@@ -419,15 +430,14 @@ contract VaultEngine is Stateful, Eventful {
 
     function _modifyEquity(
         bytes32 assetId,
-        address treasuryAddress,
         int256 underlyingAmount,
         int256 equityAmount
     ) internal {
+        require(treasury != address(0), "VaultEngine/updateAccumulators: treasury address is not set");
         require(
             assets[assetId].category == Category.UNDERLYING || assets[assetId].category == Category.BOTH,
             "Vault/modifyEquity: Asset not allowed as underlying"
         );
-        require(registry.checkRole("treasury", treasuryAddress), "Vault/modifyEquity: Treasury address is not valid");
 
         if (!vaultExists[msg.sender]) {
             vaultList.push(msg.sender);
@@ -455,22 +465,21 @@ contract VaultEngine is Stateful, Eventful {
         );
         _certifyEquityPosition(assetId, vault);
 
-        systemCurrency[treasuryAddress] = Math._add(systemCurrency[treasuryAddress], equityCreated);
+        systemCurrency[treasury] = Math._add(systemCurrency[treasury], equityCreated);
 
         emit EquityModified(msg.sender, underlyingAmount, equityCreated);
     }
 
     function _modifyDebt(
         bytes32 assetId,
-        address treasuryAddress,
         int256 collAmount,
         int256 debtAmount
     ) internal {
+        require(treasury != address(0), "VaultEngine/updateAccumulators: treasury address is not set");
         require(
             assets[assetId].category == Category.COLLATERAL || assets[assetId].category == Category.BOTH,
             "Vault/modifyDebt: Asset not allowed as collateral"
         );
-        require(registry.checkRole("treasury", treasuryAddress), "Vault/modifyDebt: Treasury address is not valid");
 
         if (!vaultExists[msg.sender]) {
             vaultList.push(msg.sender);
@@ -479,7 +488,7 @@ contract VaultEngine is Stateful, Eventful {
 
         if (debtAmount > 0) {
             require(
-                systemCurrency[treasuryAddress] >= uint256(debtAmount),
+                systemCurrency[treasury] >= uint256(debtAmount),
                 "Vault/modifyDebt: Treasury doesn't have enough equity to loan this amount"
             );
         }
@@ -503,7 +512,7 @@ contract VaultEngine is Stateful, Eventful {
         _certifyDebtPosition(assetId, vault);
 
         systemCurrency[msg.sender] = Math._add(systemCurrency[msg.sender], debtCreated);
-        systemCurrency[treasuryAddress] = Math._sub(systemCurrency[treasuryAddress], debtCreated);
+        systemCurrency[treasury] = Math._sub(systemCurrency[treasury], debtCreated);
 
         vaults[assetId][msg.sender] = vault;
 
