@@ -7,7 +7,9 @@ import "../dependencies/Eventful.sol";
 import "../dependencies/Math.sol";
 
 interface VaultEngineLike {
-    function assets(bytes32) external returns (uint256 debtAccumulator, uint256 equityAccumulator);
+    function debtAccumulator() external returns (uint256 debtAccumulator);
+
+    function equityAccumulator() external returns (uint256 equityAccumulator);
 
     function lendingPoolDebt() external returns (uint256);
 
@@ -125,7 +127,8 @@ contract Teller is Stateful, Eventful {
         require(assets[assetId].lastUpdated != 0, "Teller/updateAccumulators: Asset not initialized");
 
         Asset memory asset = assets[assetId];
-        (uint256 debtAccumulator, uint256 equityAccumulator) = vaultEngine.assets(assetId);
+        uint256 debtAccumulator = vaultEngine.debtAccumulator();
+        uint256 equityAccumulator = vaultEngine.equityAccumulator();
         uint256 lendingPoolDebt = vaultEngine.lendingPoolDebt();
         uint256 lendingPoolEquity = vaultEngine.lendingPoolEquity();
 

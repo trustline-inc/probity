@@ -272,12 +272,11 @@ describe("Teller Unit Tests", function () {
       let TIME_TO_INCREASE = 400000;
 
       await teller.updateAccumulators(ASSET_ID.FLR);
-      let vaultColl = await vaultEngine.assets(ASSET_ID.FLR);
+      let debtAccuBefore = await vaultEngine.debtAccumulator();
       let mpr = await teller.mpr();
 
       let lastUpdatedBefore = (await teller.assets(ASSET_ID.FLR))[0];
-      const before = await vaultEngine.assets(ASSET_ID.FLR);
-      expect(before[0]).to.equal(DEFAULT_DEBT_ACCUMULATOR);
+      expect(debtAccuBefore).to.equal(DEFAULT_DEBT_ACCUMULATOR);
 
       await increaseTime(TIME_TO_INCREASE);
       await teller.updateAccumulators(ASSET_ID.FLR);
@@ -285,13 +284,13 @@ describe("Teller Unit Tests", function () {
 
       let EXPECTED_DEBT_ACCUMULATOR = rmul(
         rpow(mpr, lastUpdatedAfter.sub(lastUpdatedBefore)),
-        vaultColl[0]
+        debtAccuBefore
       );
 
-      let after = await vaultEngine.assets(ASSET_ID.FLR);
-      expect(after[0]).to.equal(EXPECTED_DEBT_ACCUMULATOR);
+      let debtAccuAfter = await vaultEngine.debtAccumulator();
+      expect(debtAccuAfter).to.equal(EXPECTED_DEBT_ACCUMULATOR);
 
-      vaultColl = await vaultEngine.assets(ASSET_ID.FLR);
+      debtAccuBefore = await vaultEngine.debtAccumulator();
       mpr = await teller.mpr();
       TIME_TO_INCREASE = 23000;
 
@@ -303,11 +302,11 @@ describe("Teller Unit Tests", function () {
 
       EXPECTED_DEBT_ACCUMULATOR = rmul(
         rpow(mpr, lastUpdatedAfter.sub(lastUpdatedBefore)),
-        vaultColl[0]
+        debtAccuBefore
       );
 
-      after = await vaultEngine.assets(ASSET_ID.FLR);
-      expect(after[0]).to.equal(EXPECTED_DEBT_ACCUMULATOR);
+      debtAccuAfter = await vaultEngine.debtAccumulator();
+      expect(debtAccuAfter).to.equal(EXPECTED_DEBT_ACCUMULATOR);
     });
 
     it("tests that suppAccumulator is calculated properly", async () => {
@@ -316,10 +315,10 @@ describe("Teller Unit Tests", function () {
 
       await teller.updateAccumulators(ASSET_ID.FLR);
 
-      let vaultColl = await vaultEngine.assets(ASSET_ID.FLR);
+      let equityAccu = await vaultEngine.equityAccumulator();
       let lastUpdatedBefore = (await teller.assets(ASSET_ID.FLR))[0];
-      let before = await vaultEngine.assets(ASSET_ID.FLR);
-      expect(before[1]).to.equal(DEFAULT_SUPP_ACCUMULATOR);
+      let equityAccuBefore = await vaultEngine.equityAccumulator();
+      expect(equityAccuBefore).to.equal(DEFAULT_SUPP_ACCUMULATOR);
       await increaseTime(TIME_TO_INCREASE);
       await teller.updateAccumulators(ASSET_ID.FLR);
 
@@ -334,17 +333,17 @@ describe("Teller Unit Tests", function () {
         lastUpdatedAfter.sub(lastUpdatedBefore)
       );
 
-      let EXPECTED_SUPP_ACCUMULATOR = rmul(exponentiated, vaultColl[1]);
+      let EXPECTED_SUPP_ACCUMULATOR = rmul(exponentiated, equityAccu);
 
-      let after = await vaultEngine.assets(ASSET_ID.FLR);
-      expect(after[1]).to.equal(EXPECTED_SUPP_ACCUMULATOR);
+      let equityAccuAfter = await vaultEngine.equityAccumulator();
+      expect(equityAccuAfter).to.equal(EXPECTED_SUPP_ACCUMULATOR);
 
       TIME_TO_INCREASE = 394000;
 
       await vaultEngine.setTotalUserDebt(0);
       mpr = await teller.mpr();
       await teller.updateAccumulators(ASSET_ID.FLR);
-      vaultColl = await vaultEngine.assets(ASSET_ID.FLR);
+      equityAccu = await vaultEngine.equityAccumulator();
       lastUpdatedBefore = (await teller.assets(ASSET_ID.FLR))[0];
       await increaseTime(TIME_TO_INCREASE);
       await teller.updateAccumulators(ASSET_ID.FLR);
@@ -359,10 +358,10 @@ describe("Teller Unit Tests", function () {
         lastUpdatedAfter.sub(lastUpdatedBefore)
       );
 
-      EXPECTED_SUPP_ACCUMULATOR = rmul(exponentiated, vaultColl[1]);
+      EXPECTED_SUPP_ACCUMULATOR = rmul(exponentiated, equityAccu);
 
-      after = await vaultEngine.assets(ASSET_ID.FLR);
-      expect(after[1]).to.equal(EXPECTED_SUPP_ACCUMULATOR);
+      equityAccuAfter = await vaultEngine.equityAccumulator();
+      expect(equityAccuAfter).to.equal(EXPECTED_SUPP_ACCUMULATOR);
     });
 
     it("tests that protocolFeeRate is calculated properly", async () => {
@@ -372,12 +371,11 @@ describe("Teller Unit Tests", function () {
       let TIME_TO_INCREASE = 400000;
       await teller.updateAccumulators(ASSET_ID.FLR);
 
-      let vaultColl = await vaultEngine.assets(ASSET_ID.FLR);
+      let vaultColl = await vaultEngine.equityAccumulator();
       let lastUpdatedBefore = (await teller.assets(ASSET_ID.FLR))[0];
-      let captialAccumulatorBefore = (await vaultEngine.assets(ASSET_ID.FLR))
-        .equityAccumulator;
-      let before = await vaultEngine.assets(ASSET_ID.FLR);
-      expect(before[1]).to.equal(DEFAULT_SUPP_ACCUMULATOR);
+      let captialAccumulatorBefore = await vaultEngine.equityAccumulator();
+      let before = await vaultEngine.equityAccumulator();
+      expect(before).to.equal(DEFAULT_SUPP_ACCUMULATOR);
       await increaseTime(TIME_TO_INCREASE);
       await teller.updateAccumulators(ASSET_ID.FLR);
 
@@ -391,7 +389,7 @@ describe("Teller Unit Tests", function () {
         multipledByUtilization.add(RAY),
         lastUpdatedAfter.sub(lastUpdatedBefore)
       );
-      let EXPECTED_SUPP_ACCUMULATOR = rmul(exponentiated, vaultColl[1]);
+      let EXPECTED_SUPP_ACCUMULATOR = rmul(exponentiated, vaultColl);
       let EXPECTED_SUPP_ACCUMULATOR_RATE = EXPECTED_SUPP_ACCUMULATOR.sub(
         captialAccumulatorBefore
       );
@@ -401,8 +399,8 @@ describe("Teller Unit Tests", function () {
         EXPECTED_PROTOCOL_FEE_RATE
       );
 
-      let after = await vaultEngine.assets(ASSET_ID.FLR);
-      expect(after[1]).to.equal(
+      let after = await vaultEngine.equityAccumulator();
+      expect(after).to.equal(
         captialAccumulatorBefore.add(EXPECTED_SUPP_ACCUMULATOR_RATE)
       );
       let protocolRate = await vaultEngine.protocolFeeRates();

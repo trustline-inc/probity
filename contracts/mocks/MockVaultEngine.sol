@@ -13,8 +13,6 @@ contract MockVaultEngine {
     }
 
     struct Asset {
-        uint256 debtAccumulator; // Cumulative debt rate
-        uint256 equityAccumulator; // Cumulative equity rate
         uint256 adjustedPrice; // The asset price, adjusted for the asset ratio
         uint256 normDebt; // Normalized debt amount
         uint256 normEquity; // Normalized equity amount
@@ -59,6 +57,8 @@ contract MockVaultEngine {
     uint256 public lendingPoolDebt;
     uint256 public lendingPoolEquity;
     uint256 public lendingPoolSupply;
+    uint256 public debtAccumulator = 1e27;
+    uint256 public equityAccumulator = 1e27;
     LiquidateDebtPositionCall public lastLiquidateDebtPositionCall;
     LiquidateEquityPositionCall public lastLiquidateEquityPositionCall;
 
@@ -109,8 +109,6 @@ contract MockVaultEngine {
     }
 
     function initAsset(bytes32 assetId, Category category) external {
-        assets[assetId].debtAccumulator = 1e27;
-        assets[assetId].equityAccumulator = 1e27;
         assets[assetId].category = category;
     }
 
@@ -138,13 +136,12 @@ contract MockVaultEngine {
     function updateAccumulators(
         bytes32 assetId,
         address reservePool,
-        uint256 debtAccumulator,
-        uint256 equityAccumulator,
+        uint256 debtAccumulatorIncrease,
+        uint256 equityAccumulatorIncrease,
         uint256 protocolFeeRates_
     ) external {
-        Asset storage asset = assets[assetId];
-        asset.debtAccumulator += debtAccumulator;
-        asset.equityAccumulator += equityAccumulator;
+        debtAccumulator += debtAccumulatorIncrease;
+        equityAccumulator += equityAccumulatorIncrease;
         protocolFeeRates = protocolFeeRates_;
     }
 

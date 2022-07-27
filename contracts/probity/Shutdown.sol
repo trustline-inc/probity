@@ -48,11 +48,11 @@ interface VaultLike {
             uint256 initialEquity
         );
 
+    function debtAccumulator() external returns (uint256 debAccumulator);
+
     function assets(bytes32 assetId)
         external
         returns (
-            uint256 debtAccumulator,
-            uint256 equityAccumulator,
             uint256 price,
             uint256 normDebt,
             uint256 normEquity,
@@ -321,7 +321,7 @@ contract Shutdown is Stateful, Eventful {
     function setFinalPrice(bytes32 assetId) external onlyWhenInShutdown {
         uint256 price = priceFeed.getPrice(assetId);
         require(price != 0, "Shutdown/setFinalPrice: Price retrieved is zero");
-        (, , , assets[assetId].normDebt, , , ) = vaultEngine.assets(assetId);
+        (, assets[assetId].normDebt, , , ) = vaultEngine.assets(assetId);
         assets[assetId].finalPrice = price;
 
         emit FinalPriceSet(assetId, price);
@@ -334,7 +334,7 @@ contract Shutdown is Stateful, Eventful {
      */
     function processUserDebt(bytes32 assetId, address user) external onlyIfFinalPriceSet(assetId) {
         (, , uint256 collateral, uint256 debt, , ) = vaultEngine.vaults(assetId, user);
-        (uint256 debtAccumulator, , , , , , ) = vaultEngine.assets(assetId);
+        uint256 debtAccumulator = vaultEngine.debtAccumulator();
 
         uint256 required = (debt * debtAccumulator) / assets[assetId].finalPrice;
         uint256 amountToGrab = Math._min(collateral, required);
@@ -470,7 +470,7 @@ contract Shutdown is Stateful, Eventful {
      */
     function calculateRedemptionRatio(bytes32 assetId) external {
         require(finalStablecoinBalance != 0, "shutdown/calculateRedemptionRatio: Must set final debt balance first");
-        (uint256 debtAccumulator, , , , , , ) = vaultEngine.assets(assetId);
+        uint256 debtAccumulator = vaultEngine.debtAccumulator();
         uint256 normDebt = assets[assetId].normDebt;
         uint256 max = (normDebt * debtAccumulator) / assets[assetId].finalPrice;
         assets[assetId].redemptionRatio = ((max - assets[assetId].gap) * RAY) / (finalStablecoinBalance / RAY);

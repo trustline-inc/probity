@@ -391,9 +391,10 @@ describe("Probity happy flow", function () {
       .initAsset(ASSET_ID.FLR, WAD.mul(15).div(10), ftso.address);
     await priceFeed.updateAdjustedPrice(ASSET_ID.FLR);
 
-    let [, , adjustedPrice] = await vaultEngine.assets(ASSET_ID.FLR);
+    let [adjustedPrice] = await vaultEngine.assets(ASSET_ID.FLR);
     let expectedPrice = RAY.div(3).mul(2);
-    // As long as the expected price is within a buffer, call it success
+
+    // // As long as the expected price is within a buffer, call it success
     expect(adjustedPrice.sub(expectedPrice).toNumber() <= 10).to.equal(true);
   });
 
@@ -438,7 +439,8 @@ describe("Probity happy flow", function () {
     // increase time
     await increaseTime(5000);
 
-    const assetBefore = await vaultEngine.assets(ASSET_ID.FLR);
+    const debtAccuBefore = await vaultEngine.debtAccumulator();
+    const equityAccuBefore = await vaultEngine.equityAccumulator();
     const reserveBalBefore = await vaultEngine.systemCurrency(reserve.address);
     const totalDebtBefore = await vaultEngine.lendingPoolDebt();
     const lendingPoolEquityBefore = await vaultEngine.lendingPoolEquity();
@@ -446,21 +448,18 @@ describe("Probity happy flow", function () {
     // call teller.updateAccumulators
     await teller.updateAccumulators(ASSET_ID.FLR);
 
-    const assetAfter = await vaultEngine.assets(ASSET_ID.FLR);
+    const debtAccuAfter = await vaultEngine.debtAccumulator();
+    const equityAccuAfter = await vaultEngine.equityAccumulator();
     const reserveBalAfter = await vaultEngine.systemCurrency(reserve.address);
     const totalDebtAfter = await vaultEngine.lendingPoolDebt();
     const lendingPoolEquityAfter = await vaultEngine.lendingPoolEquity();
 
     // check the debt's accumulator update
-    const debtAccumulatorDiff = assetAfter.debtAccumulator.sub(
-      assetBefore.debtAccumulator
-    );
+    const debtAccumulatorDiff = debtAccuAfter.sub(debtAccuBefore);
     expect(debtAccumulatorDiff.gt(0)).to.equal(true);
 
     // check the equity's accumulator update
-    const equityAccumulatorDiff = assetAfter.equityAccumulator.sub(
-      assetBefore.equityAccumulator
-    );
+    const equityAccumulatorDiff = equityAccuAfter.sub(equityAccuBefore);
     expect(equityAccumulatorDiff.gt(0)).to.equal(true);
 
     // check reserveBal increase
