@@ -54,6 +54,7 @@ contract VaultEngine is Stateful, Eventful {
     uint256 public lendingPoolEquity; // Total normalized shares of equity in the lending pool [RAD]
     uint256 public lendingPoolDebt; // Total normalized amount of system currency owed by borrowers [RAD]
     uint256 public lendingPoolSupply; // Total amount of system currency in lending pool w/o interest [RAD]
+    uint256 public lendingPoolPrincipal; // Total amount of loan principal (w/o interest) [RAD]
     uint256 public totalSystemDebt; // Total amount owed to users by Probity [RAD]
     address[] public vaultList; // List of vaults that had either equity and/or debt position
     mapping(address => bool) public vaultExists; // Boolean indicating whether a vault exists for a given address
@@ -440,8 +441,7 @@ contract VaultEngine is Stateful, Eventful {
 
         assets[assetId].normEquity = Math._add(assets[assetId].normEquity, equityAmount);
         lendingPoolEquity = Math._add(lendingPoolEquity, equityAmount);
-
-        lendingPoolEquity = Math._add(lendingPoolEquity, equityCreated);
+        lendingPoolSupply = Math._add(lendingPoolSupply, equityCreated);
 
         require(lendingPoolEquity <= assets[assetId].ceiling, "Vault/modifyEquity: Supply ceiling reached");
         require(
@@ -490,6 +490,7 @@ contract VaultEngine is Stateful, Eventful {
 
         lendingPoolDebt = Math._add(lendingPoolDebt, debtAmount);
         totalSystemCurrency = Math._add(totalSystemCurrency, debtCreated);
+        lendingPoolPrincipal = Math._add(lendingPoolPrincipal, debtCreated);
 
         require(lendingPoolDebt * debtAccumulator <= assets[assetId].ceiling, "Vault/modifyDebt: Debt ceiling reached");
         require(

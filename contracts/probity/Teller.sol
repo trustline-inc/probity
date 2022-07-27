@@ -145,7 +145,7 @@ contract Teller is Stateful, Eventful {
 
         // Update equity accumulator
         uint256 debtCreated = creditFacility.debtRateIncrease * lendingPoolDebt;
-        uint256 equityAccumulatorDiff = debtCreated / lendingPoolEquity;
+        uint256 equityAccumulatorDiff = Math._rdiv(debtCreated / WAD, lendingPoolEquity * 1e9);
         creditFacility.equityRateIncrease = equityAccumulatorDiff;
 
         // Set new APR (round to nearest 0.25%)
