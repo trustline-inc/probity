@@ -84,10 +84,10 @@ async function expectBalancesToMatch(
     }
 
     if (balance["FLR"].debt !== undefined) {
-      expect(vault.debt).to.equal(balance["FLR"].debt);
+      expect(vault.normDebt).to.equal(balance["FLR"].debt);
     }
     if (balance["FLR"].equity !== undefined) {
-      expect(vault.equity).to.equal(balance["FLR"].equity);
+      expect(vault.normEquity).to.equal(balance["FLR"].equity);
     }
   }
 
@@ -99,10 +99,10 @@ async function expectBalancesToMatch(
     }
 
     if (balance["FXRP"].debt !== undefined) {
-      expect(vault.debt).to.equal(balance["FXRP"].debt);
+      expect(vault.normDebt).to.equal(balance["FXRP"].debt);
     }
     if (balance["FXRP"].equity !== undefined) {
-      expect(vault.equity).to.equal(balance["FXRP"].equity);
+      expect(vault.normEquity).to.equal(balance["FXRP"].equity);
     }
   }
 }
@@ -181,7 +181,6 @@ describe.skip("Shutdown Flow Test", function () {
     // Initialize FLR asset
     await vaultEngine.initAsset(ASSET_ID.FLR, 2);
     await vaultEngine.updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
-    await teller.initAsset(ASSET_ID.FLR, 0);
     await priceFeed.initAsset(
       ASSET_ID.FLR,
       WAD.mul(15).div(10),
@@ -192,7 +191,6 @@ describe.skip("Shutdown Flow Test", function () {
     // Initialize FXRP asset
     await vaultEngine.initAsset(ASSET_ID["FXRP"], 2);
     await vaultEngine.updateCeiling(ASSET_ID["FXRP"], RAD.mul(10_000_000));
-    await teller.initAsset(ASSET_ID["FXRP"], 0);
     await priceFeed.initAsset(
       ASSET_ID["FXRP"],
       WAD.mul(15).div(10),
@@ -1112,9 +1110,11 @@ describe.skip("Shutdown Flow Test", function () {
     expect(await vaultEngine.systemCurrency(bob.address)).to.equal(0);
 
     // redeem collateral
-    let before = (await vaultEngine.vaults(ASSET_ID.FLR, bob.address)).standby;
+    let before = (await vaultEngine.vaults(ASSET_ID.FLR, bob.address))
+      .standbyAmount;
     await shutdown.connect(bob).redeemAsset(ASSET_ID.FLR);
-    let after = (await vaultEngine.vaults(ASSET_ID.FLR, bob.address)).standby;
+    let after = (await vaultEngine.vaults(ASSET_ID.FLR, bob.address))
+      .standbyAmount;
     // bob["AUR"] balance: 1099000
     //["AUR"] balance * flr Redeemed Asset
     // 1099000 * 0.00264924679 = 2911.52222221
@@ -1123,9 +1123,11 @@ describe.skip("Shutdown Flow Test", function () {
       after.sub(before).sub(EXPECTED_FLR_COLL_REDEEMED).abs().lte(WAD.div(100))
     ).to.equal(true);
 
-    before = (await vaultEngine.vaults(ASSET_ID["FXRP"], bob.address)).standby;
+    before = (await vaultEngine.vaults(ASSET_ID["FXRP"], bob.address))
+      .standbyAmount;
     await shutdown.connect(bob).redeemAsset(ASSET_ID["FXRP"]);
-    after = (await vaultEngine.vaults(ASSET_ID["FXRP"], bob.address)).standby;
+    after = (await vaultEngine.vaults(ASSET_ID["FXRP"], bob.address))
+      .standbyAmount;
     // bob["USD"] balance: 1099000
     //["USD"] balance * flr Redeemed Asset
     // 1099000 * 0.333000333 = 365967.365967

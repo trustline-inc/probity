@@ -1702,7 +1702,7 @@ const deployMocks = async () => {
   return { contracts, signers };
 };
 
-const deployProbity = async () => {
+const deployProbity = async (vaultEngineType?: string) => {
   const signers = await getSigners();
   await deployUsd();
   await deployPbt();
@@ -1713,10 +1713,10 @@ const deployProbity = async () => {
   if (network.name === "local") {
     vaultType = "vaultEngineIssuer";
     await deployVaultEngineIssuer();
-  } else if (network.name === "coston") {
+  } else if (network.name === "coston" || vaultEngineType === "unrestricted") {
     vaultType = "vaultEngineUnrestricted";
     await deployVaultEngineUnrestricted();
-  } else if (network.name === "songbird") {
+  } else if (network.name === "songbird" || vaultEngineType === "limited") {
     vaultType = "vaultEngineLimited";
     await deployVaultEngineLimited();
   } else await deployVaultEngine();
@@ -1791,7 +1791,7 @@ const deployTest = async (vaultEngineType?: string) => {
   await deployRegistry();
   await deployMocks();
   await deployStateful();
-  await deployProbity();
+  await deployProbity(vaultEngineType);
   await deployAuctioneer();
   await deployVPAssetManager();
   await deployMockVaultEngine();

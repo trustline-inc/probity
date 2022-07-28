@@ -26,7 +26,7 @@ let gov: SignerWithAddress;
 let coll: SignerWithAddress;
 
 // Contracts
-let vaultEngine: VaultEngineLimited;
+let vaultEngine: any;
 let registry: Registry;
 let reservePool: ReservePool;
 let nativeAssetManager: NativeAssetManager;
@@ -42,7 +42,7 @@ describe("Vault Engine Limited Unit Tests", function () {
     let { contracts, signers } = await deployTest("limited");
     // Set contracts
     registry = contracts.registry!;
-    vaultEngine = contracts.vaultEngineLimited!;
+    vaultEngine = contracts.vaultEngine!;
     reservePool = contracts.reservePool!;
     nativeAssetManager = contracts.nativeAssetManager!;
     teller = contracts.teller!;
@@ -95,7 +95,7 @@ describe("Vault Engine Limited Unit Tests", function () {
 
       await vaultEngine
         .connect(coll)
-        .modifyStandbyAsset(
+        .modifyStandbyAmount(
           ASSET_ID.FLR,
           owner.address,
           COLL_AMOUNT.add(UNDERLYING_AMOUNT)
@@ -134,7 +134,7 @@ describe("Vault Engine Limited Unit Tests", function () {
 
       await vaultEngine
         .connect(coll)
-        .modifyStandbyAsset(
+        .modifyStandbyAmount(
           ASSET_ID.FLR,
           owner.address,
           COLL_AMOUNT.add(UNDERLYING_AMOUNT)
