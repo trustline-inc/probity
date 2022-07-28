@@ -420,9 +420,12 @@ contract VaultEngine is Stateful, Eventful {
         //        console.log("lendingPoolEquity       %s", lendingPoolEquity);
         //        console.log("equityRateIncrease      %s", equityRateIncrease);
         //        console.log("newEquity               %s", newEquity);
-        //        console.log("");
 
         uint256 protocolFeeToCollect = lendingPoolEquity * protocolFeeRates;
+
+        //        console.log("protocolFeeToCollect    %s", protocolFeeToCollect);
+        //        console.log("combined                %s", newEquity + protocolFeeToCollect);
+        //        console.log("");
         require(
             newEquity + protocolFeeToCollect <= newDebt,
             "VaultEngine/updateAccumulators: The equity rate increase is larger than the debt rate increase"
@@ -474,7 +477,7 @@ contract VaultEngine is Stateful, Eventful {
         lendingPoolSupply = Math._add(lendingPoolSupply, equityCreated);
 
         require(
-            Math._mul(lendingPoolEquity, equityAccumulator) <= assets[assetId].ceiling,
+            Math._mul(vault.normEquity, equityAccumulator) <= assets[assetId].ceiling,
             "Vault/modifyEquity: Supply ceiling reached"
         );
         require(
@@ -524,8 +527,7 @@ contract VaultEngine is Stateful, Eventful {
         lendingPoolDebt = Math._add(lendingPoolDebt, debtAmount);
         totalSystemCurrency = Math._add(totalSystemCurrency, debtCreated);
         lendingPoolPrincipal = Math._add(lendingPoolPrincipal, debtCreated);
-
-        require(lendingPoolDebt * debtAccumulator <= assets[assetId].ceiling, "Vault/modifyDebt: Debt ceiling reached");
+        require(vault.normDebt * debtAccumulator <= assets[assetId].ceiling, "Vault/modifyDebt: Debt ceiling reached");
         require(
             vault.normDebt == 0 || (vault.normDebt * RAY) > assets[assetId].floor,
             "Vault/modifyDebt: Debt smaller than floor"

@@ -590,7 +590,6 @@ describe("Vault Engine Unit Tests", function () {
       await assertRevert(
         vaultEngine.modifyDebt(
           ASSET_ID.FLR,
-
           COLLATERAL_AMOUNT,
           DEBT_AMOUNT.add(1)
         ),
@@ -599,7 +598,6 @@ describe("Vault Engine Unit Tests", function () {
 
       await vaultEngine.modifyDebt(
         ASSET_ID.FLR,
-
         COLLATERAL_AMOUNT,
         DEBT_AMOUNT.sub(1)
       );
@@ -1184,7 +1182,7 @@ describe("Vault Engine Unit Tests", function () {
     it("fails if the equity increase (+ protocol fee) is larger than the debt increase", async () => {
       const debtRateIncrease = BigNumber.from("251035088626883475473007");
       const equityRateIncrease = BigNumber.from("125509667994754929166541");
-      let protocolRateIncrease = BigNumber.from("25509667994754929166541");
+      let protocolRateIncrease = BigNumber.from("255096679947549291665419");
       await assertRevert(
         vaultEngine
           .connect(user)
