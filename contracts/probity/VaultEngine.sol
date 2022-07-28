@@ -58,9 +58,9 @@ contract VaultEngine is Stateful, Eventful {
     uint256 public totalSystemDebt; // Total amount owed to users by Probity [RAD]
     address[] public vaultList; // List of vaults that had either equity and/or debt position
     mapping(address => bool) public vaultExists; // Boolean indicating whether a vault exists for a given address
-    mapping(address => uint256) public systemCurrency; // Vault owner's system currency balance
-    mapping(address => uint256) public pbt; // Vault owner's governance token balance
-    mapping(address => uint256) public systemDebt; // Vault owner's share of system debt
+    mapping(address => uint256) public systemCurrency; // Vault owner's system currency balance [RAD]
+    mapping(address => uint256) public pbt; // Vault owner's governance token balance [RAD]
+    mapping(address => uint256) public systemDebt; // Vault owner's share of system debt [RAD]
     mapping(bytes32 => Asset) public assets; // assetId -> asset
     mapping(bytes32 => mapping(address => Vault)) public vaults; // assetId -> vault owner's address -> vault
 
@@ -320,6 +320,7 @@ contract VaultEngine is Stateful, Eventful {
             vaults[assetId][auctioneer].standbyAmount,
             assetToAuction
         );
+        lendingPoolEquity = Math._add(lendingPoolEquity, equityAmount);
         lendingPoolSupply = lendingPoolSupply; // TODO: Fix
 
         emit EquityLiquidated(account, assetToAuction, assetToReturn, equityAmount);
@@ -395,8 +396,21 @@ contract VaultEngine is Stateful, Eventful {
         uint256 equityRateIncrease,
         uint256 protocolFeeRates
     ) external onlyBy("teller") {
+        emit LogVarUpdate("Vault", "debtAccumulator", debtAccumulator, debtRateIncrease);
+        emit LogVarUpdate("Vault", "equityAccumulator", equityAccumulator, equityRateIncrease);
+
+        uint256 newDebt = lendingPoolDebt * debtRateIncrease;
+        uint256 newEquity = lendingPoolEquity * equityRateIncrease;
+
         debtAccumulator += debtRateIncrease;
         equityAccumulator += equityRateIncrease;
+
+        uint256 protocolFeeToCollect = lendingPoolEquity * protocolFeeRates;
+        require(
+            newEquity + protocolFeeToCollect <= newDebt,
+            "VaultEngine/updateAccumulators: The equity rate increase is larger than the debt rate increase"
+        );
+        systemCurrency[reservePool] += protocolFeeToCollect;
     }
 
     /**

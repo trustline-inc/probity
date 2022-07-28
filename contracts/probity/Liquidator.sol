@@ -79,8 +79,8 @@ contract Liquidator is Stateful, Eventful {
     /////////////////////////////////////////
     struct Asset {
         AuctioneerLike auctioneer;
-        uint256 debtPenaltyFee;
-        uint256 equityPenaltyFee;
+        uint256 debtPenaltyFee; // [WAD]
+        uint256 equityPenaltyFee; // [WAD]
     }
 
     /////////////////////////////////////////
