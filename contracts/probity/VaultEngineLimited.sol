@@ -30,28 +30,25 @@ contract VaultEngineLimited is VaultEngine {
 
     function modifyEquity(
         bytes32 assetId,
-        address treasuryAddress,
         int256 underlyingAmount,
         int256 equityAmount
     ) external override onlyBy("whitelisted") {
-        _modifyEquity(assetId, treasuryAddress, underlyingAmount, equityAmount);
+        _modifyEquity(assetId, underlyingAmount, equityAmount);
         _enforceVaultLimit(assetId, vaults[assetId][msg.sender]);
     }
 
     /**
      * @notice Modifies vault debt
      * @param assetId The ID of the vault asset type
-     * @param treasuryAddress The address of the desired treasury contract
      * @param collAmount Amount of asset supplied as loan security
      * @param debtAmount Amount of stablecoin to borrow
      */
     function modifyDebt(
         bytes32 assetId,
-        address treasuryAddress,
         int256 collAmount,
         int256 debtAmount
     ) external override onlyBy("whitelisted") {
-        _modifyDebt(assetId, treasuryAddress, collAmount, debtAmount);
+        _modifyDebt(assetId, collAmount, debtAmount);
         _enforceVaultLimit(assetId, vaults[assetId][msg.sender]);
     }
 
@@ -67,7 +64,7 @@ contract VaultEngineLimited is VaultEngine {
      */
     function _enforceVaultLimit(bytes32 assetId, Vault memory vault) internal view {
         require(
-            (vault.debt * assets[assetId].debtAccumulator) + vault.initialEquity <= vaultLimit,
+            (vault.debt * debtAccumulator) + vault.initialEquity <= vaultLimit,
             "Vault is over the individual vault limit"
         );
     }

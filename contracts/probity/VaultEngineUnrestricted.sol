@@ -27,26 +27,23 @@ contract VaultEngineUnrestricted is VaultEngine {
 
     function modifyEquity(
         bytes32 assetId,
-        address treasuryAddress,
         int256 underlyingAmount,
         int256 equityAmount
     ) external override {
-        _modifyEquity(assetId, treasuryAddress, underlyingAmount, equityAmount);
+        _modifyEquity(assetId, underlyingAmount, equityAmount);
     }
 
     /**
      * @notice Modifies vault debt
      * @param assetId The ID of the vault asset type
-     * @param treasuryAddress The address of the desired treasury contract
      * @param collAmount Amount of asset supplied as loan security
      * @param debtAmount Amount of stablecoin to borrow
      */
     function modifyDebt(
         bytes32 assetId,
-        address treasuryAddress,
         int256 collAmount,
         int256 debtAmount
     ) external override {
-        _modifyDebt(assetId, treasuryAddress, collAmount, debtAmount);
+        _modifyDebt(assetId, collAmount, debtAmount);
     }
 }
