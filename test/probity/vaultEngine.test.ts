@@ -464,91 +464,6 @@ describe("Vault Engine Unit Tests", function () {
     });
   });
 
-  describe("reducePbt Unit Tests", function () {
-    const UNDERLYING_AMOUNT = WAD.mul(10_000);
-    const ASSET_AMOUNT = WAD.mul(10_000);
-    const EQUITY_AMOUNT = WAD.mul(2000);
-    const DEBT_AMOUNT = WAD.mul(1000);
-
-    const debtRateIncrease = RAY.mul(40);
-    const equityRateIncrease = RAY.mul(15);
-
-    beforeEach(async function () {
-      await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR, 2);
-      await vaultEngine
-        .connect(gov)
-        .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
-      await registry
-        .connect(gov)
-        .setupAddress(bytes32("assetManager"), assetManager.address, true);
-
-      await vaultEngine.connect(gov).updateAdjustedPrice(ASSET_ID.FLR, RAY);
-
-      await vaultEngine
-        .connect(assetManager)
-        .modifyStandbyAsset(ASSET_ID.FLR, owner.address, ASSET_AMOUNT.mul(2));
-
-      await vaultEngine.connect(owner).modifyEquity(
-        ASSET_ID.FLR,
-
-        UNDERLYING_AMOUNT,
-        EQUITY_AMOUNT
-      );
-
-      await vaultEngine
-        .connect(owner)
-        .modifyDebt(ASSET_ID.FLR, ASSET_AMOUNT, DEBT_AMOUNT);
-
-      await registry
-        .connect(gov)
-        .setupAddress(bytes32("teller"), assetManager.address, true);
-
-      await vaultEngine
-        .connect(assetManager)
-        .updateAccumulators(
-          ASSET_ID.FLR,
-          reservePool.address,
-          debtRateIncrease,
-          equityRateIncrease,
-          BigNumber.from(0)
-        );
-
-      // await vaultEngine.connect(owner).collectInterest(ASSET_ID.FLR);
-    });
-
-    it("fails if the caller is not treasury", async () => {
-      const AMOUNT_TO_REDUCE = RAD.mul(23);
-
-      await assertRevert(
-        vaultEngine.connect(user).reducePbt(owner.address, AMOUNT_TO_REDUCE),
-        "AccessControl/onlyBy: Caller does not have permission"
-      );
-
-      await registry
-        .connect(gov)
-        .setupAddress(bytes32("treasury"), user.address, true);
-
-      await vaultEngine
-        .connect(user)
-        .reducePbt(owner.address, AMOUNT_TO_REDUCE);
-    });
-
-    it("test that correct amount is reduced", async () => {
-      await registry
-        .connect(gov)
-        .setupAddress(bytes32("treasury"), user.address, true);
-      const AMOUNT_TO_REDUCE = RAD.mul(23);
-
-      const before = await vaultEngine.pbt(owner.address);
-      await vaultEngine
-        .connect(user)
-        .reducePbt(owner.address, AMOUNT_TO_REDUCE);
-      const after = await vaultEngine.pbt(owner.address);
-
-      expect(before.sub(after)).to.equal(AMOUNT_TO_REDUCE);
-    });
-  });
-
   describe("balanceOf Unit Tests", function () {
     const UNDERLYING_AMOUNT = WAD.mul(10_000);
     const ACCUMULATOR = RAY;
@@ -639,28 +554,33 @@ describe("Vault Engine Unit Tests", function () {
         .connect(assetManager)
         .modifyStandbyAsset(ASSET_ID.FLR, user.address, ASSET_AMOUNT);
 
-      await vaultEngine.connect(user).modifyEquity(
-        ASSET_ID.FLR,
-
-        UNDERLYING_AMOUNT,
-        EQUITY_AMOUNT
-      );
+      await vaultEngine
+        .connect(user)
+        .modifyEquity(ASSET_ID.FLR, UNDERLYING_AMOUNT, EQUITY_AMOUNT);
     });
 
-    it("fails if treasury address doesn't have enough capital", async () => {
+    it("fails if treasury doesn't have enough capital", async () => {
       await registry
         .connect(gov)
         .setupAddress(bytes32("treasury"), user.address, true);
 
+      const treasuryBalance = await vaultEngine.systemCurrency(
+        treasury.address
+      );
+
       await assertRevert(
-        vaultEngine.modifyDebt(ASSET_ID.FLR, COLLATERAL_AMOUNT, DEBT_AMOUNT),
+        vaultEngine.modifyDebt(
+          ASSET_ID.FLR,
+          UNDERLYING_AMOUNT,
+          treasuryBalance.div(RAY).add(1)
+        ),
         "Vault/modifyDebt: Treasury doesn't have enough equity to loan this amount"
       );
 
       await vaultEngine.modifyDebt(
         ASSET_ID.FLR,
         COLLATERAL_AMOUNT,
-        DEBT_AMOUNT
+        treasuryBalance.div(RAY)
       );
     });
 

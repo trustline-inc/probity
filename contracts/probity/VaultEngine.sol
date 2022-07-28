@@ -486,9 +486,11 @@ contract VaultEngine is Stateful, Eventful {
             vaultExists[msg.sender] = true;
         }
 
-        if (debtAmount > 0) {
+        int256 debtCreated = Math._mul(debtAccumulator, debtAmount);
+
+        if (debtCreated > 0) {
             require(
-                systemCurrency[treasury] >= uint256(debtAmount),
+                systemCurrency[treasury] >= uint256(debtAmount) * debtAccumulator,
                 "Vault/modifyDebt: Treasury doesn't have enough equity to loan this amount"
             );
         }
@@ -496,7 +498,6 @@ contract VaultEngine is Stateful, Eventful {
         Vault memory vault = vaults[assetId][msg.sender];
         vault.standby = Math._sub(vault.standby, collAmount);
         vault.collateral = Math._add(vault.collateral, collAmount);
-        int256 debtCreated = Math._mul(debtAccumulator, debtAmount);
         vault.debt = Math._add(vault.debt, debtAmount);
 
         assets[assetId].normDebt = Math._add(assets[assetId].normDebt, debtAmount);

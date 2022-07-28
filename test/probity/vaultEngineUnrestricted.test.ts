@@ -55,6 +55,7 @@ describe("Vault Engine Unrestricted Unit Tests", function () {
     assetManager = signers.lender!;
 
     await registry.setupAddress(bytes32("gov"), gov.address, true);
+    await vaultEngine.updateTreasuryAddress(contracts.treasury.address);
   });
 
   describe("modifyEquity Unit Tests", function () {
