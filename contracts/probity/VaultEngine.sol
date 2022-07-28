@@ -414,13 +414,13 @@ contract VaultEngine is Stateful, Eventful {
         debtAccumulator += debtRateIncrease;
         equityAccumulator += equityRateIncrease;
 
-        console.log("Lending pool debt       %s", lendingPoolDebt);
-        console.log("debtRate Incrase        %s", debtRateIncrease);
-        console.log("new Debt                %s", newDebt);
-        console.log("lendingPoolEquity       %s", lendingPoolEquity);
-        console.log("equityRateIncrease      %s", equityRateIncrease);
-        console.log("newEquity               %s", newEquity);
-        console.log("");
+        //        console.log("Lending pool debt       %s", lendingPoolDebt);
+        //        console.log("debtRate Incrase        %s", debtRateIncrease);
+        //        console.log("new Debt                %s", newDebt);
+        //        console.log("lendingPoolEquity       %s", lendingPoolEquity);
+        //        console.log("equityRateIncrease      %s", equityRateIncrease);
+        //        console.log("newEquity               %s", newEquity);
+        //        console.log("");
 
         uint256 protocolFeeToCollect = lendingPoolEquity * protocolFeeRates;
         require(

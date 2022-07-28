@@ -134,9 +134,9 @@ contract Teller is Stateful, Eventful {
         //        uint256 equityRateIncrease = equityAccumulatorDiff - protocolFeeRate;
 
         //        uint256 equityAccumulatorDiff = Math._rdiv(debtCreated / WAD, lendingPoolEquity * 1e9);
-        console.log("lendingPoolPrincipal    %s", lendingPoolPrincipal);
-        console.log("lendingPoolSupply       %s", lendingPoolSupply);
-        console.log("utilization ratio       %s", utilization);
+        //        console.log("lendingPoolPrincipal    %s", lendingPoolPrincipal);
+        //        console.log("lendingPoolSupply       %s", lendingPoolSupply);
+        //        console.log("utilization ratio       %s", utilization);
         //        uint256 accumulatorDelta = Math._rpow(mpr, (block.timestamp - lastUpdated));
         //        creditFacility.debtRateIncrease = Math._rmul(accumulatorDelta, debtAccumulator) - debtAccumulator;
         //        debtAccumulator = Math._rmul(accumulatorDelta, debtAccumulator);

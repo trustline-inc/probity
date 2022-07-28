@@ -381,73 +381,73 @@ describe("Probity happy flow", function () {
     expect(adjustedPrice.sub(expectedPrice).toNumber() <= 10).to.equal(true);
   });
 
-  it.only("play with accumulator ", async () => {
-    const UNDERLYING_AMOUNT = WAD.mul(2000);
-    const EQUITY_AMOUNT = WAD.mul(1000);
-    const COLL_AMOUNT = WAD.mul(20);
-    const LOAN_AMOUNT = WAD.mul(10);
-    // Deposit native token (FLR)
-    await flrAssetManager.deposit({ value: STANDBY_AMOUNT.mul(30) });
-
-    // Initialize the FLR asset
-    await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR, 2);
-    await vaultEngine
-      .connect(gov)
-      .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
-
-    await priceFeed
-      .connect(gov)
-      .initAsset(ASSET_ID.FLR, WAD.mul(15).div(10), ftso.address);
-    await priceFeed.updateAdjustedPrice(ASSET_ID.FLR);
-
-    // increase equity
-    await vaultEngine.modifyEquity(
-      ASSET_ID.FLR,
-      UNDERLYING_AMOUNT,
-      EQUITY_AMOUNT
-    );
-
-    // increase debt
-    await vaultEngine.modifyDebt(ASSET_ID.FLR, COLL_AMOUNT, LOAN_AMOUNT);
-
-    await teller.updateAccumulators();
-
-    for (let i = 0; i < 1000; i++) {
-      await increaseTime(5000);
-      await teller.updateAccumulators();
-      await vaultEngine.modifyDebt(ASSET_ID.FLR, COLL_AMOUNT, LOAN_AMOUNT);
-    }
-    //
-    // // increase time
-    // await increaseTime(5000);
-    //
-    // const debtAccuBefore = await vaultEngine.debtAccumulator();
-    // const equityAccuBefore = await vaultEngine.equityAccumulator();
-    // const reserveBalBefore = await vaultEngine.systemCurrency(reserve.address);
-    // const totalDebtBefore = await vaultEngine.lendingPoolDebt();
-    // const lendingPoolEquityBefore = await vaultEngine.lendingPoolEquity();
-    //
-    // // call teller.updateAccumulators
-    // await teller.updateAccumulators();
-    //
-    // const debtAccuAfter = await vaultEngine.debtAccumulator();
-    // const equityAccuAfter = await vaultEngine.equityAccumulator();
-    // const reserveBalAfter = await vaultEngine.systemCurrency(reserve.address);
-    // const totalDebtAfter = await vaultEngine.lendingPoolDebt();
-    // const lendingPoolEquityAfter = await vaultEngine.lendingPoolEquity();
-    //
-    // // check the debt's accumulator update
-    // const debtAccumulatorDiff = debtAccuAfter.sub(debtAccuBefore);
-    // expect(debtAccumulatorDiff.gt(0)).to.equal(true);
-    //
-    // // check the equity's accumulator update
-    // const equityAccumulatorDiff = equityAccuAfter.sub(equityAccuBefore);
-    // expect(equityAccumulatorDiff.gt(0)).to.equal(true);
-    //
-    // // check reserveBal increase
-    // const reserveBalDiff = reserveBalAfter.sub(reserveBalBefore);
-    // expect(reserveBalDiff.gt(0)).to.equal(true);
-  });
+  // it.only("play with accumulator ", async () => {
+  //   const UNDERLYING_AMOUNT = WAD.mul(2000);
+  //   const EQUITY_AMOUNT = WAD.mul(1000);
+  //   const COLL_AMOUNT = WAD.mul(20);
+  //   const LOAN_AMOUNT = WAD.mul(10);
+  //   // Deposit native token (FLR)
+  //   await flrAssetManager.deposit({ value: STANDBY_AMOUNT.mul(30) });
+  //
+  //   // Initialize the FLR asset
+  //   await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR, 2);
+  //   await vaultEngine
+  //     .connect(gov)
+  //     .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
+  //
+  //   await priceFeed
+  //     .connect(gov)
+  //     .initAsset(ASSET_ID.FLR, WAD.mul(15).div(10), ftso.address);
+  //   await priceFeed.updateAdjustedPrice(ASSET_ID.FLR);
+  //
+  //   // increase equity
+  //   await vaultEngine.modifyEquity(
+  //     ASSET_ID.FLR,
+  //     UNDERLYING_AMOUNT,
+  //     EQUITY_AMOUNT
+  //   );
+  //
+  //   // increase debt
+  //   await vaultEngine.modifyDebt(ASSET_ID.FLR, COLL_AMOUNT, LOAN_AMOUNT);
+  //
+  //   await teller.updateAccumulators();
+  //
+  //   for (let i = 0; i < 1000; i++) {
+  //     await increaseTime(5000);
+  //     await teller.updateAccumulators();
+  //     await vaultEngine.modifyDebt(ASSET_ID.FLR, COLL_AMOUNT, LOAN_AMOUNT);
+  //   }
+  //   //
+  //   // // increase time
+  //   // await increaseTime(5000);
+  //   //
+  //   // const debtAccuBefore = await vaultEngine.debtAccumulator();
+  //   // const equityAccuBefore = await vaultEngine.equityAccumulator();
+  //   // const reserveBalBefore = await vaultEngine.systemCurrency(reserve.address);
+  //   // const totalDebtBefore = await vaultEngine.lendingPoolDebt();
+  //   // const lendingPoolEquityBefore = await vaultEngine.lendingPoolEquity();
+  //   //
+  //   // // call teller.updateAccumulators
+  //   // await teller.updateAccumulators();
+  //   //
+  //   // const debtAccuAfter = await vaultEngine.debtAccumulator();
+  //   // const equityAccuAfter = await vaultEngine.equityAccumulator();
+  //   // const reserveBalAfter = await vaultEngine.systemCurrency(reserve.address);
+  //   // const totalDebtAfter = await vaultEngine.lendingPoolDebt();
+  //   // const lendingPoolEquityAfter = await vaultEngine.lendingPoolEquity();
+  //   //
+  //   // // check the debt's accumulator update
+  //   // const debtAccumulatorDiff = debtAccuAfter.sub(debtAccuBefore);
+  //   // expect(debtAccumulatorDiff.gt(0)).to.equal(true);
+  //   //
+  //   // // check the equity's accumulator update
+  //   // const equityAccumulatorDiff = equityAccuAfter.sub(equityAccuBefore);
+  //   // expect(equityAccumulatorDiff.gt(0)).to.equal(true);
+  //   //
+  //   // // check reserveBal increase
+  //   // const reserveBalDiff = reserveBalAfter.sub(reserveBalBefore);
+  //   // expect(reserveBalDiff.gt(0)).to.equal(true);
+  // });
 
   it("updates the accumulators + protocol fees", async () => {
     // Deposit native token (FLR)
