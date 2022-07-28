@@ -188,6 +188,8 @@ yarn run issuance <network>
 
 Run this command to update the debt and equity rate accumulators every 5 seconds.
 
+> Note: You must first commit funds to the lending pool, otherwise you will get execution error `Teller/updateAccumulators: Total equity cannot be zero`
+
 ```
 yarn run rateUpdater <network>
 ```

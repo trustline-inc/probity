@@ -132,7 +132,7 @@ describe("ReservePool Unit Tests", function () {
     const AMOUNT_TO_SETTLE = RAD.mul(287);
 
     beforeEach(async function () {
-      await vaultEngine.setsystemDebt(
+      await vaultEngine.setSystemDebt(
         reservePool.address,
         UNBACKED_DEBT_TO_SET
       );
@@ -235,7 +235,7 @@ describe("ReservePool Unit Tests", function () {
       await reservePool.updateDebtThreshold(DEBT_THRESHOLD);
       await vaultEngine
         .connect(liquidator)
-        .setsystemDebt(reservePool.address, DEBT_THRESHOLD.mul(2));
+        .setSystemDebt(reservePool.address, DEBT_THRESHOLD.mul(2));
     });
 
     it("fails if caller is not by reservePool", async () => {
@@ -250,7 +250,7 @@ describe("ReservePool Unit Tests", function () {
     it("fails if debt threshold has not been crossed yet", async () => {
       await vaultEngine
         .connect(liquidator)
-        .setsystemDebt(reservePool.address, DEBT_THRESHOLD.sub(1));
+        .setSystemDebt(reservePool.address, DEBT_THRESHOLD.sub(1));
 
       await assertRevert(
         reservePool.connect(liquidator).startBondSale(),
@@ -258,7 +258,7 @@ describe("ReservePool Unit Tests", function () {
       );
       await vaultEngine
         .connect(liquidator)
-        .setsystemDebt(reservePool.address, DEBT_THRESHOLD.add(1));
+        .setSystemDebt(reservePool.address, DEBT_THRESHOLD.add(1));
       await reservePool.connect(liquidator).startBondSale();
     });
 

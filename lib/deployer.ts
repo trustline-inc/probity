@@ -112,11 +112,16 @@ interface ContractDict {
   ftso?: MockFtso;
   registry?: Registry;
   pbt?: PBT;
-  vaultEngine?: VaultEngine;
+  vaultEngine?:
+    | VaultEngine
+    | VaultEngineLimited
+    | VaultEngineUnrestricted
+    | VaultEngineIssuer;
   vaultEngineIssuer?: VaultEngineIssuer;
   vaultEngineLimited?: VaultEngineLimited;
   vaultEngineUnrestricted?: VaultEngineUnrestricted;
   nativeAssetManager?: NativeAssetManager;
+  usdManager?: ERC20AssetManager;
   erc20AssetManager?:
     | {
         USD?: ERC20AssetManager;
@@ -206,6 +211,7 @@ const contracts: ContractDict = {
   vaultEngineLimited: undefined,
   vaultEngineUnrestricted: undefined,
   nativeAssetManager: undefined,
+  usdManager: undefined,
   erc20AssetManager: {
     USD: undefined,
     FXRP: undefined,
@@ -491,10 +497,7 @@ const deployVaultEngine = async (param?: { registry?: string }) => {
 };
 
 const deployVaultEngineIssuer = async (param?: { registry?: string }) => {
-  if (
-    contracts.vaultEngineIssuer !== undefined &&
-    process.env.NODE_ENV !== "test"
-  ) {
+  if (contracts.vaultEngine !== undefined && process.env.NODE_ENV !== "test") {
     console.info(
       "vaultEngineIssuer contract has already been deployed, skipping"
     );
@@ -508,15 +511,15 @@ const deployVaultEngineIssuer = async (param?: { registry?: string }) => {
     "VaultEngineIssuer",
     signers.owner
   )) as VaultEngineIssuer__factory;
-  contracts.vaultEngineIssuer = await vaultEngineFactory.deploy(registry!);
-  await contracts.vaultEngineIssuer.deployed();
+  contracts.vaultEngine = await vaultEngineFactory.deploy(registry!);
+  await contracts.vaultEngine.deployed();
   if (process.env.NODE_ENV !== "test") {
     console.info("vaultEngineIssuer deployed ✓");
     console.info({ registry });
   }
   await contracts.registry?.setupAddress(
-    bytes32("vaultEngineIssuer"),
-    contracts.vaultEngineIssuer.address,
+    bytes32("vaultEngine"),
+    contracts.vaultEngine.address,
     true
   );
   await checkDeploymentDelay();
@@ -524,10 +527,7 @@ const deployVaultEngineIssuer = async (param?: { registry?: string }) => {
 };
 
 const deployVaultEngineUnrestricted = async (param?: { registry?: string }) => {
-  if (
-    contracts.vaultEngineUnrestricted !== undefined &&
-    process.env.NODE_ENV !== "test"
-  ) {
+  if (contracts.vaultEngine !== undefined && process.env.NODE_ENV !== "test") {
     console.info(
       "vaultEngineUnrestricted contract has already been deployed, skipping"
     );
@@ -541,17 +541,15 @@ const deployVaultEngineUnrestricted = async (param?: { registry?: string }) => {
     "VaultEngineUnrestricted",
     signers.owner
   )) as VaultEngineUnrestricted__factory;
-  contracts.vaultEngineUnrestricted = await vaultEngineFactory.deploy(
-    registry!
-  );
-  await contracts.vaultEngineUnrestricted.deployed();
+  contracts.vaultEngine = await vaultEngineFactory.deploy(registry!);
+  await contracts.vaultEngine.deployed();
   if (process.env.NODE_ENV !== "test") {
     console.info("vaultEngineUnrestricted deployed ✓");
     console.info({ registry });
   }
   await contracts.registry?.setupAddress(
     bytes32("vaultEngineUnrestricted"),
-    contracts.vaultEngineUnrestricted.address,
+    contracts.vaultEngine.address,
     true
   );
   await checkDeploymentDelay();
@@ -559,10 +557,7 @@ const deployVaultEngineUnrestricted = async (param?: { registry?: string }) => {
 };
 
 const deployVaultEngineLimited = async (param?: { registry?: string }) => {
-  if (
-    contracts.vaultEngineLimited !== undefined &&
-    process.env.NODE_ENV !== "test"
-  ) {
+  if (contracts.vaultEngine !== undefined && process.env.NODE_ENV !== "test") {
     console.info(
       "vaultEngineLimited contract has already been deployed, skipping"
     );
@@ -576,15 +571,15 @@ const deployVaultEngineLimited = async (param?: { registry?: string }) => {
     "VaultEngineLimited",
     signers.owner
   )) as VaultEngineLimited__factory;
-  contracts.vaultEngineLimited = await vaultEngineFactory.deploy(registry!);
-  await contracts.vaultEngineLimited.deployed();
+  contracts.vaultEngine = await vaultEngineFactory.deploy(registry!);
+  await contracts.vaultEngine.deployed();
   if (process.env.NODE_ENV !== "test") {
     console.info("vaultEngineLimited deployed ✓");
     console.info({ registry });
   }
   await contracts.registry?.setupAddress(
     bytes32("vaultEngineLimited"),
-    contracts.vaultEngineLimited.address,
+    contracts.vaultEngine.address,
     true
   );
   await checkDeploymentDelay();
@@ -1714,33 +1709,47 @@ const deployProbity = async () => {
   await deployApr();
 
   // Deploy VaultEngine based on network
-  if (network.name === "local") await deployVaultEngineIssuer();
-  else if (network.name === "coston") await deployVaultEngineUnrestricted();
-  else if (network.name === "songbird") await deployVaultEngineLimited();
-  else await deployVaultEngine();
+  let vaultType = "VaultEngine";
+  if (network.name === "local") {
+    vaultType = "vaultEngineIssuer";
+    await deployVaultEngineIssuer();
+  } else if (network.name === "coston") {
+    vaultType = "vaultEngineUnrestricted";
+    await deployVaultEngineUnrestricted();
+  } else if (network.name === "songbird") {
+    vaultType = "vaultEngineLimited";
+    await deployVaultEngineLimited();
+  } else await deployVaultEngine();
 
-  await deployNativeAssetManager();
-  await deployBondIssuer();
-  await deployReservePool();
-  await deployTeller();
+  await deployNativeAssetManager({
+    vaultEngine: contracts[vaultType]?.address,
+  });
+  await deployBondIssuer({ vaultEngine: contracts[vaultType]?.address });
+  await deployReservePool({ vaultEngine: contracts[vaultType]?.address });
+  await deployTeller({ vaultEngine: contracts[vaultType]?.address });
   await deployPriceCalc();
-  await deployPriceFeed();
-  await deployTreasury();
-  await deployLiquidator();
-  await deployShutdown();
+  await deployPriceFeed({ vaultEngine: contracts[vaultType]?.address });
+  await deployTreasury({ vaultEngine: contracts[vaultType]?.address });
+  await deployLiquidator({ vaultEngine: contracts[vaultType]?.address });
+  await deployShutdown({ vaultEngine: contracts[vaultType]?.address });
 
   return { contracts, signers };
 };
 
-////
-// Deployments by environment
-////
+/**
+ * @function checkDeploymentDelay
+ * @returns Promise<void>
+ */
 function checkDeploymentDelay() {
   if (process.env.DEPLOYMENT_DELAY === undefined) return;
   const delayTime = parseInt(process.env.DEPLOYMENT_DELAY);
   console.log(`sleeping for ${delayTime} ms`);
   return new Promise((resolve) => setTimeout(resolve, delayTime));
 }
+
+////
+// Deployments by environment
+////
 
 const deployDev = async () => {
   await parseExistingContracts();
@@ -1749,15 +1758,26 @@ const deployDev = async () => {
     await deployRegistry();
     await deployMocks();
     await deployProbity();
-    await deployAuctioneer();
+
+    // Get vault type
+    let vaultType = "VaultEngine";
+    if (network.name === "local") {
+      vaultType = "vaultEngineIssuer";
+    } else if (network.name === "coston") {
+      vaultType = "vaultEngineUnrestricted";
+    } else if (network.name === "songbird") {
+      vaultType = "vaultEngineLimited";
+    }
+
+    await deployAuctioneer({ vaultEngine: contracts[vaultType]?.address });
     // await deployErc20Token();
     await deployErc20AssetManager({
       registry: contracts?.registry?.address,
       symbol: "USD",
       erc20: contracts?.usd?.address,
-      vaultEngine: contracts?.vaultEngine?.address,
+      vaultEngine: contracts[vaultType]?.address,
     });
-    await deployVPAssetManager();
+    await deployVPAssetManager({ vaultEngine: contracts[vaultType]?.address });
   } catch (err) {
     console.error("Error occurred while deploying", err);
     return { contracts, signers };
@@ -1772,9 +1792,6 @@ const deployTest = async (vaultEngineType?: string) => {
   await deployMocks();
   await deployStateful();
   await deployProbity();
-  if (vaultEngineType === "issuer") await deployVaultEngineIssuer();
-  if (vaultEngineType === "limited") await deployVaultEngineLimited();
-  if (vaultEngineType === "unrestricted") await deployVaultEngineUnrestricted();
   await deployAuctioneer();
   await deployVPAssetManager();
   await deployMockVaultEngine();

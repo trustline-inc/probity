@@ -15,8 +15,11 @@ interface VaultEngineLike {
 
     function lendingPoolEquity() external returns (uint256);
 
+    function lendingPoolPrincipal() external returns (uint256);
+
+    function lendingPoolSupply() external returns (uint256);
+
     function updateAccumulators(
-        bytes32 assetId,
         address reservePool,
         uint256 debtRateIncrease,
         uint256 equityRateIncrease,
@@ -37,9 +40,12 @@ contract Teller is Stateful, Eventful {
     /////////////////////////////////////////
     // Type Declarations
     /////////////////////////////////////////
-    struct Asset {
-        uint256 lastUpdated;
-        uint256 protocolFee; // [WAD]
+
+    struct CreditFacility {
+        uint256 utilization;
+        uint256 protocolFeeRate;
+        uint256 debtRateIncrease;
+        uint256 equityRateIncrease;
     }
 
     /////////////////////////////////////////
@@ -57,7 +63,7 @@ contract Teller is Stateful, Eventful {
     address public reservePool; // reservePool address will be the recipient of the protocol fees calculated
     uint256 public apr; // Annualized percentage rate
     uint256 public mpr; // Momentized percentage rate
-    mapping(bytes32 => Asset) public assets; // assetId -> Asset
+    uint256 public lastUpdated; // Unix timestamp of last update
 
     /////////////////////////////////////////
     // Events
@@ -81,34 +87,12 @@ contract Teller is Stateful, Eventful {
         reservePool = reservePoolAddress;
         apr = RAY;
         mpr = RAY;
+        lastUpdated = block.timestamp;
     }
 
     /////////////////////////////////////////
     // External Functions
     /////////////////////////////////////////
-
-    /**
-     * @dev initialized a new asset
-     * @param assetId the asset ID
-     * @param protocolFee the protocolFee to take during accumulator calcuation
-     */
-    function initAsset(bytes32 assetId, uint256 protocolFee) external onlyBy("gov") {
-        require(assets[assetId].lastUpdated == 0, "Teller/initAsset: This asset has already been initialized");
-        assets[assetId].lastUpdated = block.timestamp;
-        assets[assetId].protocolFee = protocolFee;
-
-        emit AssetInitialized(assetId, protocolFee);
-    }
-
-    /**
-     * @dev update the protocol fee for an asset
-     * @param assetId to update
-     * @param protocolFee new protocolFee
-     */
-    function setProtocolFee(bytes32 assetId, uint256 protocolFee) external onlyBy("gov") {
-        emit LogVarUpdate(bytes32("teller"), assetId, bytes32("protocolFee"), assets[assetId].protocolFee, protocolFee);
-        assets[assetId].protocolFee = protocolFee;
-    }
 
     /**
      * @dev update the reservePool address
@@ -121,18 +105,23 @@ contract Teller is Stateful, Eventful {
 
     /**
      * @dev Updates the debt and equity rate accumulators
-     * @param assetId of the asset to update accumulators
      */
-    function updateAccumulators(bytes32 assetId) external {
-        require(assets[assetId].lastUpdated != 0, "Teller/updateAccumulators: Asset not initialized");
+    function updateAccumulators() external {
+        CreditFacility memory creditFacility;
+        uint256 debtAccumulator = vaultEngine.debtAccumulator();
 
-        Asset memory asset = assets[assetId];
         uint256 debtAccumulator = vaultEngine.debtAccumulator();
         uint256 equityAccumulator = vaultEngine.equityAccumulator();
         uint256 lendingPoolDebt = vaultEngine.lendingPoolDebt();
         uint256 lendingPoolEquity = vaultEngine.lendingPoolEquity();
 
+        // Actual totals
+        uint256 lendingPoolPrincipal = vaultEngine.lendingPoolPrincipal();
+        uint256 lendingPoolSupply = vaultEngine.lendingPoolSupply();
+
         require(lendingPoolEquity > 0, "Teller/updateAccumulators: Total equity cannot be zero");
+
+        creditFacility.utilization = Math._wdiv(lendingPoolPrincipal, lendingPoolSupply);
 
         // Update debt accumulator
         uint256 utilization = Math._wdiv((lendingPoolDebt * debtAccumulator), (lendingPoolEquity * equityAccumulator));
@@ -149,11 +138,27 @@ contract Teller is Stateful, Eventful {
 
         uint256 equityRateIncrease = equityAccumulatorDiff - protocolFeeRate;
 
+        /*        // Update protocol fee rate
+        // creditFacility.protocolFeeRate = 0;
+        // if (assets[assetId].protocolFee != 0) {
+        //     creditFacility.protocolFeeRate = (equityAccumulatorDiff * assets[assetId].protocolFee) / WAD;
+        // }
+        // console.log("creditFacility.protocolFeeRate:", creditFacility.protocolFeeRate);
+
+        // Update equity accumulator
+        uint256 debtCreated = creditFacility.debtRateIncrease * lendingPoolDebt;
+        uint256 equityAccumulatorDiff = Math._rdiv(debtCreated / WAD, lendingPoolEquity * 1e9);
+        creditFacility.equityRateIncrease = equityAccumulatorDiff;
+
+        uint256 accumulatorDelta = Math._rpow(mpr, (block.timestamp - lastUpdated));
+        creditFacility.debtRateIncrease = Math._rmul(accumulatorDelta, debtAccumulator) - debtAccumulator;
+        debtAccumulator = Math._rmul(accumulatorDelta, debtAccumulator);*/
+
         // Set new APR (round to nearest 0.25%)
-        if (utilization >= 1e18) {
+        if (creditFacility.utilization >= 1e18) {
             apr = MAX_APR;
         } else {
-            uint256 oneMinusUtilization = RAY - (utilization * 1e9);
+            uint256 oneMinusUtilization = RAY - (creditFacility.utilization * 1e9);
             uint256 oneDividedByOneMinusUtilization = Math._rdiv(10**27 * 0.01, oneMinusUtilization);
 
             uint256 round = 0.0025 * 10**27;
@@ -171,11 +176,13 @@ contract Teller is Stateful, Eventful {
             mpr = lowAprRate.APR_TO_MPR(apr);
         }
 
-        // Update time index
-        asset.lastUpdated = block.timestamp;
-        vaultEngine.updateAccumulators(assetId, reservePool, debtRateIncrease, equityRateIncrease, protocolFeeRate);
-
-        // Update asset info
-        assets[assetId] = asset;
+        // Update values
+        lastUpdated = block.timestamp;
+        vaultEngine.updateAccumulators(
+            reservePool,
+            creditFacility.debtRateIncrease,
+            creditFacility.equityRateIncrease,
+            creditFacility.protocolFeeRate
+        );
     }
 }

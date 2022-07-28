@@ -52,12 +52,12 @@ describe("Liquidator Unit Tests", function () {
     let { contracts, signers } = await deployTest();
 
     // Set contracts
-    registry = contracts.registry;
-    vaultEngine = contracts.mockVaultEngine;
-    reservePool = contracts.mockReserve;
-    auctioneer = contracts.mockAuctioneer;
-    treasury = contracts.treasury;
-    priceFeed = contracts.mockPriceFeed;
+    registry = contracts.registry!;
+    vaultEngine = contracts.mockVaultEngine!;
+    reservePool = contracts.mockReserve!;
+    auctioneer = contracts.mockAuctioneer!;
+    treasury = contracts.treasury!;
+    priceFeed = contracts.mockPriceFeed!;
 
     contracts = await probity.deployLiquidator({
       registry: registry.address,
@@ -67,10 +67,10 @@ describe("Liquidator Unit Tests", function () {
       treasury: treasury.address,
     });
 
-    liquidator = contracts.liquidator;
+    liquidator = contracts.liquidator!;
 
-    owner = signers.owner;
-    user = signers.alice;
+    owner = signers.owner!;
+    user = signers.alice!;
   });
 
   describe("initAsset Unit Tests", function () {
@@ -202,13 +202,7 @@ describe("Liquidator Unit Tests", function () {
         RAD.mul(1_000_000),
         0
       );
-      await vaultEngine.updateAccumulators(
-        ASSET_ID.FLR,
-        reservePool.address,
-        0,
-        0,
-        0
-      );
+      await vaultEngine.updateAccumulators(reservePool.address, 0, 0, 0);
       await vaultEngine.updateVault(
         ASSET_ID.FLR,
         user.address,

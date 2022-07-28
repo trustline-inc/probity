@@ -34,12 +34,12 @@ interface VaultEngineLike {
     function vaults(bytes32 assetId, address user)
         external
         returns (
-            uint256 standby,
+            uint256 standbyAmount,
             uint256 underlying,
             uint256 collateral
         );
 
-    function modifyStandbyAsset(
+    function modifyStandbyAmount(
         bytes32 assetId,
         address user,
         int256 amount
@@ -165,8 +165,8 @@ contract Delegatable is Stateful {
             "Delegatable/userCollectReward: No new epoch to claim"
         );
 
-        (uint256 underlying, uint256 collateral, uint256 standby) = vaultEngine.vaults(assetId, msg.sender);
-        uint256 currentBalance = standby + underlying + collateral;
+        (uint256 underlying, uint256 collateral, uint256 standbyAmount) = vaultEngine.vaults(assetId, msg.sender);
+        uint256 currentBalance = standbyAmount + underlying + collateral;
         uint256 rewardBalance = 0;
 
         uint256 lastEpoch = lastClaimedEpoch;

@@ -20,7 +20,7 @@ interface VaultLike {
 
     function lendingPoolDebt() external returns (uint256 value);
 
-    function lendingPoolSupply() external returns (uint256 value);
+    function totalSystemCurrency() external returns (uint256 value);
 
     function lendingPoolEquity() external returns (uint256 value);
 
@@ -40,11 +40,11 @@ interface VaultLike {
     function vaults(bytes32 assetId, address user)
         external
         returns (
-            uint256 standby,
+            uint256 standbyAmount,
             uint256 underlying,
             uint256 collateral,
-            uint256 debt,
-            uint256 equity,
+            uint256 normDebt,
+            uint256 normEquity,
             uint256 initialEquity
         );
 
@@ -419,7 +419,7 @@ contract Shutdown is Stateful, Eventful {
     function processUserEquity(bytes32 assetId, address user) external {
         require(investorObligationRatio != 0, "Shutdown/processUserEquity: Investor has no obligation");
 
-        (, uint256 underlying, , , uint256 equity, uint256 initialEquity) = vaultEngine.vaults(assetId, user);
+        (, uint256 underlying, , , uint256 normEquity, uint256 initialEquity) = vaultEngine.vaults(assetId, user);
         uint256 hookedSuppliedAmount = (initialEquity / WAD) * finalUtilizationRatio;
         uint256 investorObligation = ((hookedSuppliedAmount * investorObligationRatio) / WAD) /
             assets[assetId].finalPrice;
@@ -438,7 +438,7 @@ contract Shutdown is Stateful, Eventful {
             address(treasury),
             0,
             -int256(underlying),
-            -int256(equity),
+            -int256(normEquity),
             -int256(initialEquity)
         );
 
@@ -459,7 +459,7 @@ contract Shutdown is Stateful, Eventful {
             "shutdown/setFinalStablecoinBalance: system reserve or debt must be zero"
         );
 
-        finalStablecoinBalance = vaultEngine.lendingPoolSupply();
+        finalStablecoinBalance = vaultEngine.totalSystemCurrency();
 
         emit FinalStablecoinBalanceSet(finalStablecoinBalance);
     }

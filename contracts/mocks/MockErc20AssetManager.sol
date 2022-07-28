@@ -16,7 +16,7 @@ interface TokenLike {
 }
 
 interface VaultEngineLike {
-    function modifyStandbyAsset(
+    function modifyStandbyAmount(
         bytes32 collateral,
         address user,
         int256 amount
@@ -46,13 +46,13 @@ contract MockErc20AssetManager is Stateful {
 
     function deposit(uint256 amount) external onlyWhen("paused", false) onlyBy("whitelisted") {
         require(token.transferFrom(msg.sender, address(this), amount), "ERC20AssetManager/deposit: transfer failed");
-        vaultEngine.modifyStandbyAsset(assetId, msg.sender, int256(amount));
+        vaultEngine.modifyStandbyAmount(assetId, msg.sender, int256(amount));
         emit DepositToken(msg.sender, amount, address(token));
     }
 
     function withdraw(uint256 amount) external onlyWhen("paused", false) onlyBy("whitelisted") {
         require(token.transfer(msg.sender, amount), "ERC20AssetManager/withdraw: transfer failed");
-        vaultEngine.modifyStandbyAsset(assetId, msg.sender, -int256(amount));
+        vaultEngine.modifyStandbyAmount(assetId, msg.sender, -int256(amount));
         emit WithdrawToken(msg.sender, amount, address(token));
     }
 }
