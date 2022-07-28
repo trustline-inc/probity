@@ -39,41 +39,31 @@ const init = async () => {
   const RegistryABI = await artifacts.readArtifact("Registry");
   const LiquidatorABI = await artifacts.readArtifact("Liquidator");
   const PriceFeedABI = await artifacts.readArtifact("PriceFeed");
-  const TellerABI = await artifacts.readArtifact("Teller");
   const VaultEngineABI = await artifacts.readArtifact("VaultEngine");
-  const VaultEngineLimitedABI = await artifacts.readArtifact(
-    "VaultEngineLimited"
-  );
-  const VaultEngineIssuerABI = await artifacts.readArtifact(
-    "VaultEngineIssuer"
-  );
 
   // Contracts
-  const registry = new ethers.Contract(
-    process.env.REGISTRY!,
-    RegistryABI.abi,
-    gov
-  );
-  const liquidator = new ethers.Contract(
-    process.env.LIQUIDATOR!,
-    LiquidatorABI.abi,
-    gov
-  );
-  const priceFeed = new ethers.Contract(
-    process.env.PRICE_FEED!,
-    PriceFeedABI.abi,
-    gov
-  );
-  const teller = new ethers.Contract(process.env.TELLER!, TellerABI.abi, gov);
-  const vaultEngine = new ethers.Contract(
-    process.env.VAULT_ENGINE_S_B!
-      ? process.env.VAULT_ENGINE_S_B!
-      : process.env.VAULT_ENGINE!,
-    process.env.VAULT_ENGINE_S_B
-      ? VaultEngineLimitedABI.abi
-      : VaultEngineABI.abi,
-    gov
-  );
+  let registry, liquidator, priceFeed, vaultEngine;
+  try {
+    registry = new ethers.Contract(process.env.REGISTRY!, RegistryABI.abi, gov);
+    liquidator = new ethers.Contract(
+      process.env.LIQUIDATOR!,
+      LiquidatorABI.abi,
+      gov
+    );
+    priceFeed = new ethers.Contract(
+      process.env.PRICE_FEED!,
+      PriceFeedABI.abi,
+      gov
+    );
+    vaultEngine = new ethers.Contract(
+      process.env.VAULT_ENGINE!,
+      VaultEngineABI.abi,
+      gov
+    );
+  } catch (error) {
+    console.log(error);
+    process.exit();
+  }
 
   try {
     // Allow a list of users to interact with the contracts
@@ -81,17 +71,22 @@ const init = async () => {
       // Note: An address can only have one role at a time.
       // Note: governance address was set at deployment
       console.log(`Allowing address: ${address}`);
-      let tx = await registry
-        .connect(gov)
-        .setupAddress(
-          ethers.utils.formatBytes32String("whitelisted"),
-          address,
-          false,
-          {
-            gasLimit: 300000,
-          }
-        );
-      await tx.wait();
+      try {
+        let tx = await registry
+          .connect(gov)
+          .setupAddress(
+            ethers.utils.formatBytes32String("whitelisted"),
+            address,
+            false,
+            {
+              gasLimit: 300000,
+            }
+          );
+        await tx.wait();
+      } catch (error) {
+        console.log(`Error: ${error}`);
+        process.exit();
+      }
     }
 
     // Initialize the native token in VaultEngine

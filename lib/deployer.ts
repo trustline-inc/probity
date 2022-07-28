@@ -1014,22 +1014,16 @@ const deployTreasury = async (param?: {
     });
   }
 
-  await contracts.registry?.setupAddress(
+  let tx = await contracts.registry?.setupAddress(
     bytes32("treasury"),
     contracts.treasury?.address,
     true
   );
+  await tx?.wait();
 
   let vaultEngineContract = contracts.vaultEngine;
 
-  if (network.name === "local")
-    vaultEngineContract = contracts.vaultEngineIssuer;
-  else if (network.name === "coston")
-    vaultEngineContract = contracts.vaultEngineUnrestricted;
-  else if (network.name === "songbird")
-    vaultEngineContract = contracts.vaultEngineLimited;
-
-  await vaultEngineContract.updateTreasuryAddress(contracts.treasury.address);
+  await vaultEngineContract!.updateTreasuryAddress(contracts.treasury.address);
   await checkDeploymentDelay();
   return contracts;
 };
