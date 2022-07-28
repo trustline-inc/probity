@@ -320,7 +320,7 @@ contract VaultEngine is Stateful, Eventful {
             vaults[assetId][auctioneer].standbyAmount,
             assetToAuction
         );
-        lendingPoolEquity = Math._add(lendingPoolEquity, equityAmount);
+        lendingPoolSupply = lendingPoolSupply; // TODO: Fix
 
         emit EquityLiquidated(account, assetToAuction, assetToReturn, equityAmount);
     }
@@ -397,8 +397,6 @@ contract VaultEngine is Stateful, Eventful {
     ) external onlyBy("teller") {
         debtAccumulator += debtRateIncrease;
         equityAccumulator += equityRateIncrease;
-        console.log("debtAccumulator", debtAccumulator);
-        console.log("equityAccumulator", equityAccumulator);
     }
 
     /**
