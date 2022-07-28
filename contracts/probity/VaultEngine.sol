@@ -535,7 +535,7 @@ contract VaultEngine is Stateful, Eventful {
         systemCurrency[msg.sender] = Math._add(systemCurrency[msg.sender], debtCreated);
         systemCurrency[treasury] = Math._sub(systemCurrency[treasury], debtCreated);
 
-        console.log("treasury Balance        %s", systemCurrency[treasury]);
+        //        console.log("treasury Balance        %s", systemCurrency[treasury]);
         vaults[assetId][msg.sender] = vault;
 
         emit DebtModified(msg.sender, collAmount, debtCreated);
