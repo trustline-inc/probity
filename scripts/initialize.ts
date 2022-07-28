@@ -161,21 +161,16 @@ const init = async () => {
     await tx.wait();
     console.log(`Vault: floor updated to ${floor} ${erc20Token}`);
 
-    // Initialize native token in Teller (sets default protocol fee)
-    tx = await teller
-      .connect(gov)
-      .initAsset(NATIVE_ASSETS[nativeToken], 0, { gasLimit: 300000 });
-    await tx.wait();
-    console.log(`Teller: ${nativeToken} initialized`);
-
-    // Initialize erc20Token in Teller (sets default protocol fee)
-    tx = await teller
-      .connect(gov)
-      .initAsset(ERC20_ASSETS[erc20Token], 0, { gasLimit: 300000 });
-    await tx.wait();
-    console.log(`Teller: ${erc20Token} initialized`);
-
     // Initialize native token in Liquidator (sets default penalty fees)
+    await liquidator
+      .connect(gov)
+      .callStatic.initAsset(
+        NATIVE_ASSETS[nativeToken],
+        process.env.AUCTIONEER,
+        {
+          gasLimit: 300000,
+        }
+      );
     tx = await liquidator
       .connect(gov)
       .initAsset(NATIVE_ASSETS[nativeToken], process.env.AUCTIONEER, {
@@ -186,11 +181,14 @@ const init = async () => {
 
     // Initialize native token price feed
     let liqRatio = WAD.mul(15).div(10); // 150%
-    tx = await priceFeed
-      .connect(gov)
-      .initAsset(NATIVE_ASSETS[nativeToken], liqRatio, process.env.FTSO, {
-        gasLimit: 300000,
-      });
+    let args = [
+      NATIVE_ASSETS[nativeToken],
+      liqRatio,
+      process.env.FTSO,
+      { gasLimit: 300000 },
+    ];
+    await priceFeed.connect(gov).callStatic.initAsset(...args);
+    tx = await priceFeed.connect(gov).initAsset(...args);
     await tx.wait();
     console.log(
       `PriceFeed: ${nativeToken} price initialized with ${ethers.utils
@@ -200,11 +198,14 @@ const init = async () => {
 
     // Initialize erc20 token price feed
     liqRatio = WAD.mul(100).div(100); // must be < 100%
-    tx = await priceFeed
-      .connect(gov)
-      .initAsset(ERC20_ASSETS[erc20Token], liqRatio, process.env.FTSO, {
-        gasLimit: 300000,
-      });
+    args = [
+      ERC20_ASSETS[erc20Token],
+      liqRatio,
+      process.env.FTSO,
+      { gasLimit: 300000 },
+    ];
+    await priceFeed.connect(gov).callStatic.initAsset(...args);
+    tx = await priceFeed.connect(gov).initAsset(...args);
     await tx.wait();
     console.log(
       `PriceFeed: ${erc20Token} price initialized with ${ethers.utils
