@@ -28,7 +28,7 @@ let DEBT_TO_SET = WAD.mul(1000);
 
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
-describe.only("Teller Unit Tests", function () {
+describe("Teller Unit Tests", function () {
   beforeEach(async function () {
     let { contracts, signers } = await deployTest();
     // Set contracts
