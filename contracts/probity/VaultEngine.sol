@@ -441,7 +441,10 @@ contract VaultEngine is Stateful, Eventful {
         lendingPoolEquity = Math._add(lendingPoolEquity, equityAmount);
         lendingPoolSupply = Math._add(lendingPoolSupply, equityCreated);
 
-        require(lendingPoolEquity <= assets[assetId].ceiling, "Vault/modifyEquity: Supply ceiling reached");
+        require(
+            Math._mul(lendingPoolEquity, equityAccumulator) <= assets[assetId].ceiling,
+            "Vault/modifyEquity: Supply ceiling reached"
+        );
         require(
             vault.normEquity == 0 || (vault.normEquity * RAY) > assets[assetId].floor,
             "Vault/modifyEquity: Equity smaller than floor"

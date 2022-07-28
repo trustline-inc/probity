@@ -434,7 +434,7 @@ describe("Vault Engine Unit Tests", function () {
 
   describe("initAsset Unit Tests", function () {
     it("fails if the caller is not gov", async () => {
-      const ASSET_ID = bytes32("new Asset ");
+      const ASSET_ID = bytes32("new Asset");
       await assertRevert(
         vaultEngine.connect(user).initAsset(ASSET_ID, 2),
         "AccessControl/onlyBy: Caller does not have permission"
@@ -451,6 +451,7 @@ describe("Vault Engine Unit Tests", function () {
       const ASSET_ID = bytes32("new Asset");
 
       await vaultEngine.connect(gov).initAsset(ASSET_ID, 2);
+      await vaultEngine.connect(gov).initAsset(ASSET_ID, 2);
 
       await assertRevert(
         vaultEngine.connect(gov).initAsset(ASSET_ID, 2),
@@ -459,12 +460,12 @@ describe("Vault Engine Unit Tests", function () {
     });
 
     it("tests that variables are correctly initialized", async () => {
-      const ASSET_ID = bytes32("new Asset ");
+      const ASSET_ID = bytes32("new Asset");
 
       const debtAccumulatorBefore = await vaultEngine.debtAccumulator();
       const equityAccumulatorBefore = await vaultEngine.equityAccumulator();
-      expect(debtAccumulatorBefore).to.equal(0);
-      expect(equityAccumulatorBefore).to.equal(0);
+      expect(debtAccumulatorBefore).to.equal(RAY);
+      expect(equityAccumulatorBefore).to.equal(RAY);
 
       await vaultEngine.connect(gov).initAsset(ASSET_ID, 2);
 
@@ -743,12 +744,15 @@ describe("Vault Engine Unit Tests", function () {
       const NEW_CEILING = RAD.mul(1000);
       await vaultEngine.connect(gov).updateCeiling(ASSET_ID.FLR, NEW_CEILING);
 
+      const debtAccumulator = await vaultEngine.debtAccumulator();
+      const normDebt = DEBT_AMOUNT.add(1).div(debtAccumulator);
+
       await assertRevert(
         vaultEngine.modifyDebt(
           ASSET_ID.FLR,
           treasury.address,
           COLLATERAL_AMOUNT,
-          DEBT_AMOUNT.add(1)
+          normDebt
         ),
         "Vault/modifyDebt: Debt ceiling reached"
       );
