@@ -129,11 +129,11 @@ contract Teller is Stateful, Eventful {
         uint256 equityAccumulatorDiff = debtCreated / lendingPoolEquity;
 
         uint256 protocolFeeRate = 0;
-        //        if (assets[assetId].protocolFee != 0) {
-        //            protocolFeeRate = (equityAccumulatorDiff * assets[assetId].protocolFee) / WAD;
-        //        }
+        if (protocolFee != 0) {
+            protocolFeeRate = (equityAccumulatorDiff * protocolFee) / WAD;
+        }
 
-        //        uint256 equityRateIncrease = equityAccumulatorDiff - protocolFeeRate;
+        uint256 equityRateIncrease = equityAccumulatorDiff - protocolFeeRate;
 
         //        uint256 equityAccumulatorDiff = Math._rdiv(debtCreated / WAD, lendingPoolEquity * 1e9);
         //        console.log("lendingPoolPrincipal    %s", lendingPoolPrincipal);
@@ -167,6 +167,6 @@ contract Teller is Stateful, Eventful {
 
         // Update values
         lastUpdated = block.timestamp;
-        vaultEngine.updateAccumulators(reservePool, debtRateIncrease, equityAccumulatorDiff, protocolFeeRate);
+        vaultEngine.updateAccumulators(reservePool, debtRateIncrease, equityRateIncrease, protocolFeeRate);
     }
 }
