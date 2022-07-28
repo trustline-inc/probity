@@ -523,8 +523,6 @@ contract VaultEngine is Stateful, Eventful {
 
         assets[assetId].normDebt = Math._add(assets[assetId].normDebt, debtAmount);
         lendingPoolDebt = Math._add(lendingPoolDebt, debtAmount);
-
-        lendingPoolDebt = Math._add(lendingPoolDebt, debtAmount);
         totalSystemCurrency = Math._add(totalSystemCurrency, debtCreated);
         lendingPoolPrincipal = Math._add(lendingPoolPrincipal, debtCreated);
         require(vault.normDebt * debtAccumulator <= assets[assetId].ceiling, "Vault/modifyDebt: Debt ceiling reached");
