@@ -114,7 +114,7 @@ contract Teller is Stateful, Eventful {
         uint256 lendingPoolPrincipal = vaultEngine.lendingPoolPrincipal();
         uint256 lendingPoolSupply = vaultEngine.lendingPoolSupply();
 
-        require(lendingPoolEquity > 0, "Teller/updateAccumulators: Total equity cannot be zero");
+        require(lendingPoolSupply > 0, "Teller/updateAccumulators: Lending pool supply cannot be zero");
 
         uint256 utilization = Math._wdiv(lendingPoolPrincipal, lendingPoolSupply);
 
@@ -132,14 +132,6 @@ contract Teller is Stateful, Eventful {
         }
 
         uint256 equityRateIncrease = equityAccumulatorDiff - protocolFeeRate;
-
-        //        uint256 equityAccumulatorDiff = Math._rdiv(debtCreated / WAD, lendingPoolEquity * 1e9);
-        //        console.log("lendingPoolPrincipal    %s", lendingPoolPrincipal);
-        //        console.log("lendingPoolSupply       %s", lendingPoolSupply);
-        //        console.log("utilization ratio       %s", utilization);
-        //        uint256 accumulatorDelta = Math._rpow(mpr, (block.timestamp - lastUpdated));
-        //        creditFacility.debtRateIncrease = Math._rmul(accumulatorDelta, debtAccumulator) - debtAccumulator;
-        //        debtAccumulator = Math._rmul(accumulatorDelta, debtAccumulator);
 
         // Set new APR (round to nearest 0.25%)
         if (utilization >= 1e18) {

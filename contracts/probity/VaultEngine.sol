@@ -283,7 +283,6 @@ contract VaultEngine is Stateful, Eventful {
 
         // Auction off collateral expecting to raise at least fundraiseTarget amount
         int256 fundraiseTarget = Math._mul(debtAccumulator, debtAmount);
-        lendingPoolDebt = Math._add(lendingPoolDebt, debtAmount);
         vaults[assetId][auctioneer].standbyAmount = Math._sub(
             vaults[assetId][auctioneer].standbyAmount,
             collateralAmount
@@ -524,7 +523,6 @@ contract VaultEngine is Stateful, Eventful {
         assets[assetId].normDebt = Math._add(assets[assetId].normDebt, debtAmount);
         lendingPoolDebt = Math._add(lendingPoolDebt, debtAmount);
 
-        lendingPoolDebt = Math._add(lendingPoolDebt, debtAmount);
         totalSystemCurrency = Math._add(totalSystemCurrency, debtCreated);
         lendingPoolPrincipal = Math._add(lendingPoolPrincipal, debtCreated);
         require(vault.normDebt * debtAccumulator <= assets[assetId].ceiling, "Vault/modifyDebt: Debt ceiling reached");
