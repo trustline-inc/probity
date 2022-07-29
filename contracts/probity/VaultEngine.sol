@@ -6,8 +6,6 @@ import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
 import "../dependencies/Math.sol";
 
-import "hardhat/console.sol";
-
 /**
  * @title VaultEngine contract
  * @author Matthew Rosendin <matt@trustline.co, @mrosendin>
@@ -283,7 +281,6 @@ contract VaultEngine is Stateful, Eventful {
 
         // Auction off collateral expecting to raise at least fundraiseTarget amount
         int256 fundraiseTarget = Math._mul(debtAccumulator, debtAmount);
-        lendingPoolDebt = Math._add(lendingPoolDebt, debtAmount);
         vaults[assetId][auctioneer].standbyAmount = Math._sub(
             vaults[assetId][auctioneer].standbyAmount,
             collateralAmount
@@ -414,18 +411,8 @@ contract VaultEngine is Stateful, Eventful {
         debtAccumulator += debtRateIncrease;
         equityAccumulator += equityRateIncrease;
 
-        //        console.log("Lending pool debt       %s", lendingPoolDebt);
-        //        console.log("debtRate Incrase        %s", debtRateIncrease);
-        //        console.log("new Debt                %s", newDebt);
-        //        console.log("lendingPoolEquity       %s", lendingPoolEquity);
-        //        console.log("equityRateIncrease      %s", equityRateIncrease);
-        //        console.log("newEquity               %s", newEquity);
-
         uint256 protocolFeeToCollect = lendingPoolEquity * protocolFeeRates;
 
-        //        console.log("protocolFeeToCollect    %s", protocolFeeToCollect);
-        //        console.log("combined                %s", newEquity + protocolFeeToCollect);
-        //        console.log("");
         require(
             newEquity + protocolFeeToCollect <= newDebt,
             "VaultEngine/updateAccumulators: The equity rate increase is larger than the debt rate increase"
@@ -523,6 +510,7 @@ contract VaultEngine is Stateful, Eventful {
 
         assets[assetId].normDebt = Math._add(assets[assetId].normDebt, debtAmount);
         lendingPoolDebt = Math._add(lendingPoolDebt, debtAmount);
+
         totalSystemCurrency = Math._add(totalSystemCurrency, debtCreated);
         lendingPoolPrincipal = Math._add(lendingPoolPrincipal, debtCreated);
         require(vault.normDebt * debtAccumulator <= assets[assetId].ceiling, "Vault/modifyDebt: Debt ceiling reached");
