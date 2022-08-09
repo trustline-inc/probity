@@ -72,6 +72,11 @@ console.log("Total supply:", totalSupply);
 
 ## Development
 
+### Requirements
+
+- NodeJS
+- Yarn
+
 ### Recommended IDE
 
 [Visual Studio Code](https://code.visualstudio.com/) is the recommended IDE. Here's how to install Solidity language support:
@@ -109,7 +114,7 @@ solcjs --version
 Install node dependencies:
 
 ```
-npm install
+yarn
 ```
 
 ### Testing
@@ -133,6 +138,8 @@ We use [GitHub Packages](https://docs.github.com/en/packages/working-with-a-gith
 ### Running Locally
 
 Run a local [Flare](https://gitlab.com/flarenetwork/flare) node.
+
+Hardhat will use the account listed in `hardhat.config.ts` for the network. You'll want to make sure that account is funded first.
 
 You should run an initial transaction before deploying contracts:
 
@@ -167,6 +174,14 @@ FLARE_DIR=~/Desktop/flare yarn run initialize <network>
 ```
 
 ## Administrator Tools
+
+### Allow Address
+
+Edit `./scripts/whitelistAddress.ts` to update the new allowed address, then run this:
+
+```
+yarn run whitelistAddress <network>
+```
 
 ### System Info
 
