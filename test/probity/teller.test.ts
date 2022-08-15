@@ -6,7 +6,14 @@ import { MockVaultEngine, Registry, Teller } from "../../typechain";
 import { deployTest, probity, mock } from "../../lib/deployer";
 import { ethers } from "hardhat";
 import * as chai from "chai";
-import { bytes32, RAD, WAD, RAY, ASSET_ID } from "../utils/constants";
+import {
+  bytes32,
+  RAD,
+  WAD,
+  RAY,
+  ASSET_ID,
+  APR_TO_MPR,
+} from "../utils/constants";
 import assertRevert from "../utils/assertRevert";
 import increaseTime from "../utils/increaseTime";
 import { rdiv, rmul, rpow, wdiv } from "../utils/math";
@@ -16,6 +23,7 @@ const expect = chai.expect;
 // Wallets
 let owner: SignerWithAddress;
 let user: SignerWithAddress;
+let user2: SignerWithAddress;
 
 // Contracts
 let teller: Teller;
@@ -43,6 +51,7 @@ describe("Teller Unit Tests", function () {
 
     owner = signers.owner!;
     user = signers.alice!;
+    user2 = signers.bob!;
   });
 
   describe("setReservePool Unit Tests", function () {
@@ -338,6 +347,149 @@ describe("Teller Unit Tests", function () {
       );
       let protocolRate = await vaultEngine.protocolFeeRates();
       expect(protocolRate).to.equal(EXPECTED_PROTOCOL_FEE_RATE);
+    });
+  });
+
+  describe("issue-345", () => {
+    beforeEach(async function () {
+      let DEBT_TO_SET = WAD.mul(0);
+      let EQUITY_TO_SET = WAD.mul(0);
+      await vaultEngine.setLendingPoolDebt(DEBT_TO_SET);
+      await vaultEngine.setLendingPoolEquity(EQUITY_TO_SET);
+
+      // Initialize assets
+      await vaultEngine.initAsset(ASSET_ID.USD, 0);
+      await vaultEngine.initAsset(ASSET_ID.FLR, 1);
+    });
+
+    it("makes algorithmic loans correctly", async () => {
+      // Test case for https://github.com/trustline-inc/probity/issues/345
+
+      let lastUpdated = await teller.lastUpdated();
+      let debtAccumulator = await vaultEngine.debtAccumulator();
+      let equityAccumulator = await vaultEngine.equityAccumulator();
+
+      // Issue 100 USD to user vault
+      await vaultEngine.setStablecoin(user.address, RAD.mul(100));
+
+      // Commit 100 USD to vault by using updateVault()
+      let underlying = WAD.mul(100);
+      let equity = RAD.mul(100);
+      let initialEquity = WAD.mul(100);
+      let normEquity = equity.div(equityAccumulator);
+      let normDebt = ethers.BigNumber.from(0);
+      let collateral = ethers.BigNumber.from(0);
+      let principal = normDebt.mul(debtAccumulator).div(RAY);
+
+      await vaultEngine.updateVault(
+        ASSET_ID.USD,
+        user.address,
+        0,
+        underlying,
+        collateral,
+        normDebt,
+        normEquity,
+        initialEquity
+      );
+      await vaultEngine.updateAsset(
+        ASSET_ID.USD,
+        RAY,
+        normDebt,
+        normEquity,
+        RAD.mul(100),
+        0
+      );
+      await vaultEngine.updateNormValues(ASSET_ID.USD, 0, normEquity);
+      await vaultEngine.setLendingPoolEquity(normEquity);
+      await vaultEngine.setLendingPoolSupply(underlying);
+
+      // Get vault
+      let vault = await vaultEngine.vaults(ASSET_ID.USD, user.address);
+      expect(vault.normEquity).to.equal(normEquity);
+      expect(vault.underlying).to.equal(underlying);
+
+      // Get totals
+      let lendingPoolEquity = await vaultEngine.lendingPoolEquity();
+      let lendingPoolDebt = await vaultEngine.lendingPoolDebt();
+      let lendingPoolSupply = await vaultEngine.lendingPoolSupply();
+      let lendingPoolPrincipal = await vaultEngine.lendingPoolPrincipal();
+      expect(lendingPoolEquity).to.equal(normEquity);
+      expect(lendingPoolDebt).to.equal(normDebt);
+      expect(lendingPoolSupply).to.equal(initialEquity);
+      expect(lendingPoolPrincipal).to.equal(principal);
+
+      // Update accumulators
+      await teller.updateAccumulators();
+      let timeDiff1 = (await teller.lastUpdated()).sub(lastUpdated);
+      lastUpdated = await teller.lastUpdated();
+      debtAccumulator = await vaultEngine.debtAccumulator();
+      equityAccumulator = await vaultEngine.equityAccumulator();
+      expect(debtAccumulator).to.equal(RAY);
+      expect(equityAccumulator).to.equal(RAY);
+
+      let mpr = RAY;
+      let apr = await teller.apr();
+      const expectedDebtAccumulator1 = rmul(rpow(mpr, timeDiff1), RAY);
+
+      // Take out loan
+      collateral = WAD.mul(175);
+      principal = RAD.mul(50);
+      normDebt = principal.div(debtAccumulator);
+
+      await vaultEngine.updateVault(
+        ASSET_ID.FLR,
+        user2.address,
+        0,
+        0,
+        collateral,
+        normDebt,
+        0,
+        0
+      );
+
+      await vaultEngine.setLendingPoolDebt(normDebt);
+      await vaultEngine.setLendingPoolPrincipal(principal.div(RAY));
+      let ceiling = RAD.mul(100);
+      vaultEngine.updateAsset(ASSET_ID.FLR, RAY, normDebt, 0, ceiling, 0);
+      await vaultEngine.updateNormValues(ASSET_ID.FLR, normDebt, 0);
+
+      expect(await vaultEngine.lendingPoolDebt()).to.equal(normDebt);
+      expect(await vaultEngine.lendingPoolEquity()).to.equal(normEquity);
+
+      // Update accumulators
+      await teller.updateAccumulators();
+      let timeDiff2 = (await teller.lastUpdated()).sub(lastUpdated);
+      lastUpdated = await teller.lastUpdated();
+
+      // Set expected debtAccumulator
+      mpr = APR_TO_MPR[apr.toString()];
+      apr = await teller.apr();
+      const expectedDebtAccumulator2 = rmul(
+        rpow(ethers.BigNumber.from(mpr), timeDiff2),
+        RAY
+      );
+      const expectedDebtAccumulator = rmul(
+        expectedDebtAccumulator1,
+        expectedDebtAccumulator2
+      );
+
+      debtAccumulator = await vaultEngine.debtAccumulator();
+      equityAccumulator = await vaultEngine.equityAccumulator();
+
+      // Expected debt
+      vault = await vaultEngine.vaults(ASSET_ID.FLR, user2.address);
+      expect(expectedDebtAccumulator).to.equal(debtAccumulator);
+      const expectedDebt = principal.div(RAY).mul(expectedDebtAccumulator);
+      expect(vault.normDebt).to.equal(normDebt);
+      expect(debtAccumulator.mul(vault.normDebt)).to.equal(expectedDebt);
+
+      // Expected equity
+      vault = await vaultEngine.vaults(ASSET_ID.USD, user.address);
+      const equityInterest = vault.normEquity
+        .mul(equityAccumulator)
+        .sub(initialEquity.mul(RAY));
+      const loanInterest = normDebt.mul(debtAccumulator).sub(principal);
+      expect(equityInterest).to.equal(loanInterest);
     });
   });
 });
