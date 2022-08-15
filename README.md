@@ -175,14 +175,6 @@ FLARE_DIR=~/Desktop/flare yarn run initialize <network>
 
 ## Administrator Tools
 
-### Allow Address
-
-Edit `./scripts/whitelistAddress.ts` to update the new allowed address, then run this:
-
-```
-yarn run whitelistAddress <network>
-```
-
 ### System Info
 
 Use this command to paste the output into [probity-ui](https://github.com/trustline-inc/probity-ui):
@@ -215,6 +207,14 @@ Run this command in the local environment to use the mock FTSO.
 
 ```
 yarn run priceUpdater <network>
+```
+
+### Allow Address
+
+Edit `./scripts/whitelistAddress.ts` to update the new allowed address, then run this:
+
+```
+yarn run whitelistAddress <network>
 ```
 
 ## Contract Addresses
