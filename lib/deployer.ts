@@ -1801,8 +1801,24 @@ const deployProd = async () => {
     if (network.name === "coston") await deployMocks();
     await deployProbity();
     await deployAuctioneer();
-    await deployErc20AssetManager();
-    await deployVPAssetManager();
+
+    // Get vault type
+    let vaultType = "VaultEngine";
+    if (network.name === "local") {
+      vaultType = "vaultEngineIssuer";
+    } else if (network.name === "coston") {
+      vaultType = "vaultEngineIssuer";
+    } else if (network.name === "songbird") {
+      vaultType = "vaultEngineLimited";
+    }
+
+    await deployErc20AssetManager({
+      registry: contracts?.registry?.address,
+      symbol: "USD",
+      erc20: contracts?.usd?.address,
+      vaultEngine: contracts[vaultType]?.address,
+    });
+    await deployVPAssetManager({ vaultEngine: contracts[vaultType]?.address });
   } catch (err) {
     console.error("Error occurred while deploying", err);
     return { contracts, signers };
