@@ -18,12 +18,12 @@ contract VaultEngine is Stateful, Eventful {
     // Type Declarations
     /////////////////////////////////////////
     struct Vault {
-        uint256 standbyAmount; // Asset amount on standby
-        uint256 underlying; // Amount covering an equity position
-        uint256 collateral; // Amount covering a debt position
-        uint256 normDebt; // Normalized debt balance
-        uint256 normEquity; // Normalized equity balance
-        uint256 initialEquity; // Tracks the amount of equity (less interest)
+        uint256 standbyAmount; // Asset amount on standby [WAD]
+        uint256 underlying; // Amount covering an equity position [WAD]
+        uint256 collateral; // Amount covering a debt position [WAD]
+        uint256 normDebt; // Normalized debt balance [WAD]
+        uint256 normEquity; // Normalized equity balance [WAD]
+        uint256 initialEquity; // Tracks the amount of equity (less interest) [RAD]
     }
 
     enum Category {
@@ -104,7 +104,6 @@ contract VaultEngine is Stateful, Eventful {
      */
     function updateTreasuryAddress(address newTreasuryAddress) external {
         require(registry.checkRole("treasury", newTreasuryAddress), "Treasury address is not valid");
-
         treasury = newTreasuryAddress;
     }
 
