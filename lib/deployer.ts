@@ -91,7 +91,7 @@ import { ADDRESS_ZERO } from "../test/utils/constants";
 /**
  * Deployment targets and their native currency
  */
-const NATIVE_ASSETS = {
+const NATIVE_ASSETS: { [key: string]: string } = {
   local: process.env.NATIVE_TOKEN || "FLR",
   hardhat: "FLR", // tests always use FLR
   internal: process.env.NATIVE_TOKEN || "FLR",
@@ -106,6 +106,7 @@ const NATIVE_ASSET = NATIVE_ASSETS[network.name];
  * Contracts
  */
 interface ContractDict {
+  [key: string]: any;
   bondIssuer?: BondIssuer;
   delegatable?: Delegatable;
   usd?: USD;
@@ -162,7 +163,7 @@ interface ContractDict {
   mockBondIssuer?: MockBondIssuer;
 }
 
-const artifactNameMap = {
+const artifactNameMap: { [key: string]: any } = {
   usd: "USD",
   bondIssuer: "BondIssuer",
   ftso: "MockFtso",

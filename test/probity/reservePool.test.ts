@@ -34,21 +34,21 @@ describe("ReservePool Unit Tests", function () {
   beforeEach(async function () {
     let { contracts, signers } = await deployTest();
     // Set contracts
-    registry = contracts.registry;
+    registry = contracts.registry!;
 
     contracts = await probity.deployReservePool({
-      vaultEngine: contracts.mockVaultEngine.address,
-      bondIssuer: contracts.mockBondIssuer.address,
+      vaultEngine: contracts.mockVaultEngine?.address,
+      bondIssuer: contracts.mockBondIssuer?.address,
     });
 
-    vaultEngine = contracts.mockVaultEngine;
-    reservePool = contracts.reservePool;
-    bondIssuer = contracts.mockBondIssuer;
+    vaultEngine = contracts.mockVaultEngine!;
+    reservePool = contracts.reservePool!;
+    bondIssuer = contracts.mockBondIssuer!;
 
-    owner = signers.owner;
-    user = signers.alice;
-    liquidator = signers.charlie;
-    gov = signers.don;
+    owner = signers.owner!;
+    user = signers.alice!;
+    liquidator = signers.charlie!;
+    gov = signers.don!;
 
     await registry.setupAddress(
       bytes32("liquidator"),

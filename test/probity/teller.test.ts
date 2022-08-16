@@ -240,7 +240,7 @@ describe("Teller Unit Tests", function () {
       let lastUpdatedAfter = await teller.lastUpdated();
 
       let EXPECTED_DEBT_ACCUMULATOR = rmul(
-        rpow(mpr, lastUpdatedAfter.sub(lastUpdatedBefore)),
+        rpow(mpr, lastUpdatedAfter.sub(lastUpdatedBefore).toNumber()),
         debtAccuBefore
       );
 
@@ -258,7 +258,7 @@ describe("Teller Unit Tests", function () {
       lastUpdatedAfter = await teller.lastUpdated();
 
       EXPECTED_DEBT_ACCUMULATOR = rmul(
-        rpow(mpr, lastUpdatedAfter.sub(lastUpdatedBefore)),
+        rpow(mpr, lastUpdatedAfter.sub(lastUpdatedBefore).toNumber()),
         debtAccuBefore
       );
 
@@ -289,7 +289,7 @@ describe("Teller Unit Tests", function () {
       let lendingPoolDebt = await vaultEngine.lendingPoolDebt();
       let lendingPoolEquity = await vaultEngine.lendingPoolEquity();
       let EXPECTED_DEBT_RATE_INCREASE = rmul(
-        rpow(mpr, lastUpdatedAfter.sub(lastUpdatedBefore)),
+        rpow(mpr, lastUpdatedAfter.sub(lastUpdatedBefore).toNumber()),
         debtAccuBefore
       ).sub(debtAccuBefore);
 
@@ -326,7 +326,7 @@ describe("Teller Unit Tests", function () {
       let lendingPoolEquity = await vaultEngine.lendingPoolEquity();
 
       let EXPECTED_DEBT_RATE_INCREASE = rmul(
-        rpow(mpr, lastUpdatedAfter.sub(lastUpdatedBefore)),
+        rpow(mpr, lastUpdatedAfter.sub(lastUpdatedBefore).toNumber()),
         debtAccuBefore
       ).sub(debtAccuBefore);
 
@@ -429,7 +429,10 @@ describe("Teller Unit Tests", function () {
 
       let mpr = RAY;
       let apr = await teller.apr();
-      const expectedDebtAccumulator1 = rmul(rpow(mpr, timeDiff1), RAY);
+      const expectedDebtAccumulator1 = rmul(
+        rpow(mpr, timeDiff1.toNumber()),
+        RAY
+      );
 
       // Take out loan
       collateral = WAD.mul(175);
@@ -462,10 +465,10 @@ describe("Teller Unit Tests", function () {
       lastUpdated = await teller.lastUpdated();
 
       // Set expected debtAccumulator
-      mpr = APR_TO_MPR[apr.toString()];
+      mpr = ethers.BigNumber.from(APR_TO_MPR[apr.toString()]);
       apr = await teller.apr();
       const expectedDebtAccumulator2 = rmul(
-        rpow(ethers.BigNumber.from(mpr), timeDiff2),
+        rpow(ethers.BigNumber.from(mpr), timeDiff2.toNumber()),
         RAY
       );
       const expectedDebtAccumulator = rmul(

@@ -27,11 +27,11 @@ describe("Stateful Unit Test", function () {
     const { contracts, signers } = await deployTest();
 
     // Set contracts
-    stateful = contracts.stateful;
-    registry = contracts.registry;
+    stateful = contracts.stateful!;
+    registry = contracts.registry!;
 
-    owner = signers.owner;
-    user = signers.alice;
+    owner = signers.owner!;
+    user = signers.alice!;
   });
 
   it("test setState can only be called by gov address", async () => {

@@ -31,13 +31,13 @@ describe("Native Asset Manager Unit Test", function () {
     const { contracts, signers } = await deployTest();
 
     // Set contracts
-    vaultEngine = contracts.vaultEngine;
-    registry = contracts.registry;
-    nativeAssetManager = contracts.nativeAssetManager;
+    vaultEngine = contracts.vaultEngine!;
+    registry = contracts.registry!;
+    nativeAssetManager = contracts.nativeAssetManager!;
 
-    owner = signers.owner;
-    user = signers.alice;
-    gov = signers.bob;
+    owner = signers.owner!;
+    user = signers.alice!;
+    gov = signers.bob!;
 
     await registry.setupAddress(bytes32("gov"), gov.address, true);
     await registry

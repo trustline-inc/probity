@@ -39,22 +39,22 @@ describe("Treasury Unit Tests", function () {
   beforeEach(async function () {
     let { contracts, signers } = await deployTest();
     // Set contracts
-    registry = contracts.registry;
-    usd = contracts.usd;
-    pbt = contracts.pbt;
-    flrAsset = contracts.nativeAssetManager;
+    registry = contracts.registry!;
+    usd = contracts.usd!;
+    pbt = contracts.pbt!;
+    flrAsset = contracts.nativeAssetManager!;
 
-    owner = signers.owner;
-    user = signers.alice;
+    owner = signers.owner!;
+    user = signers.alice!;
 
-    let param = {
-      vaultEngine: null,
+    let param: { [key: string]: string | undefined } = {
+      vaultEngine: undefined,
     };
 
-    param.vaultEngine = contracts.mockVaultEngine.address;
+    param.vaultEngine = contracts.mockVaultEngine?.address;
     contracts = await probity.deployTreasury(param);
-    treasury = contracts.treasury;
-    vaultEngine = contracts.mockVaultEngine;
+    treasury = contracts.treasury!;
+    vaultEngine = contracts.mockVaultEngine!;
 
     await registry.setupAddress(bytes32("treasury"), owner.address, true);
   });

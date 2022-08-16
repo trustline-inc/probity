@@ -1,18 +1,19 @@
+import { BigNumber } from "ethers";
 import { RAD, WAD, RAY } from "./constants";
 
-function wdiv(x, y) {
+function wdiv(x: BigNumber, y: BigNumber) {
   return x.mul(WAD).add(y.div(2)).div(y);
 }
 
-function rdiv(x, y) {
+function rdiv(x: BigNumber, y: BigNumber) {
   return x.mul(RAY).add(y.div(2)).div(y);
 }
 
-function rmul(x, y) {
+function rmul(x: BigNumber, y: BigNumber) {
   return x.mul(y).add(RAY.div(2)).div(RAY);
 }
 
-function rpow(x, n) {
+function rpow(x: BigNumber, n: number) {
   let z = n % 2 != 0 ? x : RAY;
 
   for (n /= 2; n != 0; n /= 2) {

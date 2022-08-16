@@ -32,19 +32,19 @@ describe("BondIssuer Unit Tests", function () {
   beforeEach(async function () {
     let { contracts, signers } = await deployTest();
     // Set contracts
-    registry = contracts.registry;
+    registry = contracts.registry!;
 
     contracts = await probity.deployBondIssuer({
-      vaultEngine: contracts.mockVaultEngine.address,
+      vaultEngine: contracts.mockVaultEngine?.address,
     });
-    vaultEngine = contracts.mockVaultEngine;
-    bondIssuer = contracts.bondIssuer;
+    vaultEngine = contracts.mockVaultEngine!;
+    bondIssuer = contracts.bondIssuer!;
 
-    owner = signers.owner;
-    user = signers.alice;
-    gov = signers.charlie;
-    reservePool = signers.don;
-    shutdown = signers.bob;
+    owner = signers.owner!;
+    user = signers.alice!;
+    gov = signers.charlie!;
+    reservePool = signers.don!;
+    shutdown = signers.bob!;
 
     await bondIssuer.setReservePoolAddress(reservePool.address);
     await registry.setupAddress(bytes32("gov"), gov.address, true);
@@ -100,10 +100,10 @@ describe("BondIssuer Unit Tests", function () {
       let { contracts } = await deployTest();
 
       contracts = await probity.deployBondIssuer({
-        vaultEngine: contracts.mockVaultEngine.address,
+        vaultEngine: contracts.mockVaultEngine?.address,
       });
-      registry = contracts.registry;
-      bondIssuer = contracts.bondIssuer;
+      registry = contracts.registry!;
+      bondIssuer = contracts.bondIssuer!;
 
       await registry.setupAddress(bytes32("gov"), gov.address, true);
     });

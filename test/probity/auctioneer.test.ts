@@ -64,12 +64,12 @@ describe("Auctioneer Unit Tests", function () {
   beforeEach(async function () {
     let { contracts, signers } = await deployTest();
     // Set contracts
-    registry = contracts.registry;
-    vaultEngine = contracts.mockVaultEngine;
-    reservePool = contracts.reservePool;
-    priceCalc = contracts.mockPriceCalc;
-    priceFeed = contracts.mockPriceFeed;
-    liquidator = contracts.mockLiquidator;
+    registry = contracts.registry!;
+    vaultEngine = contracts.mockVaultEngine!;
+    reservePool = contracts.reservePool!;
+    priceCalc = contracts.mockPriceCalc!;
+    priceFeed = contracts.mockPriceFeed!;
+    liquidator = contracts.mockLiquidator!;
 
     contracts = await probity.deployAuctioneer({
       registry: registry,
@@ -79,13 +79,13 @@ describe("Auctioneer Unit Tests", function () {
       liquidator: liquidator.address,
     });
 
-    auctioneer = contracts.auctioneer;
+    auctioneer = contracts.auctioneer!;
 
-    owner = signers.owner;
-    user1 = signers.alice;
-    user2 = signers.don;
-    user3 = signers.lender;
-    liquidatorCaller = signers.charlie;
+    owner = signers.owner!;
+    user1 = signers.alice!;
+    user2 = signers.don!;
+    user3 = signers.lender!;
+    liquidatorCaller = signers.charlie!;
 
     await registry.setupAddress(
       bytes32("liquidator"),

@@ -38,12 +38,12 @@ describe("PriceFeed Unit Tests", function () {
   beforeEach(async function () {
     let { contracts, signers } = await deployTest();
     // Set contracts
-    registry = contracts.registry;
-    priceFeed = contracts.priceFeed;
-    ftso = contracts.ftso;
+    registry = contracts.registry!;
+    priceFeed = contracts.priceFeed!;
+    ftso = contracts.ftso!;
 
-    gov = signers.owner;
-    user = signers.alice;
+    gov = signers.owner!;
+    user = signers.alice!;
   });
 
   describe("initAsset Unit Tests", function () {
@@ -226,15 +226,15 @@ describe("PriceFeed Unit Tests", function () {
     beforeEach(async function () {
       let { contracts, signers } = await deployTest();
       // Set contracts
-      registry = contracts.registry;
-      ftso = contracts.ftso;
-      vaultEngine = contracts.mockVaultEngine;
+      registry = contracts.registry!;
+      ftso = contracts.ftso!;
+      vaultEngine = contracts.mockVaultEngine!;
 
       const res = await probity.deployPriceFeed({
-        registry: contracts.registry.address,
-        vaultEngine: contracts.mockVaultEngine.address,
+        registry: contracts.registry?.address,
+        vaultEngine: contracts.mockVaultEngine?.address,
       });
-      priceFeed = res.priceFeed;
+      priceFeed = res.priceFeed!;
 
       await ftso.setCurrentPrice(CURRENT_PRICE_TO_SET);
     });

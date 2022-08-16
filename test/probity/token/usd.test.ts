@@ -28,12 +28,12 @@ describe("USD Token Unit Test", function () {
     const { contracts, signers } = await deployTest();
 
     // Set contracts
-    vaultEngine = contracts.vaultEngine;
-    usd = contracts.usd;
-    registry = contracts.registry;
+    vaultEngine = contracts.vaultEngine!;
+    usd = contracts.usd!;
+    registry = contracts.registry!;
 
-    owner = signers.owner;
-    user = signers.alice;
+    owner = signers.owner!;
+    user = signers.alice!;
   });
 
   it("test mint can only be called by vault contract", async () => {

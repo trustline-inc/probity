@@ -30,9 +30,9 @@ describe("LinearDecrease Unit Tests", function () {
   beforeEach(async function () {
     let { contracts, signers } = await deployTest();
     // Set contracts
-    linearDecrease = contracts.linearDecrease;
+    linearDecrease = contracts.linearDecrease!;
 
-    owner = signers.owner;
+    owner = signers.owner!;
   });
 
   it("tests that it returns the starting price if timeElapsed is zero", async () => {

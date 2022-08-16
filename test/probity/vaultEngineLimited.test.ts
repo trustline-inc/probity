@@ -58,7 +58,7 @@ describe("Vault Engine Limited Unit Tests", function () {
     await registry.setupAddress(bytes32("gov"), gov.address, true);
     await registry.setupAddress(bytes32("whitelisted"), user.address, false);
     await registry.setupAddress(bytes32("whitelisted"), owner.address, false);
-    await vaultEngine.updateTreasuryAddress(contracts.treasury.address);
+    await vaultEngine.updateTreasuryAddress(contracts.treasury!.address);
   });
 
   describe("vaultLimit Unit Tests", function () {

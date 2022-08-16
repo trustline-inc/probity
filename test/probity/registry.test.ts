@@ -25,11 +25,11 @@ describe("Registry Unit Tests", function () {
   beforeEach(async function () {
     let { contracts, signers } = await deployTest();
     // Set contracts
-    registry = contracts.registry;
+    registry = contracts.registry!;
 
-    gov = signers.owner;
-    user = signers.alice;
-    user2 = signers.charlie;
+    gov = signers.owner!;
+    user = signers.alice!;
+    user2 = signers.charlie!;
   });
 
   describe("setUpAddress Unit Tests", function () {
@@ -64,7 +64,7 @@ describe("Registry Unit Tests", function () {
 
     it("tests that ContractAdded is emitted properly", async () => {
       const ROLE_NAME = bytes32("very very special role");
-      const ADDRESS = user.address;
+      const ADDRESS: string = user.address;
       const IS_PROBITY = false;
 
       let parsedEvents = await parseEvents(
@@ -81,7 +81,7 @@ describe("Registry Unit Tests", function () {
 
   describe("removeAddress Unit Tests", function () {
     const ROLE_NAME = bytes32("very very special role");
-    let ADDRESS;
+    let ADDRESS: string;
     const IS_PROBITY = true;
 
     beforeEach(async function () {
@@ -126,8 +126,8 @@ describe("Registry Unit Tests", function () {
   describe("checkIfProbitySystem Unit Tests", function () {
     const ROLE_NAME = bytes32("very very special role");
     const PROBITY_SYSTEM_NAME = bytes32("probity system role");
-    let ADDRESS;
-    let PROBITY_SYSTEM_ADDRESS;
+    let ADDRESS: string;
+    let PROBITY_SYSTEM_ADDRESS: string;
 
     beforeEach(async function () {
       ADDRESS = user.address;
@@ -161,7 +161,7 @@ describe("Registry Unit Tests", function () {
 
   describe("checkIfRegistered Unit Tests", function () {
     const ROLE_NAME = bytes32("very very special role");
-    let ADDRESS;
+    let ADDRESS: string;
 
     beforeEach(async function () {
       ADDRESS = user.address;
