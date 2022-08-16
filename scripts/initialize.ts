@@ -9,7 +9,7 @@ import getNativeToken from "../lib/getNativeToken";
 const nativeToken: string = getNativeToken();
 const networkName = hre.network.name;
 
-const NATIVE_ASSETS = {
+const NATIVE_ASSETS: { [key: string]: string } = {
   CFLR: web3.utils.keccak256("CFLR"),
   FLR: web3.utils.keccak256("FLR"),
   SGB: web3.utils.keccak256("SGB"),
