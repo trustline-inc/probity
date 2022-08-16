@@ -9,9 +9,9 @@ import "../dependencies/Math.sol";
 import "hardhat/console.sol";
 
 interface VaultEngineLike {
-    function debtAccumulator() external returns (uint256 debtAccumulator);
+    function debtAccumulator() external returns (uint256);
 
-    function equityAccumulator() external returns (uint256 equityAccumulator);
+    function equityAccumulator() external returns (uint256);
 
     function lendingPoolDebt() external returns (uint256);
 
