@@ -6,7 +6,7 @@ const fund = async (to: string) => {
     "http://127.0.0.1:9650/ext/bc/C/rpc"
   );
   const wallet = new ethers.Wallet(
-    "d77b743a0b9170c230e4a4be446b8605aa45f1d00da3d8cd5e5f778c287e1f22",
+    "e8eb815fca4f7febe74b9cfb026c640ac6d607b0c6fd65df40b7584e285f19b3",
     provider
   );
 

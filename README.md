@@ -158,7 +158,7 @@ Deploy the smart contract in the local network using the `deploy` script.
 For example:
 
 ```
-FLARE_DIR=~/Desktop/flare npm run deploy:<dev|prod> <network>
+NATIVE_TOKEN=<symbol> FLARE_DIR=~/Desktop/flare npm run deploy:<dev|prod> <network>
 ```
 
 If you get the error `ProviderError: err: Invalid value for block.coinbase`, that means you have to first run `npm run createInitialTx local`, which creates a genesis transaction in order for the network to start properly.
@@ -170,7 +170,7 @@ You can use a script to initialize the system with a new asset type.
 > Override the native token on the `local` or `internal` networks with `NATIVE_TOKEN=<CFLR|SGB|FLR>`.
 
 ```
-FLARE_DIR=~/Desktop/flare yarn run initialize <network>
+NATIVE_TOKEN=<symbol> FLARE_DIR=~/Desktop/flare yarn run initialize <network>
 ```
 
 ## Administrator Tools

@@ -23,9 +23,10 @@ const config: HardhatUserConfig = {
     local: {
       url: "http://127.0.0.1:9650/ext/bc/C/rpc",
       accounts: [
-        "6f65c8fc482827dfd05771d0f8cb1696b7c47595bd42ae2fa8b25c38c5692a1a",
+        // TODO: Read this from encrypted keystore file
+        "e8eb815fca4f7febe74b9cfb026c640ac6d607b0c6fd65df40b7584e285f19b3",
       ],
-      chainId: 1337,
+      chainId: 4294967295,
     },
     internal: {
       url: "https://coston.trustline.co/ext/bc/C/rpc",
@@ -38,7 +39,7 @@ const config: HardhatUserConfig = {
     coston: {
       url: "https://coston-api.flare.network/ext/bc/C/rpc",
       accounts: [
-        "9f05cbe65ef2defab75440cb91ca1de405233a9f6c3d16bc1a5433edc28f20b4",
+        "e8eb815fca4f7febe74b9cfb026c640ac6d607b0c6fd65df40b7584e285f19b3",
       ],
       chainId: 16,
     },

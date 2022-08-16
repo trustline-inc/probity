@@ -1704,10 +1704,10 @@ const deployProbity = async (vaultEngineType?: string) => {
 
   // Deploy VaultEngine based on network
   let vaultType = "VaultEngine";
-  if (network.name === "local") {
+  if (network.name === "local" || network.name === "coston") {
     vaultType = "vaultEngineIssuer";
     await deployVaultEngineIssuer();
-  } else if (network.name === "coston" || vaultEngineType === "unrestricted") {
+  } else if (vaultEngineType === "unrestricted") {
     vaultType = "vaultEngineUnrestricted";
     await deployVaultEngineUnrestricted();
   } else if (network.name === "songbird" || vaultEngineType === "limited") {

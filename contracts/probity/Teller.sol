@@ -106,7 +106,6 @@ contract Teller is Stateful, Eventful {
      */
     function updateAccumulators() external {
         uint256 debtAccumulator = vaultEngine.debtAccumulator();
-        uint256 equityAccumulator = vaultEngine.equityAccumulator();
         uint256 lendingPoolDebt = vaultEngine.lendingPoolDebt();
         uint256 lendingPoolEquity = vaultEngine.lendingPoolEquity();
 
@@ -119,9 +118,6 @@ contract Teller is Stateful, Eventful {
         uint256 utilization = Math._wdiv(lendingPoolPrincipal, lendingPoolSupply);
 
         // Update debt accumulator
-        // uint256 utilization = Math._wdiv(
-        // (lendingPoolDebt * debtAccumulator), (lendingPoolEquity * equityAccumulator)
-        // );
         uint256 debtRateIncrease = Math._rmul(Math._rpow(mpr, (block.timestamp - lastUpdated)), debtAccumulator) -
             debtAccumulator;
 

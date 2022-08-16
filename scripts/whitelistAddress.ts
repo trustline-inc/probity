@@ -17,7 +17,7 @@ const init = async () => {
 
   // Contracts
   const registry = new ethers.Contract(
-    process.env.REGISTRY,
+    process.env.REGISTRY!,
     RegistryABI.abi,
     owner
   );
@@ -25,7 +25,7 @@ const init = async () => {
   try {
     const args = [
       ethers.utils.formatBytes32String("whitelisted"),
-      "0x6310B7E8bDFD25EFbeDfB17987Ba69D9191a45bD",
+      "0x11EeB875AAc42eEe7CB37668360206B0056F6eEd",
       false,
       { gasLimit: 300000 },
     ];
