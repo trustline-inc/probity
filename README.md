@@ -81,9 +81,7 @@ console.log("Total supply:", totalSupply);
 
 [Visual Studio Code](https://code.visualstudio.com/) is the recommended IDE. Here's how to install Solidity language support:
 
-```
-code --install-extension JuanBlanco.solidity
-```
+We recommend installing the [Hardhat + Solidity](https://marketplace.visualstudio.com/items?itemName=NomicFoundation.hardhat-solidity) IDE extension from the VSCode marketplace.
 
 Also, get the Prettier VSCode plugin:
 
@@ -117,6 +115,20 @@ Install node dependencies:
 yarn
 ```
 
+### Running Locally
+
+Run a local [Flare](https://gitlab.com/flarenetwork/flare) node.
+
+Hardhat will use the account listed in `hardhat.config.ts` for the network. You'll want to make sure that account is funded first.
+
+You should run an initial transaction before deploying contracts:
+
+> You should also run this for the `internal` network
+
+```
+npm run createInitialTx <network>
+```
+
 ### Testing
 
 Use the npm command to run tests on the local Hardhat network:
@@ -135,25 +147,11 @@ We use [GitHub Packages](https://docs.github.com/en/packages/working-with-a-gith
 
 3. [Create a new release](https://github.com/trustline-inc/probity/releases/new) for the tagged version
 
-### Running Locally
-
-Run a local [Flare](https://gitlab.com/flarenetwork/flare) node.
-
-Hardhat will use the account listed in `hardhat.config.ts` for the network. You'll want to make sure that account is funded first.
-
-You should run an initial transaction before deploying contracts:
-
-> You should also run this for the `internal` network
-
-```
-npm run createInitialTx <network>
-```
-
 ### Deployment
 
 Deploy the smart contract in the local network using the `deploy` script.
 
-> Set the `FLARE_DIR` envioronment variables. Optionally set `NATIVE_TOKEN` if you are deploying locally.
+> Set the `FLARE_DIR` envioronment variables. Optionally set `NATIVE_TOKEN=<CFLR|SGB|FLR|XRP>` if you are deploying locally.
 
 For example:
 
@@ -167,7 +165,7 @@ If you get the error `ProviderError: err: Invalid value for block.coinbase`, tha
 
 You can use a script to initialize the system with a new asset type.
 
-> Override the native token on the `local` or `internal` networks with `NATIVE_TOKEN=<CFLR|SGB|FLR>`.
+> Override the native token on the `local` or `internal` networks with `NATIVE_TOKEN=<CFLR|SGB|FLR|XRP>`.
 
 ```
 NATIVE_TOKEN=<symbol> FLARE_DIR=~/Desktop/flare yarn run initialize <network>

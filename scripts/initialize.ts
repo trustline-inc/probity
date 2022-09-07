@@ -13,6 +13,7 @@ const NATIVE_ASSETS: { [key: string]: string } = {
   CFLR: web3.utils.keccak256("CFLR"),
   FLR: web3.utils.keccak256("FLR"),
   SGB: web3.utils.keccak256("SGB"),
+  XRP: web3.utils.keccak256("XRP"),
 };
 
 const ERC20_ASSETS = {

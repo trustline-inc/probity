@@ -2,7 +2,7 @@ import * as dotenv from "dotenv";
 import * as hre from "hardhat";
 dotenv.config();
 
-const possibleTokens = ["CFLR", "FLR", "SGB"];
+const possibleTokens = ["CFLR", "FLR", "SGB", "XRP"];
 
 export default (): string => {
   const networkName = hre.network.name;

@@ -3,7 +3,6 @@
 pragma solidity ^0.8.0;
 
 import "../dependencies/Stateful.sol";
-import "hardhat/console.sol";
 
 interface VaultEngineLike {
     function addStablecoin(address user, uint256 amount) external;

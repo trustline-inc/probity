@@ -16,11 +16,11 @@ function sleep(ms: number) {
 (async () => {
   let [owner] = await ethers.getSigners();
   const FtsoABI = await artifacts.readArtifact("MockFtso");
-  const ftso = new Contract(process.env.FTSO, FtsoABI.abi, owner);
+  const ftso = new Contract(process.env.FTSO!, FtsoABI.abi, owner);
 
   const PriceFeedABI = await artifacts.readArtifact("PriceFeed");
   const priceFeed = new ethers.Contract(
-    process.env.PRICE_FEED,
+    process.env.PRICE_FEED!,
     PriceFeedABI.abi,
     owner
   );
@@ -36,13 +36,17 @@ function sleep(ms: number) {
       console.log("Current price:", String(ethers.utils.formatUnits(price, 5)));
 
       const response = await axios({
-        url: `https://min-api.cryptocompare.com/data/price?fsym=SGB&tsyms=USD`,
+        url: `https://min-api.cryptocompare.com/data/price?fsym=XRP&tsyms=USD`,
         headers: {
           Authorization: `Apikey ${process.env.CRYPTOCOMPARE_API_KEY}`,
         },
       });
+      if (response.data.Response === "Error") {
+        console.error(response.data.Message);
+        return process.exit();
+      }
       const newPrice = String(
-        ethers.utils.parseUnits(response.data.USD.toString(), 5)
+        ethers.utils.parseUnits(response.data?.USD?.toString(), 5)
       );
       console.log("New price:", String(ethers.utils.formatUnits(newPrice, 5)));
       let tx = await ftso.setCurrentPrice(newPrice, {

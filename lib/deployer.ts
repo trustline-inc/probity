@@ -123,20 +123,8 @@ interface ContractDict {
   vaultEngineUnrestricted?: VaultEngineUnrestricted;
   nativeAssetManager?: NativeAssetManager;
   usdManager?: ERC20AssetManager;
-  erc20AssetManager?:
-    | {
-        USD?: ERC20AssetManager;
-        FXRP?: ERC20AssetManager;
-        UPXAU?: ERC20AssetManager;
-      }
-    | {};
-  erc20?:
-    | {
-        USD?: ERC20;
-        FXRP?: ERC20;
-        UPXAU?: ERC20;
-      }
-    | {};
+  erc20AssetManager?: any;
+  erc20?: any;
   ftsoManager?: MockFtsoManager;
   ftsoRewardManager?: MockFtsoRewardManager;
   teller?: Teller;
@@ -165,6 +153,7 @@ interface ContractDict {
 
 const artifactNameMap: { [key: string]: any } = {
   usd: "USD",
+  usdManager: "ERC20AssetManager",
   bondIssuer: "BondIssuer",
   ftso: "MockFtso",
   registry: "Registry",
