@@ -347,7 +347,7 @@ describe("Shutdown Flow Test", function () {
 
     // Liquidate Bob's FLR vault ($1380 backing 1500 AUR)
     await liquidator.liquidateVault(ASSET_ID.FLR, bob.address);
-    let newDebtToCover = balances.bob["FLR"].debt;
+    let newDebtToCover: any = balances.bob["FLR"].debt;
     reserveBalances.debtToCover = newDebtToCover.mul(RAY);
     expectedTotalDebt = expectedTotalDebt.sub(newDebtToCover);
     expect(await vaultEngine.lendingPoolDebt()).to.equal(expectedTotalDebt);
