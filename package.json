@@ -31,7 +31,8 @@
     "getSystemInfo": "npx hardhat run ./scripts/getSystemInfo.ts --network",
     "test": "NODE_ENV=test npx hardhat test --network hardhat",
     "test:happy": "NODE_ENV=test npx hardhat test test/happyFlow.test.ts --network hardhat",
-    "coverage": "npm run build && export NODE_ENV=test && npx hardhat coverage --temp artifacts --network hardhat --solcoverjs ./.solcover.js"
+    "coverage": "npm run build && export NODE_ENV=test && npx hardhat coverage --temp artifacts --network hardhat --solcoverjs ./.solcover.js",
+    "hardhat:version": "npx hardhat --version"
   },
   "contributors": [
     {
@@ -71,7 +72,7 @@
     "dotenv": "^8.2.0",
     "ethereum-waffle": "^3.3.0",
     "ethers": "^5.0.31",
-    "hardhat": "^2.4.3",
+    "hardhat": "^2.11.2",
     "husky": "^4.3.8",
     "prettier": "^2.2.1",
     "prettier-plugin-solidity": "^1.0.0-beta.5",
@@ -82,7 +83,7 @@
     "ts-generator": "^0.1.1",
     "ts-node": "^10.8.1",
     "typechain": "^6.0.0",
-    "typescript": "^4.1.5",
+    "typescript": "^4.8.4",
     "web3": "^1.3.5"
   },
   "husky": {
