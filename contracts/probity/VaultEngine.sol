@@ -6,8 +6,6 @@ import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
 import "../dependencies/Math.sol";
 
-import "hardhat/console.sol";
-
 /**
  * @title VaultEngine contract
  * @author Matthew Rosendin <matt@trustline.co, @mrosendin>
@@ -508,13 +506,10 @@ contract VaultEngine is Stateful, Eventful {
         Vault memory vault = vaults[assetId][msg.sender];
 
         int256 principalToChange = debtCreated;
-        console.logInt(debtCreated);
-        console.log(vault.debtPrincipal);
+
         if (debtCreated < 0 && (Math._add(vault.normDebt * debtAccumulator, debtCreated) < vault.debtPrincipal)) {
-            console.log(vault.normDebt * debtAccumulator);
             principalToChange = -int256(vault.debtPrincipal - Math._add(vault.normDebt * debtAccumulator, debtCreated));
         }
-        console.logInt(principalToChange);
 
         vault.debtPrincipal = Math._add(vault.debtPrincipal, principalToChange);
         lendingPoolPrincipal = Math._add(lendingPoolPrincipal, principalToChange);

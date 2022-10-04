@@ -524,7 +524,7 @@ describe("Vault Engine Unit Tests", function () {
     });
   });
 
-  describe.only("modifyDebt Unit Tests", function () {
+  describe("modifyDebt Unit Tests", function () {
     const UNDERLYING_AMOUNT = WAD.mul(10_000);
     const COLLATERAL_AMOUNT = WAD.mul(10_000);
     const ASSET_AMOUNT = WAD.mul(10_000);
@@ -722,7 +722,7 @@ describe("Vault Engine Unit Tests", function () {
       expect(poolPrincipalAfter).to.equal(DEBT_AMOUNT.mul(RAY));
     });
 
-    it.only("test lendingPoolPrincipal and debtPrincipal decrease only after when interests are paid off ", async () => {
+    it("test lendingPoolPrincipal and debtPrincipal decrease only after when interests are paid off ", async () => {
       const debtRateIncrease = BigNumber.from("251035088626883475473007000");
       const equityRateIncrease = BigNumber.from("125509667994754929166541000");
 
@@ -742,6 +742,7 @@ describe("Vault Engine Unit Tests", function () {
 
       const before = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
       const poolPrincipalBefore = await vaultEngine.lendingPoolPrincipal();
+      let balance = await vaultEngine.balanceOf(ASSET_ID.FLR, owner.address);
 
       const ASSET_TO_MODIFY = BigNumber.from(0).sub(ASSET_AMOUNT.div(3));
       const DEBT_TO_MODIFY = BigNumber.from(0).sub(DEBT_AMOUNT.div(3));
@@ -754,18 +755,17 @@ describe("Vault Engine Unit Tests", function () {
 
       const after = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
       const poolPrincipalAfter = await vaultEngine.lendingPoolPrincipal();
-      let balance = await vaultEngine.balanceOf(ASSET_ID.FLR, owner.address);
       let debtAccumulator = await vaultEngine.debtAccumulator();
-      const EXPECTED_PRINCIPAL = balance.debt.sub(
+
+      const EXPECTED_PRINCIPAL = balance.debt.add(
         DEBT_TO_MODIFY.mul(debtAccumulator)
       );
 
-      console.log(EXPECTED_PRINCIPAL);
-      console.log();
-      console.log(before.debtPrincipal.toString());
-      console.log(after.debtPrincipal.toString());
-      expect(after.debtPrincipal).to.equal(DEBT_AMOUNT.mul(RAY));
-      expect(poolPrincipalAfter).to.equal(DEBT_AMOUNT.mul(RAY));
+      const EXPECTED_DIFF = before.debtPrincipal.sub(EXPECTED_PRINCIPAL);
+      expect(after.debtPrincipal).to.equal(EXPECTED_PRINCIPAL);
+      expect(poolPrincipalBefore.sub(poolPrincipalAfter)).to.equal(
+        EXPECTED_DIFF
+      );
     });
 
     it("allows debt repayment", async () => {
