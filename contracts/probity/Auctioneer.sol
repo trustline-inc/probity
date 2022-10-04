@@ -48,7 +48,7 @@ contract Auctioneer is Stateful, Eventful {
         uint256 lot; // [WAD]
         uint256 debt; // [RAD]
         address owner; // leftover collateral will go back to this owner
-        address beneficiary; // systemCurrencys will go to this address
+        address beneficiary; // systemCurrency will go to this address
         uint256 startPrice;
         uint256 startTime;
         bool sellAllLot; // if true, debt amount doesn't matter, auction will attempt to sell until lot is zero
@@ -146,7 +146,7 @@ contract Auctioneer is Stateful, Eventful {
      * @notice Starts an asset auction
      * @param assetId The ID of the collateral on auction
      * @param lotSize The size of the lot
-     * @param debtSize The amount of systemCurrencys that need to be raised
+     * @param debtSize The amount of systemCurrency that need to be raised
      * @param owner The owner of the liquidated vault
      * @param beneficiary A ReservePool address
      * @param sellAllLot if true, sell all the asset regardless of the debt size needed to raise

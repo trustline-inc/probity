@@ -736,7 +736,7 @@ describe("Shutdown Unit Tests", function () {
 
       await assertRevert(
         shutdown.calculateInvestorObligation(),
-        "shutdown/calculateInvestorObligation: system reserve or systemCurrency gap must be zero"
+        "shutdown/calculateInvestorObligation: system reserve or Systemcurrency gap must be zero"
       );
 
       await vaultEngine.setSystemCurrency(reservePool.address, 0);

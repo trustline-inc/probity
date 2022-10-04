@@ -930,7 +930,7 @@ describe("Vault Engine Unit Tests", function () {
       expect(after).to.equal(EXPECTED_VALUE);
     });
 
-    it("increases systemCurrency balance", async () => {
+    it("increases Systemcurrency balance", async () => {
       const EXPECTED_VALUE = EQUITY_TO_RAISE.mul(EQUITY_AMOUNT);
 
       const before = await vaultEngine.systemCurrency(owner.address);

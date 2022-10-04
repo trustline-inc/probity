@@ -359,7 +359,7 @@ describe("BondIssuer Unit Tests", function () {
       await bondIssuer.purchaseBond(OFFER_AMOUNT);
     });
 
-    it("tests that correct amount of systemCurrencys are transferred", async () => {
+    it("tests that correct amount of systemCurrency are transferred", async () => {
       await bondIssuer.connect(reservePool).newOffering(OFFER_AMOUNT);
       const before = await vaultEngine.systemCurrency(owner.address);
       await bondIssuer.purchaseBond(OFFER_AMOUNT);

@@ -391,7 +391,7 @@ describe("Shutdown Flow Test", function () {
 
     await checkReserveBalances(reserveBalances);
 
-    // Send all reserve systemCurrencys to Bob (as a proxy for pool diminishment)
+    // Send all reserve systemCurrency to Bob (as a proxy for pool diminishment)
     await reserve
       .connect(owner)
       .sendSystemCurrency(bob.address, newDebtThreshold);
@@ -601,7 +601,7 @@ describe("Shutdown Flow Test", function () {
     after = (await vaultEngine.vaults(ASSET_ID["FXRP"], bob.address))
       .standbyAmount;
 
-    // Redemption ratio * systemCurrencys returned
+    // Redemption ratio * systemCurrency returned
     // 0.9425959091 * 66500 = 62682.6279552
     const EXPECTED_FXRP_COLL_REDEEMED = WAD.mul("626826279552").div(1e7);
     // We are okay with up to 0.001 collateral difference

@@ -123,7 +123,7 @@ contract ReservePool is Stateful, Eventful {
     }
 
     /**
-     * @notice Sends reserve pool systemCurrencys elsewhere
+     * @notice Sends reserve pool systemCurrency elsewhere
      * @param to The receiving address
      * @param amount The amount to send
      */

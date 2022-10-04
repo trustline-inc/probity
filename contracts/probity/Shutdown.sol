@@ -127,7 +127,7 @@ interface BondIssuerLike {
 
 /**
  * The shutdown module's main purpose is to pause functionality and
- * allow borrowers to redeem systemCurrencys for the remaining collateral
+ * allow borrowers to redeem systemCurrency for the remaining collateral
  * and allows investors to redeem underlying assets.
  *
  * Step 1: Pause all normal functionality
@@ -180,7 +180,7 @@ contract Shutdown is Stateful, Eventful {
     // ratio of equity position's underlying asset that will be used to cover the systemCurrency Gap [WAD]
     uint256 public investorObligationRatio;
     uint256 public finalSystemCurrencyBalance; // final balance of how much systemCurrency are in circulation [RAD]
-    uint256 public finalTotalReserve; // final balance of the systemCurrencys held by reserve pool [RAD]
+    uint256 public finalTotalReserve; // final balance of the systemCurrency held by reserve pool [RAD]
 
     /////////////////////////////////////////
     // Modifier

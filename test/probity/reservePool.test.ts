@@ -161,7 +161,7 @@ describe("ReservePool Unit Tests", function () {
       await reservePool.connect(liquidator).settle(UNBACKED_DEBT_TO_SET.sub(1));
     });
 
-    it("fails if systemCurrency balance is less than amountToSettle", async () => {
+    it("fails if Systemcurrency balance is less than amountToSettle", async () => {
       await assertRevert(
         reservePool.connect(liquidator).settle(AMOUNT_TO_SETTLE.add(1)),
         "ReservePool/settle: Not enough balance to settle"
@@ -264,7 +264,7 @@ describe("ReservePool Unit Tests", function () {
       await reservePool.connect(liquidator).startBondSale();
     });
 
-    it("fails reservePool's systemCurrency balance is still positive", async () => {
+    it("fails reservePool's Systemcurrency balance is still positive", async () => {
       await vaultEngine
         .connect(liquidator)
         .setSystemCurrency(reservePool.address, RAD);
