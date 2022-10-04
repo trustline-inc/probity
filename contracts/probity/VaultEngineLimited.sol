@@ -41,7 +41,7 @@ contract VaultEngineLimited is VaultEngine {
      * @notice Modifies vault debt
      * @param assetId The ID of the vault asset type
      * @param collAmount Amount of asset supplied as loan security
-     * @param debtAmount Amount of stablecoin to borrow
+     * @param debtAmount Amount of systemCurrency to borrow
      */
     function modifyDebt(
         bytes32 assetId,

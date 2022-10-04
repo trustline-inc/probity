@@ -214,7 +214,7 @@ describe("Liquidator Unit Tests", function () {
         EQUITY.mul(RAY)
       );
 
-      await vaultEngine.setStablecoin(treasury.address, EQUITY.mul(RAY));
+      await vaultEngine.setSystemCurrency(treasury.address, EQUITY.mul(RAY));
       await priceFeed.setPrice(ASSET_ID.FLR, RAY);
     });
 
@@ -293,14 +293,14 @@ describe("Liquidator Unit Tests", function () {
         EQUITY.mul(RAY)
       );
 
-      await vaultEngine.setStablecoin(treasury.address, 0);
+      await vaultEngine.setSystemCurrency(treasury.address, 0);
 
       await assertRevert(
         liquidator.liquidateVault(ASSET_ID.FLR, user.address),
         "VaultEngine/liquidateEquityPosition: Not enough treasury funds"
       );
 
-      await vaultEngine.setStablecoin(treasury.address, RAD.mul(100000));
+      await vaultEngine.setSystemCurrency(treasury.address, RAD.mul(100000));
       await liquidator.liquidateVault(ASSET_ID.FLR, user.address);
     });
 
@@ -436,7 +436,7 @@ describe("Liquidator Unit Tests", function () {
       expect(after.beneficiary).to.equal(reservePool.address);
     });
 
-    it("tests that removeStablecoin is called when liquidating Equity position", async () => {
+    it("tests that removeSystemCurrency is called when liquidating Equity position", async () => {
       const EXPECTED_DIFF = EQUITY.mul(RAY);
 
       const before = await vaultEngine.systemCurrency(treasury.address);

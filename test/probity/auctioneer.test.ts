@@ -217,10 +217,10 @@ describe("Auctioneer Unit Tests", function () {
         0,
         0
       );
-      await vaultEngine.addStablecoin(owner.address, RAD.mul(1000000));
-      await vaultEngine.addStablecoin(user1.address, RAD.mul(1000000));
-      await vaultEngine.addStablecoin(user2.address, RAD.mul(1000000));
-      await vaultEngine.addStablecoin(user3.address, RAD.mul(1000000));
+      await vaultEngine.addSystemCurrency(owner.address, RAD.mul(1000000));
+      await vaultEngine.addSystemCurrency(user1.address, RAD.mul(1000000));
+      await vaultEngine.addSystemCurrency(user2.address, RAD.mul(1000000));
+      await vaultEngine.addSystemCurrency(user3.address, RAD.mul(1000000));
     });
 
     it("fails if auction is over", async () => {
@@ -315,10 +315,10 @@ describe("Auctioneer Unit Tests", function () {
         0,
         0
       );
-      await vaultEngine.addStablecoin(owner.address, RAD.mul(1000000));
-      await vaultEngine.addStablecoin(user1.address, RAD.mul(1000000));
-      await vaultEngine.addStablecoin(user2.address, RAD.mul(1000000));
-      await vaultEngine.addStablecoin(user3.address, RAD.mul(1000000));
+      await vaultEngine.addSystemCurrency(owner.address, RAD.mul(1000000));
+      await vaultEngine.addSystemCurrency(user1.address, RAD.mul(1000000));
+      await vaultEngine.addSystemCurrency(user2.address, RAD.mul(1000000));
+      await vaultEngine.addSystemCurrency(user3.address, RAD.mul(1000000));
     });
 
     it("fails if auction is over", async () => {
@@ -472,10 +472,10 @@ describe("Auctioneer Unit Tests", function () {
         0,
         0
       );
-      await vaultEngine.addStablecoin(owner.address, RAD.mul(1000000));
-      await vaultEngine.addStablecoin(user1.address, RAD.mul(1000000));
-      await vaultEngine.addStablecoin(user2.address, RAD.mul(1000000));
-      await vaultEngine.addStablecoin(user3.address, RAD.mul(1000000));
+      await vaultEngine.addSystemCurrency(owner.address, RAD.mul(1000000));
+      await vaultEngine.addSystemCurrency(user1.address, RAD.mul(1000000));
+      await vaultEngine.addSystemCurrency(user2.address, RAD.mul(1000000));
+      await vaultEngine.addSystemCurrency(user3.address, RAD.mul(1000000));
     });
 
     it("fails if bid doesn't exists for caller", async () => {
@@ -535,10 +535,10 @@ describe("Auctioneer Unit Tests", function () {
         0
       );
 
-      await vaultEngine.addStablecoin(owner.address, RAD.mul(1000000));
-      await vaultEngine.addStablecoin(user1.address, RAD.mul(1000000));
-      await vaultEngine.addStablecoin(user2.address, RAD.mul(1000000));
-      await vaultEngine.addStablecoin(user3.address, RAD.mul(1000000));
+      await vaultEngine.addSystemCurrency(owner.address, RAD.mul(1000000));
+      await vaultEngine.addSystemCurrency(user1.address, RAD.mul(1000000));
+      await vaultEngine.addSystemCurrency(user2.address, RAD.mul(1000000));
+      await vaultEngine.addSystemCurrency(user3.address, RAD.mul(1000000));
     });
 
     it("fails if auction is over", async () => {
@@ -804,10 +804,10 @@ describe("Auctioneer Unit Tests", function () {
         0,
         0
       );
-      await vaultEngine.addStablecoin(owner.address, RAD.mul(1000000));
-      await vaultEngine.addStablecoin(user1.address, RAD.mul(1000000));
-      await vaultEngine.addStablecoin(user2.address, RAD.mul(1000000));
-      await vaultEngine.addStablecoin(user3.address, RAD.mul(1000000));
+      await vaultEngine.addSystemCurrency(owner.address, RAD.mul(1000000));
+      await vaultEngine.addSystemCurrency(user1.address, RAD.mul(1000000));
+      await vaultEngine.addSystemCurrency(user2.address, RAD.mul(1000000));
+      await vaultEngine.addSystemCurrency(user3.address, RAD.mul(1000000));
     });
 
     it("fails if caller has no bid", async () => {
@@ -1106,10 +1106,10 @@ describe("Auctioneer Unit Tests", function () {
         0,
         0
       );
-      await vaultEngine.addStablecoin(owner.address, RAD.mul(1000000));
-      await vaultEngine.addStablecoin(user1.address, RAD.mul(1000000));
-      await vaultEngine.addStablecoin(user2.address, RAD.mul(1000000));
-      await vaultEngine.addStablecoin(user3.address, RAD.mul(1000000));
+      await vaultEngine.addSystemCurrency(owner.address, RAD.mul(1000000));
+      await vaultEngine.addSystemCurrency(user1.address, RAD.mul(1000000));
+      await vaultEngine.addSystemCurrency(user2.address, RAD.mul(1000000));
+      await vaultEngine.addSystemCurrency(user3.address, RAD.mul(1000000));
     });
 
     it("tests that only Probity can call the function", async () => {

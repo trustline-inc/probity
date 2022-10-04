@@ -59,14 +59,14 @@ describe("Treasury Unit Tests", function () {
     await registry.setupAddress(bytes32("treasury"), owner.address, true);
   });
 
-  describe("depositStablecoin Unit Tests", function () {
+  describe("depositSystemCurrency Unit Tests", function () {
     beforeEach(async function () {
       await usd.mint(owner.address, AMOUNT_TO_MINT);
     });
 
-    it("tests that deposit calls vaultEngine.addStablecoin function", async () => {
+    it("tests that deposit calls vaultEngine.addSystemCurrency function", async () => {
       const aurBalanceBefore = await vaultEngine.systemCurrency(owner.address);
-      await treasury.depositStablecoin(AMOUNT_TO_MINT);
+      await treasury.depositSystemCurrency(AMOUNT_TO_MINT);
       const aurBalanceAfter = await vaultEngine.systemCurrency(owner.address);
       expect(aurBalanceAfter.sub(aurBalanceBefore)).to.equal(
         AMOUNT_TO_MINT.mul(RAY)
@@ -75,15 +75,15 @@ describe("Treasury Unit Tests", function () {
 
     it("tests that usd is burned from user's balance", async () => {
       const aurBalanceBefore = await usd.balanceOf(owner.address);
-      await treasury.depositStablecoin(AMOUNT_TO_MINT);
+      await treasury.depositSystemCurrency(AMOUNT_TO_MINT);
       const aurBalanceAfter = await usd.balanceOf(owner.address);
       expect(aurBalanceBefore.sub(aurBalanceAfter)).to.equal(AMOUNT_TO_MINT);
     });
 
-    it("tests that DepositStablecoin event is emitted properly", async () => {
+    it("tests that DepositSystemCurrency event is emitted properly", async () => {
       const parsedEvents = await parseEvents(
-        treasury.depositStablecoin(AMOUNT_TO_MINT),
-        "DepositStablecoin",
+        treasury.depositSystemCurrency(AMOUNT_TO_MINT),
+        "DepositSystemCurrency",
         treasury
       );
 
@@ -92,15 +92,15 @@ describe("Treasury Unit Tests", function () {
     });
   });
 
-  describe("withdrawStablecoin Unit Tests", function () {
+  describe("withdrawSystemCurrency Unit Tests", function () {
     beforeEach(async function () {
       await usd.mint(owner.address, AMOUNT_TO_MINT);
-      await treasury.depositStablecoin(AMOUNT_TO_MINT);
+      await treasury.depositSystemCurrency(AMOUNT_TO_MINT);
     });
 
-    it("tests that withdrawStablecoin calls vaultEngine.removeStablecoin function", async () => {
+    it("tests that withdrawSystemCurrency calls vaultEngine.removeSystemCurrency function", async () => {
       const aurBalanceBefore = await vaultEngine.systemCurrency(owner.address);
-      await treasury.withdrawStablecoin(AMOUNT_TO_WITHDRAW);
+      await treasury.withdrawSystemCurrency(AMOUNT_TO_WITHDRAW);
       const aurBalanceAfter = await vaultEngine.systemCurrency(owner.address);
       expect(aurBalanceBefore.sub(aurBalanceAfter).div(RAY)).to.equal(
         AMOUNT_TO_WITHDRAW
@@ -109,25 +109,25 @@ describe("Treasury Unit Tests", function () {
 
     it("fails when user doesn't have enough aur to be withdrawn", async () => {
       await assertRevert(
-        treasury.connect(user).withdrawStablecoin(AMOUNT_TO_WITHDRAW),
+        treasury.connect(user).withdrawSystemCurrency(AMOUNT_TO_WITHDRAW),
         "reverted with panic code 0x11"
       );
-      await treasury.withdrawStablecoin(AMOUNT_TO_WITHDRAW);
+      await treasury.withdrawSystemCurrency(AMOUNT_TO_WITHDRAW);
     });
 
     it("tests that usd is minted for user's balance", async () => {
       const aurBalanceBefore = await usd.balanceOf(owner.address);
-      await treasury.withdrawStablecoin(AMOUNT_TO_WITHDRAW);
+      await treasury.withdrawSystemCurrency(AMOUNT_TO_WITHDRAW);
       const aurBalanceAfter = await usd.balanceOf(owner.address);
       expect(aurBalanceAfter.sub(aurBalanceBefore)).to.equal(
         AMOUNT_TO_WITHDRAW
       );
     });
 
-    it("tests that WithdrawStablecoin event is emitted properly", async () => {
+    it("tests that WithdrawSystemCurrency event is emitted properly", async () => {
       const parsedEvents = await parseEvents(
-        treasury.withdrawStablecoin(AMOUNT_TO_WITHDRAW),
-        "WithdrawStablecoin",
+        treasury.withdrawSystemCurrency(AMOUNT_TO_WITHDRAW),
+        "WithdrawSystemCurrency",
         treasury
       );
 
@@ -136,28 +136,31 @@ describe("Treasury Unit Tests", function () {
     });
   });
 
-  describe("transferStablecoin Unit Tests", function () {
+  describe("transferSystemCurrency Unit Tests", function () {
     beforeEach(async function () {
-      await vaultEngine.addStablecoin(owner.address, AMOUNT_TO_MINT.mul(RAY));
+      await vaultEngine.addSystemCurrency(
+        owner.address,
+        AMOUNT_TO_MINT.mul(RAY)
+      );
     });
 
-    it("tests that transferStablecoin call vaultEngine.moveStablecoin function", async () => {
-      const stablecoinBalanceBefore = await vaultEngine.systemCurrency(
+    it("tests that transferSystemCurrency call vaultEngine.moveSystemCurrency function", async () => {
+      const systemCurrencyBalanceBefore = await vaultEngine.systemCurrency(
         user.address
       );
-      await treasury.transferStablecoin(user.address, AMOUNT_TO_MINT);
-      const stablecoinBalanceAfter = await vaultEngine.systemCurrency(
+      await treasury.transferSystemCurrency(user.address, AMOUNT_TO_MINT);
+      const systemCurrencyBalanceAfter = await vaultEngine.systemCurrency(
         user.address
       );
       expect(
-        stablecoinBalanceAfter.sub(stablecoinBalanceBefore).div(RAY)
+        systemCurrencyBalanceAfter.sub(systemCurrencyBalanceBefore).div(RAY)
       ).to.equal(AMOUNT_TO_MINT);
     });
 
-    it("tests that TransferStablecoin event is emitted properly", async () => {
+    it("tests that TransferSystemCurrency event is emitted properly", async () => {
       const parsedEvents = await parseEvents(
-        treasury.transferStablecoin(user.address, AMOUNT_TO_MINT),
-        "TransferStablecoin",
+        treasury.transferSystemCurrency(user.address, AMOUNT_TO_MINT),
+        "TransferSystemCurrency",
         treasury
       );
 

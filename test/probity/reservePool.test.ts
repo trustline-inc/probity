@@ -138,7 +138,7 @@ describe("ReservePool Unit Tests", function () {
       );
       await vaultEngine
         .connect(liquidator)
-        .setStablecoin(reservePool.address, AMOUNT_TO_SETTLE);
+        .setSystemCurrency(reservePool.address, AMOUNT_TO_SETTLE);
     });
 
     it("fails if caller is not by Probity", async () => {
@@ -157,11 +157,11 @@ describe("ReservePool Unit Tests", function () {
       );
       await vaultEngine
         .connect(liquidator)
-        .setStablecoin(reservePool.address, UNBACKED_DEBT_TO_SET);
+        .setSystemCurrency(reservePool.address, UNBACKED_DEBT_TO_SET);
       await reservePool.connect(liquidator).settle(UNBACKED_DEBT_TO_SET.sub(1));
     });
 
-    it("fails if stablecoin balance is less than amountToSettle", async () => {
+    it("fails if systemCurrency balance is less than amountToSettle", async () => {
       await assertRevert(
         reservePool.connect(liquidator).settle(AMOUNT_TO_SETTLE.add(1)),
         "ReservePool/settle: Not enough balance to settle"
@@ -198,23 +198,25 @@ describe("ReservePool Unit Tests", function () {
     });
   });
 
-  describe("sendStablecoin Unit Tests", function () {
+  describe("sendSystemCurrency Unit Tests", function () {
     const AMOUNT_TO_SEND = RAD.mul(283);
     beforeEach(async function () {
       await vaultEngine
         .connect(liquidator)
-        .setStablecoin(reservePool.address, AMOUNT_TO_SEND);
+        .setSystemCurrency(reservePool.address, AMOUNT_TO_SEND);
     });
 
     it("fails if caller is not by gov", async () => {
       await assertRevert(
-        reservePool.connect(user).sendStablecoin(owner.address, AMOUNT_TO_SEND),
+        reservePool
+          .connect(user)
+          .sendSystemCurrency(owner.address, AMOUNT_TO_SEND),
         "AccessControl/onlyBy: Caller does not have permission"
       );
       await registry.setupAddress(bytes32("gov"), user.address, true);
       await reservePool
         .connect(user)
-        .sendStablecoin(owner.address, AMOUNT_TO_SEND);
+        .sendSystemCurrency(owner.address, AMOUNT_TO_SEND);
     });
 
     it("tests that values are properly set", async () => {
@@ -223,7 +225,7 @@ describe("ReservePool Unit Tests", function () {
       const before = await vaultEngine.systemCurrency(owner.address);
       await reservePool
         .connect(user)
-        .sendStablecoin(owner.address, AMOUNT_TO_SEND);
+        .sendSystemCurrency(owner.address, AMOUNT_TO_SEND);
       const after = await vaultEngine.systemCurrency(owner.address);
       expect(after.sub(before).abs()).to.equal(AMOUNT_TO_SEND);
     });
@@ -262,18 +264,18 @@ describe("ReservePool Unit Tests", function () {
       await reservePool.connect(liquidator).startBondSale();
     });
 
-    it("fails reservePool's stablecoin balance is still positive", async () => {
+    it("fails reservePool's systemCurrency balance is still positive", async () => {
       await vaultEngine
         .connect(liquidator)
-        .setStablecoin(reservePool.address, RAD);
+        .setSystemCurrency(reservePool.address, RAD);
 
       await assertRevert(
         reservePool.connect(liquidator).startBondSale(),
-        "ReservePool/startBondSale: Stablecoin balance is still positive"
+        "ReservePool/startBondSale: SystemCurrency balance is still positive"
       );
       await vaultEngine
         .connect(liquidator)
-        .setStablecoin(reservePool.address, 0);
+        .setSystemCurrency(reservePool.address, 0);
       await reservePool.connect(liquidator).startBondSale();
     });
 
