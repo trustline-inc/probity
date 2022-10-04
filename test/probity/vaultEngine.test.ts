@@ -496,12 +496,9 @@ describe("Vault Engine Unit Tests", function () {
         .connect(assetManager)
         .modifyStandbyAmount(ASSET_ID.FLR, user.address, ASSET_AMOUNT);
 
-      await vaultEngine.connect(user).modifyEquity(
-        ASSET_ID.FLR,
-
-        UNDERLYING_AMOUNT,
-        EQUITY_AMOUNT
-      );
+      await vaultEngine
+        .connect(user)
+        .modifyEquity(ASSET_ID.FLR, UNDERLYING_AMOUNT, EQUITY_AMOUNT);
     });
 
     it("test that balanceOf returns correct info", async () => {
