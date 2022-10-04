@@ -55,7 +55,7 @@ let bondIssuer: MockBondIssuer;
 
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
-describe.only("Shutdown Unit Tests", function () {
+describe("Shutdown Unit Tests", function () {
   beforeEach(async function () {
     let { contracts, signers } = await deployTest();
     // Set contracts
