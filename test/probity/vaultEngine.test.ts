@@ -742,17 +742,25 @@ describe("Vault Engine Unit Tests", function () {
 
       const before = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
       const poolPrincipalBefore = await vaultEngine.lendingPoolPrincipal();
-      let balance = await vaultEngine.balanceOf(ASSET_ID.FLR, owner.address);
-      console.log(balance.debt.toString());
+
+      const ASSET_TO_MODIFY = BigNumber.from(0).sub(ASSET_AMOUNT.div(3));
+      const DEBT_TO_MODIFY = BigNumber.from(0).sub(DEBT_AMOUNT.div(3));
 
       await vaultEngine.modifyDebt(
         ASSET_ID.FLR,
-        BigNumber.from(0).sub(ASSET_AMOUNT.div(3)),
-        BigNumber.from(0).sub(DEBT_AMOUNT.div(3))
+        ASSET_TO_MODIFY,
+        DEBT_TO_MODIFY
       );
 
       const after = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
       const poolPrincipalAfter = await vaultEngine.lendingPoolPrincipal();
+      let balance = await vaultEngine.balanceOf(ASSET_ID.FLR, owner.address);
+      let debtAccumulator = await vaultEngine.debtAccumulator();
+      const EXPECTED_PRINCIPAL = balance.debt.sub(
+        DEBT_TO_MODIFY.mul(debtAccumulator)
+      );
+
+      console.log(EXPECTED_PRINCIPAL);
       console.log();
       console.log(before.debtPrincipal.toString());
       console.log(after.debtPrincipal.toString());
