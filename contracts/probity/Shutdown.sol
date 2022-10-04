@@ -173,7 +173,8 @@ contract Shutdown is Stateful, Eventful {
     mapping(bytes32 => Asset) public assets; // assetId -> Asset
     // assetId -> redeemer's address -> amount redeemed
     mapping(bytes32 => mapping(address => uint256)) public collRedeemed;
-    mapping(address => uint256) public systemCurrency; // redeemer's address -> systemCurrency balance already returned [RAD]
+    // redeemer's address -> systemCurrency balance already returned [RAD]
+    mapping(address => uint256) public systemCurrency;
     uint256 public finalUtilizationRatio; // Total Equity Utilization Ratio at the moment shutdown is initiated [WAD]
     uint256 public systemCurrencyGap; // amount of systemCurrency that doesn't have collateral backing [RAD]
     // ratio of equity position's underlying asset that will be used to cover the systemCurrency Gap [WAD]

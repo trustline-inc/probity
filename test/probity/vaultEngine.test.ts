@@ -287,7 +287,6 @@ describe("Vault Engine Unit Tests", function () {
       // Increase debt (collateral = 5000, debt = 1000)
       await vaultEngine.modifyDebt(
         ASSET_ID.FLR,
-
         COLLATERAL_AMOUNT,
         DEBT_AMOUNT
       );
@@ -507,12 +506,7 @@ describe("Vault Engine Unit Tests", function () {
       expect(before.debt).to.equal(0);
       expect(before.equity).to.equal(0);
 
-      await vaultEngine.modifyDebt(
-        ASSET_ID.FLR,
-
-        ASSET_AMOUNT,
-        DEBT_AMOUNT
-      );
+      await vaultEngine.modifyDebt(ASSET_ID.FLR, ASSET_AMOUNT, DEBT_AMOUNT);
 
       const after = await vaultEngine.balanceOf(ASSET_ID.FLR, owner.address);
       expect(after.collateral).to.equal(ASSET_AMOUNT.mul(ADJUSTED_PRICE));
@@ -607,12 +601,7 @@ describe("Vault Engine Unit Tests", function () {
         .connect(gov)
         .setupAddress(bytes32("notWhitelisted"), owner.address, false);
       await assertRevert(
-        vaultEngine.modifyDebt(
-          ASSET_ID.FLR,
-
-          COLLATERAL_AMOUNT,
-          DEBT_AMOUNT
-        ),
+        vaultEngine.modifyDebt(ASSET_ID.FLR, COLLATERAL_AMOUNT, DEBT_AMOUNT),
         "AccessControl/onlyBy: Caller does not have permission"
       );
 
@@ -622,7 +611,6 @@ describe("Vault Engine Unit Tests", function () {
 
       await vaultEngine.modifyDebt(
         ASSET_ID.FLR,
-
         COLLATERAL_AMOUNT,
         DEBT_AMOUNT
       );
@@ -650,7 +638,6 @@ describe("Vault Engine Unit Tests", function () {
 
       await vaultEngine.modifyDebt(
         ASSET_ID.FLR,
-
         COLLATERAL_AMOUNT,
         DEBT_AMOUNT
       );
@@ -664,12 +651,7 @@ describe("Vault Engine Unit Tests", function () {
       expect(before.normEquity).to.equal(0);
       expect(before.initialEquity).to.equal(0);
 
-      await vaultEngine.modifyDebt(
-        ASSET_ID.FLR,
-
-        ASSET_AMOUNT,
-        DEBT_AMOUNT
-      );
+      await vaultEngine.modifyDebt(ASSET_ID.FLR, ASSET_AMOUNT, DEBT_AMOUNT);
 
       const after = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
       expect(after.standbyAmount).to.equal(COLLATERAL_AMOUNT.sub(ASSET_AMOUNT));
@@ -680,12 +662,7 @@ describe("Vault Engine Unit Tests", function () {
     });
 
     it("fails if debt balance goes below zero when called with negative values", async () => {
-      await vaultEngine.modifyDebt(
-        ASSET_ID.FLR,
-
-        ASSET_AMOUNT,
-        DEBT_AMOUNT
-      );
+      await vaultEngine.modifyDebt(ASSET_ID.FLR, ASSET_AMOUNT, DEBT_AMOUNT);
 
       await assertRevert(
         vaultEngine.modifyDebt(
@@ -699,7 +676,6 @@ describe("Vault Engine Unit Tests", function () {
 
       await vaultEngine.modifyDebt(
         ASSET_ID.FLR,
-
         BigNumber.from(0).sub(ASSET_AMOUNT),
         BigNumber.from(0).sub(DEBT_AMOUNT)
       );
@@ -766,12 +742,7 @@ describe("Vault Engine Unit Tests", function () {
     });
 
     it("allows debt repayment", async () => {
-      await vaultEngine.modifyDebt(
-        ASSET_ID.FLR,
-
-        ASSET_AMOUNT,
-        DEBT_AMOUNT
-      );
+      await vaultEngine.modifyDebt(ASSET_ID.FLR, ASSET_AMOUNT, DEBT_AMOUNT);
 
       const before = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
       expect(before.standbyAmount).to.equal(
@@ -784,7 +755,6 @@ describe("Vault Engine Unit Tests", function () {
 
       await vaultEngine.modifyDebt(
         ASSET_ID.FLR,
-
         BigNumber.from(0).sub(ASSET_AMOUNT.div(2)),
         BigNumber.from(0).sub(DEBT_AMOUNT.div(2))
       );
@@ -804,19 +774,13 @@ describe("Vault Engine Unit Tests", function () {
       await assertRevert(
         vaultEngine.modifyDebt(
           ASSET_ID.FLR,
-
           MINIMUM_AMOUNT.sub(1),
           DEBT_AMOUNT
         ),
         "Vault/certify: Not enough collateral"
       );
 
-      await vaultEngine.modifyDebt(
-        ASSET_ID.FLR,
-
-        MINIMUM_AMOUNT,
-        DEBT_AMOUNT
-      );
+      await vaultEngine.modifyDebt(ASSET_ID.FLR, MINIMUM_AMOUNT, DEBT_AMOUNT);
     });
 
     it("updates balances when the accumulators are above the initial values", async () => {
@@ -830,12 +794,7 @@ describe("Vault Engine Unit Tests", function () {
         .connect(assetManager)
         .modifyStandbyAmount(ASSET_ID.FLR, owner.address, COLLATERAL_AMOUNT);
 
-      await vaultEngine.modifyDebt(
-        ASSET_ID.FLR,
-
-        ASSET_AMOUNT,
-        DEBT_AMOUNT
-      );
+      await vaultEngine.modifyDebt(ASSET_ID.FLR, ASSET_AMOUNT, DEBT_AMOUNT);
 
       // Update accumulators
       await registry
@@ -859,7 +818,6 @@ describe("Vault Engine Unit Tests", function () {
 
       await vaultEngine.modifyDebt(
         ASSET_ID.FLR,
-
         COLLATERAL_AMOUNT.div(2),
         DEBT_AMOUNT.div(2)
       );
@@ -876,12 +834,7 @@ describe("Vault Engine Unit Tests", function () {
       const before = await vaultEngine.getVaultList();
       expect(before.length).to.equal(1);
 
-      await vaultEngine.modifyDebt(
-        ASSET_ID.FLR,
-
-        ASSET_AMOUNT,
-        DEBT_AMOUNT
-      );
+      await vaultEngine.modifyDebt(ASSET_ID.FLR, ASSET_AMOUNT, DEBT_AMOUNT);
 
       const after = await vaultEngine.getVaultList();
       expect(after.length).to.equal(2);
@@ -891,7 +844,6 @@ describe("Vault Engine Unit Tests", function () {
     it("doesn't add existing users to the user list", async () => {
       await vaultEngine.modifyDebt(
         ASSET_ID.FLR,
-
         ASSET_AMOUNT.div(2),
         DEBT_AMOUNT.div(2)
       );
@@ -901,7 +853,6 @@ describe("Vault Engine Unit Tests", function () {
 
       await vaultEngine.modifyDebt(
         ASSET_ID.FLR,
-
         ASSET_AMOUNT.div(2),
         DEBT_AMOUNT.div(2)
       );
@@ -1040,12 +991,7 @@ describe("Vault Engine Unit Tests", function () {
         UNDERLYING_AMOUNT,
         EQUITY_AMOUNT
       );
-      await vaultEngine.modifyDebt(
-        ASSET_ID.FLR,
-
-        ASSET_AMOUNT,
-        DEBT_AMOUNT
-      );
+      await vaultEngine.modifyDebt(ASSET_ID.FLR, ASSET_AMOUNT, DEBT_AMOUNT);
 
       await registry
         .connect(gov)
@@ -1131,12 +1077,7 @@ describe("Vault Engine Unit Tests", function () {
         UNDERLYING_AMOUNT,
         EQUITY_AMOUNT
       );
-      await vaultEngine.modifyDebt(
-        ASSET_ID.FLR,
-
-        ASSET_AMOUNT,
-        DEBT_AMOUNT
-      );
+      await vaultEngine.modifyDebt(ASSET_ID.FLR, ASSET_AMOUNT, DEBT_AMOUNT);
 
       await registry
         .connect(gov)
