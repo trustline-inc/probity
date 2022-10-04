@@ -114,28 +114,13 @@ describe("Vault Engine Unit Tests", function () {
       );
     });
 
-    it("only allows whitelisted users to call modifyEquity", async () => {
+    it("tests that non whitelisted user can call modifyEquity", async () => {
       await registry
         .connect(gov)
-        .setupAddress(bytes32("notWhitelisted"), owner.address, false);
-
-      await assertRevert(
-        vaultEngine.modifyEquity(
-          ASSET_ID.FLR,
-
-          UNDERLYING_AMOUNT,
-          EQUITY_AMOUNT
-        ),
-        "AccessControl/onlyBy: Caller does not have permission"
-      );
-
-      await registry
-        .connect(gov)
-        .setupAddress(bytes32("whitelisted"), owner.address, false);
+        .setupAddress(bytes32("notWhitelisted"), owner.address, true);
 
       await vaultEngine.modifyEquity(
         ASSET_ID.FLR,
-
         UNDERLYING_AMOUNT,
         EQUITY_AMOUNT
       );
@@ -596,21 +581,14 @@ describe("Vault Engine Unit Tests", function () {
       );
     });
 
-    it("only allows whitelisted users to call modifyDebt", async () => {
+    it("tests that non whitelisted user can call modifyDebt", async () => {
       await registry
         .connect(gov)
         .setupAddress(bytes32("notWhitelisted"), owner.address, false);
-      await assertRevert(
-        vaultEngine.modifyDebt(ASSET_ID.FLR, COLLATERAL_AMOUNT, DEBT_AMOUNT),
-        "AccessControl/onlyBy: Caller does not have permission"
-      );
-
-      await registry
-        .connect(gov)
-        .setupAddress(bytes32("whitelisted"), owner.address, false);
 
       await vaultEngine.modifyDebt(
         ASSET_ID.FLR,
+
         COLLATERAL_AMOUNT,
         DEBT_AMOUNT
       );
