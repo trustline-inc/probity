@@ -14,7 +14,7 @@ interface VaultEngineLike {
 
     function increaseSystemDebt(uint256 amount) external;
 
-    function moveStablecoin(
+    function moveSystemCurrency(
         address from,
         address to,
         uint256 amount
@@ -45,10 +45,10 @@ contract BondIssuer is Stateful, Eventful {
 
     Offering public offering;
 
-    // Every stepPeriod, bondTokens received per stablecoin goes up by X% until maxDiscount
+    // Every stepPeriod, bondTokens received per systemCurrency goes up by X% until maxDiscount
     uint256 public discountIncreasePerStep = 5E16; // 5%
     uint256 public stepPeriod = 6 hours;
-    uint256 public maxDiscount = 1.5E18; // 150% of stablecoin (50% discount)
+    uint256 public maxDiscount = 1.5E18; // 150% of systemCurrency (50% discount)
 
     mapping(address => uint256) public bondTokens; // [RAD]
     uint256 public totalBondTokens; // [RAD]
@@ -64,10 +64,10 @@ contract BondIssuer is Stateful, Eventful {
     // Public functions
     /////////////////////////////////////////
     /**
-     * @notice Returns the amount of bondTokens received per stablecoin
+     * @notice Returns the amount of bondTokens received per systemCurrency
      * @dev Stepwise discount increases until max discount is met
      */
-    function tokensPerStablecoin() public view returns (uint256 discount) {
+    function tokensPerSystemCurrency() public view returns (uint256 discount) {
         uint256 steps = (block.timestamp - offering.startTime) / stepPeriod;
 
         if (ONE + (discountIncreasePerStep * steps) > maxDiscount) {
@@ -149,8 +149,8 @@ contract BondIssuer is Stateful, Eventful {
             "ReservePool/purchaseBond: Can't purchase more bondTokens than offering amount"
         );
 
-        vaultEngine.moveStablecoin(msg.sender, reservePoolAddress, value);
-        uint256 amountToBuy = ((value * tokensPerStablecoin()) / ONE);
+        vaultEngine.moveSystemCurrency(msg.sender, reservePoolAddress, value);
+        uint256 amountToBuy = ((value * tokensPerSystemCurrency()) / ONE);
         bondTokens[msg.sender] += amountToBuy;
         totalBondTokens += amountToBuy;
         offering.amount = offering.amount - value;
@@ -190,6 +190,6 @@ contract BondIssuer is Stateful, Eventful {
         );
 
         bondTokens[user] -= amount;
-        vaultEngine.moveStablecoin(address(reservePoolAddress), user, amount);
+        vaultEngine.moveSystemCurrency(address(reservePoolAddress), user, amount);
     }
 }

@@ -65,15 +65,15 @@ contract MockVaultEngine {
     LiquidateDebtPositionCall public lastLiquidateDebtPositionCall;
     LiquidateEquityPositionCall public lastLiquidateEquityPositionCall;
 
-    function addStablecoin(address user, uint256 amount) external {
+    function addSystemCurrency(address user, uint256 amount) external {
         systemCurrency[user] += amount;
     }
 
-    function removeStablecoin(address user, uint256 amount) external {
+    function removeSystemCurrency(address user, uint256 amount) external {
         systemCurrency[user] -= amount;
     }
 
-    function moveStablecoin(
+    function moveSystemCurrency(
         address from,
         address to,
         uint256 amount
@@ -82,7 +82,7 @@ contract MockVaultEngine {
         systemCurrency[to] += amount;
     }
 
-    function setStablecoin(address user, uint256 amount) external {
+    function setSystemCurrency(address user, uint256 amount) external {
         systemCurrency[user] = amount;
     }
 

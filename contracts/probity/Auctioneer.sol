@@ -14,7 +14,7 @@ interface VaultEngineLike {
         uint256 amount
     ) external;
 
-    function moveStablecoin(
+    function moveSystemCurrency(
         address from,
         address to,
         uint256 amount
@@ -35,7 +35,7 @@ interface LiquidatorLike {
 
 /**
  * @title Auctioneer contract
- * @notice Auctioneer will auction off the asset in exchange for the stablecoin
+ * @notice Auctioneer will auction off the asset in exchange for the systemCurrency
  */
 
 contract Auctioneer is Stateful, Eventful {
@@ -48,7 +48,7 @@ contract Auctioneer is Stateful, Eventful {
         uint256 lot; // [WAD]
         uint256 debt; // [RAD]
         address owner; // leftover collateral will go back to this owner
-        address beneficiary; // stablecoins will go to this address
+        address beneficiary; // systemCurrency will go to this address
         uint256 startPrice;
         uint256 startTime;
         bool sellAllLot; // if true, debt amount doesn't matter, auction will attempt to sell until lot is zero
@@ -146,7 +146,7 @@ contract Auctioneer is Stateful, Eventful {
      * @notice Starts an asset auction
      * @param assetId The ID of the collateral on auction
      * @param lotSize The size of the lot
-     * @param debtSize The amount of stablecoins that need to be raised
+     * @param debtSize The amount of systemCurrency that need to be raised
      * @param owner The owner of the liquidated vault
      * @param beneficiary A ReservePool address
      * @param sellAllLot if true, sell all the asset regardless of the debt size needed to raise
@@ -220,7 +220,7 @@ contract Auctioneer is Stateful, Eventful {
         biddableLot = Math._min(bidLot, biddableLot);
         uint256 bidValue = biddableLot * bidPrice;
 
-        vaultEngine.moveStablecoin(msg.sender, address(this), bidValue);
+        vaultEngine.moveSystemCurrency(msg.sender, address(this), bidValue);
 
         nextHighestBidder[auctionId][msg.sender] = nextHighestBidder[auctionId][indexToAdd];
         nextHighestBidder[auctionId][indexToAdd] = msg.sender;
@@ -271,7 +271,7 @@ contract Auctioneer is Stateful, Eventful {
 
         uint256 lotToBuy = Math._min(lot, biddableLot);
         lotValue = lotToBuy * currentPrice;
-        vaultEngine.moveStablecoin(msg.sender, auctions[auctionId].beneficiary, lotValue);
+        vaultEngine.moveSystemCurrency(msg.sender, auctions[auctionId].beneficiary, lotValue);
         vaultEngine.moveAsset(auctions[auctionId].assetId, address(this), msg.sender, lotToBuy);
 
         if (!auction.sellAllLot) {
@@ -529,7 +529,7 @@ contract Auctioneer is Stateful, Eventful {
         address bidder,
         uint256 newLot
     ) internal {
-        vaultEngine.moveStablecoin(
+        vaultEngine.moveSystemCurrency(
             address(this),
             bidder,
             (bids[auctionId][bidder].lot - newLot) * bids[auctionId][bidder].price
@@ -561,7 +561,11 @@ contract Auctioneer is Stateful, Eventful {
         address bidder,
         address prev
     ) internal {
-        vaultEngine.moveStablecoin(address(this), bidder, bids[auctionId][bidder].lot * bids[auctionId][bidder].price);
+        vaultEngine.moveSystemCurrency(
+            address(this),
+            bidder,
+            bids[auctionId][bidder].lot * bids[auctionId][bidder].price
+        );
         // remove the index from the nextHighestBidder and reset the bids to zero
         emit BidRemoved(
             auctions[auctionId].assetId,

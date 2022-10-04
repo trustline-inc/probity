@@ -24,6 +24,7 @@ contract VaultEngine is Stateful, Eventful {
         uint256 normDebt; // Normalized debt balance [WAD]
         uint256 normEquity; // Normalized equity balance [WAD]
         uint256 initialEquity; // Tracks the amount of equity (less interest) [RAD]
+        uint256 debtPrincipal; // Tracks the principal amount of debt
     }
 
     enum Category {
@@ -165,12 +166,12 @@ contract VaultEngine is Stateful, Eventful {
     }
 
     /**
-     * @dev Moves stablecoin between vaults.
+     * @dev Moves systemCurrency between vaults.
      * @param from The address of the originating vault owner
      * @param to The address of the beneficiary vault owner
-     * @param amount The amount of stablecoin to move
+     * @param amount The amount of systemCurrency to move
      */
-    function moveStablecoin(
+    function moveSystemCurrency(
         address from,
         address to,
         uint256 amount
@@ -180,20 +181,20 @@ contract VaultEngine is Stateful, Eventful {
     }
 
     /**
-     * @dev Add stablecoin to account vault.
+     * @dev Add systemCurrency to account vault.
      * @param account The address of the beneficiary vault owner
-     * @param amount The amount of stablecoin to add
+     * @param amount The amount of systemCurrency to add
      */
-    function addStablecoin(address account, uint256 amount) external onlyBy("treasury") {
+    function addSystemCurrency(address account, uint256 amount) external onlyBy("treasury") {
         systemCurrency[account] += amount;
     }
 
     /**
-     * @dev Remove stablecoin from account vault.
+     * @dev Remove systemCurrency from account vault.
      * @param account The address of the beneficiary vault owner
-     * @param amount The amount of stablecoin to remove
+     * @param amount The amount of systemCurrency to remove
      */
-    function removeStablecoin(address account, uint256 amount) external onlyByProbity {
+    function removeSystemCurrency(address account, uint256 amount) external onlyByProbity {
         systemCurrency[account] -= amount;
     }
 
@@ -243,7 +244,7 @@ contract VaultEngine is Stateful, Eventful {
      * @notice Modifies vault debt
      * @param assetId The ID of the vault asset type
      * @param collAmount Amount of asset supplied as loan security
-     * @param debtAmount Amount of stablecoin to borrow
+     * @param debtAmount Amount of systemCurrency to borrow
      */
     function modifyDebt(
         bytes32 assetId,
@@ -503,6 +504,16 @@ contract VaultEngine is Stateful, Eventful {
         }
 
         Vault memory vault = vaults[assetId][msg.sender];
+
+        // Reduce the debt principal only after interests are paid off
+        int256 principalToChange = debtCreated;
+        if (debtCreated < 0 && (Math._add(vault.normDebt * debtAccumulator, debtCreated) < vault.debtPrincipal)) {
+            principalToChange = -int256(vault.debtPrincipal - Math._add(vault.normDebt * debtAccumulator, debtCreated));
+        }
+
+        vault.debtPrincipal = Math._add(vault.debtPrincipal, principalToChange);
+        lendingPoolPrincipal = Math._add(lendingPoolPrincipal, principalToChange);
+
         vault.standbyAmount = Math._sub(vault.standbyAmount, collAmount);
         vault.collateral = Math._add(vault.collateral, collAmount);
         vault.normDebt = Math._add(vault.normDebt, debtAmount);
@@ -511,7 +522,7 @@ contract VaultEngine is Stateful, Eventful {
         lendingPoolDebt = Math._add(lendingPoolDebt, debtAmount);
 
         totalSystemCurrency = Math._add(totalSystemCurrency, debtCreated);
-        lendingPoolPrincipal = Math._add(lendingPoolPrincipal, debtCreated);
+
         require(vault.normDebt * debtAccumulator <= assets[assetId].ceiling, "Vault/modifyDebt: Debt ceiling reached");
         require(
             vault.normDebt == 0 || (vault.normDebt * RAY) > assets[assetId].floor,
@@ -522,7 +533,6 @@ contract VaultEngine is Stateful, Eventful {
         systemCurrency[msg.sender] = Math._add(systemCurrency[msg.sender], debtCreated);
         systemCurrency[treasury] = Math._sub(systemCurrency[treasury], debtCreated);
 
-        //        console.log("treasury Balance        %s", systemCurrency[treasury]);
         vaults[assetId][msg.sender] = vault;
 
         emit DebtModified(msg.sender, collAmount, debtCreated);

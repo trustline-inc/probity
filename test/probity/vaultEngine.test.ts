@@ -287,7 +287,6 @@ describe("Vault Engine Unit Tests", function () {
       // Increase debt (collateral = 5000, debt = 1000)
       await vaultEngine.modifyDebt(
         ASSET_ID.FLR,
-
         COLLATERAL_AMOUNT,
         DEBT_AMOUNT
       );
@@ -429,12 +428,14 @@ describe("Vault Engine Unit Tests", function () {
     });
   });
 
-  describe("addStablecoin Unit Tests", function () {
+  describe("addSystemCurrency Unit Tests", function () {
     const AMOUNT_TO_ADD = RAD.mul(173);
 
     it("fails if the caller is not treasury", async () => {
       await assertRevert(
-        vaultEngine.connect(user).addStablecoin(user.address, AMOUNT_TO_ADD),
+        vaultEngine
+          .connect(user)
+          .addSystemCurrency(user.address, AMOUNT_TO_ADD),
         "AccessControl/onlyBy: Caller does not have permission"
       );
 
@@ -444,7 +445,7 @@ describe("Vault Engine Unit Tests", function () {
 
       await vaultEngine
         .connect(user)
-        .addStablecoin(user.address, AMOUNT_TO_ADD);
+        .addSystemCurrency(user.address, AMOUNT_TO_ADD);
     });
 
     it("test that correct amount is added", async () => {
@@ -456,7 +457,7 @@ describe("Vault Engine Unit Tests", function () {
 
       await vaultEngine
         .connect(user)
-        .addStablecoin(user.address, AMOUNT_TO_ADD);
+        .addSystemCurrency(user.address, AMOUNT_TO_ADD);
 
       const after = await vaultEngine.systemCurrency(user.address);
       expect(after.sub(before)).to.equal(AMOUNT_TO_ADD);
@@ -494,12 +495,9 @@ describe("Vault Engine Unit Tests", function () {
         .connect(assetManager)
         .modifyStandbyAmount(ASSET_ID.FLR, user.address, ASSET_AMOUNT);
 
-      await vaultEngine.connect(user).modifyEquity(
-        ASSET_ID.FLR,
-
-        UNDERLYING_AMOUNT,
-        EQUITY_AMOUNT
-      );
+      await vaultEngine
+        .connect(user)
+        .modifyEquity(ASSET_ID.FLR, UNDERLYING_AMOUNT, EQUITY_AMOUNT);
     });
 
     it("test that balanceOf returns correct info", async () => {
@@ -508,12 +506,7 @@ describe("Vault Engine Unit Tests", function () {
       expect(before.debt).to.equal(0);
       expect(before.equity).to.equal(0);
 
-      await vaultEngine.modifyDebt(
-        ASSET_ID.FLR,
-
-        ASSET_AMOUNT,
-        DEBT_AMOUNT
-      );
+      await vaultEngine.modifyDebt(ASSET_ID.FLR, ASSET_AMOUNT, DEBT_AMOUNT);
 
       const after = await vaultEngine.balanceOf(ASSET_ID.FLR, owner.address);
       expect(after.collateral).to.equal(ASSET_AMOUNT.mul(ADJUSTED_PRICE));
@@ -608,12 +601,7 @@ describe("Vault Engine Unit Tests", function () {
         .connect(gov)
         .setupAddress(bytes32("notWhitelisted"), owner.address, false);
       await assertRevert(
-        vaultEngine.modifyDebt(
-          ASSET_ID.FLR,
-
-          COLLATERAL_AMOUNT,
-          DEBT_AMOUNT
-        ),
+        vaultEngine.modifyDebt(ASSET_ID.FLR, COLLATERAL_AMOUNT, DEBT_AMOUNT),
         "AccessControl/onlyBy: Caller does not have permission"
       );
 
@@ -623,7 +611,6 @@ describe("Vault Engine Unit Tests", function () {
 
       await vaultEngine.modifyDebt(
         ASSET_ID.FLR,
-
         COLLATERAL_AMOUNT,
         DEBT_AMOUNT
       );
@@ -651,7 +638,6 @@ describe("Vault Engine Unit Tests", function () {
 
       await vaultEngine.modifyDebt(
         ASSET_ID.FLR,
-
         COLLATERAL_AMOUNT,
         DEBT_AMOUNT
       );
@@ -665,12 +651,7 @@ describe("Vault Engine Unit Tests", function () {
       expect(before.normEquity).to.equal(0);
       expect(before.initialEquity).to.equal(0);
 
-      await vaultEngine.modifyDebt(
-        ASSET_ID.FLR,
-
-        ASSET_AMOUNT,
-        DEBT_AMOUNT
-      );
+      await vaultEngine.modifyDebt(ASSET_ID.FLR, ASSET_AMOUNT, DEBT_AMOUNT);
 
       const after = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
       expect(after.standbyAmount).to.equal(COLLATERAL_AMOUNT.sub(ASSET_AMOUNT));
@@ -681,12 +662,7 @@ describe("Vault Engine Unit Tests", function () {
     });
 
     it("fails if debt balance goes below zero when called with negative values", async () => {
-      await vaultEngine.modifyDebt(
-        ASSET_ID.FLR,
-
-        ASSET_AMOUNT,
-        DEBT_AMOUNT
-      );
+      await vaultEngine.modifyDebt(ASSET_ID.FLR, ASSET_AMOUNT, DEBT_AMOUNT);
 
       await assertRevert(
         vaultEngine.modifyDebt(
@@ -700,19 +676,73 @@ describe("Vault Engine Unit Tests", function () {
 
       await vaultEngine.modifyDebt(
         ASSET_ID.FLR,
-
         BigNumber.from(0).sub(ASSET_AMOUNT),
         BigNumber.from(0).sub(DEBT_AMOUNT)
       );
     });
 
-    it("allows debt repayment", async () => {
+    it("test lendingPoolPrincipal and debtPrincipal increase when debtAmount is Positive", async () => {
+      const before = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
+      const poolPrincipalBefore = await vaultEngine.lendingPoolPrincipal();
+      expect(before.debtPrincipal).to.equal(0);
+      expect(poolPrincipalBefore).to.equal(0);
+
+      await vaultEngine.modifyDebt(ASSET_ID.FLR, ASSET_AMOUNT, DEBT_AMOUNT);
+
+      const after = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
+      const poolPrincipalAfter = await vaultEngine.lendingPoolPrincipal();
+      expect(after.debtPrincipal).to.equal(DEBT_AMOUNT.mul(RAY));
+      expect(poolPrincipalAfter).to.equal(DEBT_AMOUNT.mul(RAY));
+    });
+
+    it("test lendingPoolPrincipal and debtPrincipal decrease only after when interests are paid off ", async () => {
+      const debtRateIncrease = BigNumber.from("251035088626883475473007000");
+      const equityRateIncrease = BigNumber.from("125509667994754929166541000");
+
+      await vaultEngine.modifyDebt(ASSET_ID.FLR, ASSET_AMOUNT, DEBT_AMOUNT);
+
+      await registry
+        .connect(gov)
+        .setupAddress(bytes32("teller"), user.address, true);
+      await vaultEngine
+        .connect(user)
+        .updateAccumulators(
+          reservePool.address,
+          debtRateIncrease,
+          equityRateIncrease,
+          BigNumber.from(0)
+        );
+
+      const before = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
+      const poolPrincipalBefore = await vaultEngine.lendingPoolPrincipal();
+      let balance = await vaultEngine.balanceOf(ASSET_ID.FLR, owner.address);
+
+      const ASSET_TO_MODIFY = BigNumber.from(0).sub(ASSET_AMOUNT.div(3));
+      const DEBT_TO_MODIFY = BigNumber.from(0).sub(DEBT_AMOUNT.div(3));
+
       await vaultEngine.modifyDebt(
         ASSET_ID.FLR,
-
-        ASSET_AMOUNT,
-        DEBT_AMOUNT
+        ASSET_TO_MODIFY,
+        DEBT_TO_MODIFY
       );
+
+      const after = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
+      const poolPrincipalAfter = await vaultEngine.lendingPoolPrincipal();
+      let debtAccumulator = await vaultEngine.debtAccumulator();
+
+      const EXPECTED_PRINCIPAL = balance.debt.add(
+        DEBT_TO_MODIFY.mul(debtAccumulator)
+      );
+
+      const EXPECTED_DIFF = before.debtPrincipal.sub(EXPECTED_PRINCIPAL);
+      expect(after.debtPrincipal).to.equal(EXPECTED_PRINCIPAL);
+      expect(poolPrincipalBefore.sub(poolPrincipalAfter)).to.equal(
+        EXPECTED_DIFF
+      );
+    });
+
+    it("allows debt repayment", async () => {
+      await vaultEngine.modifyDebt(ASSET_ID.FLR, ASSET_AMOUNT, DEBT_AMOUNT);
 
       const before = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
       expect(before.standbyAmount).to.equal(
@@ -725,7 +755,6 @@ describe("Vault Engine Unit Tests", function () {
 
       await vaultEngine.modifyDebt(
         ASSET_ID.FLR,
-
         BigNumber.from(0).sub(ASSET_AMOUNT.div(2)),
         BigNumber.from(0).sub(DEBT_AMOUNT.div(2))
       );
@@ -745,19 +774,13 @@ describe("Vault Engine Unit Tests", function () {
       await assertRevert(
         vaultEngine.modifyDebt(
           ASSET_ID.FLR,
-
           MINIMUM_AMOUNT.sub(1),
           DEBT_AMOUNT
         ),
         "Vault/certify: Not enough collateral"
       );
 
-      await vaultEngine.modifyDebt(
-        ASSET_ID.FLR,
-
-        MINIMUM_AMOUNT,
-        DEBT_AMOUNT
-      );
+      await vaultEngine.modifyDebt(ASSET_ID.FLR, MINIMUM_AMOUNT, DEBT_AMOUNT);
     });
 
     it("updates balances when the accumulators are above the initial values", async () => {
@@ -771,12 +794,7 @@ describe("Vault Engine Unit Tests", function () {
         .connect(assetManager)
         .modifyStandbyAmount(ASSET_ID.FLR, owner.address, COLLATERAL_AMOUNT);
 
-      await vaultEngine.modifyDebt(
-        ASSET_ID.FLR,
-
-        ASSET_AMOUNT,
-        DEBT_AMOUNT
-      );
+      await vaultEngine.modifyDebt(ASSET_ID.FLR, ASSET_AMOUNT, DEBT_AMOUNT);
 
       // Update accumulators
       await registry
@@ -800,7 +818,6 @@ describe("Vault Engine Unit Tests", function () {
 
       await vaultEngine.modifyDebt(
         ASSET_ID.FLR,
-
         COLLATERAL_AMOUNT.div(2),
         DEBT_AMOUNT.div(2)
       );
@@ -817,12 +834,7 @@ describe("Vault Engine Unit Tests", function () {
       const before = await vaultEngine.getVaultList();
       expect(before.length).to.equal(1);
 
-      await vaultEngine.modifyDebt(
-        ASSET_ID.FLR,
-
-        ASSET_AMOUNT,
-        DEBT_AMOUNT
-      );
+      await vaultEngine.modifyDebt(ASSET_ID.FLR, ASSET_AMOUNT, DEBT_AMOUNT);
 
       const after = await vaultEngine.getVaultList();
       expect(after.length).to.equal(2);
@@ -832,7 +844,6 @@ describe("Vault Engine Unit Tests", function () {
     it("doesn't add existing users to the user list", async () => {
       await vaultEngine.modifyDebt(
         ASSET_ID.FLR,
-
         ASSET_AMOUNT.div(2),
         DEBT_AMOUNT.div(2)
       );
@@ -842,7 +853,6 @@ describe("Vault Engine Unit Tests", function () {
 
       await vaultEngine.modifyDebt(
         ASSET_ID.FLR,
-
         ASSET_AMOUNT.div(2),
         DEBT_AMOUNT.div(2)
       );
@@ -853,98 +863,98 @@ describe("Vault Engine Unit Tests", function () {
     });
   });
 
-  // describe("collectInterest Unit Tests", function () {
-  //   const UNDERLYING_AMOUNT = WAD.mul(10000);
-  //   const COLL_AMOUNT = WAD.mul(10000);
-  //   const EQUITY_AMOUNT = WAD.mul(2000);
-  //   const DEBT_AMOUNT = WAD.mul(1000);
-  //   const DEBT_TO_RAISE = BigNumber.from("251035088626883475473007");
-  //   const EQUITY_TO_RAISE = BigNumber.from("125509667994754929166541");
-  //
-  //   beforeEach(async function () {
-  //     await owner.sendTransaction({
-  //       to: user.address,
-  //       value: ethers.utils.parseEther("1"),
-  //     });
-  //     await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR, 2);
-  //     await vaultEngine
-  //       .connect(gov)
-  //       .updateCeiling(ASSET_ID.FLR, RAD.mul(10000000));
-  //     await registry
-  //       .connect(gov)
-  //       .setupAddress(bytes32("assetManager"), assetManager.address, true);
-  //     await vaultEngine
-  //       .connect(gov)
-  //       .updateAdjustedPrice(ASSET_ID.FLR, RAY.mul(1));
-  //
-  //     await vaultEngine
-  //       .connect(assetManager)
-  //       .modifyStandbyAmount(ASSET_ID.FLR, owner.address, COLL_AMOUNT);
-  //
-  //     await vaultEngine
-  //       .connect(assetManager)
-  //       .modifyStandbyAmount(ASSET_ID.FLR, user.address, COLL_AMOUNT);
-  //
-  //     await vaultEngine.modifyEquity(
-  //       ASSET_ID.FLR,
-  //
-  //       UNDERLYING_AMOUNT,
-  //       EQUITY_AMOUNT
-  //     );
-  //     await vaultEngine
-  //       .connect(user)
-  //       .modifyDebt(ASSET_ID.FLR,  COLL_AMOUNT, DEBT_AMOUNT);
-  //
-  //     await registry
-  //       .connect(gov)
-  //       .setupAddress(bytes32("teller"), user.address, true);
-  //
-  //     await vaultEngine
-  //       .connect(user)
-  //       .updateAccumulators(
-  //         reservePool.address,
-  //         DEBT_TO_RAISE,
-  //         EQUITY_TO_RAISE,
-  //         BigNumber.from(0)
-  //       );
-  //   });
-  //
-  //   it("increases the PBT balance", async () => {
-  //     const EXPECTED_VALUE = EQUITY_TO_RAISE.mul(EQUITY_AMOUNT);
-  //
-  //     const before = await vaultEngine.pbt(owner.address);
-  //     expect(before).to.equal(0);
-  //     await vaultEngine.collectInterest(ASSET_ID.FLR);
-  //
-  //     const after = await vaultEngine.pbt(owner.address);
-  //     expect(after).to.equal(EXPECTED_VALUE);
-  //   });
-  //
-  //   it("increases stablecoin balance", async () => {
-  //     const EXPECTED_VALUE = EQUITY_TO_RAISE.mul(EQUITY_AMOUNT);
-  //
-  //     const before = await vaultEngine.systemCurrency(owner.address);
-  //     expect(before).to.equal(0);
-  //     // await vaultEngine.collectInterest(ASSET_ID.FLR);
-  //
-  //     const after = await vaultEngine.systemCurrency(owner.address);
-  //     expect(after).to.equal(EXPECTED_VALUE);
-  //   });
-  //
-  //   it("reduces the equity balance", async () => {
-  //     const ACCUMULATOR = RAY.add(EQUITY_TO_RAISE);
-  //     const EXPECTED_VALUE = EQUITY_AMOUNT.sub(
-  //       EQUITY_TO_RAISE.mul(EQUITY_AMOUNT).div(ACCUMULATOR)
-  //     );
-  //
-  //     const before = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
-  //     expect(before.normEquity).to.equal(EQUITY_AMOUNT);
-  //     // await vaultEngine.collectInterest(ASSET_ID.FLR);
-  //
-  //     const after = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
-  //     expect(after.normEquity).to.equal(EXPECTED_VALUE);
-  //   });
-  // });
+  describe("collectInterest Unit Tests", function () {
+    const UNDERLYING_AMOUNT = WAD.mul(10000);
+    const COLL_AMOUNT = WAD.mul(10000);
+    const EQUITY_AMOUNT = WAD.mul(2000);
+    const DEBT_AMOUNT = WAD.mul(1000);
+    const DEBT_TO_RAISE = BigNumber.from("251035088626883475473007");
+    const EQUITY_TO_RAISE = BigNumber.from("125509667994754929166541");
+
+    beforeEach(async function () {
+      await owner.sendTransaction({
+        to: user.address,
+        value: ethers.utils.parseEther("1"),
+      });
+      await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR, 2);
+      await vaultEngine
+        .connect(gov)
+        .updateCeiling(ASSET_ID.FLR, RAD.mul(10000000));
+      await registry
+        .connect(gov)
+        .setupAddress(bytes32("assetManager"), assetManager.address, true);
+      await vaultEngine
+        .connect(gov)
+        .updateAdjustedPrice(ASSET_ID.FLR, RAY.mul(1));
+
+      await vaultEngine
+        .connect(assetManager)
+        .modifyStandbyAmount(ASSET_ID.FLR, owner.address, COLL_AMOUNT);
+
+      await vaultEngine
+        .connect(assetManager)
+        .modifyStandbyAmount(ASSET_ID.FLR, user.address, COLL_AMOUNT);
+
+      await vaultEngine.modifyEquity(
+        ASSET_ID.FLR,
+
+        UNDERLYING_AMOUNT,
+        EQUITY_AMOUNT
+      );
+      await vaultEngine
+        .connect(user)
+        .modifyDebt(ASSET_ID.FLR, COLL_AMOUNT, DEBT_AMOUNT);
+
+      await registry
+        .connect(gov)
+        .setupAddress(bytes32("teller"), user.address, true);
+
+      await vaultEngine
+        .connect(user)
+        .updateAccumulators(
+          reservePool.address,
+          DEBT_TO_RAISE,
+          EQUITY_TO_RAISE,
+          BigNumber.from(0)
+        );
+    });
+
+    it("increases the PBT balance", async () => {
+      const EXPECTED_VALUE = EQUITY_TO_RAISE.mul(EQUITY_AMOUNT);
+
+      const before = await vaultEngine.pbt(owner.address);
+      expect(before).to.equal(0);
+      await vaultEngine.collectInterest(ASSET_ID.FLR);
+
+      const after = await vaultEngine.pbt(owner.address);
+      expect(after).to.equal(EXPECTED_VALUE);
+    });
+
+    it("increases Systemcurrency balance", async () => {
+      const EXPECTED_VALUE = EQUITY_TO_RAISE.mul(EQUITY_AMOUNT);
+
+      const before = await vaultEngine.systemCurrency(owner.address);
+      expect(before).to.equal(0);
+      await vaultEngine.collectInterest(ASSET_ID.FLR);
+
+      const after = await vaultEngine.systemCurrency(owner.address);
+      expect(after).to.equal(EXPECTED_VALUE);
+    });
+
+    it("reduces the equity balance", async () => {
+      const ACCUMULATOR = RAY.add(EQUITY_TO_RAISE);
+      const EXPECTED_VALUE = EQUITY_AMOUNT.sub(
+        EQUITY_TO_RAISE.mul(EQUITY_AMOUNT).div(ACCUMULATOR)
+      );
+
+      const before = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
+      expect(before.normEquity).to.equal(EQUITY_AMOUNT);
+      await vaultEngine.collectInterest(ASSET_ID.FLR);
+
+      const after = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
+      expect(after.normEquity).to.equal(EXPECTED_VALUE);
+    });
+  });
 
   describe("liquidateEquityPosition Unit Tests", function () {
     const UNDERLYING_AMOUNT = WAD.mul(10_000);
@@ -981,12 +991,7 @@ describe("Vault Engine Unit Tests", function () {
         UNDERLYING_AMOUNT,
         EQUITY_AMOUNT
       );
-      await vaultEngine.modifyDebt(
-        ASSET_ID.FLR,
-
-        ASSET_AMOUNT,
-        DEBT_AMOUNT
-      );
+      await vaultEngine.modifyDebt(ASSET_ID.FLR, ASSET_AMOUNT, DEBT_AMOUNT);
 
       await registry
         .connect(gov)
@@ -1072,12 +1077,7 @@ describe("Vault Engine Unit Tests", function () {
         UNDERLYING_AMOUNT,
         EQUITY_AMOUNT
       );
-      await vaultEngine.modifyDebt(
-        ASSET_ID.FLR,
-
-        ASSET_AMOUNT,
-        DEBT_AMOUNT
-      );
+      await vaultEngine.modifyDebt(ASSET_ID.FLR, ASSET_AMOUNT, DEBT_AMOUNT);
 
       await registry
         .connect(gov)

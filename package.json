@@ -31,8 +31,7 @@
     "getSystemInfo": "npx hardhat run ./scripts/getSystemInfo.ts --network",
     "test": "NODE_ENV=test npx hardhat test --network hardhat",
     "test:happy": "NODE_ENV=test npx hardhat test test/happyFlow.test.ts --network hardhat",
-    "coverage": "npm run build && export NODE_ENV=test && npx hardhat coverage --temp artifacts --network hardhat --solcoverjs ./.solcover.js",
-    "hardhat:version": "npx hardhat --version"
+    "coverage": "npm run build && export NODE_ENV=test && npx hardhat coverage --temp artifacts --network hardhat --solcoverjs ./.solcover.js"
   },
   "contributors": [
     {
