@@ -166,12 +166,12 @@ contract VaultEngine is Stateful, Eventful {
     }
 
     /**
-     * @dev Moves stablecoin between vaults.
+     * @dev Moves systemCurrency between vaults.
      * @param from The address of the originating vault owner
      * @param to The address of the beneficiary vault owner
-     * @param amount The amount of stablecoin to move
+     * @param amount The amount of systemCurrency to move
      */
-    function moveStablecoin(
+    function moveSystemCurrency(
         address from,
         address to,
         uint256 amount
@@ -181,20 +181,20 @@ contract VaultEngine is Stateful, Eventful {
     }
 
     /**
-     * @dev Add stablecoin to account vault.
+     * @dev Add systemCurrency to account vault.
      * @param account The address of the beneficiary vault owner
-     * @param amount The amount of stablecoin to add
+     * @param amount The amount of systemCurrency to add
      */
-    function addStablecoin(address account, uint256 amount) external onlyBy("treasury") {
+    function addSystemCurrency(address account, uint256 amount) external onlyBy("treasury") {
         systemCurrency[account] += amount;
     }
 
     /**
-     * @dev Remove stablecoin from account vault.
+     * @dev Remove systemCurrency from account vault.
      * @param account The address of the beneficiary vault owner
-     * @param amount The amount of stablecoin to remove
+     * @param amount The amount of systemCurrency to remove
      */
-    function removeStablecoin(address account, uint256 amount) external onlyByProbity {
+    function removeSystemCurrency(address account, uint256 amount) external onlyByProbity {
         systemCurrency[account] -= amount;
     }
 
@@ -244,7 +244,7 @@ contract VaultEngine is Stateful, Eventful {
      * @notice Modifies vault debt
      * @param assetId The ID of the vault asset type
      * @param collAmount Amount of asset supplied as loan security
-     * @param debtAmount Amount of stablecoin to borrow
+     * @param debtAmount Amount of systemCurrency to borrow
      */
     function modifyDebt(
         bytes32 assetId,

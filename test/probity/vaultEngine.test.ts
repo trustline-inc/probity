@@ -429,12 +429,14 @@ describe("Vault Engine Unit Tests", function () {
     });
   });
 
-  describe("addStablecoin Unit Tests", function () {
+  describe("addSystemCurrency Unit Tests", function () {
     const AMOUNT_TO_ADD = RAD.mul(173);
 
     it("fails if the caller is not treasury", async () => {
       await assertRevert(
-        vaultEngine.connect(user).addStablecoin(user.address, AMOUNT_TO_ADD),
+        vaultEngine
+          .connect(user)
+          .addSystemCurrency(user.address, AMOUNT_TO_ADD),
         "AccessControl/onlyBy: Caller does not have permission"
       );
 
@@ -444,7 +446,7 @@ describe("Vault Engine Unit Tests", function () {
 
       await vaultEngine
         .connect(user)
-        .addStablecoin(user.address, AMOUNT_TO_ADD);
+        .addSystemCurrency(user.address, AMOUNT_TO_ADD);
     });
 
     it("test that correct amount is added", async () => {
@@ -456,7 +458,7 @@ describe("Vault Engine Unit Tests", function () {
 
       await vaultEngine
         .connect(user)
-        .addStablecoin(user.address, AMOUNT_TO_ADD);
+        .addSystemCurrency(user.address, AMOUNT_TO_ADD);
 
       const after = await vaultEngine.systemCurrency(user.address);
       expect(after.sub(before)).to.equal(AMOUNT_TO_ADD);
@@ -920,7 +922,7 @@ describe("Vault Engine Unit Tests", function () {
   //     expect(after).to.equal(EXPECTED_VALUE);
   //   });
   //
-  //   it("increases stablecoin balance", async () => {
+  //   it("increases systemCurrency balance", async () => {
   //     const EXPECTED_VALUE = EQUITY_TO_RAISE.mul(EQUITY_AMOUNT);
   //
   //     const before = await vaultEngine.systemCurrency(owner.address);

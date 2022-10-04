@@ -56,7 +56,7 @@ describe("BondIssuer Unit Tests", function () {
     await registry.setupAddress(bytes32("shutdown"), shutdown.address, true);
   });
 
-  describe("tokensPerStablecoin Unit Tests", function () {
+  describe("tokensPerSystemCurrency Unit Tests", function () {
     const OFFER_AMOUNT = RAD.mul(500000);
     beforeEach(async function () {
       await bondIssuer.connect(reservePool).newOffering(OFFER_AMOUNT);
@@ -64,17 +64,17 @@ describe("BondIssuer Unit Tests", function () {
 
     it("tests that price increase correctly at each steps", async () => {
       const EXPECTED_INITIAL = WAD;
-      const initialStep = await bondIssuer.tokensPerStablecoin();
+      const initialStep = await bondIssuer.tokensPerSystemCurrency();
       expect(initialStep).to.equal(EXPECTED_INITIAL);
 
       await increaseTime(DEFAULT_SALE_STEP_PERIOD);
-      const secondStep = await bondIssuer.tokensPerStablecoin();
+      const secondStep = await bondIssuer.tokensPerSystemCurrency();
       expect(secondStep).to.equal(
         EXPECTED_INITIAL.add(DEFAULT_PER_STEP_INCREASE)
       );
 
       await increaseTime(DEFAULT_SALE_STEP_PERIOD);
-      const thirdStep = await bondIssuer.tokensPerStablecoin();
+      const thirdStep = await bondIssuer.tokensPerSystemCurrency();
       expect(thirdStep).to.equal(
         EXPECTED_INITIAL.add(DEFAULT_PER_STEP_INCREASE).add(
           DEFAULT_PER_STEP_INCREASE
@@ -86,11 +86,11 @@ describe("BondIssuer Unit Tests", function () {
       const EXPECTED_INITIAL = WAD;
       const EXPECTED_MAX = WAD.mul(15).div(10);
 
-      const initialStep = await bondIssuer.tokensPerStablecoin();
+      const initialStep = await bondIssuer.tokensPerSystemCurrency();
       expect(initialStep).to.equal(EXPECTED_INITIAL);
 
       await increaseTime(DEFAULT_SALE_STEP_PERIOD * 20);
-      const nextStep = await bondIssuer.tokensPerStablecoin();
+      const nextStep = await bondIssuer.tokensPerSystemCurrency();
       expect(nextStep).to.equal(EXPECTED_MAX);
     });
   });
@@ -244,9 +244,9 @@ describe("BondIssuer Unit Tests", function () {
 
     beforeEach(async function () {
       await bondIssuer.connect(reservePool).newOffering(OFFER_AMOUNT);
-      await vaultEngine.setStablecoin(reservePool.address, RESERVE_BAL);
-      await vaultEngine.setStablecoin(owner.address, RESERVE_BAL);
-      await vaultEngine.setStablecoin(user.address, RESERVE_BAL);
+      await vaultEngine.setSystemCurrency(reservePool.address, RESERVE_BAL);
+      await vaultEngine.setSystemCurrency(owner.address, RESERVE_BAL);
+      await vaultEngine.setSystemCurrency(user.address, RESERVE_BAL);
 
       await bondIssuer.purchaseBond(BUY_AMOUNT);
     });
@@ -280,14 +280,14 @@ describe("BondIssuer Unit Tests", function () {
     it("fails if reservePool doesn't have enough funds to redeem", async () => {
       await bondIssuer.connect(shutdown).setShutdownState();
 
-      await vaultEngine.setStablecoin(reservePool.address, 0);
+      await vaultEngine.setSystemCurrency(reservePool.address, 0);
       await assertRevert(
         bondIssuer
           .connect(shutdown)
           .shutdownRedemption(owner.address, BUY_AMOUNT),
         "BondIssuer/processRedemption: The reserve pool doesn't have enough funds"
       );
-      await vaultEngine.setStablecoin(reservePool.address, RESERVE_BAL);
+      await vaultEngine.setSystemCurrency(reservePool.address, RESERVE_BAL);
       await bondIssuer
         .connect(shutdown)
         .shutdownRedemption(owner.address, BUY_AMOUNT);
@@ -319,7 +319,7 @@ describe("BondIssuer Unit Tests", function () {
       expect(after.sub(before).abs()).to.equal(BUY_AMOUNT);
     });
 
-    it("tests that correct amount of stablecoin is transferred", async () => {
+    it("tests that correct amount of systemCurrency is transferred", async () => {
       await bondIssuer.connect(shutdown).setShutdownState();
 
       const before = await vaultEngine.systemCurrency(owner.address);
@@ -337,7 +337,7 @@ describe("BondIssuer Unit Tests", function () {
     const STABLECOIN_BAL = RAD.mul(1000000);
 
     beforeEach(async function () {
-      await vaultEngine.setStablecoin(owner.address, STABLECOIN_BAL);
+      await vaultEngine.setSystemCurrency(owner.address, STABLECOIN_BAL);
     });
 
     it("fails if offering is not active", async () => {
@@ -359,7 +359,7 @@ describe("BondIssuer Unit Tests", function () {
       await bondIssuer.purchaseBond(OFFER_AMOUNT);
     });
 
-    it("tests that correct amount of stablecoins are transferred", async () => {
+    it("tests that correct amount of systemCurrencys are transferred", async () => {
       await bondIssuer.connect(reservePool).newOffering(OFFER_AMOUNT);
       const before = await vaultEngine.systemCurrency(owner.address);
       await bondIssuer.purchaseBond(OFFER_AMOUNT);
@@ -376,7 +376,7 @@ describe("BondIssuer Unit Tests", function () {
       await bondIssuer.connect(reservePool).newOffering(OFFER_AMOUNT);
       await increaseTime(DEFAULT_SALE_STEP_PERIOD * 2);
 
-      const price = await bondIssuer.tokensPerStablecoin();
+      const price = await bondIssuer.tokensPerSystemCurrency();
       expect(price).to.equal(WAD.add(DEFAULT_PER_STEP_INCREASE.mul(2)));
 
       const offeringBefore = await bondIssuer.offering();
@@ -418,20 +418,20 @@ describe("BondIssuer Unit Tests", function () {
     const BUY_AMOUNT = OFFER_AMOUNT.div(10);
     beforeEach(async function () {
       await bondIssuer.connect(reservePool).newOffering(OFFER_AMOUNT);
-      await vaultEngine.setStablecoin(reservePool.address, RESERVE_BAL);
-      await vaultEngine.setStablecoin(owner.address, RESERVE_BAL);
-      await vaultEngine.setStablecoin(user.address, RESERVE_BAL);
+      await vaultEngine.setSystemCurrency(reservePool.address, RESERVE_BAL);
+      await vaultEngine.setSystemCurrency(owner.address, RESERVE_BAL);
+      await vaultEngine.setSystemCurrency(user.address, RESERVE_BAL);
 
       await bondIssuer.purchaseBond(BUY_AMOUNT);
     });
 
     it("fails if reservePool doesn't have enough funds to redeem", async () => {
-      await vaultEngine.setStablecoin(reservePool.address, 0);
+      await vaultEngine.setSystemCurrency(reservePool.address, 0);
       await assertRevert(
         bondIssuer.redeemBondTokens(BUY_AMOUNT),
         "BondIssuer/processRedemption: The reserve pool doesn't have enough funds"
       );
-      await vaultEngine.setStablecoin(reservePool.address, RESERVE_BAL);
+      await vaultEngine.setSystemCurrency(reservePool.address, RESERVE_BAL);
       await bondIssuer.redeemBondTokens(BUY_AMOUNT);
     });
 
@@ -452,7 +452,7 @@ describe("BondIssuer Unit Tests", function () {
       expect(after.sub(before).abs()).to.equal(BUY_AMOUNT);
     });
 
-    it("tests that correct amount of stablecoin is transferred", async () => {
+    it("tests that correct amount of systemCurrency is transferred", async () => {
       const before = await vaultEngine.systemCurrency(owner.address);
       await bondIssuer.redeemBondTokens(BUY_AMOUNT);
       const after = await vaultEngine.systemCurrency(owner.address);

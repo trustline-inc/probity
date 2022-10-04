@@ -435,24 +435,24 @@ describe("Shutdown Unit Tests", function () {
 
       let coll = await shutdown.assets(ASSET_ID.FLR);
       expect(coll.gap).to.equal(0);
-      let stablecoinGap = await shutdown.stablecoinGap();
-      expect(stablecoinGap).to.equal(0);
+      let systemCurrencyGap = await shutdown.systemCurrencyGap();
+      expect(systemCurrencyGap).to.equal(0);
 
       // overcollateralized vaults
       await shutdown.processUserDebt(ASSET_ID.FLR, user.address);
 
       coll = await shutdown.assets(ASSET_ID.FLR);
       expect(coll.gap).to.equal(0);
-      stablecoinGap = await shutdown.stablecoinGap();
-      expect(stablecoinGap).to.equal(0);
+      systemCurrencyGap = await shutdown.systemCurrencyGap();
+      expect(systemCurrencyGap).to.equal(0);
 
       // undercollateralized vaults
       await shutdown.processUserDebt(ASSET_ID.FLR, owner.address);
 
       coll = await shutdown.assets(ASSET_ID.FLR);
       expect(coll.gap).to.equal(EXPECTED_GAP);
-      stablecoinGap = await shutdown.stablecoinGap();
-      expect(stablecoinGap).to.equal(EXPECTED_AUR_GAP);
+      systemCurrencyGap = await shutdown.systemCurrencyGap();
+      expect(systemCurrencyGap).to.equal(EXPECTED_AUR_GAP);
     });
 
     it("tests that correct amount of user's collateral is transferred", async () => {
@@ -653,7 +653,7 @@ describe("Shutdown Unit Tests", function () {
 
       await vaultEngine.setTotalSystemCurrency(TOTAL_DEBT_TO_SET);
       await vaultEngine.setSystemDebt(reservePool.address, SYSTEM_DEBT_TO_SET);
-      await vaultEngine.setStablecoin(
+      await vaultEngine.setSystemCurrency(
         reservePool.address,
         SYSTEM_RESERVE_TO_SET
       );
@@ -667,9 +667,9 @@ describe("Shutdown Unit Tests", function () {
 
       await shutdown.processUserDebt(ASSET_ID.FLR, user.address);
 
-      let stablecoinGap = await shutdown.stablecoinGap();
+      let systemCurrencyGap = await shutdown.systemCurrencyGap();
       let suppObligation = await shutdown.investorObligationRatio();
-      expect(stablecoinGap).to.equal(EXPECTED_AUR_GAP);
+      expect(systemCurrencyGap).to.equal(EXPECTED_AUR_GAP);
       expect(suppObligation).to.equal(0);
       await vaultEngine.setLendingPoolDebt(TOTAL_DEBT_TO_SET);
       await vaultEngine.setTotalSystemCurrency(TOTAL_DEBT_TO_SET);
@@ -678,13 +678,13 @@ describe("Shutdown Unit Tests", function () {
       await vaultEngine.setSystemDebt(reservePool.address, 0);
 
       await shutdown.writeOffFromReserves();
-      await shutdown.setFinalStablecoinBalance();
+      await shutdown.setFinalSystemCurrencyBalance();
 
       await shutdown.calculateInvestorObligation();
-      stablecoinGap = await shutdown.stablecoinGap();
+      systemCurrencyGap = await shutdown.systemCurrencyGap();
       suppObligation = await shutdown.investorObligationRatio();
-      // stablecoinGap should be erased
-      expect(stablecoinGap).to.equal(0);
+      // systemCurrencyGap should be erased
+      expect(systemCurrencyGap).to.equal(0);
       expect(suppObligation).to.equal(0);
     });
 
@@ -692,7 +692,7 @@ describe("Shutdown Unit Tests", function () {
       const SYSTEM_RESERVE_TO_SET = RAD.mul(10);
       const EXPECTED_SUPP_OBLIGATION = wdiv(RAD.mul(40), RAD.mul(100));
 
-      await vaultEngine.setStablecoin(
+      await vaultEngine.setSystemCurrency(
         reservePool.address,
         SYSTEM_RESERVE_TO_SET
       );
@@ -701,7 +701,7 @@ describe("Shutdown Unit Tests", function () {
       await vaultEngine.setSystemDebt(reservePool.address, 0);
 
       await shutdown.writeOffFromReserves();
-      await shutdown.setFinalStablecoinBalance();
+      await shutdown.setFinalSystemCurrencyBalance();
 
       let suppObligation = await shutdown.investorObligationRatio();
       expect(suppObligation).to.equal(0);
@@ -712,34 +712,34 @@ describe("Shutdown Unit Tests", function () {
       ).to.equal(true);
     });
 
-    it("fail if finalStablecoinBalance is not set", async () => {
+    it("fail if finalSystemCurrencyBalance is not set", async () => {
       await assertRevert(
         shutdown.calculateInvestorObligation(),
-        "shutdown/calculateInvestorObligation: finalStablecoinBalance must be set first"
+        "shutdown/calculateInvestorObligation: finalSystemCurrencyBalance must be set first"
       );
 
       await vaultEngine.setSystemDebt(reservePool.address, 0);
 
       await shutdown.writeOffFromReserves();
-      await shutdown.setFinalStablecoinBalance();
+      await shutdown.setFinalSystemCurrencyBalance();
 
       await shutdown.calculateInvestorObligation();
     });
 
-    it("fails if stablecoinGap and systemReserve is non zero", async () => {
+    it("fails if systemCurrencyGap and systemReserve is non zero", async () => {
       await shutdown.processUserDebt(ASSET_ID.FLR, user.address);
       await vaultEngine.setSystemDebt(reservePool.address, 0);
 
-      await shutdown.setFinalStablecoinBalance();
+      await shutdown.setFinalSystemCurrencyBalance();
 
-      await vaultEngine.setStablecoin(reservePool.address, 1);
+      await vaultEngine.setSystemCurrency(reservePool.address, 1);
 
       await assertRevert(
         shutdown.calculateInvestorObligation(),
-        "shutdown/calculateInvestorObligation: system reserve or stablecoin gap must be zero"
+        "shutdown/calculateInvestorObligation: system reserve or systemCurrency gap must be zero"
       );
 
-      await vaultEngine.setStablecoin(reservePool.address, 0);
+      await vaultEngine.setSystemCurrency(reservePool.address, 0);
 
       await shutdown.calculateInvestorObligation();
     });
@@ -787,12 +787,12 @@ describe("Shutdown Unit Tests", function () {
       );
 
       await vaultEngine.setSystemDebt(reservePool.address, SYSTEM_DEBT_TO_SET);
-      await vaultEngine.setStablecoin(reservePool.address, 0);
+      await vaultEngine.setSystemCurrency(reservePool.address, 0);
       await shutdown.processUserDebt(ASSET_ID.FLR, user.address);
       await increaseTime(172800);
       await vaultEngine.setSystemDebt(reservePool.address, 0);
 
-      await shutdown.setFinalStablecoinBalance();
+      await shutdown.setFinalSystemCurrencyBalance();
     });
 
     it("fails if investorObligationRatio is zero", async () => {
@@ -825,7 +825,7 @@ describe("Shutdown Unit Tests", function () {
     });
   });
 
-  describe("setFinalStablecoinBalance Unit Tests", function () {
+  describe("setFinalSystemCurrencyBalance Unit Tests", function () {
     const DEBT_BALANCE = RAD.mul(21747);
 
     beforeEach(async function () {
@@ -838,45 +838,45 @@ describe("Shutdown Unit Tests", function () {
     it("tests that proper value is updated", async () => {
       await increaseTime(172800 * 2);
 
-      const before = await shutdown.finalStablecoinBalance();
+      const before = await shutdown.finalSystemCurrencyBalance();
       expect(before).to.equal(0);
-      await shutdown.setFinalStablecoinBalance();
+      await shutdown.setFinalSystemCurrencyBalance();
 
-      const after = await shutdown.finalStablecoinBalance();
+      const after = await shutdown.finalSystemCurrencyBalance();
       expect(after).to.equal(DEBT_BALANCE);
     });
 
     it("fails if supplierWaitPeriod has not passed", async () => {
       await assertRevert(
-        shutdown.setFinalStablecoinBalance(),
-        "shutdown/setFinalStablecoinBalance: Waiting for auctions to complete"
+        shutdown.setFinalSystemCurrencyBalance(),
+        "shutdown/setFinalSystemCurrencyBalance: Waiting for auctions to complete"
       );
       await increaseTime(172800 * 2);
-      await shutdown.setFinalStablecoinBalance();
+      await shutdown.setFinalSystemCurrencyBalance();
     });
 
     it("fails if system Debt and system reserve is non zero", async () => {
       await increaseTime(172800 * 2);
 
-      await vaultEngine.setStablecoin(reservePool.address, 1);
+      await vaultEngine.setSystemCurrency(reservePool.address, 1);
       await vaultEngine.setSystemDebt(reservePool.address, 1);
       await assertRevert(
-        shutdown.setFinalStablecoinBalance(),
-        "shutdown/setFinalStablecoinBalance: system reserve or debt must be zero"
+        shutdown.setFinalSystemCurrencyBalance(),
+        "shutdown/setFinalSystemCurrencyBalance: system reserve or debt must be zero"
       );
 
       await vaultEngine.setSystemDebt(reservePool.address, 0);
 
-      // await shutdown.setFinalStablecoinBalance()
+      // await shutdown.setFinalSystemCurrencyBalance()
     });
 
     it("fails if the final debt balance is already set", async () => {
       await increaseTime(172800 * 2);
-      await shutdown.setFinalStablecoinBalance();
+      await shutdown.setFinalSystemCurrencyBalance();
 
       await assertRevert(
-        shutdown.setFinalStablecoinBalance(),
-        "shutdown/setFinalStablecoinBalance: Balance already set"
+        shutdown.setFinalSystemCurrencyBalance(),
+        "shutdown/setFinalSystemCurrencyBalance: Balance already set"
       );
     });
   });
@@ -938,7 +938,7 @@ describe("Shutdown Unit Tests", function () {
     it("calculates the redemption ratio with a zero gap", async () => {
       let expected = RAY;
 
-      await shutdown.setFinalStablecoinBalance();
+      await shutdown.setFinalSystemCurrencyBalance();
       await shutdown.calculateRedemptionRatio(ASSET_ID.FLR);
 
       const asset = await shutdown.assets(ASSET_ID.FLR);
@@ -946,7 +946,7 @@ describe("Shutdown Unit Tests", function () {
     });
 
     it("calculates redemption ratio with a non-zero gap", async () => {
-      await shutdown.setFinalStablecoinBalance();
+      await shutdown.setFinalSystemCurrencyBalance();
       await shutdown.processUserDebt(ASSET_ID.FLR, user.address);
       let expected = RAY.mul(2).div(3);
 
@@ -961,44 +961,48 @@ describe("Shutdown Unit Tests", function () {
         shutdown.calculateRedemptionRatio(ASSET_ID.FLR),
         "shutdown/calculateRedemptionRatio: Must set final debt balance first"
       );
-      await shutdown.setFinalStablecoinBalance();
+      await shutdown.setFinalSystemCurrencyBalance();
 
       await shutdown.calculateRedemptionRatio(ASSET_ID.FLR);
     });
   });
 
-  describe("returnStablecoin Unit Tests", function () {
+  describe("returnSystemCurrency Unit Tests", function () {
     const AUREI_AMOUNT_TO_SET = RAD.mul(2000);
     beforeEach(async function () {
-      await vaultEngine.setStablecoin(owner.address, AUREI_AMOUNT_TO_SET);
+      await vaultEngine.setSystemCurrency(owner.address, AUREI_AMOUNT_TO_SET);
     });
 
     it("tests that correct amount of usd are transferred", async () => {
       const AMOUNT_TO_RETURN = AUREI_AMOUNT_TO_SET.div(10);
-      const stablecoinBalanceBefore = await vaultEngine.systemCurrency(
+      const systemCurrencyBalanceBefore = await vaultEngine.systemCurrency(
         shutdown.address
       );
 
-      await shutdown.returnStablecoin(AMOUNT_TO_RETURN);
+      await shutdown.returnSystemCurrency(AMOUNT_TO_RETURN);
 
-      const stablecoinBalanceAfter = await vaultEngine.systemCurrency(
+      const systemCurrencyBalanceAfter = await vaultEngine.systemCurrency(
         shutdown.address
       );
-      expect(stablecoinBalanceAfter.sub(stablecoinBalanceBefore)).to.equal(
-        AMOUNT_TO_RETURN
-      );
+      expect(
+        systemCurrencyBalanceAfter.sub(systemCurrencyBalanceBefore)
+      ).to.equal(AMOUNT_TO_RETURN);
     });
 
     it("tests that values are properly updated", async () => {
       const AMOUNT_TO_RETURN = AUREI_AMOUNT_TO_SET.div(10);
-      const stablecoinBalanceBefore = await shutdown.stablecoin(owner.address);
-
-      await shutdown.returnStablecoin(AMOUNT_TO_RETURN);
-
-      const stablecoinBalanceAfter = await shutdown.stablecoin(owner.address);
-      expect(stablecoinBalanceAfter.sub(stablecoinBalanceBefore)).to.equal(
-        AMOUNT_TO_RETURN
+      const systemCurrencyBalanceBefore = await shutdown.systemCurrency(
+        owner.address
       );
+
+      await shutdown.returnSystemCurrency(AMOUNT_TO_RETURN);
+
+      const systemCurrencyBalanceAfter = await shutdown.systemCurrency(
+        owner.address
+      );
+      expect(
+        systemCurrencyBalanceAfter.sub(systemCurrencyBalanceBefore)
+      ).to.equal(AMOUNT_TO_RETURN);
     });
   });
 
@@ -1052,10 +1056,10 @@ describe("Shutdown Unit Tests", function () {
 
       await increaseTime(172800);
       await increaseTime(172800);
-      await shutdown.setFinalStablecoinBalance();
+      await shutdown.setFinalSystemCurrencyBalance();
       await shutdown.calculateRedemptionRatio(ASSET_ID.FLR);
 
-      await vaultEngine.setStablecoin(owner.address, AUREI_AMOUNT_TO_SET);
+      await vaultEngine.setSystemCurrency(owner.address, AUREI_AMOUNT_TO_SET);
       await vaultEngine.updateVault(
         ASSET_ID.FLR,
         shutdown.address,
@@ -1069,7 +1073,7 @@ describe("Shutdown Unit Tests", function () {
     });
 
     it("tests that values are properly updated", async () => {
-      await shutdown.returnStablecoin(AUREI_AMOUNT_TO_SET);
+      await shutdown.returnSystemCurrency(AUREI_AMOUNT_TO_SET);
 
       const before = await shutdown.collRedeemed(ASSET_ID.FLR, owner.address);
       await shutdown.redeemAsset(ASSET_ID.FLR);
@@ -1078,7 +1082,7 @@ describe("Shutdown Unit Tests", function () {
     });
 
     it("tests that if more usd is returned, more collateral can be withdrawn", async () => {
-      await shutdown.returnStablecoin(AUREI_AMOUNT_TO_SET.mul(2).div(3));
+      await shutdown.returnSystemCurrency(AUREI_AMOUNT_TO_SET.mul(2).div(3));
 
       let before = await shutdown.collRedeemed(ASSET_ID.FLR, owner.address);
 
@@ -1087,7 +1091,7 @@ describe("Shutdown Unit Tests", function () {
       let after = await shutdown.collRedeemed(ASSET_ID.FLR, owner.address);
       expect(after.sub(before)).to.equal(DEBT_TO_SET.mul(2).div(3));
 
-      await shutdown.returnStablecoin(AUREI_AMOUNT_TO_SET.div(3));
+      await shutdown.returnSystemCurrency(AUREI_AMOUNT_TO_SET.div(3));
       before = await shutdown.collRedeemed(ASSET_ID.FLR, owner.address);
 
       await shutdown.redeemAsset(ASSET_ID.FLR);
@@ -1097,7 +1101,7 @@ describe("Shutdown Unit Tests", function () {
     });
 
     it("tests that correct Amount of collateral has been transferred", async () => {
-      await shutdown.returnStablecoin(AUREI_AMOUNT_TO_SET);
+      await shutdown.returnSystemCurrency(AUREI_AMOUNT_TO_SET);
 
       const before = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
       await shutdown.redeemAsset(ASSET_ID.FLR);
@@ -1148,17 +1152,17 @@ describe("Shutdown Unit Tests", function () {
       await shutdown.writeOffFromReserves();
     });
 
-    it("tests that correct amount of stablecoinGap is reduced by using the system Reserve", async () => {
+    it("tests that correct amount of systemCurrencyGap is reduced by using the system Reserve", async () => {
       const SYSTEM_RESERVE = 1;
 
       await shutdown.processUserDebt(ASSET_ID.FLR, owner.address);
 
-      await vaultEngine.setStablecoin(reservePool.address, SYSTEM_RESERVE);
+      await vaultEngine.setSystemCurrency(reservePool.address, SYSTEM_RESERVE);
 
-      const before = await shutdown.stablecoinGap();
+      const before = await shutdown.systemCurrencyGap();
       await shutdown.writeOffFromReserves();
 
-      const after = await shutdown.stablecoinGap();
+      const after = await shutdown.systemCurrencyGap();
       expect(before.sub(after)).to.equal(SYSTEM_RESERVE);
     });
   });
@@ -1175,37 +1179,37 @@ describe("Shutdown Unit Tests", function () {
       await increaseTime(172800);
     });
 
-    it("fails if finalStablecoinBalance is not set", async () => {
-      await vaultEngine.setStablecoin(reservePool.address, 1);
+    it("fails if finalSystemCurrencyBalance is not set", async () => {
+      await vaultEngine.setSystemCurrency(reservePool.address, 1);
 
       await assertRevert(
         shutdown.setFinalSystemReserve(),
-        "shutdown/redeemBondTokens: finalStablecoinBalance must be set first"
+        "shutdown/redeemBondTokens: finalSystemCurrencyBalance must be set first"
       );
-      await shutdown.setFinalStablecoinBalance();
+      await shutdown.setFinalSystemCurrencyBalance();
 
       await shutdown.setFinalSystemReserve();
     });
 
     it("fails if system reserve is zero", async () => {
-      await shutdown.setFinalStablecoinBalance();
+      await shutdown.setFinalSystemCurrencyBalance();
 
-      await vaultEngine.setStablecoin(reservePool.address, 0);
+      await vaultEngine.setSystemCurrency(reservePool.address, 0);
 
       await assertRevert(
         shutdown.setFinalSystemReserve(),
         "shutdown/setFinalSystemReserve: system reserve is zero"
       );
 
-      await vaultEngine.setStablecoin(reservePool.address, 1);
+      await vaultEngine.setSystemCurrency(reservePool.address, 1);
       await shutdown.setFinalSystemReserve();
     });
 
     it("tests that finalTotalReserve is set correctly", async () => {
       const SYSTEM_RESERVE_TO_SET = 1;
-      await shutdown.setFinalStablecoinBalance();
+      await shutdown.setFinalSystemCurrencyBalance();
 
-      await vaultEngine.setStablecoin(
+      await vaultEngine.setSystemCurrency(
         reservePool.address,
         SYSTEM_RESERVE_TO_SET
       );
@@ -1230,9 +1234,9 @@ describe("Shutdown Unit Tests", function () {
       await vaultEngine.setTotalSystemCurrency(TOTAL_DEBT_TO_SET);
       await increaseTime(172800 * 2);
       await increaseTime(172800);
-      await shutdown.setFinalStablecoinBalance();
+      await shutdown.setFinalSystemCurrencyBalance();
       await bondIssuer.setTotalBondTokens(RAD);
-      await vaultEngine.setStablecoin(reservePool.address, RAD.mul(1000));
+      await vaultEngine.setSystemCurrency(reservePool.address, RAD.mul(1000));
     });
 
     it("fails if finalTotalReserve is not set", async () => {
@@ -1275,7 +1279,10 @@ describe("Shutdown Unit Tests", function () {
       const USER_IOU = RAD.mul(28);
       const finalTotalReserve = RAD.mul(100);
 
-      await vaultEngine.setStablecoin(reservePool.address, finalTotalReserve);
+      await vaultEngine.setSystemCurrency(
+        reservePool.address,
+        finalTotalReserve
+      );
       await shutdown.setFinalSystemReserve();
 
       const EXPECTED_AMOUNT = rmul(

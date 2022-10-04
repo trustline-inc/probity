@@ -71,9 +71,9 @@ async function expectBalancesToMatch(
   balance: UserBalances[string]
 ) {
   if (balance["USD"] !== undefined) {
-    let stablecoin = await vaultEngine.systemCurrency(user.address);
+    let systemCurrency = await vaultEngine.systemCurrency(user.address);
 
-    expect(stablecoin).to.equal(balance["USD"]);
+    expect(systemCurrency).to.equal(balance["USD"]);
   }
 
   if (balance["FLR"] !== undefined) {
@@ -253,7 +253,7 @@ describe("Shutdown Flow Test", function () {
      */
 
     let expectedTotalDebt = BigNumber.from(0); // rad
-    let expectedTotalStablecoin = BigNumber.from(0); // rad
+    let expectedTotalSystemCurrency = BigNumber.from(0); // rad
     let underlying: BigNumber; // wad
     let equity: BigNumber; // wad
     let collateral: BigNumber; // wad
@@ -283,7 +283,7 @@ describe("Shutdown Flow Test", function () {
     balances.bob["FLR"] = { collateral, debt };
     balances.bob["USD"] = RAY.mul(debt);
     expectedTotalDebt = expectedTotalDebt.add(debt);
-    expectedTotalStablecoin = expectedTotalStablecoin.add(debt);
+    expectedTotalSystemCurrency = expectedTotalSystemCurrency.add(debt);
     await expectBalancesToMatch(bob, balances.bob);
 
     // Bob utilizes 150,000 FXRP ($417,000) to BORROW 135,000 USD
@@ -295,7 +295,7 @@ describe("Shutdown Flow Test", function () {
     balances.bob["FXRP"] = { collateral, debt };
     balances.bob["USD"] = balances.bob["USD"].add(debt.mul(RAY));
     expectedTotalDebt = expectedTotalDebt.add(debt);
-    expectedTotalStablecoin = expectedTotalStablecoin.add(debt);
+    expectedTotalSystemCurrency = expectedTotalSystemCurrency.add(debt);
     await expectBalancesToMatch(bob, balances.bob);
 
     // Charlie utilizes 400,000 FXRP ($1,112,000) to MINT 150,000 USD
@@ -316,7 +316,7 @@ describe("Shutdown Flow Test", function () {
     balances.charlie["FXRP"] = { collateral, debt };
     balances.charlie["USD"] = debt.mul(RAY);
     expectedTotalDebt = expectedTotalDebt.add(debt);
-    expectedTotalStablecoin = expectedTotalStablecoin.add(debt);
+    expectedTotalSystemCurrency = expectedTotalSystemCurrency.add(debt);
     await expectBalancesToMatch(charlie, balances.charlie);
 
     // Don utilizes 6900 FLR ($7590) to BORROW 4500 USD
@@ -326,13 +326,13 @@ describe("Shutdown Flow Test", function () {
     balances.don["FLR"] = { collateral, debt };
     balances.don["USD"] = RAY.mul(debt);
     expectedTotalDebt = expectedTotalDebt.add(debt);
-    expectedTotalStablecoin = expectedTotalStablecoin.add(debt);
+    expectedTotalSystemCurrency = expectedTotalSystemCurrency.add(debt);
     await expectBalancesToMatch(don, balances.don);
 
     // Total debt should be 291,000 USD
     expect(await vaultEngine.lendingPoolDebt()).to.equal(expectedTotalDebt);
     expect(await vaultEngine.totalSystemCurrency()).to.equal(
-      expectedTotalStablecoin.mul(RAY)
+      expectedTotalSystemCurrency.mul(RAY)
     );
 
     // Drop prices (FLR: $1.10 => $0.60), FXRP: ($2.78 => $1.23)
@@ -379,11 +379,11 @@ describe("Shutdown Flow Test", function () {
     // Increase debt threshold to 5000 * 1.2 = 6000
     const newDebtThreshold = DEBT_THRESHOLD.mul(12).div(10);
     await reserve.connect(owner).increaseSystemDebt(newDebtThreshold);
-    expectedTotalStablecoin = expectedTotalStablecoin
+    expectedTotalSystemCurrency = expectedTotalSystemCurrency
       .mul(RAY)
       .add(newDebtThreshold);
     expect(await vaultEngine.totalSystemCurrency()).to.equal(
-      expectedTotalStablecoin
+      expectedTotalSystemCurrency
     );
     reserveBalances.reserve = newDebtThreshold;
     reserveBalances.debtToCover =
@@ -391,12 +391,14 @@ describe("Shutdown Flow Test", function () {
 
     await checkReserveBalances(reserveBalances);
 
-    // Send all reserve stablecoins to Bob (as a proxy for pool diminishment)
-    await reserve.connect(owner).sendStablecoin(bob.address, newDebtThreshold);
+    // Send all reserve systemCurrencys to Bob (as a proxy for pool diminishment)
+    await reserve
+      .connect(owner)
+      .sendSystemCurrency(bob.address, newDebtThreshold);
     reserveBalances.reserve = RAD.mul(0);
     await checkReserveBalances(reserveBalances);
 
-    // Expect Bob's stablecoin balance to increase
+    // Expect Bob's systemCurrency balance to increase
     balances.bob["USD"] = balances.bob["USD"].add(newDebtThreshold);
     await expectBalancesToMatch(bob, balances.bob);
 
@@ -409,7 +411,7 @@ describe("Shutdown Flow Test", function () {
       reserveBalances.debtToCover.sub(amountOfTokens);
     await checkReserveBalances(reserveBalances);
 
-    // Expect Charlie's stablecoin balance to decrease after purchase
+    // Expect Charlie's systemCurrency balance to decrease after purchase
     balances.charlie["USD"] = balances.charlie["USD"].sub(amountOfTokens);
     await expectBalancesToMatch(charlie, balances.charlie);
 
@@ -421,7 +423,7 @@ describe("Shutdown Flow Test", function () {
       reserveBalances.debtToCover.sub(amountOfTokens);
     await checkReserveBalances(reserveBalances);
 
-    // Expect Bob's stablecoin balance to decrease after purchase
+    // Expect Bob's systemCurrency balance to decrease after purchase
     balances.bob["USD"] = balances.bob["USD"].sub(amountOfTokens);
     await expectBalancesToMatch(bob, balances.bob);
 
@@ -432,7 +434,7 @@ describe("Shutdown Flow Test", function () {
     // Bob (as a proxy for protocol replenishment) transfers 7000 USD to the reserve pool
     await treasury
       .connect(bob)
-      .transferStablecoin(reserve.address, WAD.mul(7000));
+      .transferSystemCurrency(reserve.address, WAD.mul(7000));
 
     // Expect reserve to be replenished and Bob's balance to decrease
     reserveBalances.reserve = reserveBalances.reserve.add(RAD.mul(7000));
@@ -443,7 +445,7 @@ describe("Shutdown Flow Test", function () {
     // Charlie transfers 140_000 USD to the reserve pool
     await treasury
       .connect(charlie)
-      .transferStablecoin(reserve.address, WAD.mul(140_000));
+      .transferSystemCurrency(reserve.address, WAD.mul(140_000));
 
     // Expect reserve to increase and Charlie's balance to decrease
     reserveBalances.reserve = reserveBalances.reserve.add(RAD.mul(140_000));
@@ -503,7 +505,7 @@ describe("Shutdown Flow Test", function () {
       EXPECTED_FLR_GAP
     );
     expect(
-      (await shutdown.stablecoinGap()).sub(EXPECTED_AUR_GAP).abs().lte(RAD)
+      (await shutdown.systemCurrencyGap()).sub(EXPECTED_AUR_GAP).abs().lte(RAD)
     ).to.equal(true);
 
     // Process debt for FXRP collateral
@@ -532,7 +534,7 @@ describe("Shutdown Flow Test", function () {
     reserveBalances.reserve = reserveBalances.reserve.sub(RAD.mul(137_500));
 
     // Set the finalized unbacked debt balance due after processing borrowers
-    await shutdown.setFinalStablecoinBalance();
+    await shutdown.setFinalSystemCurrencyBalance();
     const res = await vaultEngine.lendingPoolSupply();
     const EXPECTED_FINAL_STABLECOIN_BALANCE = RAD.mul(154_500);
 
@@ -549,13 +551,13 @@ describe("Shutdown Flow Test", function () {
     await increaseTime(TWO_DAYS_IN_SECONDS);
 
     // Expect final debt balance to equal the previous calculation after two days (?)
-    expect(await shutdown.finalStablecoinBalance()).to.equal(
+    expect(await shutdown.finalSystemCurrencyBalance()).to.equal(
       EXPECTED_FINAL_STABLECOIN_BALANCE
     );
 
     // Calcuate redemption ratio for FLR
     await shutdown.calculateRedemptionRatio(ASSET_ID.FLR);
-    // Redeemption ratio = (theoretical max - gap) / total stablecoin in circulation
+    // Redeemption ratio = (theoretical max - gap) / total systemCurrency in circulation
     // (10714285714285714285714 - 3814285714285714285714) / 154_500
     // 6900000000000000000000 / 154_500
     // 6900 / 154_500 = 0.0446601941
@@ -567,15 +569,15 @@ describe("Shutdown Flow Test", function () {
 
     // Calcuate redemption ratio for FXRP
     await shutdown.calculateRedemptionRatio(ASSET_ID["FXRP"]);
-    // Redeemption ratio = (theoretical max - gap) / total stablecoin in circulation
+    // Redeemption ratio = (theoretical max - gap) / total systemCurrency in circulation
     // 150_000 - 1.03 / 154_500 = 0.9425959091 (?)
     const EXPECTED_FXRP_REDEMPTION_RATIO = "942595909133754359506077669";
     expect((await shutdown.assets(ASSET_ID["FXRP"])).redemptionRatio).to.equal(
       EXPECTED_FXRP_REDEMPTION_RATIO
     );
 
-    await shutdown.connect(bob).returnStablecoin(RAD.mul(65000 + 1500));
-    expect(await shutdown.stablecoin(bob.address)).to.equal(
+    await shutdown.connect(bob).returnSystemCurrency(RAD.mul(65000 + 1500));
+    expect(await shutdown.systemCurrency(bob.address)).to.equal(
       RAD.mul(65000 + 1500)
     );
 
@@ -585,7 +587,7 @@ describe("Shutdown Flow Test", function () {
     await shutdown.connect(bob).redeemAsset(ASSET_ID.FLR);
     let after = (await vaultEngine.vaults(ASSET_ID.FLR, bob.address))
       .standbyAmount;
-    // Redemption ratio * stablecoin returned
+    // Redemption ratio * systemCurrency returned
     // 0.0446601941 * 66500 = 2969.90290765
     const EXPECTED_FLR_COLL_REDEEMED = WAD.mul(296990290765).div(1e8);
     // We are okay with up to 0.001 collateral difference
@@ -599,7 +601,7 @@ describe("Shutdown Flow Test", function () {
     after = (await vaultEngine.vaults(ASSET_ID["FXRP"], bob.address))
       .standbyAmount;
 
-    // Redemption ratio * stablecoins returned
+    // Redemption ratio * systemCurrencys returned
     // 0.9425959091 * 66500 = 62682.6279552
     const EXPECTED_FXRP_COLL_REDEEMED = WAD.mul("626826279552").div(1e7);
     // We are okay with up to 0.001 collateral difference
@@ -826,7 +828,7 @@ describe("Shutdown Flow Test", function () {
     // Put system reserve to fill up some gap but not entirely
     await treasury
       .connect(bob)
-      .transferStablecoin(reserve.address, WAD.mul(7000));
+      .transferSystemCurrency(reserve.address, WAD.mul(7000));
 
     reserveBalances.reserve = reserveBalances.reserve.add(RAD.mul(7000));
     await checkReserveBalances(reserveBalances);
@@ -835,7 +837,7 @@ describe("Shutdown Flow Test", function () {
 
     await treasury
       .connect(don)
-      .transferStablecoin(reserve.address, WAD.mul(140_000));
+      .transferSystemCurrency(reserve.address, WAD.mul(140_000));
 
     reserveBalances.reserve = reserveBalances.reserve.add(RAD.mul(140_000));
     await checkReserveBalances(reserveBalances);
@@ -877,12 +879,12 @@ describe("Shutdown Flow Test", function () {
     await shutdown.processUserDebt(ASSET_ID.FLR, charlie.address);
 
     // user 3 have debt of $25000 and have 9000 FLR coll @ 2.23 = $20070
-    // stablecoinGap should be 25000 - 20070 = 4930
+    // systemCurrencyGap should be 25000 - 20070 = 4930
     // collGap should be 4930 / 2.23 = 2210.76233184
     EXPECTED_FLR_GAP = WAD.mul("221076233184").div(1e8);
     let EXPECTED_AUR_GAP = RAD.mul(4930);
     expect(
-      (await shutdown.stablecoinGap())
+      (await shutdown.systemCurrencyGap())
         .sub(EXPECTED_AUR_GAP)
         .abs()
         .lte(RAD.div(100))
@@ -928,22 +930,22 @@ describe("Shutdown Flow Test", function () {
 
     await shutdown.processUserDebt(ASSET_ID["FXRP"], don.address);
     // user 4 have debt of $1500000, coll value: 620000 * 2.20 = 1364000
-    // stablecoinGap should be 1500000 - 1364000 = 136000
+    // systemCurrencyGap should be 1500000 - 1364000 = 136000
     // collGap should be 136000 / 2.20 = 61818.1818182
     EXPECTED_FXRP_GAP = WAD.mul("618181818182").div(1e7);
     EXPECTED_AUR_GAP = EXPECTED_AUR_GAP.add(RAD.mul(136_000));
-    let stablecoinGap = await shutdown.stablecoinGap();
+    let systemCurrencyGap = await shutdown.systemCurrencyGap();
     expect(
-      stablecoinGap.sub(EXPECTED_AUR_GAP).abs().lte(RAD.div(100))
+      systemCurrencyGap.sub(EXPECTED_AUR_GAP).abs().lte(RAD.div(100))
     ).to.equal(true);
     const gap = (await shutdown.assets(ASSET_ID["FXRP"])).gap;
     expect(gap.sub(EXPECTED_FXRP_GAP).abs().lte(WAD.div(100))).to.equal(true);
 
     await shutdown.processUserDebt(ASSET_ID["FXRP"], lender.address);
-    stablecoinGap = await shutdown.stablecoinGap();
+    systemCurrencyGap = await shutdown.systemCurrencyGap();
 
     expect(
-      (await shutdown.stablecoinGap())
+      (await shutdown.systemCurrencyGap())
         .sub(EXPECTED_AUR_GAP)
         .abs()
         .lte(RAD.div(100))
@@ -962,18 +964,18 @@ describe("Shutdown Flow Test", function () {
     await reserve.settle(RAD.mul(147_000));
 
     // Set the final debt balance
-    await shutdown.setFinalStablecoinBalance();
+    await shutdown.setFinalSystemCurrencyBalance();
     const EXPECTED_FINAL_STABLECOIN_BALANCE = RAD.mul(3_685_500);
-    expect(await shutdown.finalStablecoinBalance()).to.equal(
+    expect(await shutdown.finalSystemCurrencyBalance()).to.equal(
       EXPECTED_FINAL_STABLECOIN_BALANCE
     );
 
     await shutdown.calculateInvestorObligation();
 
-    // total stablecoinGap 140930
+    // total systemCurrencyGap 140930
     // total equity * final utilization Ratio = total equity in use
     // $4506500 * 0.605014978364584489 = 2726500
-    // total stablecoinGap / total equity in use = supplier obligation ratio
+    // total systemCurrencyGap / total equity in use = supplier obligation ratio
     // 140930 / 2726500 = 0.05168897854
 
     const EXPECTED_SUPPLIER_OBLIGATION_RATIO = WAD.mul("5168897854").div(1e11);
@@ -1113,8 +1115,8 @@ describe("Shutdown Flow Test", function () {
         .lte(WAD.div(100))
     ).to.equal(true);
 
-    // return stablecoin
-    await shutdown.connect(bob).returnStablecoin(RAD.mul(1_099_000));
+    // return systemCurrency
+    await shutdown.connect(bob).returnSystemCurrency(RAD.mul(1_099_000));
     expect(await vaultEngine.systemCurrency(bob.address)).to.equal(0);
 
     // redeem collateral

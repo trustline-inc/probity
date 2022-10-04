@@ -370,7 +370,7 @@ describe("Teller Unit Tests", function () {
       let equityAccumulator = await vaultEngine.equityAccumulator();
 
       // Issue 100 USD to user vault
-      await vaultEngine.setStablecoin(user.address, RAD.mul(100));
+      await vaultEngine.setSystemCurrency(user.address, RAD.mul(100));
 
       // Commit 100 USD to vault by using updateVault()
       let underlying = WAD.mul(100);

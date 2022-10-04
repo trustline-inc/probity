@@ -5,11 +5,11 @@ pragma solidity ^0.8.0;
 import "../dependencies/Stateful.sol";
 
 interface VaultEngineLike {
-    function addStablecoin(address user, uint256 amount) external;
+    function addSystemCurrency(address user, uint256 amount) external;
 
-    function removeStablecoin(address user, uint256 amount) external;
+    function removeSystemCurrency(address user, uint256 amount) external;
 
-    function moveStablecoin(
+    function moveSystemCurrency(
         address from,
         address to,
         uint256 amount
@@ -34,23 +34,23 @@ interface TokenLike {
 
 /**
  * @title Treasury Contract
- * @notice Treasury exchanges the stablecoin/pbt balances between the VaultEngine and their ERC20 counterpart
+ * @notice Treasury exchanges the systemCurrency/pbt balances between the VaultEngine and their ERC20 counterpart
  */
 contract Treasury is Stateful {
     /////////////////////////////////////////
     // State Variables
     /////////////////////////////////////////
 
-    TokenLike public immutable stablecoin;
+    TokenLike public immutable systemCurrency;
     TokenLike public immutable pbt;
     VaultEngineLike public immutable vaultEngine;
 
     /////////////////////////////////////////
     // Events
     /////////////////////////////////////////
-    event DepositStablecoin(address indexed user, uint256 amount);
-    event WithdrawStablecoin(address indexed user, uint256 amount);
-    event TransferStablecoin(address indexed from, address indexed to, uint256 amount);
+    event DepositSystemCurrency(address indexed user, uint256 amount);
+    event WithdrawSystemCurrency(address indexed user, uint256 amount);
+    event TransferSystemCurrency(address indexed from, address indexed to, uint256 amount);
     event WithdrawPbt(address indexed user, uint256 amount);
 
     /////////////////////////////////////////
@@ -58,11 +58,11 @@ contract Treasury is Stateful {
     /////////////////////////////////////////
     constructor(
         address registryAddress,
-        TokenLike stablecoinAddress,
+        TokenLike systemCurrencyAddress,
         TokenLike pbtAddress,
         VaultEngineLike vaultEngineAddress
     ) Stateful(registryAddress) {
-        stablecoin = stablecoinAddress;
+        systemCurrency = systemCurrencyAddress;
         vaultEngine = vaultEngineAddress;
         pbt = pbtAddress;
     }
@@ -72,33 +72,33 @@ contract Treasury is Stateful {
     /////////////////////////////////////////
 
     /**
-     * @dev exchange ERC20 of the stablecoin from user to stablecoin balance in Vault Engine
+     * @dev exchange ERC20 of the systemCurrency from user to systemCurrency balance in Vault Engine
      * @param amount to exchange
      */
-    function depositStablecoin(uint256 amount) external {
-        vaultEngine.addStablecoin(msg.sender, amount * 1e27);
-        stablecoin.burn(msg.sender, amount);
-        emit DepositStablecoin(msg.sender, amount);
+    function depositSystemCurrency(uint256 amount) external {
+        vaultEngine.addSystemCurrency(msg.sender, amount * 1e27);
+        systemCurrency.burn(msg.sender, amount);
+        emit DepositSystemCurrency(msg.sender, amount);
     }
 
     /**
-     * @dev exchange the stablecoin balance from Vault to ERC20 version
+     * @dev exchange the systemCurrency balance from Vault to ERC20 version
      * @param amount to exchange
      */
-    function withdrawStablecoin(uint256 amount) external {
-        vaultEngine.removeStablecoin(msg.sender, amount * 1e27);
-        stablecoin.mint(msg.sender, amount);
-        emit WithdrawStablecoin(msg.sender, amount);
+    function withdrawSystemCurrency(uint256 amount) external {
+        vaultEngine.removeSystemCurrency(msg.sender, amount * 1e27);
+        systemCurrency.mint(msg.sender, amount);
+        emit WithdrawSystemCurrency(msg.sender, amount);
     }
 
     /**
-     * @dev Transfer stablecoin balance within vault engine to another address
+     * @dev Transfer systemCurrency balance within vault engine to another address
      * @param recipient of the transfer
      * @param amount to transfer
      */
-    function transferStablecoin(address recipient, uint256 amount) external {
-        vaultEngine.moveStablecoin(msg.sender, recipient, amount * 1e27);
-        emit TransferStablecoin(msg.sender, recipient, amount);
+    function transferSystemCurrency(address recipient, uint256 amount) external {
+        vaultEngine.moveSystemCurrency(msg.sender, recipient, amount * 1e27);
+        emit TransferSystemCurrency(msg.sender, recipient, amount);
     }
 
     /**

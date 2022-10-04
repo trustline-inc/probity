@@ -14,7 +14,7 @@ interface VaultEngineLike {
 
     function increaseSystemDebt(uint256 amount) external;
 
-    function moveStablecoin(
+    function moveSystemCurrency(
         address from,
         address to,
         uint256 amount
@@ -47,7 +47,7 @@ contract ReservePool is Stateful, Eventful {
     event DebtOnAuctionRemoved(uint256 amountRemoved);
     event SystemDebtIncreased(uint256 amountToIncrase);
     event SystemDebtSettled(uint256 amountSettle);
-    event StablecoinTransferred(address to, uint256 amount);
+    event SystemCurrencyTransferred(address to, uint256 amount);
 
     /////////////////////////////////////////
     // Constructor
@@ -123,14 +123,14 @@ contract ReservePool is Stateful, Eventful {
     }
 
     /**
-     * @notice Sends reserve pool stablecoins elsewhere
+     * @notice Sends reserve pool systemCurrencys elsewhere
      * @param to The receiving address
      * @param amount The amount to send
      */
-    function sendStablecoin(address to, uint256 amount) external onlyBy("gov") {
-        vaultEngine.moveStablecoin(address(this), to, amount);
+    function sendSystemCurrency(address to, uint256 amount) external onlyBy("gov") {
+        vaultEngine.moveSystemCurrency(address(this), to, amount);
 
-        emit StablecoinTransferred(to, amount);
+        emit SystemCurrencyTransferred(to, amount);
     }
 
     /**
@@ -144,7 +144,7 @@ contract ReservePool is Stateful, Eventful {
 
         require(
             vaultEngine.systemCurrency(address(this)) == 0,
-            "ReservePool/startBondSale: Stablecoin balance is still positive"
+            "ReservePool/startBondSale: SystemCurrency balance is still positive"
         );
 
         bondSeller.newOffering(debtThreshold);

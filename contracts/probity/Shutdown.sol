@@ -24,7 +24,7 @@ interface VaultLike {
 
     function lendingPoolEquity() external returns (uint256 value);
 
-    function moveStablecoin(
+    function moveSystemCurrency(
         address from,
         address to,
         uint256 amount
@@ -127,7 +127,7 @@ interface BondIssuerLike {
 
 /**
  * The shutdown module's main purpose is to pause functionality and
- * allow borrowers to redeem stablecoins for the remaining collateral
+ * allow borrowers to redeem systemCurrencys for the remaining collateral
  * and allows investors to redeem underlying assets.
  *
  * Step 1: Pause all normal functionality
@@ -173,13 +173,13 @@ contract Shutdown is Stateful, Eventful {
     mapping(bytes32 => Asset) public assets; // assetId -> Asset
     // assetId -> redeemer's address -> amount redeemed
     mapping(bytes32 => mapping(address => uint256)) public collRedeemed;
-    mapping(address => uint256) public stablecoin; // redeemer's address -> stablecoin balance already returned [RAD]
+    mapping(address => uint256) public systemCurrency; // redeemer's address -> systemCurrency balance already returned [RAD]
     uint256 public finalUtilizationRatio; // Total Equity Utilization Ratio at the moment shutdown is initiated [WAD]
-    uint256 public stablecoinGap; // amount of stablecoin that doesn't have collateral backing [RAD]
-    // ratio of equity position's underlying asset that will be used to cover the stablecoin Gap [WAD]
+    uint256 public systemCurrencyGap; // amount of systemCurrency that doesn't have collateral backing [RAD]
+    // ratio of equity position's underlying asset that will be used to cover the systemCurrency Gap [WAD]
     uint256 public investorObligationRatio;
-    uint256 public finalStablecoinBalance; // final balance of how much stablecoin are in circulation [RAD]
-    uint256 public finalTotalReserve; // final balance of the stablecoins held by reserve pool [RAD]
+    uint256 public finalSystemCurrencyBalance; // final balance of how much systemCurrency are in circulation [RAD]
+    uint256 public finalTotalReserve; // final balance of the systemCurrencys held by reserve pool [RAD]
 
     /////////////////////////////////////////
     // Modifier
@@ -210,12 +210,12 @@ contract Shutdown is Stateful, Eventful {
     event ContractAddressChanged(bytes32 which, address newAddress);
     event WaitPeriodChanged(bytes32 which, uint256 newWaitPeriod);
     event FinalPriceSet(bytes32 assetId, uint256 finalPrice);
-    event DebtPositionProcessed(bytes32 assetId, address user, uint256 assetGap, uint256 stablecoinGap);
-    event EquityPositionProcessed(bytes32 assetId, address user, uint256 assetCovered, uint256 stablecoinCovered);
+    event DebtPositionProcessed(bytes32 assetId, address user, uint256 assetGap, uint256 systemCurrencyGap);
+    event EquityPositionProcessed(bytes32 assetId, address user, uint256 assetCovered, uint256 systemCurrencyCovered);
     event InvestorObligationCalculated(uint256 investorObligationRatio);
-    event FinalStablecoinBalanceSet(uint256 finalStablecoinBalance);
+    event FinalSystemCurrencyBalanceSet(uint256 finalSystemCurrencyBalance);
     event RedemptionRatioCalculated(bytes32 assetId, uint256 redemptionRatio);
-    event StablecoinReturned(address user, uint256 amount);
+    event SystemCurrencyReturned(address user, uint256 amount);
     event AssetRedeemed(bytes32 assetId, address user, uint256 amountRedeemed);
     event BondTokensRedeemed(address user, uint256 amount);
 
@@ -340,7 +340,7 @@ contract Shutdown is Stateful, Eventful {
         uint256 amountToGrab = Math._min(collateral, required);
         uint256 gap = required - amountToGrab;
         assets[assetId].gap += gap;
-        stablecoinGap += gap * assets[assetId].finalPrice;
+        systemCurrencyGap += gap * assets[assetId].finalPrice;
 
         vaultEngine.liquidateDebtPosition(
             assetId,
@@ -382,13 +382,13 @@ contract Shutdown is Stateful, Eventful {
             "shutdown/writeOffFromReserves: the system debt needs to be zero before write off can happen"
         );
         uint256 reserveBalance = vaultEngine.systemCurrency(address(reservePool));
-        uint256 amountToMove = Math._min(stablecoinGap, reserveBalance);
-        vaultEngine.moveStablecoin(address(reservePool), address(this), amountToMove);
-        stablecoinGap -= amountToMove;
+        uint256 amountToMove = Math._min(systemCurrencyGap, reserveBalance);
+        vaultEngine.moveSystemCurrency(address(reservePool), address(this), amountToMove);
+        systemCurrencyGap -= amountToMove;
     }
 
     /**
-     * @notice Calculate the investor's obligation ratio to cover the stablecoin Gap created by
+     * @notice Calculate the investor's obligation ratio to cover the systemCurrency Gap created by
      *         undercollateralized debt positions
      */
     function calculateInvestorObligation() external onlyWhenInShutdown {
@@ -397,22 +397,22 @@ contract Shutdown is Stateful, Eventful {
         //    - all outstanding auctions are over
 
         require(
-            finalStablecoinBalance != 0,
-            "shutdown/calculateInvestorObligation: finalStablecoinBalance must be set first"
+            finalSystemCurrencyBalance != 0,
+            "shutdown/calculateInvestorObligation: finalSystemCurrencyBalance must be set first"
         );
 
         require(
-            stablecoinGap == 0 || vaultEngine.systemCurrency(address(reservePool)) == 0,
-            "shutdown/calculateInvestorObligation: system reserve or stablecoin gap must be zero"
+            systemCurrencyGap == 0 || vaultEngine.systemCurrency(address(reservePool)) == 0,
+            "shutdown/calculateInvestorObligation: system reserve or systemCurrency gap must be zero"
         );
-        uint256 stablecoinUtilized = (vaultEngine.lendingPoolEquity() / WAD) * finalUtilizationRatio;
-        investorObligationRatio = Math._min((stablecoinGap * WAD) / stablecoinUtilized, WAD);
+        uint256 systemCurrencyUtilized = (vaultEngine.lendingPoolEquity() / WAD) * finalUtilizationRatio;
+        investorObligationRatio = Math._min((systemCurrencyGap * WAD) / systemCurrencyUtilized, WAD);
 
         emit InvestorObligationCalculated(investorObligationRatio);
     }
 
     /**
-     * @notice Process equity positions to cover stablecoin Gap created by undercollateralized debt positions
+     * @notice Process equity positions to cover systemCurrency Gap created by undercollateralized debt positions
      * @param assetId The ID of the asset to process
      * @param user The address of the user vault to process
      */
@@ -430,7 +430,7 @@ contract Shutdown is Stateful, Eventful {
         }
 
         assets[assetId].gap -= amountToGrab;
-        stablecoinGap -= amountToGrab * assets[assetId].finalPrice;
+        systemCurrencyGap -= amountToGrab * assets[assetId].finalPrice;
 
         vaultEngine.liquidateEquityPosition(
             assetId,
@@ -446,56 +446,59 @@ contract Shutdown is Stateful, Eventful {
     }
 
     /**
-     * @notice After Auctions have ended, the stablecoin balance in circulation should no longer change
+     * @notice After Auctions have ended, the systemCurrency balance in circulation should no longer change
      */
-    function setFinalStablecoinBalance() external onlyWhenInShutdown {
-        require(finalStablecoinBalance == 0, "shutdown/setFinalStablecoinBalance: Balance already set");
+    function setFinalSystemCurrencyBalance() external onlyWhenInShutdown {
+        require(finalSystemCurrencyBalance == 0, "shutdown/setFinalSystemCurrencyBalance: Balance already set");
         require(
             block.timestamp >= initiatedAt + auctionWaitPeriod,
-            "shutdown/setFinalStablecoinBalance: Waiting for auctions to complete"
+            "shutdown/setFinalSystemCurrencyBalance: Waiting for auctions to complete"
         );
         require(
             vaultEngine.systemDebt(address(reservePool)) == 0 || vaultEngine.systemCurrency(address(reservePool)) == 0,
-            "shutdown/setFinalStablecoinBalance: system reserve or debt must be zero"
+            "shutdown/setFinalSystemCurrencyBalance: system reserve or debt must be zero"
         );
 
-        finalStablecoinBalance = vaultEngine.totalSystemCurrency();
+        finalSystemCurrencyBalance = vaultEngine.totalSystemCurrency();
 
-        emit FinalStablecoinBalanceSet(finalStablecoinBalance);
+        emit FinalSystemCurrencyBalanceSet(finalSystemCurrencyBalance);
     }
 
     /**
-     * @notice Calculate the redemptionRatio to determine how much of asset should be redeemed for each stablecoin
+     * @notice Calculate the redemptionRatio to determine how much of asset should be redeemed for each systemCurrency
      * @param assetId The ID of the asset to be redeemed
      */
     function calculateRedemptionRatio(bytes32 assetId) external {
-        require(finalStablecoinBalance != 0, "shutdown/calculateRedemptionRatio: Must set final debt balance first");
+        require(
+            finalSystemCurrencyBalance != 0,
+            "shutdown/calculateRedemptionRatio: Must set final debt balance first"
+        );
         uint256 debtAccumulator = vaultEngine.debtAccumulator();
         uint256 normDebt = assets[assetId].normDebt;
         uint256 max = (normDebt * debtAccumulator) / assets[assetId].finalPrice;
-        assets[assetId].redemptionRatio = ((max - assets[assetId].gap) * RAY) / (finalStablecoinBalance / RAY);
+        assets[assetId].redemptionRatio = ((max - assets[assetId].gap) * RAY) / (finalSystemCurrencyBalance / RAY);
 
         emit RedemptionRatioCalculated(assetId, assets[assetId].redemptionRatio);
     }
 
     /**
-     * @notice Return the stablecoin to shutdown in order to redeem the asset
+     * @notice Return the systemCurrency to shutdown in order to redeem the asset
      * @param amount The Amount to return to shutdown module
      */
-    function returnStablecoin(uint256 amount) external {
-        vaultEngine.moveStablecoin(msg.sender, address(this), amount);
-        stablecoin[msg.sender] += amount;
+    function returnSystemCurrency(uint256 amount) external {
+        vaultEngine.moveSystemCurrency(msg.sender, address(this), amount);
+        systemCurrency[msg.sender] += amount;
 
-        emit StablecoinReturned(msg.sender, amount);
+        emit SystemCurrencyReturned(msg.sender, amount);
     }
 
     /**
-     * @notice Based on the amount of stablecoin returned and redemptionRatio, assset will be given to user
+     * @notice Based on the amount of systemCurrency returned and redemptionRatio, assset will be given to user
      * @param assetId The AssetId
      */
     function redeemAsset(bytes32 assetId) external {
-        // can withdraw collateral returnedStablecoin * collateralPerAUR for collateral type
-        uint256 redeemAmount = ((stablecoin[msg.sender] / 1e9) * assets[assetId].redemptionRatio) /
+        // can withdraw collateral returnedSystemCurrency * collateralPerAUR for collateral type
+        uint256 redeemAmount = ((systemCurrency[msg.sender] / 1e9) * assets[assetId].redemptionRatio) /
             WAD /
             RAY -
             collRedeemed[assetId][msg.sender];
@@ -507,10 +510,13 @@ contract Shutdown is Stateful, Eventful {
     }
 
     /**
-     * @notice Set the final stablecoin balance of reserve pool (if non-zero)
+     * @notice Set the final systemCurrency balance of reserve pool (if non-zero)
      */
     function setFinalSystemReserve() external {
-        require(finalStablecoinBalance != 0, "shutdown/redeemBondTokens: finalStablecoinBalance must be set first");
+        require(
+            finalSystemCurrencyBalance != 0,
+            "shutdown/redeemBondTokens: finalSystemCurrencyBalance must be set first"
+        );
 
         uint256 totalSystemReserve = vaultEngine.systemCurrency(address(reservePool));
         require(totalSystemReserve != 0, "shutdown/setFinalSystemReserve: system reserve is zero");
@@ -519,7 +525,7 @@ contract Shutdown is Stateful, Eventful {
     }
 
     /**
-     * @notice Allows bond holders to redeem for a share of stablecoin held by ReservePool
+     * @notice Allows bond holders to redeem for a share of systemCurrency held by ReservePool
      *         up to the token amount
      */
     function redeemBondTokens() external {
@@ -531,14 +537,14 @@ contract Shutdown is Stateful, Eventful {
         require(userTokens != 0 && totalBondTokens != 0, "shutdown/redeemBondTokens: no bond tokens to redeem");
 
         uint256 percentageOfBonds = Math._rdiv(userTokens, totalBondTokens);
-        uint256 shareOfStablecoin = Math._rmul(percentageOfBonds, finalTotalReserve);
+        uint256 shareOfSystemCurrency = Math._rmul(percentageOfBonds, finalTotalReserve);
 
-        if (shareOfStablecoin > userTokens) {
-            shareOfStablecoin = userTokens;
+        if (shareOfSystemCurrency > userTokens) {
+            shareOfSystemCurrency = userTokens;
         }
 
-        bondIssuer.shutdownRedemption(msg.sender, shareOfStablecoin);
+        bondIssuer.shutdownRedemption(msg.sender, shareOfSystemCurrency);
 
-        emit BondTokensRedeemed(msg.sender, shareOfStablecoin);
+        emit BondTokensRedeemed(msg.sender, shareOfSystemCurrency);
     }
 }

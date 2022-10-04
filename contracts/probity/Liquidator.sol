@@ -23,7 +23,7 @@ interface VaultEngineLike {
 
     function systemCurrency(address user) external returns (uint256);
 
-    function removeStablecoin(address user, uint256 amount) external;
+    function removeSystemCurrency(address user, uint256 amount) external;
 
     function liquidateDebtPosition(
         bytes32 assetId,
@@ -255,7 +255,7 @@ contract Liquidator is Stateful, Eventful {
                 true
             );
 
-            vaultEngine.removeStablecoin(treasuryAddress, initialEquity);
+            vaultEngine.removeSystemCurrency(treasuryAddress, initialEquity);
         }
     }
 }
