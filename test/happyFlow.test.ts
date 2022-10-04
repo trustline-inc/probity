@@ -380,74 +380,6 @@ describe("Probity happy flow", function () {
     expect(adjustedPrice.sub(expectedPrice).toNumber() <= 10).to.equal(true);
   });
 
-  // it.only("play with accumulator ", async () => {
-  //   const UNDERLYING_AMOUNT = WAD.mul(2000);
-  //   const EQUITY_AMOUNT = WAD.mul(1000);
-  //   const COLL_AMOUNT = WAD.mul(20);
-  //   const LOAN_AMOUNT = WAD.mul(10);
-  //   // Deposit native token (FLR)
-  //   await flrAssetManager.deposit({ value: STANDBY_AMOUNT.mul(30) });
-  //
-  //   // Initialize the FLR asset
-  //   await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR, 2);
-  //   await vaultEngine
-  //     .connect(gov)
-  //     .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
-  //
-  //   await priceFeed
-  //     .connect(gov)
-  //     .initAsset(ASSET_ID.FLR, WAD.mul(15).div(10), ftso.address);
-  //   await priceFeed.updateAdjustedPrice(ASSET_ID.FLR);
-  //
-  //   // increase equity
-  //   await vaultEngine.modifyEquity(
-  //     ASSET_ID.FLR,
-  //     UNDERLYING_AMOUNT,
-  //     EQUITY_AMOUNT
-  //   );
-  //
-  //   // increase debt
-  //   await vaultEngine.modifyDebt(ASSET_ID.FLR, COLL_AMOUNT, LOAN_AMOUNT);
-  //
-  //   await teller.updateAccumulators();
-  //
-  //   for (let i = 0; i < 1000; i++) {
-  //     await increaseTime(5000);
-  //     await teller.updateAccumulators();
-  //     await vaultEngine.modifyDebt(ASSET_ID.FLR, COLL_AMOUNT, LOAN_AMOUNT);
-  //   }
-  //   //
-  //   // // increase time
-  //   // await increaseTime(5000);
-  //   //
-  //   // const debtAccuBefore = await vaultEngine.debtAccumulator();
-  //   // const equityAccuBefore = await vaultEngine.equityAccumulator();
-  //   // const reserveBalBefore = await vaultEngine.systemCurrency(reserve.address);
-  //   // const totalDebtBefore = await vaultEngine.lendingPoolDebt();
-  //   // const lendingPoolEquityBefore = await vaultEngine.lendingPoolEquity();
-  //   //
-  //   // // call teller.updateAccumulators
-  //   // await teller.updateAccumulators();
-  //   //
-  //   // const debtAccuAfter = await vaultEngine.debtAccumulator();
-  //   // const equityAccuAfter = await vaultEngine.equityAccumulator();
-  //   // const reserveBalAfter = await vaultEngine.systemCurrency(reserve.address);
-  //   // const totalDebtAfter = await vaultEngine.lendingPoolDebt();
-  //   // const lendingPoolEquityAfter = await vaultEngine.lendingPoolEquity();
-  //   //
-  //   // // check the debt's accumulator update
-  //   // const debtAccumulatorDiff = debtAccuAfter.sub(debtAccuBefore);
-  //   // expect(debtAccumulatorDiff.gt(0)).to.equal(true);
-  //   //
-  //   // // check the equity's accumulator update
-  //   // const equityAccumulatorDiff = equityAccuAfter.sub(equityAccuBefore);
-  //   // expect(equityAccumulatorDiff.gt(0)).to.equal(true);
-  //   //
-  //   // // check reserveBal increase
-  //   // const reserveBalDiff = reserveBalAfter.sub(reserveBalBefore);
-  //   // expect(reserveBalDiff.gt(0)).to.equal(true);
-  // });
-
   it("updates the accumulators + protocol fees", async () => {
     // Deposit native token (FLR)
     await flrAssetManager.deposit({ value: STANDBY_AMOUNT });
@@ -514,148 +446,148 @@ describe("Probity happy flow", function () {
     expect(reserveBalDiff.gt(0)).to.equal(true);
   });
 
-  // it("liquidates unhealthy vaults", async () => {
-  //   // Deposit native token (FLR)
-  //   await flrAssetManager.deposit({ value: STANDBY_AMOUNT.mul(2) });
+  it("liquidates unhealthy vaults", async () => {
+    // Deposit native token (FLR)
+    await flrAssetManager.deposit({ value: STANDBY_AMOUNT.mul(2) });
 
-  //   // Initialize the FLR asset
-  //   await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR, 2);
-  //   await vaultEngine
-  //     .connect(gov)
-  //     .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
+    // Initialize the FLR asset
+    await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR, 2);
+    await vaultEngine
+      .connect(gov)
+      .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
 
-  //   await liquidator.connect(gov).initAsset(ASSET_ID.FLR, auctioneer.address);
-  //   await priceFeed.connect(gov).initAsset(ASSET_ID.FLR, WAD, ftso.address);
-  //   await priceFeed.updateAdjustedPrice(ASSET_ID.FLR);
+    await liquidator.connect(gov).initAsset(ASSET_ID.FLR, auctioneer.address);
+    await priceFeed.connect(gov).initAsset(ASSET_ID.FLR, WAD, ftso.address);
+    await priceFeed.updateAdjustedPrice(ASSET_ID.FLR);
 
-  //   // Increase equity
-  //   await vaultEngine.modifyEquity(
-  //     ASSET_ID.FLR,
+    // Increase equity
+    await vaultEngine.modifyEquity(
+      ASSET_ID.FLR,
 
-  //     UNDERLYING_AMOUNT.mul(2),
-  //     EQUITY_AMOUNT
-  //   );
+      UNDERLYING_AMOUNT.mul(2),
+      EQUITY_AMOUNT
+    );
 
-  //   // Take out a loan
-  //   await vaultEngine.modifyDebt(
-  //     ASSET_ID.FLR,
+    // Take out a loan
+    await vaultEngine.modifyDebt(
+      ASSET_ID.FLR,
 
-  //     COLL_AMOUNT,
-  //     LOAN_AMOUNT
-  //   );
+      COLL_AMOUNT,
+      LOAN_AMOUNT
+    );
 
-  //   // Set liquidation ratio to 220%
-  //   await priceFeed
-  //     .connect(gov)
-  //     .updateLiquidationRatio(ASSET_ID.FLR, WAD.mul(22).div(10));
-  //   await priceFeed.updateAdjustedPrice(ASSET_ID.FLR);
+    // Set liquidation ratio to 220%
+    await priceFeed
+      .connect(gov)
+      .updateLiquidationRatio(ASSET_ID.FLR, WAD.mul(22).div(10));
+    await priceFeed.updateAdjustedPrice(ASSET_ID.FLR);
 
-  //   // Get unbacked debt and balances before liquidation
-  //   let systemDebt0 = await vaultEngine.systemDebt(reserve.address);
-  //   let [, underlying0] = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
+    // Get unbacked debt and balances before liquidation
+    let systemDebt0 = await vaultEngine.systemDebt(reserve.address);
+    let [, underlying0] = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
 
-  //   // Liquidate the vault
-  //   await liquidator.liquidateVault(ASSET_ID.FLR, owner.address);
+    // Liquidate the vault
+    await liquidator.liquidateVault(ASSET_ID.FLR, owner.address);
 
-  //   // Get unbacked debt and balances after liquidation
-  //   let systemDebt1 = await vaultEngine.systemDebt(reserve.address);
-  //   let [, underlying1] = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
+    // Get unbacked debt and balances after liquidation
+    let systemDebt1 = await vaultEngine.systemDebt(reserve.address);
+    let [, underlying1] = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
 
-  //   // Expect unbacked debt to equal the loan amount and underlying to be the same (?)
-  //   expect(systemDebt1.sub(systemDebt0)).to.equal(LOAN_AMOUNT.mul(RAY));
-  //   expect(underlying1).to.equal(UNDERLYING_AMOUNT.mul(2));
-  // });
+    // Expect unbacked debt to equal the loan amount and underlying to be the same (?)
+    expect(systemDebt1.sub(systemDebt0)).to.equal(LOAN_AMOUNT.mul(RAY));
+    expect(underlying1).to.equal(UNDERLYING_AMOUNT.mul(2));
+  });
 
-  // it("creates an auction and allows a user to buy the collateral", async () => {
-  //   // Deposit native token (FLR)
-  //   await flrAssetManager.deposit({ value: STANDBY_AMOUNT.mul(2) });
+  it("creates an auction and allows a user to buy the collateral", async () => {
+    // Deposit native token (FLR)
+    await flrAssetManager.deposit({ value: STANDBY_AMOUNT.mul(2) });
 
-  //   // Initialize the FLR asset
-  //   await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR, 2);
-  //   await vaultEngine
-  //     .connect(gov)
-  //     .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
+    // Initialize the FLR asset
+    await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR, 2);
+    await vaultEngine
+      .connect(gov)
+      .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
 
-  //   await liquidator.connect(gov).initAsset(ASSET_ID.FLR, auctioneer.address);
-  //   await priceFeed.connect(gov).initAsset(ASSET_ID.FLR, WAD, ftso.address);
-  //   await priceFeed.updateAdjustedPrice(ASSET_ID.FLR);
+    await liquidator.connect(gov).initAsset(ASSET_ID.FLR, auctioneer.address);
+    await priceFeed.connect(gov).initAsset(ASSET_ID.FLR, WAD, ftso.address);
+    await priceFeed.updateAdjustedPrice(ASSET_ID.FLR);
 
-  //   // Increase equity
-  //   await vaultEngine.modifyEquity(
-  //     ASSET_ID.FLR,
+    // Increase equity
+    await vaultEngine.modifyEquity(
+      ASSET_ID.FLR,
 
-  //     UNDERLYING_AMOUNT.mul(2),
-  //     EQUITY_AMOUNT
-  //   );
+      UNDERLYING_AMOUNT.mul(2),
+      EQUITY_AMOUNT
+    );
 
-  //   // Take out a loan
-  //   await vaultEngine.modifyDebt(
-  //     ASSET_ID.FLR,
+    // Take out a loan
+    await vaultEngine.modifyDebt(
+      ASSET_ID.FLR,
 
-  //     COLL_AMOUNT,
-  //     LOAN_AMOUNT
-  //   );
+      COLL_AMOUNT,
+      LOAN_AMOUNT
+    );
 
-  //   // Set liquidation ratio to 220%
-  //   await priceFeed
-  //     .connect(gov)
-  //     .updateLiquidationRatio(ASSET_ID.FLR, WAD.mul(22).div(10));
-  //   await priceFeed.updateAdjustedPrice(ASSET_ID.FLR);
+    // Set liquidation ratio to 220%
+    await priceFeed
+      .connect(gov)
+      .updateLiquidationRatio(ASSET_ID.FLR, WAD.mul(22).div(10));
+    await priceFeed.updateAdjustedPrice(ASSET_ID.FLR);
 
-  //   // Liquidate the vault
-  //   await liquidator.liquidateVault(ASSET_ID.FLR, owner.address);
+    // Liquidate the vault
+    await liquidator.liquidateVault(ASSET_ID.FLR, owner.address);
 
-  //   // Deposit FLR as a secondary user
-  //   await flrAssetManager.connect(user).deposit({ value: WAD.mul(50_000) });
+    // Deposit FLR as a secondary user
+    await flrAssetManager.connect(user).deposit({ value: WAD.mul(50_000) });
 
-  //   // Increase equity as user
-  //   await vaultEngine.connect(user).modifyEquity(
-  //     ASSET_ID.FLR,
+    // Increase equity as user
+    await vaultEngine.connect(user).modifyEquity(
+      ASSET_ID.FLR,
 
-  //     WAD.mul(20_000),
-  //     WAD.mul(1000)
-  //   );
+      WAD.mul(20_000),
+      WAD.mul(1000)
+    );
 
-  //   // Take out a loan as user
-  //   await vaultEngine
-  //     .connect(user)
-  //     .modifyDebt(ASSET_ID.FLR, WAD.mul(20000), WAD.mul(600));
+    // Take out a loan as user
+    await vaultEngine
+      .connect(user)
+      .modifyDebt(ASSET_ID.FLR, WAD.mul(20000), WAD.mul(600));
 
-  //   // Place a bid on the collateral auction as user
-  //   const auctionId = 0,
-  //     price0 = RAY.mul(9).div(10),
-  //     lot0 = WAD.mul("100");
-  //   await auctioneer.connect(user).placeBid(auctionId, price0, lot0);
-  //   let [price1, lot1] = await auctioneer.bids(auctionId, user.address);
+    // Place a bid on the collateral auction as user
+    const auctionId = 0,
+      price0 = RAY.mul(9).div(10),
+      lot0 = WAD.mul("100");
+    await auctioneer.connect(user).placeBid(auctionId, price0, lot0);
+    let [price1, lot1] = await auctioneer.bids(auctionId, user.address);
 
-  //   // Expect bid data to equal the inputs
-  //   expect(price1).to.equal(price0);
-  //   expect(lot1).to.equal(lot0);
+    // Expect bid data to equal the inputs
+    expect(price1).to.equal(price0);
+    expect(lot1).to.equal(lot0);
 
-  //   const BUY_PRICE = RAY.mul(11).div(10); // $1.10
-  //   const EXPECTED_BUY_LOT = WAD.mul(10);
-  //   const EXPECTED_BUY_VALUE = BUY_PRICE.mul(EXPECTED_BUY_LOT); // $12.00
+    const BUY_PRICE = RAY.mul(11).div(10); // $1.10
+    const EXPECTED_BUY_LOT = WAD.mul(10);
+    const EXPECTED_BUY_VALUE = BUY_PRICE.mul(EXPECTED_BUY_LOT); // $12.00
 
-  //   // Get standby and stablecoin balances before purchase
-  //   let [standby0] = await vaultEngine.vaults(ASSET_ID.FLR, user.address);
-  //   let stablecoin0 = await vaultEngine.systemCurrency(user.address);
+    // Get standby and stablecoin balances before purchase
+    let [standby0] = await vaultEngine.vaults(ASSET_ID.FLR, user.address);
+    let stablecoin0 = await vaultEngine.systemCurrency(user.address);
 
-  //   // Purchase 10 FLR on auction for $1.10 per unit
-  //   await auctioneer
-  //     .connect(user)
-  //     .buyItNow(auctionId, BUY_PRICE, EXPECTED_BUY_LOT);
+    // Purchase 10 FLR on auction for $1.10 per unit
+    await auctioneer
+      .connect(user)
+      .buyItNow(auctionId, BUY_PRICE, EXPECTED_BUY_LOT);
 
-  //   // Get standby and stablecoin balances after purchase
-  //   let [standby1] = await vaultEngine.vaults(ASSET_ID.FLR, user.address);
-  //   let stablecoin1 = await vaultEngine.systemCurrency(user.address);
-  //   // Expect (?)
-  //   expect(
-  //     stablecoin0.sub(stablecoin1).sub(EXPECTED_BUY_VALUE).abs().lte(RAD)
-  //   ).to.equal(true);
-  //   expect(
-  //     standby1.sub(standby0).sub(EXPECTED_BUY_LOT).toNumber() <= 1e17
-  //   ).to.equal(true);
-  // });
+    // Get standby and stablecoin balances after purchase
+    let [standby1] = await vaultEngine.vaults(ASSET_ID.FLR, user.address);
+    let stablecoin1 = await vaultEngine.systemCurrency(user.address);
+    // Expect (?)
+    expect(
+      stablecoin0.sub(stablecoin1).sub(EXPECTED_BUY_VALUE).abs().lte(RAD)
+    ).to.equal(true);
+    expect(
+      standby1.sub(standby0).sub(EXPECTED_BUY_LOT).toNumber() <= 1e17
+    ).to.equal(true);
+  });
 
   it("creates an auction by liquidating equity position and allows a users to buy collateral", async () => {
     // Deposit native token (FLR)
@@ -741,100 +673,100 @@ describe("Probity happy flow", function () {
     ).to.equal(true);
   });
 
-  // it("runs an IOU sale", async () => {
-  //   // Deposit native token (FLR)
-  //   await flrAssetManager.deposit({ value: STANDBY_AMOUNT.mul(2) });
+  it("runs an IOU sale", async () => {
+    // Deposit native token (FLR)
+    await flrAssetManager.deposit({ value: STANDBY_AMOUNT.mul(2) });
 
-  //   // Initialize the FLR asset
-  //   await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR, 2);
-  //   await vaultEngine
-  //     .connect(gov)
-  //     .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
+    // Initialize the FLR asset
+    await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR, 2);
+    await vaultEngine
+      .connect(gov)
+      .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
 
-  //   await liquidator.connect(gov).initAsset(ASSET_ID.FLR, auctioneer.address);
-  //   await priceFeed.connect(gov).initAsset(ASSET_ID.FLR, WAD, ftso.address);
-  //   await priceFeed.updateAdjustedPrice(ASSET_ID.FLR);
+    await liquidator.connect(gov).initAsset(ASSET_ID.FLR, auctioneer.address);
+    await priceFeed.connect(gov).initAsset(ASSET_ID.FLR, WAD, ftso.address);
+    await priceFeed.updateAdjustedPrice(ASSET_ID.FLR);
 
-  //   // Increase equity
-  //   await vaultEngine.modifyEquity(
-  //     ASSET_ID.FLR,
+    // Increase equity
+    await vaultEngine.modifyEquity(
+      ASSET_ID.FLR,
 
-  //     UNDERLYING_AMOUNT.mul(2),
-  //     EQUITY_AMOUNT
-  //   );
+      UNDERLYING_AMOUNT.mul(2),
+      EQUITY_AMOUNT
+    );
 
-  //   // Take out a loan
-  //   await vaultEngine.modifyDebt(
-  //     ASSET_ID.FLR,
+    // Take out a loan
+    await vaultEngine.modifyDebt(
+      ASSET_ID.FLR,
 
-  //     COLL_AMOUNT,
-  //     LOAN_AMOUNT
-  //   );
+      COLL_AMOUNT,
+      LOAN_AMOUNT
+    );
 
-  //   // Set liquidation ratio to 220%
-  //   await priceFeed
-  //     .connect(gov)
-  //     .updateLiquidationRatio(ASSET_ID.FLR, WAD.mul(22).div(10));
-  //   await priceFeed.updateAdjustedPrice(ASSET_ID.FLR);
+    // Set liquidation ratio to 220%
+    await priceFeed
+      .connect(gov)
+      .updateLiquidationRatio(ASSET_ID.FLR, WAD.mul(22).div(10));
+    await priceFeed.updateAdjustedPrice(ASSET_ID.FLR);
 
-  //   // Liquidate the vault
-  //   await liquidator.liquidateVault(ASSET_ID.FLR, owner.address);
+    // Liquidate the vault
+    await liquidator.liquidateVault(ASSET_ID.FLR, owner.address);
 
-  //   // Check the amount on auction (lot = 200 FLR, debt = 100 USD + 17 USD penalty)
-  //   let auction = await auctioneer.auctions(0);
-  //   const penalty = WAD.mul(17);
-  //   expect(auction.lot).to.equal(COLL_AMOUNT);
-  //   expect(auction.debt).to.equal(LOAN_AMOUNT.add(penalty).mul(RAY));
+    // Check the amount on auction (lot = 200 FLR, debt = 100 USD + 17 USD penalty)
+    let auction = await auctioneer.auctions(0);
+    const penalty = WAD.mul(17);
+    expect(auction.lot).to.equal(COLL_AMOUNT);
+    expect(auction.debt).to.equal(LOAN_AMOUNT.add(penalty).mul(RAY));
 
-  //   // Deposit FLR as a secondary user
-  //   await flrAssetManager.connect(user).deposit({ value: WAD.mul(300_000) });
+    // Deposit FLR as a secondary user
+    await flrAssetManager.connect(user).deposit({ value: WAD.mul(300_000) });
 
-  //   // Increase equity as user
-  //   await vaultEngine.connect(user).modifyEquity(
-  //     ASSET_ID.FLR,
+    // Increase equity as user
+    await vaultEngine.connect(user).modifyEquity(
+      ASSET_ID.FLR,
 
-  //     WAD.mul(20_000),
-  //     WAD.mul(1000)
-  //   );
+      WAD.mul(20_000),
+      WAD.mul(1000)
+    );
 
-  //   // Take out a loan as user
-  //   await vaultEngine
-  //     .connect(user)
-  //     .modifyDebt(ASSET_ID.FLR, WAD.mul(9000), WAD.mul(600));
+    // Take out a loan as user
+    await vaultEngine
+      .connect(user)
+      .modifyDebt(ASSET_ID.FLR, WAD.mul(9000), WAD.mul(600));
 
-  //   // Expect unbacked debt to equal amount on auction (100)
-  //   const systemDebt = await vaultEngine.systemDebt(reserve.address);
-  //   expect(systemDebt).to.equal(LOAN_AMOUNT.mul(RAY));
+    // Expect unbacked debt to equal amount on auction (100)
+    const systemDebt = await vaultEngine.systemDebt(reserve.address);
+    expect(systemDebt).to.equal(LOAN_AMOUNT.mul(RAY));
 
-  //   // Reduce auction debt by 20 USD (from 100 to 80)
-  //   const debtToReduce = RAD.mul(20);
-  //   await liquidator.connect(userWithRole).reduceAuctionDebt(debtToReduce);
+    // Reduce auction debt by 20 USD (from 100 to 80)
+    const debtToReduce = RAD.mul(20);
+    await liquidator.connect(userWithRole).reduceAuctionDebt(debtToReduce);
 
-  //   // Expect debt to be reduced
-  //   const debtOnAuction = await reserve.debtOnAuction();
-  //   expect(debtOnAuction).to.equal(LOAN_AMOUNT.mul(RAY).sub(debtToReduce));
+    // Expect debt to be reduced
+    const debtOnAuction = await reserve.debtOnAuction();
+    expect(debtOnAuction).to.equal(LOAN_AMOUNT.mul(RAY).sub(debtToReduce));
 
-  //   // Set debt threshold to 10 USD
-  //   const debtThreshold = RAD.mul(10);
-  //   await reserve.connect(gov).updateDebtThreshold(debtThreshold);
+    // Set debt threshold to 10 USD
+    const debtThreshold = RAD.mul(10);
+    await reserve.connect(gov).updateDebtThreshold(debtThreshold);
 
-  //   // Expect debt threshold to be reduced
-  //   const _debtThreshold = await reserve.debtThreshold();
-  //   expect(_debtThreshold).to.equal(debtThreshold);
+    // Expect debt threshold to be reduced
+    const _debtThreshold = await reserve.debtThreshold();
+    expect(_debtThreshold).to.equal(debtThreshold);
 
-  //   // Start an IOU sale (systemDebt - debtOnAuction > debtThreshold)
-  //   await reserve.connect(gov).startBondSale();
+    // Start an IOU sale (systemDebt - debtOnAuction > debtThreshold)
+    await reserve.connect(gov).startBondSale();
 
-  //   await ethers.provider.send("evm_increaseTime", [21601]);
-  //   await ethers.provider.send("evm_mine", []);
+    await ethers.provider.send("evm_increaseTime", [21601]);
+    await ethers.provider.send("evm_mine", []);
 
-  //   // Purchase 10 bond tokens
-  //   await bondIssuer.connect(user).purchaseBond(RAD.mul(10));
+    // Purchase 10 bond tokens
+    await bondIssuer.connect(user).purchaseBond(RAD.mul(10));
 
-  //   // Get the amount of bond tokens
-  //   let bondTokens = await bondIssuer.bondTokens(user.address);
+    // Get the amount of bond tokens
+    let bondTokens = await bondIssuer.bondTokens(user.address);
 
-  //   // Expect more than 10 bondTokens (?)
-  //   expect(bondTokens > RAD.mul(10)).to.equal(true);
-  // });
+    // Expect more than 10 bondTokens (?)
+    expect(bondTokens > RAD.mul(10)).to.equal(true);
+  });
 });
