@@ -505,8 +505,8 @@ contract VaultEngine is Stateful, Eventful {
 
         Vault memory vault = vaults[assetId][msg.sender];
 
+        // Reduce the debt principal only after interests are paid off
         int256 principalToChange = debtCreated;
-
         if (debtCreated < 0 && (Math._add(vault.normDebt * debtAccumulator, debtCreated) < vault.debtPrincipal)) {
             principalToChange = -int256(vault.debtPrincipal - Math._add(vault.normDebt * debtAccumulator, debtCreated));
         }
