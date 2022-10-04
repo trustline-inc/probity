@@ -6,6 +6,8 @@ import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
 import "../dependencies/Math.sol";
 
+import "hardhat/console.sol";
+
 /**
  * @title VaultEngine contract
  * @author Matthew Rosendin <matt@trustline.co, @mrosendin>
@@ -24,6 +26,7 @@ contract VaultEngine is Stateful, Eventful {
         uint256 normDebt; // Normalized debt balance [WAD]
         uint256 normEquity; // Normalized equity balance [WAD]
         uint256 initialEquity; // Tracks the amount of equity (less interest) [RAD]
+        uint256 debtPrincipal; // Tracks the principal amount of debt
     }
 
     enum Category {
@@ -503,6 +506,19 @@ contract VaultEngine is Stateful, Eventful {
         }
 
         Vault memory vault = vaults[assetId][msg.sender];
+
+        int256 principalToChange = debtCreated;
+        console.logInt(debtCreated);
+        console.log(vault.debtPrincipal);
+        if (debtCreated < 0 && (Math._add(vault.normDebt * debtAccumulator, debtCreated) < vault.debtPrincipal)) {
+            console.log(vault.normDebt * debtAccumulator);
+            principalToChange = -int256(vault.debtPrincipal - Math._add(vault.normDebt * debtAccumulator, debtCreated));
+        }
+        console.logInt(principalToChange);
+
+        vault.debtPrincipal = Math._add(vault.debtPrincipal, principalToChange);
+        lendingPoolPrincipal = Math._add(lendingPoolPrincipal, principalToChange);
+
         vault.standbyAmount = Math._sub(vault.standbyAmount, collAmount);
         vault.collateral = Math._add(vault.collateral, collAmount);
         vault.normDebt = Math._add(vault.normDebt, debtAmount);
@@ -511,7 +527,7 @@ contract VaultEngine is Stateful, Eventful {
         lendingPoolDebt = Math._add(lendingPoolDebt, debtAmount);
 
         totalSystemCurrency = Math._add(totalSystemCurrency, debtCreated);
-        lendingPoolPrincipal = Math._add(lendingPoolPrincipal, debtCreated);
+
         require(vault.normDebt * debtAccumulator <= assets[assetId].ceiling, "Vault/modifyDebt: Debt ceiling reached");
         require(
             vault.normDebt == 0 || (vault.normDebt * RAY) > assets[assetId].floor,
@@ -522,7 +538,6 @@ contract VaultEngine is Stateful, Eventful {
         systemCurrency[msg.sender] = Math._add(systemCurrency[msg.sender], debtCreated);
         systemCurrency[treasury] = Math._sub(systemCurrency[treasury], debtCreated);
 
-        //        console.log("treasury Balance        %s", systemCurrency[treasury]);
         vaults[assetId][msg.sender] = vault;
 
         emit DebtModified(msg.sender, collAmount, debtCreated);
