@@ -531,7 +531,7 @@ contract VaultEngine is Stateful, Eventful {
         _certifyDebtPosition(assetId, vault);
 
         systemCurrency[msg.sender] = Math._add(systemCurrency[msg.sender], debtCreated);
-        systemCurrency[treasury] = Math._sub(systemCurrency[treasury], debtCreated);
+        systemCurrency[treasury] = Math._sub(systemCurrency[treasury], principalToChange);
 
         vaults[assetId][msg.sender] = vault;
 

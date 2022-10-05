@@ -607,7 +607,6 @@ describe("Vault Engine Unit Tests", function () {
       await assertRevert(
         vaultEngine.modifyDebt(
           ASSET_ID.FLR,
-
           COLLATERAL_AMOUNT,
           DEBT_AMOUNT_UNDER_FLOOR
         ),
@@ -715,6 +714,54 @@ describe("Vault Engine Unit Tests", function () {
       const EXPECTED_DIFF = before.debtPrincipal.sub(EXPECTED_PRINCIPAL);
       expect(after.debtPrincipal).to.equal(EXPECTED_PRINCIPAL);
       expect(poolPrincipalBefore.sub(poolPrincipalAfter)).to.equal(
+        EXPECTED_DIFF
+      );
+    });
+
+    it("test only principal is paid back to the treasury", async () => {
+      const debtRateIncrease = BigNumber.from("251035088626883475473007000");
+      const equityRateIncrease = BigNumber.from("125509667994754929166541000");
+
+      await vaultEngine.modifyDebt(ASSET_ID.FLR, ASSET_AMOUNT, DEBT_AMOUNT);
+
+      await registry
+        .connect(gov)
+        .setupAddress(bytes32("teller"), user.address, true);
+      await vaultEngine
+        .connect(user)
+        .updateAccumulators(
+          reservePool.address,
+          debtRateIncrease,
+          equityRateIncrease,
+          BigNumber.from(0)
+        );
+
+      const before = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
+      const treasuryBalanceBefore = await vaultEngine.systemCurrency(
+        treasury.address
+      );
+      let balance = await vaultEngine.balanceOf(ASSET_ID.FLR, owner.address);
+
+      const ASSET_TO_MODIFY = BigNumber.from(0).sub(ASSET_AMOUNT.div(3));
+      const DEBT_TO_MODIFY = BigNumber.from(0).sub(DEBT_AMOUNT.div(3));
+
+      await vaultEngine.modifyDebt(
+        ASSET_ID.FLR,
+        ASSET_TO_MODIFY,
+        DEBT_TO_MODIFY
+      );
+
+      const treasuryBalanceAfter = await vaultEngine.systemCurrency(
+        treasury.address
+      );
+      let debtAccumulator = await vaultEngine.debtAccumulator();
+
+      const EXPECTED_PRINCIPAL = balance.debt.add(
+        DEBT_TO_MODIFY.mul(debtAccumulator)
+      );
+
+      const EXPECTED_DIFF = before.debtPrincipal.sub(EXPECTED_PRINCIPAL);
+      expect(treasuryBalanceAfter.sub(treasuryBalanceBefore)).to.equal(
         EXPECTED_DIFF
       );
     });
