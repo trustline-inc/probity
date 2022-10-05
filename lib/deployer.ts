@@ -12,6 +12,7 @@ export type Deployment = {
 
 // Import contract types
 import {
+  AccessControl,
   BondIssuer,
   Delegatable,
   USD,
@@ -48,6 +49,7 @@ import {
   MockBondIssuer,
   MockErc20Token,
   MockErc20AssetManager,
+  AccessControl__factory,
   USD__factory,
   Registry__factory,
   BondIssuer__factory,
@@ -107,6 +109,7 @@ const NATIVE_ASSET = NATIVE_ASSETS[network.name];
  */
 interface ContractDict {
   [key: string]: any;
+  accessControl?: AccessControl;
   bondIssuer?: BondIssuer;
   delegatable?: Delegatable;
   usd?: USD;
@@ -164,6 +167,7 @@ interface ContractDict {
 }
 
 const artifactNameMap: { [key: string]: any } = {
+  accessControl: "ACCESS_CONTROL",
   usd: "USD",
   bondIssuer: "BondIssuer",
   ftso: "MockFtso",
@@ -311,6 +315,29 @@ const parseExistingContracts = async () => {
     }
   }
 
+  return contracts;
+};
+
+const deployAccessControl = async (param?: { registry?: string }) => {
+  if (
+    contracts.accessControl !== undefined &&
+    process.env.NODE_ENV !== "test"
+  ) {
+    console.info("usd contract has already been deployed, skipping");
+    return contracts;
+  }
+
+  const registry =
+    param && param.registry ? param.registry : contracts.registry?.address;
+  const signers = await getSigners();
+  const accessControlFactory = (await ethers.getContractFactory(
+    "AccessControl",
+    signers.owner
+  )) as AccessControl__factory;
+  contracts.accessControl = await accessControlFactory.deploy(registry!);
+  await contracts.accessControl.deployed();
+
+  await checkDeploymentDelay();
   return contracts;
 };
 
@@ -1784,6 +1811,7 @@ const deployDev = async () => {
 const deployTest = async (vaultEngineType?: string) => {
   const signers = await getSigners();
   await deployRegistry();
+  await deployAccessControl();
   await deployMocks();
   await deployStateful();
   await deployProbity(vaultEngineType);

@@ -47,4 +47,15 @@ contract AccessControl {
     constructor(address registryAddress) {
         registry = IRegistry(registryAddress);
     }
+
+    ///////////////////////////////////
+    // External Functions
+    ///////////////////////////////////
+
+    /**
+     * @dev check if the caller is from one of the Probity system's contract
+     */
+    function setRegistryAddress(IRegistry newRegistryAddress) external onlyBy("gov") {
+        registry = newRegistryAddress;
+    }
 }
