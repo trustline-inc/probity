@@ -20,7 +20,7 @@ import {
   VaultEngine,
   VaultEngineIssuer,
   VaultEngineLimited,
-  VaultEngineUnrestricted,
+  VaultEngineRestricted,
   NativeAssetManager,
   ERC20AssetManager,
   Teller,
@@ -116,11 +116,11 @@ interface ContractDict {
   vaultEngine?:
     | VaultEngine
     | VaultEngineLimited
-    | VaultEngineUnrestricted
+    | VaultEngineRestricted
     | VaultEngineIssuer;
   vaultEngineIssuer?: VaultEngineIssuer;
   vaultEngineLimited?: VaultEngineLimited;
-  vaultEngineUnrestricted?: VaultEngineUnrestricted;
+  vaultEngineUnrestricted?: VaultEngineRestricted;
   nativeAssetManager?: NativeAssetManager;
   usdManager?: ERC20AssetManager;
   erc20AssetManager?:
@@ -172,7 +172,7 @@ const artifactNameMap: { [key: string]: any } = {
   vaultEngine: "VaultEngine",
   vaultEngineIssuer: "VaultEngineIssuer",
   vaultEngineLimited: "VaultEngineLimited",
-  vaultEngineUnrestricted: "VaultEngineUnrestricted",
+  vaultEngineUnrestricted: "VaultEngineRestricted",
   nativeAssetManager: "NativeAssetManager",
   erc20AssetManager: "ERC20AssetManager",
   ftsoManager: "MockFtsoManager",
@@ -539,7 +539,7 @@ const deployVaultEngineUnrestricted = async (param?: { registry?: string }) => {
     param && param.registry ? param.registry : contracts.registry?.address;
   const signers = await getSigners();
   const vaultEngineFactory = (await ethers.getContractFactory(
-    "VaultEngineUnrestricted",
+    "VaultEngineRestricted",
     signers.owner
   )) as VaultEngineUnrestricted__factory;
   contracts.vaultEngine = await vaultEngineFactory.deploy(registry!);
@@ -1708,7 +1708,7 @@ const deployProbity = async (vaultEngineType?: string) => {
   if (network.name === "local" || network.name === "coston") {
     vaultType = "vaultEngineIssuer";
     await deployVaultEngineIssuer();
-  } else if (vaultEngineType === "unrestricted") {
+  } else if (vaultEngineType === "restricted") {
     vaultType = "vaultEngineUnrestricted";
     await deployVaultEngineUnrestricted();
   } else if (network.name === "songbird" || vaultEngineType === "limited") {

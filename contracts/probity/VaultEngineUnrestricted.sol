@@ -12,7 +12,7 @@ import "./VaultEngine.sol";
  * This contract inherits VaultEngine removes the whitelist feature
  */
 
-contract VaultEngineUnrestricted is VaultEngine {
+contract VaultEngineRestricted is VaultEngine {
     /////////////////////////////////////////
     // Data Variables
     /////////////////////////////////////////
@@ -29,7 +29,7 @@ contract VaultEngineUnrestricted is VaultEngine {
         bytes32 assetId,
         int256 underlyingAmount,
         int256 equityAmount
-    ) external override {
+    ) external override onlyBy("whitelisted") {
         _modifyEquity(assetId, underlyingAmount, equityAmount);
     }
 
@@ -43,7 +43,7 @@ contract VaultEngineUnrestricted is VaultEngine {
         bytes32 assetId,
         int256 collAmount,
         int256 debtAmount
-    ) external override {
+    ) external override onlyBy("whitelisted") {
         _modifyDebt(assetId, collAmount, debtAmount);
     }
 }

@@ -236,7 +236,7 @@ contract VaultEngine is Stateful, Eventful {
         bytes32 assetId,
         int256 underlyingAmount,
         int256 equityAmount
-    ) external virtual onlyBy("whitelisted") {
+    ) external virtual {
         _modifyEquity(assetId, underlyingAmount, equityAmount);
     }
 
@@ -250,7 +250,7 @@ contract VaultEngine is Stateful, Eventful {
         bytes32 assetId,
         int256 collAmount,
         int256 debtAmount
-    ) external virtual onlyBy("whitelisted") {
+    ) external virtual {
         _modifyDebt(assetId, collAmount, debtAmount);
     }
 

@@ -9,12 +9,13 @@ import {
   ReservePool,
   Teller,
   Treasury,
-  VaultEngineUnrestricted,
+  VaultEngineRestricted,
 } from "../../typechain";
 
 import { deployTest } from "../../lib/deployer";
 import { ethers } from "hardhat";
 import { bytes32, RAD, WAD, RAY, ASSET_ID } from "../utils/constants";
+import assertRevert from "../utils/assertRevert";
 
 // Wallets
 let owner: SignerWithAddress;
@@ -24,7 +25,7 @@ let coll: SignerWithAddress;
 let assetManager: SignerWithAddress;
 
 // Contracts
-let vaultEngine: VaultEngineUnrestricted;
+let vaultEngine: VaultEngineRestricted;
 let registry: Registry;
 let reservePool: ReservePool;
 let nativeAssetManager: NativeAssetManager;
@@ -37,7 +38,7 @@ ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
 describe("Vault Engine Unrestricted Unit Tests", function () {
   beforeEach(async function () {
-    let { contracts, signers } = await deployTest("unrestricted");
+    let { contracts, signers } = await deployTest("restricted");
     // Set contracts
     registry = contracts.registry!;
     vaultEngine = contracts.vaultEngine!;
@@ -83,20 +84,35 @@ describe("Vault Engine Unrestricted Unit Tests", function () {
         .modifyStandbyAmount(ASSET_ID.FLR, owner.address, STANDBY_AMOUNT);
     });
 
-    it("tests that non whitelisted user can call modifyEquity", async () => {
+    it("only allows whitelisted users to call modifyEquity", async () => {
       await registry
         .connect(gov)
-        .setupAddress(bytes32("notWhitelisted"), owner.address, true);
+        .setupAddress(bytes32("notWhitelisted"), owner.address, false);
+
+      await assertRevert(
+        vaultEngine.modifyEquity(
+          ASSET_ID.FLR,
+
+          UNDERLYING_AMOUNT,
+          EQUITY_AMOUNT
+        ),
+        "AccessControl/onlyBy: Caller does not have permission"
+      );
+
+      await registry
+        .connect(gov)
+        .setupAddress(bytes32("whitelisted"), owner.address, false);
 
       await vaultEngine.modifyEquity(
         ASSET_ID.FLR,
+
         UNDERLYING_AMOUNT,
         EQUITY_AMOUNT
       );
     });
   });
 
-  describe("modifyEquity Unit Tests", function () {
+  describe("modifyDebt Unit Tests", function () {
     const STANDBY_AMOUNT = WAD.mul(10_000);
     const UNDERLYING_AMOUNT = WAD.mul(10_000);
     const EQUITY_AMOUNT = WAD.mul(2000);
@@ -126,6 +142,10 @@ describe("Vault Engine Unrestricted Unit Tests", function () {
           STANDBY_AMOUNT.mul(2)
         );
 
+      await registry
+        .connect(gov)
+        .setupAddress(bytes32("whitelisted"), owner.address, false);
+
       await vaultEngine.modifyEquity(
         ASSET_ID.FLR,
         UNDERLYING_AMOUNT,
@@ -133,17 +153,20 @@ describe("Vault Engine Unrestricted Unit Tests", function () {
       );
     });
 
-    it("tests that non whitelisted user can call modifyDebt", async () => {
+    it("only allows whitelisted users to call modifyDebt", async () => {
       await registry
         .connect(gov)
         .setupAddress(bytes32("notWhitelisted"), owner.address, false);
-
-      await vaultEngine.modifyDebt(
-        ASSET_ID.FLR,
-
-        COLL_AMOUNT,
-        DEBT_AMOUNT
+      await assertRevert(
+        vaultEngine.modifyDebt(ASSET_ID.FLR, COLL_AMOUNT, DEBT_AMOUNT),
+        "AccessControl/onlyBy: Caller does not have permission"
       );
+
+      await registry
+        .connect(gov)
+        .setupAddress(bytes32("whitelisted"), owner.address, false);
+
+      await vaultEngine.modifyDebt(ASSET_ID.FLR, COLL_AMOUNT, DEBT_AMOUNT);
     });
   });
 });
