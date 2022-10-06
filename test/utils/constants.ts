@@ -1,4 +1,5 @@
 import { ethers, web3 } from "hardhat";
+import { BigNumber } from "ethers";
 
 const errorTypes = {
   ISSUER_EXISTS: "An issuer already exists with this address.",
@@ -35,6 +36,8 @@ const ASSET_ID = {
 };
 
 const bytes32 = (string: string) => ethers.utils.formatBytes32String(string);
+
+const MAX_APR: BigNumber = WAD.mul(2).mul(1e9);
 
 const APR_TO_MPR: { [key: string]: string } = {
   "1010000000000000000000000000": "1000000000315313692301234303", // 1.00%
@@ -439,6 +442,7 @@ const APR_TO_MPR: { [key: string]: string } = {
 export {
   errorTypes,
   APR_TO_MPR,
+  MAX_APR,
   ADDRESS_ZERO,
   BYTES32_ZERO,
   WAD,
