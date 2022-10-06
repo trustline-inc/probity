@@ -14,6 +14,7 @@ import {
   ASSET_ID,
   APR_TO_MPR,
 } from "../utils/constants";
+import { mpr } from "../utils/mpr";
 import assertRevert from "../utils/assertRevert";
 import increaseTime from "../utils/increaseTime";
 import { rdiv, rmul, rpow, wdiv } from "../utils/math";
@@ -225,12 +226,15 @@ describe("Teller Unit Tests", function () {
       const DEFAULT_DEBT_ACCUMULATOR = RAY;
       let TIME_TO_INCREASE = 400000;
 
-      await vaultEngine.setLendingPoolPrincipal(WAD.mul(620));
-      await vaultEngine.setLendingPoolSupply(WAD.mul(1000));
+      const SUPPLY_TO_SET = WAD.mul(1000);
+      const PRINCIPAL_TO_SET = WAD.mul(620);
 
-      await teller.updateAccumulators();
+      await vaultEngine.setLendingPoolPrincipal(PRINCIPAL_TO_SET);
+      await vaultEngine.setLendingPoolSupply(SUPPLY_TO_SET);
+
       let debtAccuBefore = await vaultEngine.debtAccumulator();
-      let mpr = await teller.mpr();
+      // we need to use expected MPR
+      let EXPECTED_MPR = mpr(PRINCIPAL_TO_SET, SUPPLY_TO_SET);
 
       let lastUpdatedBefore = await teller.lastUpdated();
       expect(debtAccuBefore).to.equal(DEFAULT_DEBT_ACCUMULATOR);
@@ -240,7 +244,7 @@ describe("Teller Unit Tests", function () {
       let lastUpdatedAfter = await teller.lastUpdated();
 
       let EXPECTED_DEBT_ACCUMULATOR = rmul(
-        rpow(mpr, lastUpdatedAfter.sub(lastUpdatedBefore).toNumber()),
+        rpow(EXPECTED_MPR, lastUpdatedAfter.sub(lastUpdatedBefore).toNumber()),
         debtAccuBefore
       );
 
@@ -248,7 +252,7 @@ describe("Teller Unit Tests", function () {
       expect(debtAccuAfter).to.equal(EXPECTED_DEBT_ACCUMULATOR);
 
       debtAccuBefore = await vaultEngine.debtAccumulator();
-      mpr = await teller.mpr();
+      EXPECTED_MPR = await teller.mpr();
       TIME_TO_INCREASE = 23000;
 
       lastUpdatedBefore = lastUpdatedAfter;
@@ -258,7 +262,7 @@ describe("Teller Unit Tests", function () {
       lastUpdatedAfter = await teller.lastUpdated();
 
       EXPECTED_DEBT_ACCUMULATOR = rmul(
-        rpow(mpr, lastUpdatedAfter.sub(lastUpdatedBefore).toNumber()),
+        rpow(EXPECTED_MPR, lastUpdatedAfter.sub(lastUpdatedBefore).toNumber()),
         debtAccuBefore
       );
 
@@ -272,8 +276,6 @@ describe("Teller Unit Tests", function () {
 
       await vaultEngine.setLendingPoolPrincipal(WAD.mul(620));
       await vaultEngine.setLendingPoolSupply(WAD.mul(1000));
-
-      await teller.updateAccumulators();
 
       let equityAccu = await vaultEngine.equityAccumulator();
       let lastUpdatedBefore = await teller.lastUpdated();
@@ -310,7 +312,6 @@ describe("Teller Unit Tests", function () {
       await vaultEngine.setLendingPoolPrincipal(WAD.mul(620));
       await vaultEngine.setLendingPoolSupply(WAD.mul(1000));
       let TIME_TO_INCREASE = 400000;
-      await teller.updateAccumulators();
 
       let lastUpdatedBefore = await teller.lastUpdated();
       let captialAccumulatorBefore = await vaultEngine.equityAccumulator();
@@ -418,21 +419,12 @@ describe("Teller Unit Tests", function () {
       expect(lendingPoolSupply).to.equal(initialEquity);
       expect(lendingPoolPrincipal).to.equal(principal);
 
-      // Update accumulators
-      await teller.updateAccumulators();
       let timeDiff1 = (await teller.lastUpdated()).sub(lastUpdated);
       lastUpdated = await teller.lastUpdated();
       debtAccumulator = await vaultEngine.debtAccumulator();
       equityAccumulator = await vaultEngine.equityAccumulator();
       expect(debtAccumulator).to.equal(RAY);
       expect(equityAccumulator).to.equal(RAY);
-
-      let mpr = RAY;
-      let apr = await teller.apr();
-      const expectedDebtAccumulator1 = rmul(
-        rpow(mpr, timeDiff1.toNumber()),
-        RAY
-      );
 
       // Take out loan
       collateral = WAD.mul(175);
@@ -459,21 +451,17 @@ describe("Teller Unit Tests", function () {
       expect(await vaultEngine.lendingPoolDebt()).to.equal(normDebt);
       expect(await vaultEngine.lendingPoolEquity()).to.equal(normEquity);
 
+      debtAccumulator = await vaultEngine.debtAccumulator();
       // Update accumulators
       await teller.updateAccumulators();
       let timeDiff2 = (await teller.lastUpdated()).sub(lastUpdated);
-      lastUpdated = await teller.lastUpdated();
 
       // Set expected debtAccumulator
-      mpr = ethers.BigNumber.from(APR_TO_MPR[apr.toString()]);
-      apr = await teller.apr();
-      const expectedDebtAccumulator2 = rmul(
-        rpow(ethers.BigNumber.from(mpr), timeDiff2.toNumber()),
-        RAY
-      );
+      let expectedMpr = mpr(normDebt, normEquity);
+
       const expectedDebtAccumulator = rmul(
-        expectedDebtAccumulator1,
-        expectedDebtAccumulator2
+        rpow(expectedMpr, timeDiff2.toNumber()),
+        RAY
       );
 
       debtAccumulator = await vaultEngine.debtAccumulator();

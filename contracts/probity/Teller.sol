@@ -6,8 +6,6 @@ import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
 import "../dependencies/Math.sol";
 
-import "hardhat/console.sol";
-
 interface VaultEngineLike {
     function debtAccumulator() external returns (uint256);
 
@@ -117,20 +115,6 @@ contract Teller is Stateful, Eventful {
 
         uint256 utilization = Math._wdiv(lendingPoolPrincipal, lendingPoolSupply);
 
-        // Update debt accumulator
-        uint256 debtRateIncrease = Math._rmul(Math._rpow(mpr, (block.timestamp - lastUpdated)), debtAccumulator) -
-            debtAccumulator;
-
-        uint256 debtCreated = debtRateIncrease * lendingPoolDebt;
-        uint256 equityAccumulatorDiff = debtCreated / lendingPoolEquity;
-
-        uint256 protocolFeeRate = 0;
-        if (protocolFee != 0) {
-            protocolFeeRate = (equityAccumulatorDiff * protocolFee) / WAD;
-        }
-
-        uint256 equityRateIncrease = equityAccumulatorDiff - protocolFeeRate;
-
         // Set new APR (round to nearest 0.25%)
         if (utilization >= 1e18) {
             apr = MAX_APR;
@@ -152,6 +136,20 @@ contract Teller is Stateful, Eventful {
         } else {
             mpr = lowAprRate.APR_TO_MPR(apr);
         }
+
+        // Update debt accumulator
+        uint256 debtRateIncrease = Math._rmul(Math._rpow(mpr, (block.timestamp - lastUpdated)), debtAccumulator) -
+            debtAccumulator;
+
+        uint256 debtCreated = debtRateIncrease * lendingPoolDebt;
+        uint256 equityAccumulatorDiff = debtCreated / lendingPoolEquity;
+
+        uint256 protocolFeeRate = 0;
+        if (protocolFee != 0) {
+            protocolFeeRate = (equityAccumulatorDiff * protocolFee) / WAD;
+        }
+
+        uint256 equityRateIncrease = equityAccumulatorDiff - protocolFeeRate;
 
         // Update values
         lastUpdated = block.timestamp;
