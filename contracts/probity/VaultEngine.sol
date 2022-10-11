@@ -213,17 +213,10 @@ contract VaultEngine is Stateful, Eventful {
      */
     function collectInterest(bytes32 assetId) public {
         Vault memory vault = vaults[assetId][msg.sender];
-        Asset memory asset = assets[assetId];
         uint256 interestAmount = vault.normEquity * equityAccumulator - vault.initialEquity;
-        pbt[msg.sender] += interestAmount;
-        systemCurrency[msg.sender] += interestAmount;
+        uint256 normEquityToCollect = interestAmount / equityAccumulator;
 
-        totalSystemCurrency += interestAmount;
-
-        // @todo evaluate how loss of precision can impact here
-        vaults[assetId][msg.sender].normEquity -= interestAmount / equityAccumulator;
-
-        emit InterestCollected(msg.sender, assetId, interestAmount);
+        _collectInterest(assetId, normEquityToCollect);
     }
 
     /**
@@ -435,6 +428,24 @@ contract VaultEngine is Stateful, Eventful {
     /////////////////////////////////////////
     // Internal Functions
     /////////////////////////////////////////
+
+    function _collectInterest(bytes32 assetId, uint256 normEquityToCollect) internal {
+        uint256 interestAmount = normEquityToCollect * equityAccumulator;
+        Vault memory vault = vaults[assetId][msg.sender];
+        // make sure that the interest doesn't go below the initial Equity
+        require(
+            (vault.normEquity * equityAccumulator - interestAmount) >= vault.initialEquity,
+            "VaultEngine/_collectInterest: interestAmount to be collected is more than available"
+        );
+
+        pbt[msg.sender] += interestAmount;
+        systemCurrency[msg.sender] += interestAmount;
+        totalSystemCurrency += interestAmount;
+
+        vaults[assetId][msg.sender].normEquity -= normEquityToCollect;
+
+        emit InterestCollected(msg.sender, assetId, interestAmount);
+    }
 
     function _modifyEquity(
         bytes32 assetId,

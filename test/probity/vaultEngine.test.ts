@@ -945,7 +945,14 @@ describe("Vault Engine Unit Tests", function () {
     });
 
     it("increases the PBT balance", async () => {
-      const EXPECTED_VALUE = EQUITY_TO_RAISE.mul(EQUITY_AMOUNT);
+      const ownerVault = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
+      const equityAccumulator = await vaultEngine.equityAccumulator();
+      const interestAmount = ownerVault.normEquity
+        .mul(equityAccumulator)
+        .sub(ownerVault.initialEquity);
+      const EXPECTED_VALUE = interestAmount
+        .div(equityAccumulator)
+        .mul(equityAccumulator);
 
       const before = await vaultEngine.pbt(owner.address);
       expect(before).to.equal(0);
@@ -956,7 +963,14 @@ describe("Vault Engine Unit Tests", function () {
     });
 
     it("increases Systemcurrency balance", async () => {
-      const EXPECTED_VALUE = EQUITY_TO_RAISE.mul(EQUITY_AMOUNT);
+      const ownerVault = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
+      const equityAccumulator = await vaultEngine.equityAccumulator();
+      const interestAmount = ownerVault.normEquity
+        .mul(equityAccumulator)
+        .sub(ownerVault.initialEquity);
+      const EXPECTED_VALUE = interestAmount
+        .div(equityAccumulator)
+        .mul(equityAccumulator);
 
       const before = await vaultEngine.systemCurrency(owner.address);
       expect(before).to.equal(0);
