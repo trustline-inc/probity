@@ -219,7 +219,7 @@ yarn run whitelistAddress <network>
 
 ### Internal Network
 
-The internal network is only accessible to the Linqto/Trustline developers and partners. The network native token depends on the chain ID.
+The internal network is only accessible to the Linqto/Trustline developers and partners.
 
 The network chain ID `4294967295` and the native token is `LNQ`.
 
