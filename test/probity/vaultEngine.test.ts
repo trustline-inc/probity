@@ -67,8 +67,8 @@ describe("Vault Engine Unit Tests", function () {
     await registry.setupAddress(bytes32("whitelisted"), owner.address, false);
   });
 
-  describe("modifyEquity Unit Tests", function () {
-    const STANDBY_AMOUNT = WAD.mul(10_000);
+  describe.only("modifyEquity Unit Tests", function () {
+    const STANDBY_AMOUNT = WAD.mul(100_000);
     const UNDERLYING_AMOUNT = WAD.mul(10_000);
     const EQUITY_AMOUNT = WAD.mul(2000);
 
@@ -90,6 +90,10 @@ describe("Vault Engine Unit Tests", function () {
       await vaultEngine
         .connect(assetManager)
         .modifyStandbyAmount(ASSET_ID.FLR, owner.address, STANDBY_AMOUNT);
+
+      await vaultEngine
+        .connect(assetManager)
+        .modifyStandbyAmount(ASSET_ID.FLR, user.address, STANDBY_AMOUNT);
     });
 
     it("fails if supply ceiling has been reached", async () => {
@@ -188,7 +192,6 @@ describe("Vault Engine Unit Tests", function () {
       // Increase equity
       await vaultEngine.modifyEquity(
         ASSET_ID.FLR,
-
         UNDERLYING_AMOUNT,
         EQUITY_AMOUNT
       );
@@ -197,7 +200,6 @@ describe("Vault Engine Unit Tests", function () {
       await assertRevert(
         vaultEngine.modifyEquity(
           ASSET_ID.FLR,
-
           BigNumber.from(0).sub(UNDERLYING_AMOUNT),
           BigNumber.from(0).sub(EQUITY_AMOUNT.add(1))
         ),
@@ -207,7 +209,6 @@ describe("Vault Engine Unit Tests", function () {
       // Decrease equity
       await vaultEngine.modifyEquity(
         ASSET_ID.FLR,
-
         BigNumber.from(0).sub(UNDERLYING_AMOUNT),
         BigNumber.from(0).sub(EQUITY_AMOUNT)
       );
@@ -217,7 +218,6 @@ describe("Vault Engine Unit Tests", function () {
       // Increase equity
       await vaultEngine.modifyEquity(
         ASSET_ID.FLR,
-
         UNDERLYING_AMOUNT,
         EQUITY_AMOUNT
       );
@@ -234,7 +234,6 @@ describe("Vault Engine Unit Tests", function () {
       // Decrease equity
       await vaultEngine.modifyEquity(
         ASSET_ID.FLR,
-
         BigNumber.from(0).sub(UNDERLYING_AMOUNT.div(2)),
         BigNumber.from(0).sub(EQUITY_AMOUNT.div(2))
       );
@@ -247,6 +246,129 @@ describe("Vault Engine Unit Tests", function () {
       expect(after.normDebt).to.equal(0);
       expect(after.normEquity).to.equal(EQUITY_AMOUNT.div(2));
       expect(after.initialEquity).to.equal(EQUITY_AMOUNT.div(2).mul(RAY));
+    });
+
+    it.only("tests that collectInterest is called when equityCreated > vault.initialEquity", async () => {
+      const debtRateIncrease = BigNumber.from("281035088626883475473007000000");
+      const equityRateIncrease = BigNumber.from(
+        "12550966799475492916654100000"
+      );
+
+      await registry
+        .connect(gov)
+        .setupAddress(bytes32("teller"), user.address, true);
+
+      // Increase equity
+      await vaultEngine.modifyEquity(
+        ASSET_ID.FLR,
+        UNDERLYING_AMOUNT,
+        EQUITY_AMOUNT
+      );
+
+      await vaultEngine
+        .connect(user)
+        .modifyEquity(ASSET_ID.FLR, UNDERLYING_AMOUNT, EQUITY_AMOUNT);
+
+      await vaultEngine
+        .connect(user)
+        .modifyDebt(
+          ASSET_ID.FLR,
+          UNDERLYING_AMOUNT.div(2),
+          EQUITY_AMOUNT.div(2)
+        );
+
+      await vaultEngine
+        .connect(user)
+        .updateAccumulators(
+          reservePool.address,
+          debtRateIncrease,
+          equityRateIncrease,
+          BigNumber.from(0)
+        );
+
+      const equityAccumulator = await vaultEngine.equityAccumulator();
+      const vaultBefore = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
+      const interestAmount = vaultBefore.normEquity
+        .mul(equityAccumulator)
+        .sub(vaultBefore.initialEquity);
+      const EXPECTED_NORM_EQUITY = vaultBefore.normEquity.sub(
+        interestAmount.div(equityAccumulator)
+      );
+
+      // Decrease equity
+      await vaultEngine.modifyEquity(
+        ASSET_ID.FLR,
+        BigNumber.from(0).sub(UNDERLYING_AMOUNT.div(2)),
+        BigNumber.from(0).sub(EQUITY_AMOUNT.div(2))
+      );
+
+      // Expect balances to be updated
+      const after = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
+      expect(after.standbyAmount).to.equal(
+        STANDBY_AMOUNT.sub(UNDERLYING_AMOUNT.div(2))
+      );
+      expect(after.underlying).to.equal(UNDERLYING_AMOUNT.div(2));
+      expect(after.collateral).to.equal(0);
+      expect(after.normDebt).to.equal(0);
+      expect(after.normEquity).to.equal(EXPECTED_NORM_EQUITY);
+      expect(after.initialEquity).to.equal(EQUITY_AMOUNT.mul(RAY));
+    });
+
+    it.only("tests that collectInterest is called when max withdrawing and norm.equity is zero", async () => {
+      const debtRateIncrease = BigNumber.from("281035088626883475473007000000");
+      const equityRateIncrease = BigNumber.from(
+        "12550966799475492916654100000"
+      );
+
+      await registry
+        .connect(gov)
+        .setupAddress(bytes32("teller"), user.address, true);
+
+      // Increase equity
+      await vaultEngine.modifyEquity(
+        ASSET_ID.FLR,
+        UNDERLYING_AMOUNT,
+        EQUITY_AMOUNT
+      );
+
+      await vaultEngine
+        .connect(user)
+        .modifyEquity(ASSET_ID.FLR, UNDERLYING_AMOUNT, EQUITY_AMOUNT);
+
+      await vaultEngine
+        .connect(user)
+        .modifyDebt(
+          ASSET_ID.FLR,
+          UNDERLYING_AMOUNT.div(2),
+          EQUITY_AMOUNT.div(2)
+        );
+
+      await vaultEngine
+        .connect(user)
+        .updateAccumulators(
+          reservePool.address,
+          debtRateIncrease,
+          equityRateIncrease,
+          BigNumber.from(0)
+        );
+
+      // Decrease equity
+      await vaultEngine.modifyEquity(
+        ASSET_ID.FLR,
+        BigNumber.from(0).sub(UNDERLYING_AMOUNT),
+        BigNumber.from(0).sub(EQUITY_AMOUNT)
+      );
+
+      // Expect balances to be updated
+      const after = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
+      expect(after.standbyAmount).to.equal(
+        STANDBY_AMOUNT.sub(UNDERLYING_AMOUNT.div(2))
+      );
+      expect(after.underlying).to.equal(UNDERLYING_AMOUNT.div(2));
+      expect(after.collateral).to.equal(0);
+      expect(after.normDebt).to.equal(0);
+      expect(after.normEquity).to.equal(0);
+      expect(after.initialEquity).to.equal(0);
     });
 
     it("updates equity when the accumulators are greater than the initial value", async () => {

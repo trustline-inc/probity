@@ -6,6 +6,8 @@ import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
 import "../dependencies/Math.sol";
 
+import "hardhat/console.sol";
+
 /**
  * @title VaultEngine contract
  * @author Matthew Rosendin <matt@trustline.co, @mrosendin>
@@ -418,7 +420,6 @@ contract VaultEngine is Stateful, Eventful {
             "VaultEngine/updateAccumulators: The equity rate increase is larger than the debt rate increase"
         );
 
-        //        systemCurrency[treasury] += newEquity;
         systemCurrency[reservePool] += protocolFeeToCollect;
     }
 
@@ -441,7 +442,7 @@ contract VaultEngine is Stateful, Eventful {
         int256 underlyingAmount,
         int256 equityAmount
     ) internal {
-        require(treasury != address(0), "VaultEngine/updateAccumulators: treasury address is not set");
+        require(treasury != address(0), "VaultEngine/modifyEquity: treasury address is not set");
         require(
             assets[assetId].category == Category.UNDERLYING || assets[assetId].category == Category.BOTH,
             "Vault/modifyEquity: Asset not allowed as underlying"
@@ -453,10 +454,42 @@ contract VaultEngine is Stateful, Eventful {
         }
 
         Vault storage vault = vaults[assetId][msg.sender];
+        console.log("first");
+        console.logInt(underlyingAmount);
+        console.log(vault.standbyAmount);
         vault.standbyAmount = Math._sub(vault.standbyAmount, underlyingAmount);
         vault.underlying = Math._add(vault.underlying, underlyingAmount);
         int256 equityCreated = Math._mul(equityAccumulator, equityAmount);
+
+        if (equityCreated < 0 && uint256(-equityCreated) > vault.initialEquity) {
+            uint256 normEquityBefore = vault.normEquity;
+
+            // collectInterest and change the equityAmount
+            collectInterest(assetId);
+
+            if (normEquityBefore - vault.normEquity != 0) {
+                console.log("here");
+                console.log(normEquityBefore - vault.normEquity);
+                console.log(uint256(-equityAmount));
+                console.log("");
+                if (uint256(-equityAmount) > (normEquityBefore - vault.normEquity)) {
+                    // equityAmount must be negative
+                    console.logInt(equityAmount);
+                    equityAmount = equityAmount + int256(normEquityBefore - vault.normEquity);
+                    equityCreated = Math._mul(equityAccumulator, equityAmount);
+                } else {
+                    equityAmount = 0;
+                    equityCreated = 0;
+                }
+            }
+        }
+
+        console.log("there");
+        console.logInt(equityAmount);
+        console.log(vault.normEquity);
         vault.normEquity = Math._add(vault.normEquity, equityAmount);
+        console.logInt(equityCreated);
+        console.log(vault.initialEquity);
         vault.initialEquity = Math._add(vault.initialEquity, equityCreated);
 
         assets[assetId].normEquity = Math._add(assets[assetId].normEquity, equityAmount);
@@ -483,7 +516,7 @@ contract VaultEngine is Stateful, Eventful {
         int256 collAmount,
         int256 debtAmount
     ) internal {
-        require(treasury != address(0), "VaultEngine/updateAccumulators: treasury address is not set");
+        require(treasury != address(0), "VaultEngine/modifyDebt: treasury address is not set");
         require(
             assets[assetId].category == Category.COLLATERAL || assets[assetId].category == Category.BOTH,
             "Vault/modifyDebt: Asset not allowed as collateral"
