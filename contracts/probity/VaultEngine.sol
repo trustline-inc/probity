@@ -218,7 +218,14 @@ contract VaultEngine is Stateful, Eventful {
         uint256 interestAmount = vault.normEquity * equityAccumulator - vault.initialEquity;
         uint256 normEquityToCollect = interestAmount / equityAccumulator;
 
-        _collectInterest(assetId, normEquityToCollect);
+        require(
+            (vault.normEquity * equityAccumulator - interestAmount) >= vault.initialEquity,
+            "VaultEngine/_collectInterest: interestAmount to be collected is more than available"
+        );
+
+        _collectInterest(assetId, normEquityToCollect * equityAccumulator);
+
+        vaults[assetId][msg.sender].normEquity -= normEquityToCollect;
     }
 
     /**
@@ -430,22 +437,12 @@ contract VaultEngine is Stateful, Eventful {
     // Internal Functions
     /////////////////////////////////////////
 
-    function _collectInterest(bytes32 assetId, uint256 normEquityToCollect) internal {
-        uint256 interestAmount = normEquityToCollect * equityAccumulator;
-        Vault memory vault = vaults[assetId][msg.sender];
-        // make sure that the interest doesn't go below the initial Equity
-        require(
-            (vault.normEquity * equityAccumulator - interestAmount) >= vault.initialEquity,
-            "VaultEngine/_collectInterest: interestAmount to be collected is more than available"
-        );
+    function _collectInterest(bytes32 assetId, uint256 interestAmountToCollect) internal {
+        pbt[msg.sender] += interestAmountToCollect;
+        systemCurrency[msg.sender] += interestAmountToCollect;
+        totalSystemCurrency += interestAmountToCollect;
 
-        pbt[msg.sender] += interestAmount;
-        systemCurrency[msg.sender] += interestAmount;
-        totalSystemCurrency += interestAmount;
-
-        vaults[assetId][msg.sender].normEquity -= normEquityToCollect;
-
-        emit InterestCollected(msg.sender, assetId, interestAmount);
+        emit InterestCollected(msg.sender, assetId, interestAmountToCollect);
     }
 
     function _modifyEquity(
@@ -465,47 +462,31 @@ contract VaultEngine is Stateful, Eventful {
         }
 
         Vault storage vault = vaults[assetId][msg.sender];
-        console.log("first");
-        console.logInt(underlyingAmount);
-        console.log(vault.standbyAmount);
+
         vault.standbyAmount = Math._sub(vault.standbyAmount, underlyingAmount);
         vault.underlying = Math._add(vault.underlying, underlyingAmount);
         int256 equityCreated = Math._mul(equityAccumulator, equityAmount);
 
-        if (equityCreated < 0 && uint256(-equityCreated) > vault.initialEquity) {
-            uint256 normEquityBefore = vault.normEquity;
+        int256 initialEquityToChange = equityCreated;
 
-            // collectInterest and change the equityAmount
-            collectInterest(assetId);
+        // only reduce initialEquity if
+        if (
+            equityCreated < 0 && (Math._add(vault.normEquity * equityAccumulator, equityCreated) < vault.initialEquity)
+        ) {
+            initialEquityToChange = -int256(
+                vault.initialEquity - Math._add(vault.normEquity * equityAccumulator, equityCreated)
+            );
 
-            if (normEquityBefore - vault.normEquity != 0) {
-                console.log("here");
-                console.log(normEquityBefore - vault.normEquity);
-                console.log(uint256(-equityAmount));
-                console.log("");
-                if (uint256(-equityAmount) > (normEquityBefore - vault.normEquity)) {
-                    // equityAmount must be negative
-                    console.logInt(equityAmount);
-                    equityAmount = equityAmount + int256(normEquityBefore - vault.normEquity);
-                    equityCreated = Math._mul(equityAccumulator, equityAmount);
-                } else {
-                    equityAmount = 0;
-                    equityCreated = 0;
-                }
-            }
+            uint256 interestToCollect = uint256(-(equityCreated - initialEquityToChange));
+            _collectInterest(assetId, interestToCollect);
         }
 
-        console.log("there");
-        console.logInt(equityAmount);
-        console.log(vault.normEquity);
         vault.normEquity = Math._add(vault.normEquity, equityAmount);
-        console.logInt(equityCreated);
-        console.log(vault.initialEquity);
-        vault.initialEquity = Math._add(vault.initialEquity, equityCreated);
+        vault.initialEquity = Math._add(vault.initialEquity, initialEquityToChange);
 
         assets[assetId].normEquity = Math._add(assets[assetId].normEquity, equityAmount);
         lendingPoolEquity = Math._add(lendingPoolEquity, equityAmount);
-        lendingPoolSupply = Math._add(lendingPoolSupply, equityCreated);
+        lendingPoolSupply = Math._add(lendingPoolSupply, initialEquityToChange);
 
         require(
             Math._mul(vault.normEquity, equityAccumulator) <= assets[assetId].ceiling,
@@ -517,7 +498,7 @@ contract VaultEngine is Stateful, Eventful {
         );
         _certifyEquityPosition(assetId, vault);
 
-        systemCurrency[treasury] = Math._add(systemCurrency[treasury], equityCreated);
+        systemCurrency[treasury] = Math._add(systemCurrency[treasury], initialEquityToChange);
 
         emit EquityModified(msg.sender, underlyingAmount, equityCreated);
     }
