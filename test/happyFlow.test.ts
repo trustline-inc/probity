@@ -56,8 +56,6 @@ const EQUITY_AMOUNT_TO_DECREASE = WAD.mul(-200);
 const EQUITY_AMOUNT = WAD.mul(200);
 const COLL_AMOUNT = WAD.mul(200);
 const LOAN_AMOUNT = WAD.mul(100);
-const LOAN_REPAY_COLL_AMOUNT = WAD.mul(-200);
-const LOAN_REPAY_DEBT_AMOUNT = WAD.mul(-100);
 
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
@@ -236,9 +234,10 @@ describe("Probity happy flow", function () {
     expect(ownerBalanceAfter.sub(balance0).mul(RAY)).to.equal(stablecoin1);
   });
 
-  it.only("allows debt repayment", async () => {
+  it("test that debt balance grows with accumulator and allows debt repayment (partial & max)", async () => {
     // Deposit native token (FLR)
     await flrAssetManager.deposit({ value: STANDBY_AMOUNT });
+    await flrAssetManager.connect(user).deposit({ value: STANDBY_AMOUNT });
 
     // Initialize the FLR asset
     await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR, 2);
@@ -256,6 +255,15 @@ describe("Probity happy flow", function () {
       UNDERLYING_AMOUNT,
       EQUITY_AMOUNT
     );
+
+    // Increase equity for second user
+    await vaultEngine
+      .connect(user)
+      .modifyEquity(ASSET_ID.FLR, UNDERLYING_AMOUNT, EQUITY_AMOUNT);
+
+    await vaultEngine
+      .connect(user)
+      .modifyDebt(ASSET_ID.FLR, COLL_AMOUNT, LOAN_AMOUNT);
 
     let [standby0, , , debt0] = await vaultEngine.vaults(
       ASSET_ID.FLR,
@@ -275,55 +283,77 @@ describe("Probity happy flow", function () {
     expect(standby0.sub(standby1)).to.equal(COLL_AMOUNT);
     expect(debt1.sub(debt0)).to.equal(LOAN_AMOUNT);
 
-    await teller.updateAccumulators();
-
-    // Increase time
-    await increaseTime(100000);
-
-    // Update accumulators
-    await teller.updateAccumulators();
-
-    // amount owed
-    const debtAccumulator = await vaultEngine.debtAccumulator();
-
-    let [standby2, underlying2, collateral2, debt2, equity2, initialEquity2] =
-      await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
+    let [standby2, , , debt2] = await vaultEngine.vaults(
+      ASSET_ID.FLR,
+      owner.address
+    );
+    let balanceOfBefore = await vaultEngine.balanceOf(
+      ASSET_ID.FLR,
+      owner.address
+    );
     let stablecoin2 = await vaultEngine.systemCurrency(owner.address);
 
-    // Increase stablecoin balance so user can pay off interest
-    // This has to be done by another user sending stablecoin to the borrower with VaultEngine
-    await flrAssetManager.connect(user).deposit({ value: STANDBY_AMOUNT });
-    const loanAmount = RAD.div(debtAccumulator);
+    await teller.updateAccumulators();
+    // before we repay loan, update accumulator
+    // increase time
+    await increaseTime(5000);
+    await teller.updateAccumulators();
 
-    await vaultEngine
-      .connect(user)
-      .modifyDebt(ASSET_ID.FLR, COLL_AMOUNT, loanAmount);
+    let [standby3, , , debt3] = await vaultEngine.vaults(
+      ASSET_ID.FLR,
+      owner.address
+    );
+    let balanceOfAfter = await vaultEngine.balanceOf(
+      ASSET_ID.FLR,
+      owner.address
+    );
 
-    // Withdraw less than loan amount due to precision loss when taking out loan.
-    const withdrawAmount = WAD.sub("1000000000");
+    expect(balanceOfAfter.debt.sub(balanceOfBefore.debt).gt(0)).to.equal(true);
+    // repay some of the loan
+    const LOAN_REPAY_COLL_AMOUNT = COLL_AMOUNT.div(2).sub(COLL_AMOUNT);
+    const LOAN_REPAY_DEBT_AMOUNT = LOAN_AMOUNT.div(2).sub(LOAN_AMOUNT);
 
-    await treasury.connect(user).withdrawStablecoin(withdrawAmount);
-    await usd.connect(user).transfer(owner.address, withdrawAmount);
-    await treasury.connect(owner).depositStablecoin(withdrawAmount);
-
-    // Repay loan
     await vaultEngine.modifyDebt(
       ASSET_ID.FLR,
       LOAN_REPAY_COLL_AMOUNT,
       debt2.mul("-1")
     );
 
-    let stablecoin3 = await vaultEngine.systemCurrency(owner.address);
-    // It will be slightly greater due to precision loss
-    expect(stablecoin3.sub(stablecoin2)).to.be.gt(
-      LOAN_REPAY_DEBT_AMOUNT.mul(RAY)
-    );
-    let [standby3, , , debt3] = await vaultEngine.vaults(
+    let systemCurrency3 = await vaultEngine.systemCurrency(owner.address);
+    expect(
+      systemCurrency3
+        .sub(systemCurrency2)
+        .sub(LOAN_REPAY_DEBT_AMOUNT.mul(RAY))
+        .lt(WAD)
+    ).to.equal(true);
+    let [standby4, , , debt4] = await vaultEngine.vaults(
       ASSET_ID.FLR,
       owner.address
     );
-    expect(standby2.sub(standby3)).to.equal(LOAN_REPAY_COLL_AMOUNT);
-    expect(debt3.sub(debt2)).to.equal(LOAN_REPAY_DEBT_AMOUNT);
+    expect(standby2.sub(standby4)).to.equal(LOAN_REPAY_COLL_AMOUNT);
+    expect(debt4.sub(debt3)).to.equal(LOAN_REPAY_DEBT_AMOUNT);
+
+    const TRANSFER_AMOUNT = LOAN_AMOUNT.mul(RAY);
+    await vaultEngine
+      .connect(gov)
+      .moveStablecoin(user.address, owner.address, TRANSFER_AMOUNT);
+
+    // repay all the loan with extra systemCurrency
+    await vaultEngine.modifyDebt(
+      ASSET_ID.FLR,
+      LOAN_REPAY_COLL_AMOUNT,
+      LOAN_REPAY_DEBT_AMOUNT
+    );
+
+    let stablecoin4 = await vaultEngine.systemCurrency(owner.address);
+    let [standby5, , , debt5] = await vaultEngine.vaults(
+      ASSET_ID.FLR,
+      owner.address
+    );
+
+    expect(stablecoin4.lt(TRANSFER_AMOUNT)).to.equal(true);
+    expect(standby4.sub(standby5)).to.equal(LOAN_REPAY_COLL_AMOUNT);
+    expect(debt5).to.equal(0);
   });
 
   it("allows underlying asset redemption", async () => {
