@@ -185,6 +185,8 @@ yarn run getSystemInfo <network>
 
 The system admin (AKA "governance address") is able to issue fiat tokens for lending in Probity when using `VaultEngineIssuer`.
 
+Currently, you have to replace the address of `beneficiary` in the issuance script.
+
 ```
 yarn run issuance <network>
 ```

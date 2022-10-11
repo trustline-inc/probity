@@ -55,7 +55,7 @@ contract VaultEngine is Stateful, Eventful {
     uint256 public lendingPoolEquity; // Total normalized shares of equity in the lending pool [RAD]
     uint256 public lendingPoolDebt; // Total normalized amount of system currency owed by borrowers [RAD]
     uint256 public totalSystemDebt; // Total amount owed to users by Probity [RAD]
-    uint256 public lendingPoolSupply; // Total amount of system currency in lending pool w/o interest [RAD]
+    uint256 public lendingPoolCredit; // Total amount of system currency credit in lending pool [RAD]
     uint256 public lendingPoolPrincipal; // Total amount of loan principal (w/o interest) [RAD]
     address[] public vaultList; // List of vaults that had either equity and/or debt position
     mapping(address => bool) public vaultExists; // Boolean indicating whether a vault exists for a given address
@@ -326,7 +326,7 @@ contract VaultEngine is Stateful, Eventful {
             vaults[assetId][auctioneer].standbyAmount,
             assetToAuction
         );
-        lendingPoolSupply = lendingPoolSupply; // TODO: Fix
+        lendingPoolCredit = lendingPoolCredit; // TODO: Fix
 
         emit EquityLiquidated(account, assetToAuction, assetToReturn, equityAmount);
     }
@@ -461,7 +461,7 @@ contract VaultEngine is Stateful, Eventful {
 
         assets[assetId].normEquity = Math._add(assets[assetId].normEquity, equityAmount);
         lendingPoolEquity = Math._add(lendingPoolEquity, equityAmount);
-        lendingPoolSupply = Math._add(lendingPoolSupply, equityCreated);
+        lendingPoolCredit = Math._add(lendingPoolCredit, equityCreated);
         totalSystemCurrency = Math._add(totalSystemCurrency, equityCreated);
 
         require(
