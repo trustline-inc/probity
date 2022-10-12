@@ -95,7 +95,7 @@ import { ADDRESS_ZERO } from "../test/utils/constants";
  */
 const NATIVE_ASSETS: { [key: string]: string } = {
   local: process.env.NATIVE_TOKEN || "FLR",
-  hardhat: "FLR", // tests always use FLR
+  hardhat: process.env.NATIVE_TOKEN || "FLR",
   internal: process.env.NATIVE_TOKEN || "FLR",
   coston: "CFLR",
   songbird: "SGB",
@@ -123,7 +123,7 @@ interface ContractDict {
     | VaultEngineIssuer;
   vaultEngineIssuer?: VaultEngineIssuer;
   vaultEngineLimited?: VaultEngineLimited;
-  vaultEngineUnrestricted?: VaultEngineRestricted;
+  vaultEngineRestricted?: VaultEngineRestricted;
   nativeAssetManager?: NativeAssetManager;
   usdManager?: ERC20AssetManager;
   erc20AssetManager?:
@@ -176,10 +176,10 @@ const artifactNameMap: { [key: string]: any } = {
   vaultEngine: "VaultEngine",
   vaultEngineIssuer: "VaultEngineIssuer",
   vaultEngineLimited: "VaultEngineLimited",
-  vaultEngineUnrestricted: "VaultEngineRestricted",
+  vaultEngineRestricted: "VaultEngineRestricted",
   nativeAssetManager: "NativeAssetManager",
-  erc20AssetManager: "ERC20AssetManager",
-  usdManager: "ERC20AssetManager",
+  erc20AssetManager: "Erc20AssetManager",
+  usdManager: "Erc20AssetManager",
   ftsoManager: "MockFtsoManager",
   ftsoRewardManager: "MockFtsoRewardManager",
   teller: "Teller",
@@ -215,7 +215,7 @@ const contracts: ContractDict = {
   vaultEngine: undefined,
   vaultEngineIssuer: undefined,
   vaultEngineLimited: undefined,
-  vaultEngineUnrestricted: undefined,
+  vaultEngineRestricted: undefined,
   nativeAssetManager: undefined,
   usdManager: undefined,
   erc20AssetManager: {
@@ -1733,15 +1733,16 @@ const deployProbity = async (vaultEngineType?: string) => {
 
   // Deploy VaultEngine based on network
   let vaultType = "VaultEngine";
-  if (network.name === "local" || network.name === "coston") {
+  if (
+    network.name === "local" ||
+    network.name === "coston" ||
+    network.name === "hardhat"
+  ) {
     vaultType = "vaultEngineIssuer";
     await deployVaultEngineIssuer();
   } else if (vaultEngineType === "restricted") {
-    vaultType = "vaultEngineUnrestricted";
+    vaultType = "vaultEngineRestricted";
     await deployVaultEngineRestricted();
-  } else if (network.name === "songbird" || vaultEngineType === "limited") {
-    vaultType = "vaultEngineLimited";
-    await deployVaultEngineLimited();
   } else await deployVaultEngine();
 
   await deployNativeAssetManager({
@@ -1787,7 +1788,7 @@ const deployDev = async () => {
     if (network.name === "local") {
       vaultType = "vaultEngineIssuer";
     } else if (network.name === "coston") {
-      vaultType = "vaultEngineUnrestricted";
+      vaultType = "vaultEngineRestricted";
     } else if (network.name === "songbird") {
       vaultType = "vaultEngineLimited";
     }
