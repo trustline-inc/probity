@@ -21,6 +21,10 @@ interface VaultEngineLike {
     ) external;
 }
 
+interface VPTokenLike {
+    function collectRewardForUser(address user) external;
+}
+
 interface PriceCalc {
     function price(uint256 startPrice, uint256 timeElapsed) external returns (uint256 calculatedPrice);
 }

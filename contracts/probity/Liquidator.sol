@@ -79,6 +79,7 @@ contract Liquidator is Stateful, Eventful {
     /////////////////////////////////////////
     struct Asset {
         AuctioneerLike auctioneer;
+        address vpAssetManagerAddress; // address should be zero if asset doesn't have delegatable
         uint256 debtPenaltyFee; // [WAD]
         uint256 equityPenaltyFee; // [WAD]
     }
@@ -121,12 +122,17 @@ contract Liquidator is Stateful, Eventful {
      * @param assetId The ID of the asset type
      * @param auctioneer The contract address of the auctioneer
      */
-    function initAsset(bytes32 assetId, AuctioneerLike auctioneer) external onlyBy("gov") {
+    function initAsset(
+        bytes32 assetId,
+        AuctioneerLike auctioneer,
+        address vpAssetManager
+    ) external onlyBy("gov") {
         require(
             address(assets[assetId].auctioneer) == address(0),
             "Liquidator/initAsset: This asset has already been initialized"
         );
         assets[assetId].auctioneer = auctioneer;
+        assets[assetId].vpAssetManagerAddress = vpAssetManager;
         assets[assetId].debtPenaltyFee = 1.7E17;
         assets[assetId].equityPenaltyFee = 5E16;
     }

@@ -165,32 +165,22 @@ contract Delegatable is Stateful {
             "Delegatable/userCollectReward: No new epoch to claim"
         );
 
-        (uint256 underlying, uint256 collateral, uint256 standbyAmount) = vaultEngine.vaults(assetId, msg.sender);
-        uint256 currentBalance = standbyAmount + underlying + collateral;
-        uint256 rewardBalance = 0;
+        _userCollectReward(epochToEnd, msg.sender);
+    }
 
-        uint256 lastEpoch = lastClaimedEpoch;
-
-        if (epochToEnd != 0 && epochToEnd < lastClaimedEpoch) {
-            lastEpoch = epochToEnd;
+    /**
+     * @dev allow auctioneer to collect reward on behalf of users based on their locked up token value,
+     *      use epochToEnd parameter if there are too many epochs to process
+     * @param user address of the user's reward to collect
+     */
+    function collectRewardForUser(address user) external onlyBy("auctioneer") {
+        if (lastClaimedEpoch > userLastClaimedEpoch[user]) {
+            // no reward to collect, simply return without throwing error
+            return;
         }
 
-        for (uint256 epochId = userLastClaimedEpoch[msg.sender]; epochId <= lastEpoch; epochId++) {
-            uint256 rewardableBalance = 0;
-
-            if (recentTotalDeposit[msg.sender] < currentBalance) {
-                rewardableBalance = currentBalance - recentTotalDeposit[msg.sender];
-            }
-
-            recentTotalDeposit[msg.sender] -= recentDeposits[msg.sender][epochId];
-            rewardBalance += (rewardPerUnitForEpoch[epochId] * rewardableBalance) / RAY;
-
-            delete recentDeposits[msg.sender][epochId];
-        }
-
-        userLastClaimedEpoch[msg.sender] = lastEpoch;
-
-        token.transfer(msg.sender, rewardBalance);
+        // pass in zero to collect all collectable epoch
+        _userCollectReward(0, user);
     }
 
     /**
@@ -217,5 +207,38 @@ contract Delegatable is Stateful {
         );
 
         dataProviders = providers;
+    }
+
+    ///////////////////////////////////
+    // Internal Functions
+    ///////////////////////////////////
+
+    function _userCollectReward(uint256 epochToEnd, address user) internal {
+        (uint256 underlying, uint256 collateral, uint256 standbyAmount) = vaultEngine.vaults(assetId, user);
+        uint256 currentBalance = standbyAmount + underlying + collateral;
+        uint256 rewardBalance = 0;
+
+        uint256 lastEpoch = lastClaimedEpoch;
+
+        if (epochToEnd != 0 && epochToEnd < lastClaimedEpoch) {
+            lastEpoch = epochToEnd;
+        }
+
+        for (uint256 epochId = userLastClaimedEpoch[user]; epochId <= lastEpoch; epochId++) {
+            uint256 rewardableBalance = 0;
+
+            if (recentTotalDeposit[user] < currentBalance) {
+                rewardableBalance = currentBalance - recentTotalDeposit[user];
+            }
+
+            recentTotalDeposit[user] -= recentDeposits[user][epochId];
+            rewardBalance += (rewardPerUnitForEpoch[epochId] * rewardableBalance) / RAY;
+
+            delete recentDeposits[user][epochId];
+        }
+
+        userLastClaimedEpoch[user] = lastEpoch;
+
+        token.transfer(user, rewardBalance);
     }
 }

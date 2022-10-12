@@ -77,9 +77,17 @@ describe("Liquidator Unit Tests", function () {
     it("fails if asset has already been initialized", async () => {
       const EXPECTED_AUCTIONEER_ADDRESS = user.address;
 
-      await liquidator.initAsset(ASSET_ID.FLR, EXPECTED_AUCTIONEER_ADDRESS);
+      await liquidator.initAsset(
+        ASSET_ID.FLR,
+        EXPECTED_AUCTIONEER_ADDRESS,
+        ADDRESS_ZERO
+      );
       await assertRevert(
-        liquidator.initAsset(ASSET_ID.FLR, EXPECTED_AUCTIONEER_ADDRESS),
+        liquidator.initAsset(
+          ASSET_ID.FLR,
+          EXPECTED_AUCTIONEER_ADDRESS,
+          ADDRESS_ZERO
+        ),
         "Liquidator/initAsset: This asset has already been initialized"
       );
     });
@@ -94,7 +102,11 @@ describe("Liquidator Unit Tests", function () {
       expect(before.debtPenaltyFee).to.equal(0);
       expect(before.equityPenaltyFee).to.equal(0);
 
-      await liquidator.initAsset(ASSET_ID.FLR, EXPECTED_AUCTIONEER_ADDRESS);
+      await liquidator.initAsset(
+        ASSET_ID.FLR,
+        EXPECTED_AUCTIONEER_ADDRESS,
+        ADDRESS_ZERO
+      );
 
       const after = await liquidator.assets(ASSET_ID.FLR);
       expect(after.auctioneer).to.equal(EXPECTED_AUCTIONEER_ADDRESS);
@@ -107,7 +119,11 @@ describe("Liquidator Unit Tests", function () {
     const DEFAULT_DEBT_PENALTY_FEE = WAD.mul(17).div(100);
     const DEFAULT_SUPP_PENALTY_FEE = WAD.mul(5).div(100);
     beforeEach(async function () {
-      await liquidator.initAsset(ASSET_ID.FLR, auctioneer.address);
+      await liquidator.initAsset(
+        ASSET_ID.FLR,
+        auctioneer.address,
+        ADDRESS_ZERO
+      );
     });
 
     it("tests that penaltyFees are updated correctly", async () => {
@@ -131,7 +147,11 @@ describe("Liquidator Unit Tests", function () {
 
   describe("updateAuctioneer Unit Tests", function () {
     beforeEach(async function () {
-      await liquidator.initAsset(ASSET_ID.FLR, auctioneer.address);
+      await liquidator.initAsset(
+        ASSET_ID.FLR,
+        auctioneer.address,
+        ADDRESS_ZERO
+      );
     });
 
     it("tests that auctioneer address is updated correctly", async () => {
@@ -149,7 +169,11 @@ describe("Liquidator Unit Tests", function () {
 
   describe("reduceAuctionDebt Unit Tests", function () {
     beforeEach(async function () {
-      await liquidator.initAsset(ASSET_ID.FLR, auctioneer.address);
+      await liquidator.initAsset(
+        ASSET_ID.FLR,
+        auctioneer.address,
+        ADDRESS_ZERO
+      );
     });
 
     it("fail if caller is not auctioneer contract", async () => {
@@ -193,7 +217,11 @@ describe("Liquidator Unit Tests", function () {
     const PRICE = RAY;
 
     beforeEach(async function () {
-      await liquidator.initAsset(ASSET_ID.FLR, auctioneer.address);
+      await liquidator.initAsset(
+        ASSET_ID.FLR,
+        auctioneer.address,
+        ADDRESS_ZERO
+      );
       await vaultEngine.updateAsset(
         ASSET_ID.FLR,
         PRICE,
