@@ -1733,16 +1733,15 @@ const deployProbity = async (vaultEngineType?: string) => {
 
   // Deploy VaultEngine based on network
   let vaultType = "VaultEngine";
-  if (
-    network.name === "local" ||
-    network.name === "coston" ||
-    network.name === "hardhat"
-  ) {
+  if (network.name === "local" || network.name === "coston") {
     vaultType = "vaultEngineIssuer";
     await deployVaultEngineIssuer();
   } else if (vaultEngineType === "restricted") {
     vaultType = "vaultEngineRestricted";
     await deployVaultEngineRestricted();
+  } else if (vaultEngineType === "limited") {
+    vaultType = "vaultEngineLimited";
+    await deployVaultEngineLimited();
   } else await deployVaultEngine();
 
   await deployNativeAssetManager({
