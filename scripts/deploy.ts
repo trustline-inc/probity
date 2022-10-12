@@ -8,7 +8,7 @@ utils.Logger.setLogLevel(utils.Logger.levels.ERROR);
 
 async function main() {
   let deployment: Deployment;
-  if (["hardhat", "local", "internal"].includes(hre.network.name)) {
+  if (["localhost", "local", "internal"].includes(hre.network.name)) {
     console.info("Deploying in Dev Mode");
     deployment = await deployDev();
   } else {

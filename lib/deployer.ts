@@ -95,6 +95,7 @@ import { ADDRESS_ZERO } from "../test/utils/constants";
  */
 const NATIVE_ASSETS: { [key: string]: string } = {
   local: process.env.NATIVE_TOKEN || "FLR",
+  localhost: process.env.NATIVE_TOKEN || "ETH",
   hardhat: process.env.NATIVE_TOKEN || "FLR",
   internal: process.env.NATIVE_TOKEN || "FLR",
   coston: "CFLR",
@@ -178,8 +179,8 @@ const artifactNameMap: { [key: string]: any } = {
   vaultEngineLimited: "VaultEngineLimited",
   vaultEngineRestricted: "VaultEngineRestricted",
   nativeAssetManager: "NativeAssetManager",
-  erc20AssetManager: "Erc20AssetManager",
-  usdManager: "Erc20AssetManager",
+  erc20AssetManager: "ERC20AssetManager",
+  usdManager: "ERC20AssetManager",
   ftsoManager: "MockFtsoManager",
   ftsoRewardManager: "MockFtsoRewardManager",
   teller: "Teller",
@@ -1732,8 +1733,12 @@ const deployProbity = async (vaultEngineType?: string) => {
   await deployApr();
 
   // Deploy VaultEngine based on network
-  let vaultType = "VaultEngine";
-  if (network.name === "local" || network.name === "coston") {
+  let vaultType = "vaultEngine";
+  if (
+    network.name === "local" ||
+    network.name === "coston" ||
+    network.name === "localhost"
+  ) {
     vaultType = "vaultEngineIssuer";
     await deployVaultEngineIssuer();
   } else if (vaultEngineType === "restricted") {
@@ -1745,16 +1750,16 @@ const deployProbity = async (vaultEngineType?: string) => {
   } else await deployVaultEngine();
 
   await deployNativeAssetManager({
-    vaultEngine: contracts[vaultType]?.address,
+    vaultEngine: contracts.vaultEngine.address,
   });
-  await deployBondIssuer({ vaultEngine: contracts[vaultType]?.address });
-  await deployReservePool({ vaultEngine: contracts[vaultType]?.address });
-  await deployTeller({ vaultEngine: contracts[vaultType]?.address });
+  await deployBondIssuer({ vaultEngine: contracts.vaultEngine.address });
+  await deployReservePool({ vaultEngine: contracts.vaultEngine.address });
+  await deployTeller({ vaultEngine: contracts.vaultEngine.address });
   await deployPriceCalc();
-  await deployPriceFeed({ vaultEngine: contracts[vaultType]?.address });
-  await deployTreasury({ vaultEngine: contracts[vaultType]?.address });
-  await deployLiquidator({ vaultEngine: contracts[vaultType]?.address });
-  await deployShutdown({ vaultEngine: contracts[vaultType]?.address });
+  await deployPriceFeed({ vaultEngine: contracts.vaultEngine.address });
+  await deployTreasury({ vaultEngine: contracts.vaultEngine.address });
+  await deployLiquidator({ vaultEngine: contracts.vaultEngine.address });
+  await deployShutdown({ vaultEngine: contracts.vaultEngine.address });
 
   return { contracts, signers };
 };
@@ -1780,17 +1785,18 @@ const deployDev = async () => {
   try {
     await deployRegistry();
     await deployMocks();
-    await deployProbity();
 
     // Get vault type
-    let vaultType = "VaultEngine";
-    if (network.name === "local") {
+    let vaultType = "vaultEngine";
+    if (network.name === "local" || network.name === "localhost") {
       vaultType = "vaultEngineIssuer";
     } else if (network.name === "coston") {
       vaultType = "vaultEngineRestricted";
     } else if (network.name === "songbird") {
       vaultType = "vaultEngineLimited";
     }
+
+    await deployProbity(vaultType);
 
     await deployAuctioneer({ vaultEngine: contracts[vaultType]?.address });
     // await deployErc20Token();
@@ -1833,7 +1839,7 @@ const deployProd = async () => {
     await deployAuctioneer();
 
     // Get vault type
-    let vaultType = "VaultEngine";
+    let vaultType = "vaultEngine";
     if (network.name === "local") {
       vaultType = "vaultEngineIssuer";
     } else if (network.name === "coston") {
