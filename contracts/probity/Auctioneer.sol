@@ -55,7 +55,8 @@ contract Auctioneer is Stateful, Eventful {
         address beneficiary; // systemCurrency will go to this address
         uint256 startPrice;
         uint256 startTime;
-        VPAssetManagerLike vpAssetManagerAddress; // should be zero if the asset doesn't have delegatable module implemented
+        // should be zero if the asset doesn't have delegatable module implemented
+        VPAssetManagerLike vpAssetManagerAddress;
         bool sellAllLot; // if true, debt amount doesn't matter, auction will attempt to sell until lot is zero
         bool isOver;
     }
