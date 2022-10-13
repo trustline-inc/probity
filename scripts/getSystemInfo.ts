@@ -1,5 +1,10 @@
-console.log(`
-{
+function pbcopy(data) {
+  var proc = require("child_process").spawn("pbcopy");
+  proc.stdin.write(data);
+  proc.stdin.end();
+}
+
+const output = `{
   USD: {
     address: "${process.env.USD}",
     abi: UsdABI.abi
@@ -67,5 +72,11 @@ console.log(`
     "${process.env.TREASURY}": TreasuryABI,
     "${process.env.VAULT_ENGINE}": VaultEngineIssuerABI
   }
+}`;
+
+console.log(output);
+
+if (process.platform === "darwin") {
+  pbcopy(output);
+  console.log("Copied to clipboard.");
 }
-`);
