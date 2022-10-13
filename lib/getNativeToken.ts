@@ -9,7 +9,7 @@ export default (): string => {
 
   let nativeToken = process.env.NATIVE_TOKEN?.toUpperCase();
   if (
-    ["hardhat", "local", "internal"].includes(networkName) &&
+    ["localhost", "local", "internal"].includes(networkName) &&
     !process.env.NATIVE_TOKEN
   )
     throw Error("Must set the NATIVE_TOKEN environment variable.");
