@@ -5,7 +5,7 @@ import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-web3";
 import { artifacts, ethers, web3 } from "hardhat";
 import { Contract } from "ethers";
-import getNativeToken from "../lib/getNativeToken";
+import { getNativeToken } from "../lib/utils";
 
 const nativeToken = getNativeToken();
 

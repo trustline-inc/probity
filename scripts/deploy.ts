@@ -1,33 +1,51 @@
 import "@nomiclabs/hardhat-ethers";
+import "hardhat-ethernal";
 import { utils } from "ethers";
-import { deployDev, Deployment, deployProd } from "../lib/deployer";
+import { deployDev, deployProd } from "../lib/deployer";
+import { Deployment } from "../lib/types";
 import * as fs from "fs";
 import * as hre from "hardhat";
 
 utils.Logger.setLogLevel(utils.Logger.levels.ERROR);
 
 async function main() {
+  // Reset Ethernal workspace
+  const workspaceName = "Probity";
+  hre.ethernal.resetWorkspace(workspaceName);
+
+  // Deploy to target environment
   let deployment: Deployment;
-  if (["localhost", "local", "internal"].includes(hre.network.name)) {
+  const DEV_ENVIRONMENTS = ["localhost", "local", "internal"];
+
+  if (DEV_ENVIRONMENTS.includes(hre.network.name)) {
     console.info("Deploying in Dev Mode");
     deployment = await deployDev();
   } else {
     console.info("Deploying in Production Mode");
     deployment = await deployProd();
-    console.warn(
-      "This deployment of Probity in Production does not include ERC20AssetManager, VPAssetManager and Auctioneer contracts. Please deploy them separately."
-    );
+    const message =
+      "This deployment of Probity in Production does not include \
+      ERC20AssetManager, VPAssetManager and Auctioneer contracts. \
+      Please deploy them separately.";
+    console.warn(message);
   }
 
-  let { contracts } = deployment;
+  console.log(`Deployment to ${hre.network.name} was a success!`);
 
-  console.log("Contracts deployed!");
-
-  const addresses: any[] = [];
+  /*
+   * Write contract deployment addresses to file and display table in console
+   */
+  type ConsoleTableRow = {
+    "Contract Name": string;
+    "Contract Address": string;
+  };
+  const table: ConsoleTableRow[] = [];
   let fileOutput = "";
+  let { contracts } = deployment;
   for (let contractName in contracts) {
     if (contracts[contractName] == null) continue;
 
+    // contracts[contractName] can be a string or an object
     let contractAddress =
       typeof contracts[contractName] === "string"
         ? contracts[contractName]
@@ -69,15 +87,15 @@ async function main() {
       if (contractDisplayName === "ERC20_ASSET_MANAGER") continue; // skip empty ERC20_ASSET_MANAGER
     }
 
-    addresses.push({
-      Contract: contractDisplayName,
-      Address: contractAddress,
+    table.push({
+      "Contract Name": contractDisplayName,
+      "Contract Address": contractAddress,
     });
 
     fileOutput += `${contractDisplayName}=${contractAddress}\n`;
   }
 
-  console.table(addresses);
+  console.table(table);
   fs.writeFileSync(".env", fileOutput);
   console.info(`Contract addresses written to ${process.cwd()}/.env`);
 }

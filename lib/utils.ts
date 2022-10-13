@@ -4,7 +4,7 @@ dotenv.config();
 
 const possibleTokens = ["CFLR", "FLR", "SGB", "XRP", "ETH"];
 
-export default (): string => {
+const getNativeToken = (): string => {
   const networkName = hre.network.name;
 
   let nativeToken = process.env.NATIVE_TOKEN?.toUpperCase();
@@ -22,3 +22,5 @@ export default (): string => {
 
   return nativeToken!;
 };
+
+export { getNativeToken };

@@ -5,10 +5,7 @@ import { artifacts, ethers, network, web3 } from "hardhat";
 import * as dotenv from "dotenv";
 dotenv.config();
 
-export type Deployment = {
-  contracts: ContractDict;
-  signers: SignerDict;
-};
+import { Deployment } from "./types";
 
 // Import contract types
 import {
@@ -325,7 +322,7 @@ const deployAccessControl = async (param?: { registry?: string }) => {
     contracts.accessControl !== undefined &&
     process.env.NODE_ENV !== "test"
   ) {
-    console.info("usd contract has already been deployed, skipping");
+    console.info("AccessControl contract has already been deployed, skipping");
     return contracts;
   }
 
@@ -338,14 +335,17 @@ const deployAccessControl = async (param?: { registry?: string }) => {
   )) as AccessControl__factory;
   contracts.accessControl = await accessControlFactory.deploy(registry!);
   await contracts.accessControl.deployed();
-
+  await hre.ethernal.push({
+    name: "AccessControl",
+    address: contracts.accessControl?.address,
+  });
   await checkDeploymentDelay();
   return contracts;
 };
 
 const deployRegistry = async (param?: { govAddress?: string }) => {
   if (contracts.registry !== undefined && process.env.NODE_ENV !== "test") {
-    console.info("registry contract has already been deployed, skipping");
+    console.info("Registry contract has already been deployed, skipping");
     return;
   }
 
@@ -364,6 +364,10 @@ const deployRegistry = async (param?: { govAddress?: string }) => {
       address: contracts.registry?.address,
       params: { govAddress },
     });
+    await hre.ethernal.push({
+      name: "Registry",
+      address: contracts.registry?.address,
+    });
   }
   await checkDeploymentDelay();
   return contracts;
@@ -371,7 +375,7 @@ const deployRegistry = async (param?: { govAddress?: string }) => {
 
 const deployStateful = async (param?: { registry?: string }) => {
   if (contracts.stateful !== undefined && process.env.NODE_ENV !== "test") {
-    console.info("usd contract has already been deployed, skipping");
+    console.info("Stateful contract has already been deployed, skipping");
     return contracts;
   }
 

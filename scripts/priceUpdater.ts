@@ -4,7 +4,7 @@ import "@nomiclabs/hardhat-web3";
 import { artifacts, ethers, web3 } from "hardhat";
 import axios from "axios";
 import * as dotenv from "dotenv";
-import getNativeToken from "../lib/getNativeToken";
+import { getNativeToken } from "../lib/utils";
 dotenv.config();
 
 const nativeToken = getNativeToken();
