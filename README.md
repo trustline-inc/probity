@@ -137,6 +137,16 @@ Use the npm command to run tests on the local Hardhat network:
 npm run test
 ```
 
+### Publishing
+
+We use [GitHub Packages](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-npm-registry) to publish to the npm registry now. Below are the steps to publish a new version:
+
+1. Update `version` in `package.json` and commit the change
+
+2. Create a tag that matches `version` for the commit and run `git push --follow-tags`
+
+3. [Create a new release](https://github.com/trustline-inc/probity/releases/new) for the tagged version
+
 ### Deployment
 
 Deploy the smart contract in the local network using the `deploy` script.
@@ -160,16 +170,6 @@ You can use a script to initialize the system with a new asset type.
 ```
 NATIVE_TOKEN=<symbol> FLARE_DIR=~/Desktop/flare yarn run initialize <network>
 ```
-
-### Publishing
-
-We use [GitHub Packages](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-npm-registry) to publish to the npm registry now. Below are the steps to publish a new version:
-
-1. Update `version` in `package.json` and commit the change
-
-2. Create a tag that matches `version` for the commit and run `git push --follow-tags`
-
-3. [Create a new release](https://github.com/trustline-inc/probity/releases/new) for the tagged version
 
 ## Administrator Tools
 
