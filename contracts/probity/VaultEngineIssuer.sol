@@ -2,23 +2,23 @@
 
 pragma solidity ^0.8.0;
 
-import "./VaultEngine.sol";
+import "./VaultEngineRestricted.sol";
 
 /**
  * @title VaultEngineIssuer contract
  * @author Matthew Rosendin <matt@trustline.co, @mrosendin>
  * @author Shine Lee <shine@trustline.co, @shine2lay>
  * @notice The core accounting module for the Probity system
- * This contract inherits VaultEngine and adds a feature to manage issuance and redemptions.
+ * This contract inherits VaultEngineRestricted and adds a feature to manage issuance and redemptions.
  */
 
-contract VaultEngineIssuer is VaultEngine {
+contract VaultEngineIssuer is VaultEngineRestricted {
     /////////////////////////////////////////
     // Constructor
     /////////////////////////////////////////
 
     // solhint-disable-next-line
-    constructor(address registryAddress) VaultEngine(registryAddress) {}
+    constructor(address registryAddress) VaultEngineRestricted(registryAddress) {}
 
     /**
      * @notice Issues system currency to an account

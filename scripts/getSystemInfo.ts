@@ -51,7 +51,7 @@ console.log(`
   },
   VAULT_ENGINE: {
     address: "${process.env.VAULT_ENGINE}",
-    abi: VaultEngineLimitedABI.abi
+    abi: VaultEngineIssuerABI.abi
   },
   INTERFACES: {
     "${process.env.USD}": UsdABI,
@@ -65,7 +65,7 @@ console.log(`
     "${process.env.RESERVE_POOL}": ReservePoolABI,
     "${process.env.TELLER}": TellerABI,
     "${process.env.TREASURY}": TreasuryABI,
-    "${process.env.VAULT_ENGINE}": VaultEngineLimitedABI
+    "${process.env.VAULT_ENGINE}": VaultEngineIssuerABI
   }
 }
 `);

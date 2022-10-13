@@ -95,7 +95,8 @@ import { ADDRESS_ZERO } from "../test/utils/constants";
  */
 const NATIVE_ASSETS: { [key: string]: string } = {
   local: process.env.NATIVE_TOKEN || "FLR",
-  hardhat: "FLR", // tests always use FLR
+  localhost: process.env.NATIVE_TOKEN || "ETH",
+  hardhat: process.env.NATIVE_TOKEN || "FLR",
   internal: process.env.NATIVE_TOKEN || "FLR",
   coston: "CFLR",
   songbird: "SGB",
@@ -123,7 +124,7 @@ interface ContractDict {
     | VaultEngineIssuer;
   vaultEngineIssuer?: VaultEngineIssuer;
   vaultEngineLimited?: VaultEngineLimited;
-  vaultEngineUnrestricted?: VaultEngineRestricted;
+  vaultEngineRestricted?: VaultEngineRestricted;
   nativeAssetManager?: NativeAssetManager;
   usdManager?: ERC20AssetManager;
   erc20AssetManager?:
@@ -176,7 +177,7 @@ const artifactNameMap: { [key: string]: any } = {
   vaultEngine: "VaultEngine",
   vaultEngineIssuer: "VaultEngineIssuer",
   vaultEngineLimited: "VaultEngineLimited",
-  vaultEngineUnrestricted: "VaultEngineRestricted",
+  vaultEngineRestricted: "VaultEngineRestricted",
   nativeAssetManager: "NativeAssetManager",
   erc20AssetManager: "ERC20AssetManager",
   usdManager: "ERC20AssetManager",
@@ -215,7 +216,7 @@ const contracts: ContractDict = {
   vaultEngine: undefined,
   vaultEngineIssuer: undefined,
   vaultEngineLimited: undefined,
-  vaultEngineUnrestricted: undefined,
+  vaultEngineRestricted: undefined,
   nativeAssetManager: undefined,
   usdManager: undefined,
   erc20AssetManager: {
@@ -1732,29 +1733,33 @@ const deployProbity = async (vaultEngineType?: string) => {
   await deployApr();
 
   // Deploy VaultEngine based on network
-  let vaultType = "VaultEngine";
-  if (network.name === "local" || network.name === "coston") {
+  let vaultType = "vaultEngine";
+  if (
+    network.name === "local" ||
+    network.name === "coston" ||
+    network.name === "localhost"
+  ) {
     vaultType = "vaultEngineIssuer";
     await deployVaultEngineIssuer();
   } else if (vaultEngineType === "restricted") {
-    vaultType = "vaultEngineUnrestricted";
+    vaultType = "vaultEngineRestricted";
     await deployVaultEngineRestricted();
-  } else if (network.name === "songbird" || vaultEngineType === "limited") {
+  } else if (vaultEngineType === "limited") {
     vaultType = "vaultEngineLimited";
     await deployVaultEngineLimited();
   } else await deployVaultEngine();
 
   await deployNativeAssetManager({
-    vaultEngine: contracts[vaultType]?.address,
+    vaultEngine: contracts.vaultEngine.address,
   });
-  await deployBondIssuer({ vaultEngine: contracts[vaultType]?.address });
-  await deployReservePool({ vaultEngine: contracts[vaultType]?.address });
-  await deployTeller({ vaultEngine: contracts[vaultType]?.address });
+  await deployBondIssuer({ vaultEngine: contracts.vaultEngine.address });
+  await deployReservePool({ vaultEngine: contracts.vaultEngine.address });
+  await deployTeller({ vaultEngine: contracts.vaultEngine.address });
   await deployPriceCalc();
-  await deployPriceFeed({ vaultEngine: contracts[vaultType]?.address });
-  await deployTreasury({ vaultEngine: contracts[vaultType]?.address });
-  await deployLiquidator({ vaultEngine: contracts[vaultType]?.address });
-  await deployShutdown({ vaultEngine: contracts[vaultType]?.address });
+  await deployPriceFeed({ vaultEngine: contracts.vaultEngine.address });
+  await deployTreasury({ vaultEngine: contracts.vaultEngine.address });
+  await deployLiquidator({ vaultEngine: contracts.vaultEngine.address });
+  await deployShutdown({ vaultEngine: contracts.vaultEngine.address });
 
   return { contracts, signers };
 };
@@ -1780,17 +1785,18 @@ const deployDev = async () => {
   try {
     await deployRegistry();
     await deployMocks();
-    await deployProbity();
 
     // Get vault type
-    let vaultType = "VaultEngine";
-    if (network.name === "local") {
+    let vaultType = "vaultEngine";
+    if (network.name === "local" || network.name === "localhost") {
       vaultType = "vaultEngineIssuer";
     } else if (network.name === "coston") {
-      vaultType = "vaultEngineUnrestricted";
+      vaultType = "vaultEngineRestricted";
     } else if (network.name === "songbird") {
       vaultType = "vaultEngineLimited";
     }
+
+    await deployProbity(vaultType);
 
     await deployAuctioneer({ vaultEngine: contracts[vaultType]?.address });
     // await deployErc20Token();
@@ -1833,7 +1839,7 @@ const deployProd = async () => {
     await deployAuctioneer();
 
     // Get vault type
-    let vaultType = "VaultEngine";
+    let vaultType = "vaultEngine";
     if (network.name === "local") {
       vaultType = "vaultEngineIssuer";
     } else if (network.name === "coston") {
