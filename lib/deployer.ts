@@ -335,10 +335,17 @@ const deployAccessControl = async (param?: { registry?: string }) => {
   )) as AccessControl__factory;
   contracts.accessControl = await accessControlFactory.deploy(registry!);
   await contracts.accessControl.deployed();
-  await hre.ethernal.push({
-    name: "AccessControl",
-    address: contracts.accessControl?.address,
-  });
+  if (process.env.NODE_ENV !== "test") {
+    console.info("accessControl deployed ✓");
+    console.info({
+      address: contracts.accessControl.address,
+      params: { registry },
+    });
+    await hre.ethernal.push({
+      name: "AccessControl",
+      address: contracts.accessControl?.address,
+    });
+  }
   await checkDeploymentDelay();
   return contracts;
 };
@@ -388,7 +395,16 @@ const deployStateful = async (param?: { registry?: string }) => {
   )) as Stateful__factory;
   contracts.stateful = await statefulFactory.deploy(registry!);
   await contracts.stateful.deployed();
-
+  if (process.env.NODE_ENV !== "test") {
+    console.info("stateful deployed ✓");
+    console.info({
+      address: contracts.stateful.address,
+    });
+    await hre.ethernal.push({
+      name: "Stateful",
+      address: contracts.stateful?.address,
+    });
+  }
   await checkDeploymentDelay();
   return contracts;
 };
@@ -418,6 +434,10 @@ const deployUsd = async (param?: { registry?: string }) => {
       address: contracts.usd.address,
       params: { registry },
     });
+    await hre.ethernal.push({
+      name: "USD",
+      address: contracts.usd?.address,
+    });
   }
   await contracts.registry?.setupAddress(
     bytes32("usd"),
@@ -446,6 +466,10 @@ const deployPbt = async (param?: { registry?: string }) => {
   if (process.env.NODE_ENV !== "test") {
     console.info("pbt deployed ✓");
     console.info({ registry });
+    await hre.ethernal.push({
+      name: "PBT",
+      address: contracts.pbt?.address,
+    });
   }
   await contracts.registry?.setupAddress(
     bytes32("pbt"),
@@ -477,6 +501,13 @@ const deployApr = async () => {
   )) as LowAPR__factory;
   contracts.lowApr = await lowAprFactory.deploy();
   await contracts.lowApr.deployed();
+  if (process.env.NODE_ENV !== "test") {
+    console.info("lowApr deployed ✓");
+    await hre.ethernal.push({
+      name: "LowAPR",
+      address: contracts.lowApr?.address,
+    });
+  }
   await contracts.registry?.setupAddress(
     bytes32("lowApr"),
     contracts.lowApr.address,
@@ -488,7 +519,13 @@ const deployApr = async () => {
   )) as HighAPR__factory;
   contracts.highApr = await highAprFactory.deploy();
   await contracts.highApr.deployed();
-  if (process.env.NODE_ENV !== "test") console.info("highApr deployed ✓");
+  if (process.env.NODE_ENV !== "test") {
+    console.info("highApr deployed ✓");
+    await hre.ethernal.push({
+      name: "HighAPR",
+      address: contracts.highApr?.address,
+    });
+  }
   await contracts.registry?.setupAddress(
     bytes32("highApr"),
     contracts.highApr.address,
@@ -520,6 +557,10 @@ const deployVaultEngine = async (param?: { registry?: string }) => {
   if (process.env.NODE_ENV !== "test") {
     console.info("vaultEngine deployed ✓");
     console.info({ registry });
+    await hre.ethernal.push({
+      name: "VaultEngine",
+      address: contracts.vaultEngine?.address,
+    });
   }
   await contracts.registry?.setupAddress(
     bytes32("vaultEngine"),
@@ -550,6 +591,10 @@ const deployVaultEngineIssuer = async (param?: { registry?: string }) => {
   if (process.env.NODE_ENV !== "test") {
     console.info("vaultEngineIssuer deployed ✓");
     console.info({ registry });
+    await hre.ethernal.push({
+      name: "VaultEngineIssuer",
+      address: contracts.vaultEngine?.address,
+    });
   }
   await contracts.registry?.setupAddress(
     bytes32("vaultEngine"),
@@ -580,6 +625,10 @@ const deployVaultEngineRestricted = async (param?: { registry?: string }) => {
   if (process.env.NODE_ENV !== "test") {
     console.info("vaultEngineRestricted deployed ✓");
     console.info({ registry });
+    await hre.ethernal.push({
+      name: "VaultEngineRestricted",
+      address: contracts.vaultEngine?.address,
+    });
   }
   await contracts.registry?.setupAddress(
     bytes32("vaultEngineRestricted"),
@@ -610,6 +659,10 @@ const deployVaultEngineLimited = async (param?: { registry?: string }) => {
   if (process.env.NODE_ENV !== "test") {
     console.info("vaultEngineLimited deployed ✓");
     console.info({ registry });
+    await hre.ethernal.push({
+      name: "VaultEngineLimited",
+      address: contracts.vaultEngine?.address,
+    });
   }
   await contracts.registry?.setupAddress(
     bytes32("vaultEngineLimited"),
@@ -688,6 +741,10 @@ const deployVPAssetManager = async (param?: {
       mockVpToken,
       vaultEngine,
     });
+    await hre.ethernal.push({
+      name: "VPAssetManager",
+      address: contracts.vaultEngine?.address,
+    });
   }
 
   await contracts.registry?.setupAddress(
@@ -724,6 +781,10 @@ const deployErc20Token = async (param?: { symbol: string; name: string }) => {
   await contracts[symbol.toLowerCase()].deployed();
   if (process.env.NODE_ENV !== "test") {
     console.info(`erc20[${symbol.toLowerCase()}] deployed ✓`);
+    await hre.ethernal.push({
+      name: symbol,
+      address: contracts[symbol.toLowerCase()].address,
+    });
   }
   await checkDeploymentDelay();
   return contracts;
@@ -783,6 +844,10 @@ const deployErc20AssetManager = async (param?: {
         vaultEngine,
       },
     });
+    await hre.ethernal.push({
+      name: symbol + "Manager",
+      address: contracts[`${symbol.toLowerCase()}Manager`].address,
+    });
   }
 
   await contracts.registry?.setupAddress(
@@ -838,6 +903,10 @@ const deployNativeAssetManager = async (param?: {
       registry,
       assetId,
       vaultEngine,
+    });
+    await hre.ethernal.push({
+      name: "NativeAssetManager",
+      address: contracts.nativeAssetManager.address,
     });
   }
 
@@ -925,6 +994,10 @@ const deployShutdown = async (param?: {
       liquidator,
       bondIssuer,
     });
+    await hre.ethernal.push({
+      name: "Shutdown",
+      address: contracts.shutdown?.address,
+    });
   }
 
   await contracts.registry?.setupAddress(
@@ -991,6 +1064,10 @@ const deployTeller = async (param?: {
       lowApr,
       highApr,
     });
+    await hre.ethernal.push({
+      name: "Teller",
+      address: contracts.teller?.address,
+    });
   }
 
   await contracts.registry?.setupAddress(
@@ -1046,6 +1123,10 @@ const deployTreasury = async (param?: {
       pbt,
       vaultEngine,
     });
+    await hre.ethernal.push({
+      name: "Treasury",
+      address: contracts.treasury?.address,
+    });
   }
 
   let tx = await contracts.registry?.setupAddress(
@@ -1093,6 +1174,10 @@ const deployPriceFeed = async (param?: {
   if (process.env.NODE_ENV !== "test") {
     console.info("priceFeed deployed ✓");
     console.info({ registry, vaultEngine });
+    await hre.ethernal.push({
+      name: "PriceFeed",
+      address: contracts.priceFeed?.address,
+    });
   }
 
   await contracts.registry?.setupAddress(
@@ -1161,6 +1246,10 @@ const deployAuctioneer = async (param?: {
       priceFeed,
       liquidator,
     });
+    await hre.ethernal.push({
+      name: "Auctioneer",
+      address: contracts.auctioneer?.address,
+    });
   }
 
   await registry!.setupAddress(
@@ -1189,8 +1278,13 @@ const deployPriceCalc = async () => {
   )) as LinearDecrease__factory;
   contracts.linearDecrease = await linearDecreaseFactory.deploy();
   await contracts.linearDecrease.deployed();
-  if (process.env.NODE_ENV !== "test")
+  if (process.env.NODE_ENV !== "test") {
     console.info("linearDecrease deployed ✓");
+    await hre.ethernal.push({
+      name: "LinearDecrease",
+      address: contracts.linearDecrease?.address,
+    });
+  }
   await contracts.registry?.setupAddress(
     bytes32("priceCalc"),
     contracts.linearDecrease.address,
@@ -1236,6 +1330,10 @@ const deployBondIssuer = async (param?: {
     console.info({
       registry,
       vaultEngine,
+    });
+    await hre.ethernal.push({
+      name: "BondIssuer",
+      address: contracts.bondIssuer?.address,
     });
   }
   await contracts.registry?.setupAddress(
@@ -1290,6 +1388,10 @@ const deployReservePool = async (param?: {
       registry,
       vaultEngine,
       bondIssuer,
+    });
+    await hre.ethernal.push({
+      name: "ReservePool",
+      address: contracts.reservePool?.address,
     });
   }
   await contracts.registry?.setupAddress(
@@ -1362,6 +1464,10 @@ const deployLiquidator = async (param?: {
       vaultEngine,
       reservePool,
     });
+    await hre.ethernal.push({
+      name: "Liquidator",
+      address: contracts.liquidator?.address,
+    });
   }
   await contracts.registry?.setupAddress(
     bytes32("liquidator"),
@@ -1396,6 +1502,13 @@ const deployMockErc20Token = async () => {
     "FXRP"
   );
   await contracts.mockErc20Token!?.deployed();
+  if (process.env.NODE_ENV !== "test") {
+    console.info("mockErc20Token deployed ✓");
+    await hre.ethernal.push({
+      name: "MockErc20Token",
+      address: contracts.mockErc20Token?.address,
+    });
+  }
   return contracts;
 };
 
@@ -1421,6 +1534,13 @@ const deployMockErc20AssetManager = async () => {
     contracts.mockErc20Token!.address
   );
   await contracts.mockErc20AssetManager!?.deployed();
+  if (process.env.NODE_ENV !== "test") {
+    console.info("mockErc20AssetManager deployed ✓");
+    await hre.ethernal.push({
+      name: "MockErc20AssetManager",
+      address: contracts.mockErc20AssetManager?.address,
+    });
+  }
   return contracts;
 };
 
