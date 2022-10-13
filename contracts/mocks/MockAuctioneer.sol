@@ -14,6 +14,7 @@ contract MockAuctioneer {
         uint256 debtSize;
         address owner;
         address beneficiary;
+        address vpAssetManager;
         bool sellAllLot;
     }
 
@@ -31,6 +32,7 @@ contract MockAuctioneer {
         uint256 debtSize,
         address owner,
         address beneficiary,
+        address vpAssetManager,
         bool sellAllLot
     ) external {
         lastStartAuctionCall.assetId = assetId;
@@ -39,5 +41,6 @@ contract MockAuctioneer {
         lastStartAuctionCall.owner = owner;
         lastStartAuctionCall.beneficiary = beneficiary;
         lastStartAuctionCall.sellAllLot = sellAllLot;
+        lastStartAuctionCall.vpAssetManager = vpAssetManager;
     }
 }

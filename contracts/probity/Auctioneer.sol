@@ -21,7 +21,7 @@ interface VaultEngineLike {
     ) external;
 }
 
-interface VPTokenLike {
+interface VPAssetManagerLike {
     function collectRewardForUser(address user) external;
 }
 
@@ -55,6 +55,7 @@ contract Auctioneer is Stateful, Eventful {
         address beneficiary; // systemCurrency will go to this address
         uint256 startPrice;
         uint256 startTime;
+        VPAssetManagerLike vpAssetManagerAddress; // should be zero if the asset doesn't have delegatable module implemented
         bool sellAllLot; // if true, debt amount doesn't matter, auction will attempt to sell until lot is zero
         bool isOver;
     }
@@ -161,6 +162,7 @@ contract Auctioneer is Stateful, Eventful {
         uint256 debtSize,
         address owner,
         address beneficiary,
+        VPAssetManagerLike vpAssetManagerAddress,
         bool sellAllLot
     ) external onlyBy("liquidator") {
         uint256 currentPrice = priceFeed.getPrice(assetId);
@@ -174,6 +176,7 @@ contract Auctioneer is Stateful, Eventful {
             beneficiary,
             startPrice,
             block.timestamp,
+            vpAssetManagerAddress,
             sellAllLot,
             false
         );
@@ -276,6 +279,11 @@ contract Auctioneer is Stateful, Eventful {
         uint256 lotToBuy = Math._min(lot, biddableLot);
         lotValue = lotToBuy * currentPrice;
         vaultEngine.moveSystemCurrency(msg.sender, auctions[auctionId].beneficiary, lotValue);
+
+        if (address(auction.vpAssetManagerAddress) != address(0)) {
+            auction.vpAssetManagerAddress.collectRewardForUser(msg.sender);
+        }
+
         vaultEngine.moveAsset(auctions[auctionId].assetId, address(this), msg.sender, lotToBuy);
 
         if (!auction.sellAllLot) {
@@ -304,6 +312,9 @@ contract Auctioneer is Stateful, Eventful {
         );
         uint256 buyAmount = bids[auctionId][msg.sender].price * bids[auctionId][msg.sender].lot;
 
+        if (address(auctions[auctionId].vpAssetManagerAddress) != address(0)) {
+            auctions[auctionId].vpAssetManagerAddress.collectRewardForUser(msg.sender);
+        }
         vaultEngine.moveAsset(auctions[auctionId].assetId, address(this), msg.sender, bids[auctionId][msg.sender].lot);
 
         if (!auctions[auctionId].sellAllLot) {

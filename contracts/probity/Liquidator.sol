@@ -52,6 +52,7 @@ interface AuctioneerLike {
         uint256 debtSize,
         address owner,
         address beneficiary,
+        address vpAssetManagerAddress,
         bool sellAllLot
     ) external;
 }
@@ -220,6 +221,7 @@ contract Liquidator is Stateful, Eventful {
                 fundraiseTarget,
                 user,
                 address(reserve),
+                asset.vpAssetManagerAddress,
                 false
             );
         }
@@ -258,6 +260,7 @@ contract Liquidator is Stateful, Eventful {
                 penaltyAmount,
                 address(reserve),
                 address(reserve),
+                asset.vpAssetManagerAddress,
                 true
             );
 
