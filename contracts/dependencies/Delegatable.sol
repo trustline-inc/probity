@@ -4,8 +4,6 @@ pragma solidity ^0.8.0;
 import "./Stateful.sol";
 import "./Math.sol";
 
-import "hardhat/console.sol";
-
 interface FtsoRewardManagerLike {
     function claimRewardFromDataProviders(
         address payable _recipient,
@@ -177,7 +175,6 @@ contract Delegatable is Stateful {
      */
     function collectRewardForUser(address user) external onlyBy("auctioneer") {
         if (lastClaimedEpoch <= userLastClaimedEpoch[user]) {
-            console.log("here");
             // no reward to collect, simply return without throwing error
             return;
         }
