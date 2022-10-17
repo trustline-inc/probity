@@ -13,10 +13,10 @@ then
 fi
 
 # Deploy contracts
-npm run deploy:dev hardhat
+npm run deploy:dev localhost
 
 # Initialize
-yarn run initialize hardhat
+yarn run initialize localhost
 
 # Get system info
-yarn run getSystemInfo hardhat
+yarn run getSystemInfo localhost

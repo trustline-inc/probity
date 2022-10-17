@@ -35,7 +35,8 @@ const init = async () => {
   // Wallets
   const [gov]: SignerWithAddress[] = await ethers.getSigners();
   const TRUSTLINE_INC = "0x11EeB875AAc42eEe7CB37668360206B0056F6eEd";
-  const allowlist = [TRUSTLINE_INC];
+  const LINQTO_INC = "0x901F2B246e5445f9f7317Ee05A14193839E7397C";
+  const allowlist = [TRUSTLINE_INC, LINQTO_INC];
 
   // ABIs
   const RegistryABI = await artifacts.readArtifact("Registry");
