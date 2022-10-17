@@ -1,6 +1,6 @@
 import "@nomiclabs/hardhat-ethers";
-import "hardhat-ethernal";
 import { utils } from "ethers";
+import { DEV_ENVIRONMENTS } from "../lib/constants";
 import { deployDev, deployProd } from "../lib/deployer";
 import { Deployment } from "../lib/types";
 import * as fs from "fs";
@@ -9,13 +9,8 @@ import * as hre from "hardhat";
 utils.Logger.setLogLevel(utils.Logger.levels.ERROR);
 
 async function main() {
-  // Reset Ethernal workspace
-  const workspaceName = "Probity";
-  hre.ethernal.resetWorkspace(workspaceName);
-
   // Deploy to target environment
   let deployment: Deployment;
-  const DEV_ENVIRONMENTS = ["localhost", "local", "internal"];
 
   if (DEV_ENVIRONMENTS.includes(hre.network.name)) {
     console.info("Deploying in Dev Mode");
