@@ -1,20 +1,15 @@
 require("dotenv").config();
+import "hardhat-ethernal";
 import "solidity-coverage";
 import "@typechain/hardhat";
 import "@nomiclabs/hardhat-ethers";
 import "@nomiclabs/hardhat-web3";
 import "@nomiclabs/hardhat-waffle";
-import "@nomiclabs/hardhat-ganache";
 import { HardhatUserConfig } from "hardhat/config";
 
 const config: HardhatUserConfig = {
   defaultNetwork: "coston",
   networks: {
-    ganache: {
-      url: "http://localhost:7545/",
-      chainId: 5777,
-      allowUnlimitedContractSize: true,
-    },
     hardhat: {
       chainId: 1337,
       allowUnlimitedContractSize: true,
