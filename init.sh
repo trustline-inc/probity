@@ -20,3 +20,6 @@ yarn run initialize localhost
 
 # Get system info
 yarn run getSystemInfo localhost
+
+# Create an issuance
+yarn run issuance localhost
