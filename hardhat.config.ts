@@ -8,10 +8,23 @@ import "@nomiclabs/hardhat-waffle";
 import { HardhatUserConfig } from "hardhat/config";
 
 const config: HardhatUserConfig = {
-  defaultNetwork: "coston",
+  defaultNetwork: "localhost",
+  ethernal: {
+    workspace: "Probity",
+  },
   networks: {
+    localhost: {
+      chainId: 31337,
+      url: "http://127.0.0.1:8545",
+      allowUnlimitedContractSize: true,
+      gas: 12000000,
+      blockGasLimit: 0x1fffffffffffff,
+      accounts: [
+        "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
+      ],
+    },
     hardhat: {
-      chainId: 1337,
+      chainId: 31337,
       allowUnlimitedContractSize: true,
       gas: 12000000,
       blockGasLimit: 0x1fffffffffffff,
@@ -21,7 +34,7 @@ const config: HardhatUserConfig = {
         accountsBalance: "100000000000000000000000000",
       },
     },
-    local: {
+    flare_local: {
       url: "http://127.0.0.1:9650/ext/bc/C/rpc",
       accounts: [
         // TODO: Read this from encrypted keystore file
@@ -29,7 +42,7 @@ const config: HardhatUserConfig = {
       ],
       chainId: 4294967295,
     },
-    internal: {
+    flare_internal: {
       url: "https://coston.trustline.co/ext/bc/C/rpc",
       accounts: [
         "44b8de040dec19cf810efe64919b481e05e2ba643efe003223662f1626b114f0",
