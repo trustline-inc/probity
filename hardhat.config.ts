@@ -12,6 +12,9 @@ const config: HardhatUserConfig = {
   defaultNetwork: "localhost",
   ethernal: {
     workspace: "Probity",
+    email: process.env.ETHERNAL_EMAIL,
+    password: process.env.ETHERNAL_PASSWORD,
+    disabled: true,
   },
   networks: {
     localhost: {
@@ -30,13 +33,11 @@ const config: HardhatUserConfig = {
       allowUnlimitedContractSize: true,
       gas: 12000000,
       blockGasLimit: 0x1fffffffffffff,
-      accounts: [
-        {
-          privateKey:
-            "2f1c0faaa822d71c3f581f92a6db4bd599b38a3a85dbcde6256bf929e5c7a45e",
-          balance: "100000000000000000000000000",
-        },
-      ],
+      accounts: {
+        mnemonic:
+          "refuse inherit state window exercise carpet circle empty scan exclude talk cargo",
+        accountsBalance: "100000000000000000000000000",
+      },
     },
     flare_local: {
       url: "http://127.0.0.1:9650/ext/bc/C/rpc",

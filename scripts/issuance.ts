@@ -7,7 +7,7 @@ import { artifacts, ethers } from "hardhat";
 import { Contract } from "ethers";
 import { RAD } from "../test/utils/constants";
 
-const account = "0x901F2B246e5445f9f7317Ee05A14193839E7397C";
+const account = "0x11EeB875AAc42eEe7CB37668360206B0056F6eEd";
 const amount = RAD.mul(1_000_000);
 
 (async () => {

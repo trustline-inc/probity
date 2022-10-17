@@ -35,14 +35,19 @@ const init = async () => {
   // Wallets
   const [gov]: SignerWithAddress[] = await ethers.getSigners();
   const TRUSTLINE_INC = "0x11EeB875AAc42eEe7CB37668360206B0056F6eEd";
-  const LINQTO_INC = "0x901F2B246e5445f9f7317Ee05A14193839E7397C";
-  const allowlist = [TRUSTLINE_INC, LINQTO_INC];
+  const allowlist = [TRUSTLINE_INC];
 
   // ABIs
   const RegistryABI = await artifacts.readArtifact("Registry");
   const LiquidatorABI = await artifacts.readArtifact("Liquidator");
   const PriceFeedABI = await artifacts.readArtifact("PriceFeed");
   const VaultEngineABI = await artifacts.readArtifact("VaultEngine");
+  const NativeAssetManagerABI = await artifacts.readArtifact(
+    "NativeAssetManager"
+  );
+  const Erc20AssetManagerABI = await artifacts.readArtifact(
+    "ERC20AssetManager"
+  );
 
   // Contracts
   let registry, liquidator, priceFeed, vaultEngine;
