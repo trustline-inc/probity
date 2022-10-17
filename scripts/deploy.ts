@@ -10,9 +10,11 @@ import * as hre from "hardhat";
 utils.Logger.setLogLevel(utils.Logger.levels.ERROR);
 
 async function main() {
-  // Reset Ethernal workspace
-  const workspaceName = "Probity";
-  await hre.ethernal.resetWorkspace(workspaceName);
+  if (process.env.NODE_ENV !== "test") {
+    // Reset Ethernal workspace
+    const workspaceName = "Probity";
+    await hre.ethernal.resetWorkspace(workspaceName);
+  }
 
   // Deploy to target environment
   let deployment: Deployment;
