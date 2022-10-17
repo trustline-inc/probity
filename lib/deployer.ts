@@ -91,7 +91,7 @@ import { ADDRESS_ZERO } from "../test/utils/constants";
  * Deployment targets and their native currency
  */
 const NATIVE_ASSETS: { [key: string]: string } = {
-  local: process.env.NATIVE_TOKEN || "FLR",
+  flare_local: process.env.NATIVE_TOKEN || "FLR",
   localhost: process.env.NATIVE_TOKEN || "ETH",
   hardhat: process.env.NATIVE_TOKEN || "FLR",
   internal: process.env.NATIVE_TOKEN || "FLR",
@@ -743,7 +743,7 @@ const deployVPAssetManager = async (param?: {
     });
     await hre.ethernal.push({
       name: "VPAssetManager",
-      address: contracts.vaultEngine?.address,
+      address: contracts.vpAssetManager?.address,
     });
   }
 
@@ -799,7 +799,7 @@ const deployErc20AssetManager = async (param?: {
   const symbol = param?.symbol || "FXRP";
 
   if (
-    contracts[`${symbol.toLowerCase()}Manager`] !== undefined &&
+    contracts.erc20AssetManager[`${symbol}_MANAGER`] !== undefined &&
     process.env.NODE_ENV !== "test"
   ) {
     console.info(
@@ -825,18 +825,18 @@ const deployErc20AssetManager = async (param?: {
     "ERC20AssetManager",
     signers.owner
   )) as ERC20AssetManager__factory;
-  contracts[`${symbol.toLowerCase()}Manager`] =
+  contracts.erc20AssetManager[`${symbol}_MANAGER`] =
     await erc20AssetManagerFactory.deploy(
       registry!,
       web3.utils.keccak256(symbol),
       erc20,
       vaultEngine!
     );
-  await contracts[`${symbol.toLowerCase()}Manager`].deployed();
+  await contracts.erc20AssetManager[`${symbol}_MANAGER`].deployed();
   if (process.env.NODE_ENV !== "test") {
     console.info(`erc20AssetManager[${symbol.toLowerCase()}] deployed ✓`);
     console.info({
-      address: contracts[`${symbol.toLowerCase()}Manager`].address,
+      address: contracts.erc20AssetManager[`${symbol}_MANAGER`].address,
       params: {
         registry,
         symbol,
@@ -845,14 +845,14 @@ const deployErc20AssetManager = async (param?: {
       },
     });
     await hre.ethernal.push({
-      name: symbol + "Manager",
-      address: contracts[`${symbol.toLowerCase()}Manager`].address,
+      name: "ERC20AssetManager",
+      address: contracts.erc20AssetManager[`${symbol}_MANAGER`].address,
     });
   }
 
   await contracts.registry?.setupAddress(
     bytes32("assetManager"),
-    contracts[`${symbol.toLowerCase()}Manager`].address,
+    contracts.erc20AssetManager[`${symbol}_MANAGER`].address,
     true
   );
 
@@ -1859,7 +1859,7 @@ const deployProbity = async (vaultEngineType?: string) => {
   // Deploy VaultEngine based on network
   let vaultType = "vaultEngine";
   if (
-    network.name === "local" ||
+    network.name === "flare_local" ||
     network.name === "coston" ||
     network.name === "localhost"
   ) {
@@ -1912,7 +1912,7 @@ const deployDev = async () => {
 
     // Get vault type
     let vaultType = "vaultEngine";
-    if (network.name === "local" || network.name === "localhost") {
+    if (network.name === "flare_local" || network.name === "localhost") {
       vaultType = "vaultEngineIssuer";
     } else if (network.name === "coston") {
       vaultType = "vaultEngineRestricted";
@@ -1964,7 +1964,7 @@ const deployProd = async () => {
 
     // Get vault type
     let vaultType = "vaultEngine";
-    if (network.name === "local") {
+    if (network.name === "flare_local") {
       vaultType = "vaultEngineIssuer";
     } else if (network.name === "coston") {
       vaultType = "vaultEngineIssuer";
