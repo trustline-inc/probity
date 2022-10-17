@@ -49,6 +49,7 @@ import {
   MockBondIssuer,
   MockErc20Token,
   MockErc20AssetManager,
+  MockVPAssetManager,
   AccessControl__factory,
   USD__factory,
   Registry__factory,
@@ -84,6 +85,7 @@ import {
   MockPriceCalc__factory,
   MockReservePool__factory,
   MockBondIssuer__factory,
+  MockVPAssetManager__factory,
   VaultEngineLimited__factory,
   ERC20,
   ERC20__factory,
@@ -204,6 +206,7 @@ const artifactNameMap: { [key: string]: any } = {
   mockReserve: "MockReservePool",
   mockPriceCalc: "MockPriceCalc",
   mockBondIssuer: "MockBondIssuer",
+  mockVPAssetManager: "MockVPAssetManager",
 };
 
 const contracts: ContractDict = {
@@ -253,6 +256,7 @@ const contracts: ContractDict = {
   mockBondIssuer: undefined,
   mockErc20Token: undefined,
   mockErc20AssetManager: undefined,
+  mockVPAssetManager: undefined,
 };
 
 interface SignerDict {
@@ -1705,6 +1709,36 @@ const deployMockBondIssuer = async () => {
   return contracts;
 };
 
+const deployMockVPAssetManager = async () => {
+  if (
+    contracts.mockVpAssetManager !== undefined &&
+    process.env.NODE_ENV !== "test"
+  ) {
+    console.info("mockReserve contract has already been deployed, skipping");
+    return contracts;
+  }
+
+  // Set signers
+  const signers = await getSigners();
+
+  const mockBondIssuer = (await ethers.getContractFactory(
+    "MockVPAssetManager",
+    signers.owner
+  )) as MockVPAssetManager__factory;
+  contracts.mockVpAssetManager = await mockBondIssuer.deploy();
+  await contracts.mockVpAssetManager.deployed();
+  if (process.env.NODE_ENV !== "test")
+    console.info("mockVpAssetManager deployed ✓");
+
+  await contracts.registry?.setupAddress(
+    bytes32("vpAssetManager"),
+    contracts.mockVpAssetManager.address,
+    true
+  );
+  await checkDeploymentDelay();
+  return contracts;
+};
+
 /*
  * Aggregated Deployment Functions
  */
@@ -1722,6 +1756,7 @@ const deployMocks = async () => {
   await deployMockAuctioneer();
   await deployMockLiquidator();
   await deployMockBondIssuer();
+  await deployMockVPAssetManager();
 
   return { contracts, signers };
 };

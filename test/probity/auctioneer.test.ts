@@ -18,6 +18,8 @@ import {
   MockPriceCalc,
   MockLiquidator,
   MockPriceFeed,
+  MockVPToken,
+  MockVPAssetManager,
 } from "../../typechain";
 
 import { deployTest, probity } from "../../lib/deployer";
@@ -53,6 +55,7 @@ let auctioneer: Auctioneer;
 let priceFeed: MockPriceFeed;
 let liquidator: MockLiquidator;
 let priceCalc: MockPriceCalc;
+let mockVPAssetManager: MockVPAssetManager;
 
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
@@ -70,6 +73,7 @@ describe("Auctioneer Unit Tests", function () {
     priceCalc = contracts.mockPriceCalc!;
     priceFeed = contracts.mockPriceFeed!;
     liquidator = contracts.mockLiquidator!;
+    mockVPAssetManager = contracts.mockVpAssetManager!;
 
     contracts = await probity.deployAuctioneer({
       registry: registry,
@@ -108,6 +112,7 @@ describe("Auctioneer Unit Tests", function () {
           DEBT_SIZE,
           COLL_OWNER,
           BENEFICIARY,
+          ADDRESS_ZERO,
           false
         ),
         "AccessControl/onlyBy: Caller does not have permission"
@@ -123,6 +128,7 @@ describe("Auctioneer Unit Tests", function () {
           DEBT_SIZE,
           COLL_OWNER,
           BENEFICIARY,
+          ADDRESS_ZERO,
           false
         );
     });
@@ -150,6 +156,7 @@ describe("Auctioneer Unit Tests", function () {
           DEBT_SIZE,
           COLL_OWNER,
           BENEFICIARY,
+          ADDRESS_ZERO,
           false
         );
 
@@ -181,6 +188,7 @@ describe("Auctioneer Unit Tests", function () {
             DEBT_SIZE,
             COLL_OWNER,
             BENEFICIARY,
+            ADDRESS_ZERO,
             false
           ),
         "AuctionStarted",
@@ -204,6 +212,7 @@ describe("Auctioneer Unit Tests", function () {
           DEBT_SIZE,
           user1.address,
           reservePool.address,
+          ADDRESS_ZERO,
           false
         );
 
@@ -302,6 +311,7 @@ describe("Auctioneer Unit Tests", function () {
           DEBT_SIZE,
           user1.address,
           reservePool.address,
+          ADDRESS_ZERO,
           false
         );
 
@@ -459,6 +469,7 @@ describe("Auctioneer Unit Tests", function () {
           DEBT_SIZE,
           user1.address,
           reservePool.address,
+          ADDRESS_ZERO,
           false
         );
 
@@ -521,6 +532,7 @@ describe("Auctioneer Unit Tests", function () {
           DEBT_SIZE,
           user1.address,
           reservePool.address,
+          ADDRESS_ZERO,
           false
         );
 
@@ -631,6 +643,7 @@ describe("Auctioneer Unit Tests", function () {
           DEBT_SIZE,
           user1.address,
           reservePool.address,
+          ADDRESS_ZERO,
           true
         );
 
@@ -651,6 +664,38 @@ describe("Auctioneer Unit Tests", function () {
       const after = await auctioneer.bids(AUCTION_ID, owner.address);
       expect(after.price).to.equal(BID_PRICE);
       expect(after.lot).to.equal(LOT_SIZE.div(2));
+    });
+
+    it("tests that bids will be modified for existing bidder if buyItNow purchases a portion of it", async () => {
+      const AUCTION_ID = 1;
+
+      await auctioneer
+        .connect(liquidatorCaller)
+        .startAuction(
+          ASSET_ID.FLR,
+          LOT_SIZE,
+          DEBT_SIZE,
+          user1.address,
+          reservePool.address,
+          mockVPAssetManager.address,
+          true
+        );
+
+      const BID_PRICE = RAY.mul(11).div(10);
+      await auctioneer.connect(owner).placeBid(AUCTION_ID, BID_PRICE, LOT_SIZE);
+
+      const before = await mockVPAssetManager.rewardCollectedUser();
+      expect(before).to.equal(ADDRESS_ZERO);
+      // make sure to get buyItNow only buy partial of the current bid
+
+      await auctioneer.buyItNow(
+        AUCTION_ID,
+        RAY.mul(12).div(10),
+        LOT_SIZE.div(2)
+      );
+
+      const after = await mockVPAssetManager.rewardCollectedUser();
+      expect(after).to.equal(owner.address);
     });
 
     it("tests that new buyer can only buy the biddable amount based on current existing bids", async () => {
@@ -678,6 +723,7 @@ describe("Auctioneer Unit Tests", function () {
           DEBT_SIZE,
           user1.address,
           reservePool.address,
+          ADDRESS_ZERO,
           true
         );
 
@@ -718,6 +764,7 @@ describe("Auctioneer Unit Tests", function () {
           0,
           reservePool.address,
           reservePool.address,
+          ADDRESS_ZERO,
           true
         );
 
@@ -791,6 +838,7 @@ describe("Auctioneer Unit Tests", function () {
           DEBT_SIZE,
           user1.address,
           reservePool.address,
+          mockVPAssetManager.address,
           false
         );
 
@@ -897,6 +945,7 @@ describe("Auctioneer Unit Tests", function () {
           DEBT_SIZE,
           user1.address,
           reservePool.address,
+          ADDRESS_ZERO,
           true
         );
 
@@ -920,6 +969,35 @@ describe("Auctioneer Unit Tests", function () {
 
       const after = await auctioneer.auctions(AUCTION_ID);
       expect(after.debt).to.equal(DEBT_SIZE);
+    });
+
+    it("test that collectRewardForUser is called when vpassetManager address is set", async () => {
+      const AUCTION_ID = 1;
+      await auctioneer
+        .connect(liquidatorCaller)
+        .startAuction(
+          ASSET_ID.FLR,
+          LOT_SIZE,
+          DEBT_SIZE,
+          user1.address,
+          reservePool.address,
+          mockVPAssetManager.address,
+          true
+        );
+
+      await auctioneer
+        .connect(user1)
+        .placeBid(AUCTION_ID, RAY.div(10), LOT_SIZE.mul(4).div(10));
+
+      await priceCalc.setPrice(RAY.div(11));
+
+      const before = await mockVPAssetManager.rewardCollectedUser();
+      expect(before).to.equal(ADDRESS_ZERO);
+
+      await auctioneer.connect(user1).finalizeSale(AUCTION_ID);
+
+      const after = await mockVPAssetManager.rewardCollectedUser();
+      expect(after).to.equal(user1.address);
     });
 
     it("tests auctionDebt is reduced when the auction ended with non-zero debt", async () => {
@@ -994,6 +1072,7 @@ describe("Auctioneer Unit Tests", function () {
           0,
           reservePool.address,
           reservePool.address,
+          ADDRESS_ZERO,
           true
         );
 
@@ -1055,6 +1134,7 @@ describe("Auctioneer Unit Tests", function () {
           DEBT_SIZE,
           user1.address,
           reservePool.address,
+          ADDRESS_ZERO,
           false
         );
 
@@ -1089,6 +1169,7 @@ describe("Auctioneer Unit Tests", function () {
           DEBT_SIZE,
           user1.address,
           reservePool.address,
+          ADDRESS_ZERO,
           false
         );
 

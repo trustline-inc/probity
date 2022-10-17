@@ -138,7 +138,7 @@ type ReserveBalances = {
   debtToCover: BigNumber;
 };
 
-describe("Shutdown Flow Test", function () {
+describe.skip("Shutdown Flow Test", function () {
   const TWO_DAYS_IN_SECONDS = 86400 * 2;
   const DEBT_THRESHOLD = RAD.mul(5000);
   let balances: UserBalances;
