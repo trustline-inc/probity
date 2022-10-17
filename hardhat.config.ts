@@ -7,6 +7,7 @@ import "@nomiclabs/hardhat-web3";
 import "@nomiclabs/hardhat-waffle";
 import { HardhatUserConfig } from "hardhat/config";
 
+// See https://hardhat.org/hardhat-runner/docs/config#available-config-options
 const config: HardhatUserConfig = {
   defaultNetwork: "localhost",
   ethernal: {
@@ -20,19 +21,22 @@ const config: HardhatUserConfig = {
       gas: 12000000,
       blockGasLimit: 0x1fffffffffffff,
       accounts: [
-        "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
+        "2f1c0faaa822d71c3f581f92a6db4bd599b38a3a85dbcde6256bf929e5c7a45e",
       ],
     },
+    // See https://hardhat.org/hardhat-network/docs/reference#supported-fields
     hardhat: {
       chainId: 31337,
       allowUnlimitedContractSize: true,
       gas: 12000000,
       blockGasLimit: 0x1fffffffffffff,
-      accounts: {
-        mnemonic:
-          "refuse inherit state window exercise carpet circle empty scan exclude talk cargo",
-        accountsBalance: "100000000000000000000000000",
-      },
+      accounts: [
+        {
+          privateKey:
+            "2f1c0faaa822d71c3f581f92a6db4bd599b38a3a85dbcde6256bf929e5c7a45e",
+          balance: "100000000000000000000000000",
+        },
+      ],
     },
     flare_local: {
       url: "http://127.0.0.1:9650/ext/bc/C/rpc",
