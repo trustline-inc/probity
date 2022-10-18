@@ -1,7 +1,13 @@
 #!/bin/bash
 
 # Setup environment vairbales
-# NOTE: Set ETHERNAL_PASSWORD in shell before running script
+
+# ETHERNAL_PASSWORD should be set in the shell before running script
+if [[ -z "${ETHERNAL_PASSWORD}" ]]; then
+  echo "Please export ETHERNAL_PASSWORD envvar in the shell."
+  exit 1
+fi
+
 export ETHERNAL_EMAIL=mrosendin@linqto.com
 export NATIVE_TOKEN=ETH
 
