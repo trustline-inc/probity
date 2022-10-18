@@ -164,15 +164,21 @@ const init = async () => {
       .callStatic.initAsset(
         NATIVE_ASSETS[nativeToken],
         process.env.AUCTIONEER,
+        "0x11EeB875AAc42eEe7CB37668360206B0056F6eEd",
         {
           gasLimit: 300000,
         }
       );
     tx = await liquidator
       .connect(gov)
-      .initAsset(NATIVE_ASSETS[nativeToken], process.env.AUCTIONEER, {
-        gasLimit: 300000,
-      });
+      .initAsset(
+        NATIVE_ASSETS[nativeToken],
+        process.env.AUCTIONEER,
+        "0x11EeB875AAc42eEe7CB37668360206B0056F6eEd",
+        {
+          gasLimit: 300000,
+        }
+      );
     await tx.wait();
     console.log(`Liquidator: ${nativeToken} initialized`);
 
