@@ -11,7 +11,7 @@ fi
 export ETHERNAL_EMAIL=mrosendin@linqto.com
 export NATIVE_TOKEN=ETH
 
-# (TODO: create separate file other than .env for deploy script output; below conditional is temporary)
+# TODO: create separate file other than .env for deploy script output; below conditional is temporary
 if [ -e .env ]
 then
     rm .env
