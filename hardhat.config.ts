@@ -14,7 +14,7 @@ const config: HardhatUserConfig = {
     workspace: "Probity",
     email: process.env.ETHERNAL_EMAIL,
     password: process.env.ETHERNAL_PASSWORD,
-    disabled: true,
+    disabled: process.env.NODE_ENV === "test",
   },
   networks: {
     localhost: {
