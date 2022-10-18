@@ -15,6 +15,7 @@ const config: HardhatUserConfig = {
     email: process.env.ETHERNAL_EMAIL,
     password: process.env.ETHERNAL_PASSWORD,
     disabled: process.env.NODE_ENV === "test",
+    uploadAst: true,
   },
   networks: {
     localhost: {
