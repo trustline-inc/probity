@@ -46,7 +46,7 @@ const amount = RAD.mul(1_000_000);
     console.log(result);
     tx = await treasury
       .connect(wallet)
-      .withdrawSystemCurrency(ethers.utils.parseUnits(String(amount), 18), {
+      .withdrawSystemCurrency(ethers.utils.parseUnits(String(1_000_000), 18), {
         gasLimit: 400000,
       });
     console.log(tx);

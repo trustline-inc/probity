@@ -65,7 +65,7 @@ describe("Shutdown Unit Tests", function () {
     priceFeed = contracts.mockPriceFeed!;
     treasury = contracts.treasury!;
     liquidator = contracts.mockLiquidator!;
-    reservePool = contracts.mockReserve!;
+    reservePool = contracts.mockReservePool!;
     auctioneer = contracts.mockAuctioneer!;
     bondIssuer = contracts.mockBondIssuer!;
 
