@@ -10,6 +10,7 @@ contract MockVaultEngine {
         uint256 normDebt; // Normalized debt balance
         uint256 normEquity; // Normalized equity balance
         uint256 initialEquity; // Tracks the amount of equity (less interest)
+        uint256 debtPrincipal;
     }
 
     struct Asset {
@@ -28,6 +29,7 @@ contract MockVaultEngine {
         address reservePool;
         int256 collateralAmount;
         int256 debtAmount;
+        int256 principalAmount;
     }
 
     struct LiquidateEquityPositionCall {
@@ -62,6 +64,7 @@ contract MockVaultEngine {
     uint256 public lendingPoolDebt;
     uint256 public lendingPoolEquity;
     uint256 public totalSystemCurrency;
+    address public reservePool;
     LiquidateDebtPositionCall public lastLiquidateDebtPositionCall;
     LiquidateEquityPositionCall public lastLiquidateEquityPositionCall;
 
@@ -144,7 +147,7 @@ contract MockVaultEngine {
     }
 
     function updateAccumulators(
-        address reservePool,
+        address reservePool_,
         uint256 debtAccumulatorIncrease,
         uint256 equityAccumulatorIncrease,
         uint256 protocolFeeRates_
@@ -152,6 +155,7 @@ contract MockVaultEngine {
         debtAccumulator += debtAccumulatorIncrease;
         equityAccumulator += equityAccumulatorIncrease;
         protocolFeeRates = protocolFeeRates_;
+        reservePool = reservePool_;
     }
 
     function updateNormValues(
@@ -201,17 +205,19 @@ contract MockVaultEngine {
         bytes32 assetId,
         address user,
         address auctioneer,
-        address reservePool,
+        address reservePool_,
         int256 collateralAmount,
-        int256 debtAmount
+        int256 debtAmount,
+        int256 principalAmount
     ) external {
         lastLiquidateDebtPositionCall = LiquidateDebtPositionCall(
             assetId,
             user,
             auctioneer,
-            reservePool,
+            reservePool_,
             collateralAmount,
-            debtAmount
+            debtAmount,
+            principalAmount
         );
     }
 
