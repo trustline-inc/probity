@@ -45,7 +45,8 @@ interface VaultLike {
             uint256 collateral,
             uint256 normDebt,
             uint256 normEquity,
-            uint256 initialEquity
+            uint256 initialEquity,
+            uint256 debtPrincipal
         );
 
     function debtAccumulator() external returns (uint256 debAccumulator);
@@ -66,7 +67,8 @@ interface VaultLike {
         address auctioneer,
         address reservePool,
         int256 collAmount,
-        int256 debt
+        int256 debtAmount,
+        int256 debtPrincipal
     ) external;
 
     function liquidateEquityPosition(
@@ -334,7 +336,7 @@ contract Shutdown is Stateful, Eventful {
      * @param user The address of the vault user
      */
     function processUserDebt(bytes32 assetId, address user) external onlyIfFinalPriceSet(assetId) {
-        (, , uint256 collateral, uint256 debt, , ) = vaultEngine.vaults(assetId, user);
+        (, , uint256 collateral, uint256 debt, , , uint256 debtPrincipal) = vaultEngine.vaults(assetId, user);
         uint256 debtAccumulator = vaultEngine.debtAccumulator();
 
         uint256 required = (debt * debtAccumulator) / assets[assetId].finalPrice;
@@ -349,7 +351,8 @@ contract Shutdown is Stateful, Eventful {
             address(this),
             address(this),
             -int256(amountToGrab),
-            -int256(debt)
+            -int256(debt),
+            -int256(debtPrincipal)
         );
 
         emit DebtPositionProcessed(assetId, user, gap, gap * assets[assetId].finalPrice);
@@ -361,7 +364,10 @@ contract Shutdown is Stateful, Eventful {
      * @param user The address of the user vault
      */
     function freeExcessAsset(bytes32 assetId, address user) external onlyIfFinalPriceSet(assetId) {
-        (, , uint256 collateral, uint256 debt, , uint256 initialEquity) = vaultEngine.vaults(assetId, user);
+        (, , uint256 collateral, uint256 debt, , uint256 initialEquity, uint256 debtPrincipal) = vaultEngine.vaults(
+            assetId,
+            user
+        );
         require(debt == 0, "Shutdown/freeExcessAsset: User needs to process debt first before calling this");
 
         // how do we make it so this can be reused
@@ -371,7 +377,15 @@ contract Shutdown is Stateful, Eventful {
 
         uint256 amountToFree = collateral - hookedCollAmount;
 
-        vaultEngine.liquidateDebtPosition(assetId, user, user, address(this), -int256(amountToFree), 0);
+        vaultEngine.liquidateDebtPosition(
+            assetId,
+            user,
+            user,
+            address(this),
+            -int256(amountToFree),
+            0,
+            -int256(debtPrincipal)
+        );
     }
 
     /**
@@ -420,7 +434,7 @@ contract Shutdown is Stateful, Eventful {
     function processUserEquity(bytes32 assetId, address user) external {
         require(investorObligationRatio != 0, "Shutdown/processUserEquity: Investor has no obligation");
 
-        (, uint256 underlying, , , uint256 normEquity, uint256 initialEquity) = vaultEngine.vaults(assetId, user);
+        (, uint256 underlying, , , uint256 normEquity, uint256 initialEquity, ) = vaultEngine.vaults(assetId, user);
         uint256 hookedSuppliedAmount = (initialEquity / WAD) * finalUtilizationRatio;
         uint256 investorObligation = ((hookedSuppliedAmount * investorObligationRatio) / WAD) /
             assets[assetId].finalPrice;

@@ -269,7 +269,8 @@ contract VaultEngine is Stateful, Eventful {
         address auctioneer,
         address reservePool,
         int256 collateralAmount,
-        int256 debtAmount
+        int256 debtAmount,
+        int256 principalAmount
     ) external onlyByProbity {
         Vault storage vault = vaults[assetId][account];
         Asset storage asset = assets[assetId];
@@ -278,6 +279,8 @@ contract VaultEngine is Stateful, Eventful {
         vault.normDebt = Math._add(vault.normDebt, debtAmount);
         asset.normDebt = Math._add(asset.normDebt, debtAmount);
         lendingPoolDebt = Math._add(lendingPoolDebt, debtAmount);
+        lendingPoolPrincipal = Math._add(lendingPoolPrincipal, principalAmount);
+        vault.debtPrincipal = Math._add(vault.debtPrincipal, principalAmount);
 
         // Auction off collateral expecting to raise at least fundraiseTarget amount
         int256 fundraiseTarget = Math._mul(debtAccumulator, debtAmount);
