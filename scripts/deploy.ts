@@ -98,8 +98,10 @@ async function main() {
   }
 
   console.table(table);
-  fs.writeFileSync(".env", fileOutput);
-  console.info(`Contract addresses written to ${process.cwd()}/.env`);
+  // const filepath = `${process.cwd()}/docs/${hre.network.name}-addresses`
+  const filepath = ".env";
+  fs.writeFileSync(filepath, fileOutput);
+  console.info(`Contract addresses written to ${filepath}`);
 }
 
 main()

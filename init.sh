@@ -13,7 +13,7 @@ then
 fi
 
 # Deploy contracts
-npm run deploy:dev localhost
+yarn run deploy:dev localhost
 
 # Initialize
 yarn run initialize localhost
