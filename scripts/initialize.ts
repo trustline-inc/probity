@@ -42,12 +42,6 @@ const init = async () => {
   const LiquidatorABI = await artifacts.readArtifact("Liquidator");
   const PriceFeedABI = await artifacts.readArtifact("PriceFeed");
   const VaultEngineABI = await artifacts.readArtifact("VaultEngine");
-  const NativeAssetManagerABI = await artifacts.readArtifact(
-    "NativeAssetManager"
-  );
-  const Erc20AssetManagerABI = await artifacts.readArtifact(
-    "ERC20AssetManager"
-  );
 
   // Contracts
   let registry, liquidator, priceFeed, vaultEngine;
