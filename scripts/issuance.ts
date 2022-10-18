@@ -49,7 +49,7 @@ const amount = RAD.mul(1_000_000);
 
     // Fund beneficiary wallet 1 ETH to pay for withdraw tx fee
     console.log("Tx: gov.sendTransaction");
-    const tx = await gov.sendTransaction({
+    tx = await gov.sendTransaction({
       to: wallet.address,
       value: ethers.BigNumber.from("1000000000000000000"),
     });
