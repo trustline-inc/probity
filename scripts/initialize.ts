@@ -4,7 +4,7 @@ import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-web3";
 import * as hre from "hardhat";
 import { artifacts, ethers, web3 } from "hardhat";
-import getNativeToken from "../lib/getNativeToken";
+import { getNativeToken } from "../lib/utils";
 
 const nativeToken: string = getNativeToken();
 const networkName = hre.network.name;

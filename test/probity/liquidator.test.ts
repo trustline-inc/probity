@@ -54,7 +54,7 @@ describe("Liquidator Unit Tests", function () {
     // Set contracts
     registry = contracts.registry!;
     vaultEngine = contracts.mockVaultEngine!;
-    reservePool = contracts.mockReserve!;
+    reservePool = contracts.mockReservePool!;
     auctioneer = contracts.mockAuctioneer!;
     treasury = contracts.treasury!;
     priceFeed = contracts.mockPriceFeed!;

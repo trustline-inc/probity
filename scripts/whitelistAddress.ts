@@ -22,10 +22,13 @@ const init = async () => {
     owner
   );
 
+  // Address
+  const address = "0x901F2B246e5445f9f7317Ee05A14193839E7397C";
+
   try {
     const args = [
       ethers.utils.formatBytes32String("whitelisted"),
-      "0x11EeB875AAc42eEe7CB37668360206B0056F6eEd",
+      address,
       false,
       { gasLimit: 300000 },
     ];
@@ -33,6 +36,8 @@ const init = async () => {
     const result = await registry.setupAddress(...args);
 
     await result.wait();
+
+    console.log(`Successfully whitelisted ${address} on ${hre.network.name}!`);
   } catch (error) {
     console.log(error);
   }

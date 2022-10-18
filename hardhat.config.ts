@@ -1,4 +1,5 @@
 require("dotenv").config();
+import "hardhat-ethernal";
 import "solidity-coverage";
 import "@typechain/hardhat";
 import "@nomiclabs/hardhat-ethers";
@@ -6,11 +7,30 @@ import "@nomiclabs/hardhat-web3";
 import "@nomiclabs/hardhat-waffle";
 import { HardhatUserConfig } from "hardhat/config";
 
+// See https://hardhat.org/hardhat-runner/docs/config#available-config-options
 const config: HardhatUserConfig = {
-  defaultNetwork: "coston",
+  defaultNetwork: "localhost",
+  ethernal: {
+    workspace: "Probity",
+    email: process.env.ETHERNAL_EMAIL,
+    password: process.env.ETHERNAL_PASSWORD,
+    disabled: process.env.NODE_ENV === "test",
+    uploadAst: true,
+  },
   networks: {
+    localhost: {
+      chainId: 31337,
+      url: "http://127.0.0.1:8545",
+      allowUnlimitedContractSize: true,
+      gas: 12000000,
+      blockGasLimit: 0x1fffffffffffff,
+      accounts: [
+        "2f1c0faaa822d71c3f581f92a6db4bd599b38a3a85dbcde6256bf929e5c7a45e",
+      ],
+    },
+    // See https://hardhat.org/hardhat-network/docs/reference#supported-fields
     hardhat: {
-      chainId: 1337,
+      chainId: 31337,
       allowUnlimitedContractSize: true,
       gas: 12000000,
       blockGasLimit: 0x1fffffffffffff,
@@ -20,7 +40,7 @@ const config: HardhatUserConfig = {
         accountsBalance: "100000000000000000000000000",
       },
     },
-    local: {
+    flare_local: {
       url: "http://127.0.0.1:9650/ext/bc/C/rpc",
       accounts: [
         // TODO: Read this from encrypted keystore file
@@ -28,7 +48,7 @@ const config: HardhatUserConfig = {
       ],
       chainId: 4294967295,
     },
-    internal: {
+    flare_internal: {
       url: "https://coston.trustline.co/ext/bc/C/rpc",
       accounts: [
         "44b8de040dec19cf810efe64919b481e05e2ba643efe003223662f1626b114f0",

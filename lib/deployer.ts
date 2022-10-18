@@ -5,10 +5,7 @@ import { artifacts, ethers, network, web3 } from "hardhat";
 import * as dotenv from "dotenv";
 dotenv.config();
 
-export type Deployment = {
-  contracts: ContractDict;
-  signers: SignerDict;
-};
+import { Deployment } from "./types";
 
 // Import contract types
 import {
@@ -96,7 +93,7 @@ import { ADDRESS_ZERO } from "../test/utils/constants";
  * Deployment targets and their native currency
  */
 const NATIVE_ASSETS: { [key: string]: string } = {
-  local: process.env.NATIVE_TOKEN || "FLR",
+  flare_local: process.env.NATIVE_TOKEN || "FLR",
   localhost: process.env.NATIVE_TOKEN || "ETH",
   hardhat: process.env.NATIVE_TOKEN || "FLR",
   internal: process.env.NATIVE_TOKEN || "FLR",
@@ -164,7 +161,7 @@ interface ContractDict {
   mockPriceFeed?: MockPriceFeed;
   mockAuctioneer?: MockAuctioneer;
   mockLiquidator?: MockLiquidator;
-  mockReserve?: MockReservePool;
+  mockReservePool?: MockReservePool;
   mockPriceCalc?: MockPriceCalc;
   mockBondIssuer?: MockBondIssuer;
 }
@@ -203,7 +200,7 @@ const artifactNameMap: { [key: string]: any } = {
   mockPriceFeed: "MockPriceFeed",
   mockAuctioneer: "MockAuctioneer",
   mockLiquidator: "MockLiquidator",
-  mockReserve: "MockReservePool",
+  mockReservePool: "MockReservePool",
   mockPriceCalc: "MockPriceCalc",
   mockBondIssuer: "MockBondIssuer",
   mockVPAssetManager: "MockVPAssetManager",
@@ -251,7 +248,7 @@ const contracts: ContractDict = {
   mockPriceFeed: undefined,
   mockAuctioneer: undefined,
   mockLiquidator: undefined,
-  mockReserve: undefined,
+  mockReservePool: undefined,
   mockPriceCalc: undefined,
   mockBondIssuer: undefined,
   mockErc20Token: undefined,
@@ -329,7 +326,7 @@ const deployAccessControl = async (param?: { registry?: string }) => {
     contracts.accessControl !== undefined &&
     process.env.NODE_ENV !== "test"
   ) {
-    console.info("usd contract has already been deployed, skipping");
+    console.info("AccessControl contract has already been deployed, skipping");
     return contracts;
   }
 
@@ -342,14 +339,24 @@ const deployAccessControl = async (param?: { registry?: string }) => {
   )) as AccessControl__factory;
   contracts.accessControl = await accessControlFactory.deploy(registry!);
   await contracts.accessControl.deployed();
-
+  if (process.env.NODE_ENV !== "test") {
+    console.info("accessControl deployed ✓");
+    console.info({
+      address: contracts.accessControl.address,
+      params: { registry },
+    });
+    await hre.ethernal.push({
+      name: "AccessControl",
+      address: contracts.accessControl?.address,
+    });
+  }
   await checkDeploymentDelay();
   return contracts;
 };
 
 const deployRegistry = async (param?: { govAddress?: string }) => {
   if (contracts.registry !== undefined && process.env.NODE_ENV !== "test") {
-    console.info("registry contract has already been deployed, skipping");
+    console.info("Registry contract has already been deployed, skipping");
     return;
   }
 
@@ -368,6 +375,10 @@ const deployRegistry = async (param?: { govAddress?: string }) => {
       address: contracts.registry?.address,
       params: { govAddress },
     });
+    await hre.ethernal.push({
+      name: "Registry",
+      address: contracts.registry?.address,
+    });
   }
   await checkDeploymentDelay();
   return contracts;
@@ -375,7 +386,7 @@ const deployRegistry = async (param?: { govAddress?: string }) => {
 
 const deployStateful = async (param?: { registry?: string }) => {
   if (contracts.stateful !== undefined && process.env.NODE_ENV !== "test") {
-    console.info("usd contract has already been deployed, skipping");
+    console.info("Stateful contract has already been deployed, skipping");
     return contracts;
   }
 
@@ -388,7 +399,16 @@ const deployStateful = async (param?: { registry?: string }) => {
   )) as Stateful__factory;
   contracts.stateful = await statefulFactory.deploy(registry!);
   await contracts.stateful.deployed();
-
+  if (process.env.NODE_ENV !== "test") {
+    console.info("stateful deployed ✓");
+    console.info({
+      address: contracts.stateful.address,
+    });
+    await hre.ethernal.push({
+      name: "Stateful",
+      address: contracts.stateful?.address,
+    });
+  }
   await checkDeploymentDelay();
   return contracts;
 };
@@ -418,6 +438,10 @@ const deployUsd = async (param?: { registry?: string }) => {
       address: contracts.usd.address,
       params: { registry },
     });
+    await hre.ethernal.push({
+      name: "USD",
+      address: contracts.usd?.address,
+    });
   }
   await contracts.registry?.setupAddress(
     bytes32("usd"),
@@ -446,6 +470,10 @@ const deployPbt = async (param?: { registry?: string }) => {
   if (process.env.NODE_ENV !== "test") {
     console.info("pbt deployed ✓");
     console.info({ registry });
+    await hre.ethernal.push({
+      name: "PBT",
+      address: contracts.pbt?.address,
+    });
   }
   await contracts.registry?.setupAddress(
     bytes32("pbt"),
@@ -477,6 +505,13 @@ const deployApr = async () => {
   )) as LowAPR__factory;
   contracts.lowApr = await lowAprFactory.deploy();
   await contracts.lowApr.deployed();
+  if (process.env.NODE_ENV !== "test") {
+    console.info("lowApr deployed ✓");
+    await hre.ethernal.push({
+      name: "LowAPR",
+      address: contracts.lowApr?.address,
+    });
+  }
   await contracts.registry?.setupAddress(
     bytes32("lowApr"),
     contracts.lowApr.address,
@@ -488,7 +523,13 @@ const deployApr = async () => {
   )) as HighAPR__factory;
   contracts.highApr = await highAprFactory.deploy();
   await contracts.highApr.deployed();
-  if (process.env.NODE_ENV !== "test") console.info("highApr deployed ✓");
+  if (process.env.NODE_ENV !== "test") {
+    console.info("highApr deployed ✓");
+    await hre.ethernal.push({
+      name: "HighAPR",
+      address: contracts.highApr?.address,
+    });
+  }
   await contracts.registry?.setupAddress(
     bytes32("highApr"),
     contracts.highApr.address,
@@ -520,6 +561,10 @@ const deployVaultEngine = async (param?: { registry?: string }) => {
   if (process.env.NODE_ENV !== "test") {
     console.info("vaultEngine deployed ✓");
     console.info({ registry });
+    await hre.ethernal.push({
+      name: "VaultEngine",
+      address: contracts.vaultEngine?.address,
+    });
   }
   await contracts.registry?.setupAddress(
     bytes32("vaultEngine"),
@@ -550,6 +595,10 @@ const deployVaultEngineIssuer = async (param?: { registry?: string }) => {
   if (process.env.NODE_ENV !== "test") {
     console.info("vaultEngineIssuer deployed ✓");
     console.info({ registry });
+    await hre.ethernal.push({
+      name: "VaultEngineIssuer",
+      address: contracts.vaultEngine?.address,
+    });
   }
   await contracts.registry?.setupAddress(
     bytes32("vaultEngine"),
@@ -580,6 +629,10 @@ const deployVaultEngineRestricted = async (param?: { registry?: string }) => {
   if (process.env.NODE_ENV !== "test") {
     console.info("vaultEngineRestricted deployed ✓");
     console.info({ registry });
+    await hre.ethernal.push({
+      name: "VaultEngineRestricted",
+      address: contracts.vaultEngine?.address,
+    });
   }
   await contracts.registry?.setupAddress(
     bytes32("vaultEngineRestricted"),
@@ -610,6 +663,10 @@ const deployVaultEngineLimited = async (param?: { registry?: string }) => {
   if (process.env.NODE_ENV !== "test") {
     console.info("vaultEngineLimited deployed ✓");
     console.info({ registry });
+    await hre.ethernal.push({
+      name: "VaultEngineLimited",
+      address: contracts.vaultEngine?.address,
+    });
   }
   await contracts.registry?.setupAddress(
     bytes32("vaultEngineLimited"),
@@ -688,6 +745,10 @@ const deployVPAssetManager = async (param?: {
       mockVpToken,
       vaultEngine,
     });
+    await hre.ethernal.push({
+      name: "VPAssetManager",
+      address: contracts.vpAssetManager?.address,
+    });
   }
 
   await contracts.registry?.setupAddress(
@@ -724,6 +785,10 @@ const deployErc20Token = async (param?: { symbol: string; name: string }) => {
   await contracts[symbol.toLowerCase()].deployed();
   if (process.env.NODE_ENV !== "test") {
     console.info(`erc20[${symbol.toLowerCase()}] deployed ✓`);
+    await hre.ethernal.push({
+      name: symbol,
+      address: contracts[symbol.toLowerCase()].address,
+    });
   }
   await checkDeploymentDelay();
   return contracts;
@@ -738,7 +803,7 @@ const deployErc20AssetManager = async (param?: {
   const symbol = param?.symbol || "FXRP";
 
   if (
-    contracts[`${symbol.toLowerCase()}Manager`] !== undefined &&
+    contracts.erc20AssetManager[`${symbol}_MANAGER`] !== undefined &&
     process.env.NODE_ENV !== "test"
   ) {
     console.info(
@@ -764,18 +829,18 @@ const deployErc20AssetManager = async (param?: {
     "ERC20AssetManager",
     signers.owner
   )) as ERC20AssetManager__factory;
-  contracts[`${symbol.toLowerCase()}Manager`] =
+  contracts.erc20AssetManager[`${symbol}_MANAGER`] =
     await erc20AssetManagerFactory.deploy(
       registry!,
       web3.utils.keccak256(symbol),
       erc20,
       vaultEngine!
     );
-  await contracts[`${symbol.toLowerCase()}Manager`].deployed();
+  await contracts.erc20AssetManager[`${symbol}_MANAGER`].deployed();
   if (process.env.NODE_ENV !== "test") {
     console.info(`erc20AssetManager[${symbol.toLowerCase()}] deployed ✓`);
     console.info({
-      address: contracts[`${symbol.toLowerCase()}Manager`].address,
+      address: contracts.erc20AssetManager[`${symbol}_MANAGER`].address,
       params: {
         registry,
         symbol,
@@ -783,11 +848,15 @@ const deployErc20AssetManager = async (param?: {
         vaultEngine,
       },
     });
+    await hre.ethernal.push({
+      name: "ERC20AssetManager",
+      address: contracts.erc20AssetManager[`${symbol}_MANAGER`].address,
+    });
   }
 
   await contracts.registry?.setupAddress(
     bytes32("assetManager"),
-    contracts[`${symbol.toLowerCase()}Manager`].address,
+    contracts.erc20AssetManager[`${symbol}_MANAGER`].address,
     true
   );
 
@@ -838,6 +907,10 @@ const deployNativeAssetManager = async (param?: {
       registry,
       assetId,
       vaultEngine,
+    });
+    await hre.ethernal.push({
+      name: "NativeAssetManager",
+      address: contracts.nativeAssetManager.address,
     });
   }
 
@@ -925,6 +998,10 @@ const deployShutdown = async (param?: {
       liquidator,
       bondIssuer,
     });
+    await hre.ethernal.push({
+      name: "Shutdown",
+      address: contracts.shutdown?.address,
+    });
   }
 
   await contracts.registry?.setupAddress(
@@ -991,6 +1068,10 @@ const deployTeller = async (param?: {
       lowApr,
       highApr,
     });
+    await hre.ethernal.push({
+      name: "Teller",
+      address: contracts.teller?.address,
+    });
   }
 
   await contracts.registry?.setupAddress(
@@ -1046,6 +1127,10 @@ const deployTreasury = async (param?: {
       pbt,
       vaultEngine,
     });
+    await hre.ethernal.push({
+      name: "Treasury",
+      address: contracts.treasury?.address,
+    });
   }
 
   let tx = await contracts.registry?.setupAddress(
@@ -1093,6 +1178,10 @@ const deployPriceFeed = async (param?: {
   if (process.env.NODE_ENV !== "test") {
     console.info("priceFeed deployed ✓");
     console.info({ registry, vaultEngine });
+    await hre.ethernal.push({
+      name: "PriceFeed",
+      address: contracts.priceFeed?.address,
+    });
   }
 
   await contracts.registry?.setupAddress(
@@ -1161,6 +1250,10 @@ const deployAuctioneer = async (param?: {
       priceFeed,
       liquidator,
     });
+    await hre.ethernal.push({
+      name: "Auctioneer",
+      address: contracts.auctioneer?.address,
+    });
   }
 
   await registry!.setupAddress(
@@ -1189,8 +1282,13 @@ const deployPriceCalc = async () => {
   )) as LinearDecrease__factory;
   contracts.linearDecrease = await linearDecreaseFactory.deploy();
   await contracts.linearDecrease.deployed();
-  if (process.env.NODE_ENV !== "test")
+  if (process.env.NODE_ENV !== "test") {
     console.info("linearDecrease deployed ✓");
+    await hre.ethernal.push({
+      name: "LinearDecrease",
+      address: contracts.linearDecrease?.address,
+    });
+  }
   await contracts.registry?.setupAddress(
     bytes32("priceCalc"),
     contracts.linearDecrease.address,
@@ -1236,6 +1334,10 @@ const deployBondIssuer = async (param?: {
     console.info({
       registry,
       vaultEngine,
+    });
+    await hre.ethernal.push({
+      name: "BondIssuer",
+      address: contracts.bondIssuer?.address,
     });
   }
   await contracts.registry?.setupAddress(
@@ -1290,6 +1392,10 @@ const deployReservePool = async (param?: {
       registry,
       vaultEngine,
       bondIssuer,
+    });
+    await hre.ethernal.push({
+      name: "ReservePool",
+      address: contracts.reservePool?.address,
     });
   }
   await contracts.registry?.setupAddress(
@@ -1362,6 +1468,10 @@ const deployLiquidator = async (param?: {
       vaultEngine,
       reservePool,
     });
+    await hre.ethernal.push({
+      name: "Liquidator",
+      address: contracts.liquidator?.address,
+    });
   }
   await contracts.registry?.setupAddress(
     bytes32("liquidator"),
@@ -1396,6 +1506,16 @@ const deployMockErc20Token = async () => {
     "FXRP"
   );
   await contracts.mockErc20Token!?.deployed();
+  if (process.env.NODE_ENV !== "test") {
+    console.info("mockErc20Token deployed ✓");
+    console.info({
+      address: contracts.mockErc20Token?.address,
+    });
+    await hre.ethernal.push({
+      name: "MockErc20Token",
+      address: contracts.mockErc20Token?.address,
+    });
+  }
   return contracts;
 };
 
@@ -1421,6 +1541,13 @@ const deployMockErc20AssetManager = async () => {
     contracts.mockErc20Token!.address
   );
   await contracts.mockErc20AssetManager!?.deployed();
+  if (process.env.NODE_ENV !== "test") {
+    console.info("mockErc20AssetManager deployed ✓");
+    await hre.ethernal.push({
+      name: "MockErc20AssetManager",
+      address: contracts.mockErc20AssetManager?.address,
+    });
+  }
   return contracts;
 };
 
@@ -1437,7 +1564,13 @@ const deployMockVPToken = async () => {
   )) as MockVPToken__factory;
   contracts.mockVpToken = await mockVpTokenFactory.deploy();
   await contracts.mockVpToken.deployed();
-  if (process.env.NODE_ENV !== "test") console.info("mockVpToken deployed ✓");
+  if (process.env.NODE_ENV !== "test") {
+    console.info("mockVpToken deployed ✓");
+    await hre.ethernal.push({
+      name: "MockVPToken",
+      address: contracts.mockVpToken?.address,
+    });
+  }
   await checkDeploymentDelay();
   return contracts;
 };
@@ -1460,8 +1593,13 @@ const deployMockVaultEngine = async () => {
   )) as MockVaultEngine__factory;
   contracts.mockVaultEngine = await mockVaultEngineFactory.deploy();
   await contracts.mockVaultEngine.deployed();
-  if (process.env.NODE_ENV !== "test")
+  if (process.env.NODE_ENV !== "test") {
     console.info("mockVaultEngine deployed ✓");
+    await hre.ethernal.push({
+      name: "MockVaultEngine",
+      address: contracts.mockVaultEngine?.address,
+    });
+  }
   await checkDeploymentDelay();
   return contracts;
 };
@@ -1482,7 +1620,13 @@ const deployMockPriceCalc = async () => {
   )) as MockPriceCalc__factory;
   contracts.mockPriceCalc = await mockPriceCalcFactory.deploy();
   await contracts.mockPriceCalc.deployed();
-  if (process.env.NODE_ENV !== "test") console.info("mockPriceCalc deployed ✓");
+  if (process.env.NODE_ENV !== "test") {
+    console.info("mockPriceCalc deployed ✓");
+    await hre.ethernal.push({
+      name: "MockPriceCalc",
+      address: contracts.mockPriceCalc?.address,
+    });
+  }
   await checkDeploymentDelay();
   return contracts;
 };
@@ -1500,7 +1644,13 @@ const deployMockFtso = async () => {
   )) as MockFtso__factory;
   contracts.ftso = await ftsoFactory.deploy();
   await contracts.ftso.deployed();
-  if (process.env.NODE_ENV !== "test") console.info("ftso deployed ✓");
+  if (process.env.NODE_ENV !== "test") {
+    console.info("mockFtso deployed ✓");
+    await hre.ethernal.push({
+      name: "MockFtso",
+      address: contracts.ftso?.address,
+    });
+  }
   await contracts.registry?.setupAddress(
     bytes32("ftso"),
     contracts.ftso.address,
@@ -1525,7 +1675,13 @@ const deployMockFtsoManager = async () => {
   )) as MockFtsoManager__factory;
   contracts.ftsoManager = await ftsoManagerFactory.deploy();
   await contracts.ftsoManager.deployed();
-  if (process.env.NODE_ENV !== "test") console.info("ftsoManager deployed ✓");
+  if (process.env.NODE_ENV !== "test") {
+    console.info("ftsoManager deployed ✓");
+    await hre.ethernal.push({
+      name: "MockFtsoManager",
+      address: contracts.ftsoManager?.address,
+    });
+  }
   await contracts.registry?.setupAddress(
     bytes32("ftsoManager"),
     contracts.ftsoManager?.address,
@@ -1554,8 +1710,13 @@ const deployMockFtsoRewardManager = async () => {
   )) as MockFtsoRewardManager__factory;
   contracts.ftsoRewardManager = await ftsoRewardManager.deploy();
   await contracts.ftsoRewardManager.deployed();
-  if (process.env.NODE_ENV !== "test")
+  if (process.env.NODE_ENV !== "test") {
     console.info("ftsoRewardManager deployed ✓");
+    await hre.ethernal.push({
+      name: "MockFtsoRewardManager",
+      address: contracts.ftsoRewardManager?.address,
+    });
+  }
   await contracts.registry?.setupAddress(
     bytes32("ftsoRewardManager"),
     contracts.ftsoRewardManager?.address,
@@ -1583,7 +1744,13 @@ const deployMockPriceFeed = async () => {
   )) as MockPriceFeed__factory;
   contracts.mockPriceFeed = await mockPriceFeed.deploy();
   await contracts.mockPriceFeed.deployed();
-  if (process.env.NODE_ENV !== "test") console.info("mockPriceFeed deployed ✓");
+  if (process.env.NODE_ENV !== "test") {
+    console.info("mockPriceFeed deployed ✓");
+    await hre.ethernal.push({
+      name: "MockPriceFeed",
+      address: contracts.mockPriceFeed?.address,
+    });
+  }
 
   await contracts.registry?.setupAddress(
     bytes32("priceFeed"),
@@ -1612,8 +1779,13 @@ const deployMockLiquidator = async () => {
   )) as MockLiquidator__factory;
   contracts.mockLiquidator = await mockLiquidator.deploy();
   await contracts.mockLiquidator.deployed();
-  if (process.env.NODE_ENV !== "test")
+  if (process.env.NODE_ENV !== "test") {
     console.info("mockLiquidator deployed ✓");
+    await hre.ethernal.push({
+      name: "MockLiquidator",
+      address: contracts.mockLiquidator?.address,
+    });
+  }
   await contracts.registry?.setupAddress(
     bytes32("liquidator"),
     contracts.mockLiquidator.address,
@@ -1641,8 +1813,13 @@ const deployMockAuctioneer = async () => {
   )) as MockAuctioneer__factory;
   contracts.mockAuctioneer = await mockAuctioneer.deploy();
   await contracts.mockAuctioneer.deployed();
-  if (process.env.NODE_ENV !== "test")
+  if (process.env.NODE_ENV !== "test") {
     console.info("mockAuctioneer deployed ✓");
+    await hre.ethernal.push({
+      name: "MockAuctioneer",
+      address: contracts.mockAuctioneer?.address,
+    });
+  }
 
   await contracts.registry?.setupAddress(
     bytes32("auctioneer"),
@@ -1654,25 +1831,36 @@ const deployMockAuctioneer = async () => {
 };
 
 const deployMockReservePool = async () => {
-  if (contracts.mockReserve !== undefined && process.env.NODE_ENV !== "test") {
-    console.info("mockReserve contract has already been deployed, skipping");
+  if (
+    contracts.mockReservePool !== undefined &&
+    process.env.NODE_ENV !== "test"
+  ) {
+    console.info(
+      "mockReservePool contract has already been deployed, skipping"
+    );
     return contracts;
   }
 
   // Set signers
   const signers = await getSigners();
 
-  const mockReserve = (await ethers.getContractFactory(
+  const mockReservePool = (await ethers.getContractFactory(
     "MockReservePool",
     signers.owner
   )) as MockReservePool__factory;
-  contracts.mockReserve = await mockReserve.deploy();
-  await contracts.mockReserve.deployed();
-  if (process.env.NODE_ENV !== "test") console.info("mockReserve deployed ✓");
+  contracts.mockReservePool = await mockReservePool.deploy();
+  await contracts.mockReservePool.deployed();
+  if (process.env.NODE_ENV !== "test") {
+    console.info("mockReservePool deployed ✓");
+    await hre.ethernal.push({
+      name: "MockReservePool",
+      address: contracts.mockReservePool?.address,
+    });
+  }
 
   await contracts.registry?.setupAddress(
     bytes32("reservePool"),
-    contracts.mockReserve.address,
+    contracts.mockReservePool.address,
     true
   );
   await checkDeploymentDelay();
@@ -1684,7 +1872,9 @@ const deployMockBondIssuer = async () => {
     contracts.mockBondIssuer !== undefined &&
     process.env.NODE_ENV !== "test"
   ) {
-    console.info("mockReserve contract has already been deployed, skipping");
+    console.info(
+      "mockReservePool contract has already been deployed, skipping"
+    );
     return contracts;
   }
 
@@ -1697,8 +1887,13 @@ const deployMockBondIssuer = async () => {
   )) as MockBondIssuer__factory;
   contracts.mockBondIssuer = await mockBondIssuer.deploy();
   await contracts.mockBondIssuer.deployed();
-  if (process.env.NODE_ENV !== "test")
+  if (process.env.NODE_ENV !== "test") {
     console.info("mockBondIssuer deployed ✓");
+    await hre.ethernal.push({
+      name: "MockBondIssuer",
+      address: contracts.mockBondIssuer?.address,
+    });
+  }
 
   await contracts.registry?.setupAddress(
     bytes32("bondIssuer"),
@@ -1770,7 +1965,7 @@ const deployProbity = async (vaultEngineType?: string) => {
   // Deploy VaultEngine based on network
   let vaultType = "vaultEngine";
   if (
-    network.name === "local" ||
+    network.name === "flare_local" ||
     network.name === "coston" ||
     network.name === "localhost"
   ) {
@@ -1823,7 +2018,7 @@ const deployDev = async () => {
 
     // Get vault type
     let vaultType = "vaultEngine";
-    if (network.name === "local" || network.name === "localhost") {
+    if (network.name === "flare_local" || network.name === "localhost") {
       vaultType = "vaultEngineIssuer";
     } else if (network.name === "coston") {
       vaultType = "vaultEngineRestricted";
@@ -1875,7 +2070,7 @@ const deployProd = async () => {
 
     // Get vault type
     let vaultType = "vaultEngine";
-    if (network.name === "local") {
+    if (network.name === "flare_local") {
       vaultType = "vaultEngineIssuer";
     } else if (network.name === "coston") {
       vaultType = "vaultEngineIssuer";

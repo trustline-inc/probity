@@ -4,7 +4,7 @@ import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-web3";
 import * as hre from "hardhat";
 import { artifacts, ethers, web3 } from "hardhat";
-import getNativeToken from "../lib/getNativeToken";
+import { getNativeToken } from "../lib/utils";
 import { ASSET_ID, bytes32 } from "../test/utils/constants";
 
 const nativeToken: string = getNativeToken();
