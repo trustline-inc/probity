@@ -25,8 +25,4 @@ contract MockPriceFeed {
     function setPrice(bytes32 assetId, uint256 newPrice) external {
         assets[assetId].price = newPrice;
     }
-
-    function setShutdownState() external {
-        states[bytes32("shutdown")] = true;
-    }
 }

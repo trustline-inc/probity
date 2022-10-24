@@ -31,7 +31,6 @@ import {
   VPAssetManager,
   LowAPR,
   HighAPR,
-  Shutdown,
   Stateful,
   MockFtso,
   MockFtsoManager,
@@ -66,7 +65,6 @@ import {
   Auctioneer__factory,
   LinearDecrease__factory,
   ReservePool__factory,
-  Shutdown__factory,
   Stateful__factory,
   Liquidator__factory,
   MockErc20Token__factory,
@@ -151,7 +149,6 @@ interface ContractDict {
   reservePool?: ReservePool;
   mockErc20Token?: MockErc20Token;
   mockErc20AssetManager?: MockErc20AssetManager;
-  shutdown?: Shutdown;
   stateful?: Stateful;
   mockVpToken?: MockVPToken;
   vpAssetManager?: VPAssetManager;
@@ -193,7 +190,6 @@ const artifactNameMap: { [key: string]: any } = {
   mockErc20AssetManager: "MockErc20AssetManager",
   mockVpToken: "MockVPToken",
   vpAssetManager: "VPAssetManager",
-  shutdown: "Shutdown",
   lowApr: "LowAPR",
   highApr: "HighAPR",
   mockVaultEngine: "MockVaultEngine",
@@ -240,7 +236,6 @@ const contracts: ContractDict = {
   reservePool: undefined,
   vpAssetManager: undefined,
   mockVpToken: undefined,
-  shutdown: undefined,
   stateful: undefined,
   lowApr: undefined,
   highApr: undefined,
@@ -917,96 +912,6 @@ const deployNativeAssetManager = async (param?: {
   await contracts.registry?.setupAddress(
     bytes32("assetManager"),
     contracts.nativeAssetManager.address,
-    true
-  );
-
-  await checkDeploymentDelay();
-  return contracts;
-};
-
-//
-// Shutdown
-//
-
-const deployShutdown = async (param?: {
-  registry?: string;
-  priceFeed?: string;
-  vaultEngine?: string;
-  reservePool?: string;
-  teller?: string;
-  treasury?: string;
-  liquidator?: string;
-  bondIssuer?: string;
-}) => {
-  if (contracts.shutdown !== undefined && process.env.NODE_ENV !== "test") {
-    console.info("shutdown contract has already been deployed, skipping");
-    return contracts;
-  }
-
-  const registry =
-    param && param.registry ? param.registry : contracts.registry?.address;
-  const vaultEngine =
-    param && param.vaultEngine
-      ? param.vaultEngine
-      : contracts.vaultEngine?.address;
-  const priceFeed =
-    param && param.priceFeed ? param.priceFeed : contracts.priceFeed?.address;
-  const reservePool =
-    param && param.reservePool
-      ? param.reservePool
-      : contracts.reservePool?.address;
-  const teller =
-    param && param.teller ? param.teller : contracts.teller?.address;
-  const treasury =
-    param && param.treasury ? param.treasury : contracts.treasury?.address;
-  const liquidator =
-    param && param.liquidator
-      ? param.liquidator
-      : contracts.liquidator?.address;
-  const bondIssuer =
-    param && param.bondIssuer
-      ? param.bondIssuer
-      : contracts.bondIssuer?.address;
-
-  // Set signers
-  const signers = await getSigners();
-
-  const shutdownFactory = (await ethers.getContractFactory(
-    "Shutdown",
-    signers.owner
-  )) as Shutdown__factory;
-  contracts.shutdown = await shutdownFactory.deploy(
-    registry!,
-    priceFeed!,
-    vaultEngine!,
-    reservePool!,
-    teller!,
-    treasury!,
-    liquidator!,
-    bondIssuer!
-  );
-  await contracts.shutdown.deployed();
-  if (process.env.NODE_ENV !== "test") {
-    console.info("shutdown deployed ✓");
-    console.info({
-      registry,
-      priceFeed,
-      vaultEngine,
-      reservePool,
-      teller,
-      treasury,
-      liquidator,
-      bondIssuer,
-    });
-    await hre.ethernal.push({
-      name: "Shutdown",
-      address: contracts.shutdown?.address,
-    });
-  }
-
-  await contracts.registry?.setupAddress(
-    bytes32("shutdown"),
-    contracts.shutdown.address,
     true
   );
 
@@ -1989,7 +1894,6 @@ const deployProbity = async (vaultEngineType?: string) => {
   await deployPriceFeed({ vaultEngine: contracts.vaultEngine.address });
   await deployTreasury({ vaultEngine: contracts.vaultEngine.address });
   await deployLiquidator({ vaultEngine: contracts.vaultEngine.address });
-  await deployShutdown({ vaultEngine: contracts.vaultEngine.address });
 
   return { contracts, signers };
 };
@@ -2108,7 +2012,6 @@ const probity = {
   deployTreasury,
   deployReservePool,
   deployLiquidator,
-  deployShutdown,
   deployBondIssuer,
 };
 

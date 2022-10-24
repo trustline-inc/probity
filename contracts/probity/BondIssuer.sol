@@ -130,15 +130,6 @@ contract BondIssuer is Stateful, Eventful {
     }
 
     /**
-     * @notice Processes a redemption when the system is in shut down state
-     * @param user The user to process for
-     * @param amount The amount to redeem
-     */
-    function shutdownRedemption(address user, uint256 amount) external onlyWhen("shutdown", true) onlyBy("shutdown") {
-        _processRedemption(user, amount);
-    }
-
-    /**
      * @notice Purchases a bond
      * @param value The bond face value
      */

@@ -186,10 +186,6 @@ contract MockVaultEngine {
         vault.initialEquity = initialEquity;
     }
 
-    function setShutdownState() external {
-        states[bytes32("shutdown")] = true;
-    }
-
     function settle(uint256 amount) external {
         systemCurrency[msg.sender] -= amount;
         systemDebt[msg.sender] -= amount;
