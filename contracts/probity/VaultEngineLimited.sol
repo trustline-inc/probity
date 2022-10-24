@@ -34,7 +34,7 @@ contract VaultEngineLimited is VaultEngine {
         int256 equityAmount
     ) external override onlyBy("whitelisted") {
         _modifyEquity(assetId, underlyingAmount, equityAmount);
-        _enforceVaultLimit(assetId, vaults[assetId][msg.sender]);
+        _enforceVaultLimit(vaults[assetId][msg.sender]);
     }
 
     /**
@@ -49,7 +49,7 @@ contract VaultEngineLimited is VaultEngine {
         int256 debtAmount
     ) external override onlyBy("whitelisted") {
         _modifyDebt(assetId, collAmount, debtAmount);
-        _enforceVaultLimit(assetId, vaults[assetId][msg.sender]);
+        _enforceVaultLimit(vaults[assetId][msg.sender]);
     }
 
     /**
@@ -62,7 +62,7 @@ contract VaultEngineLimited is VaultEngine {
     /**
      * @notice Check if user's vault is under vault limit
      */
-    function _enforceVaultLimit(bytes32 assetId, Vault memory vault) internal view {
+    function _enforceVaultLimit(Vault memory vault) internal view {
         require(
             (vault.normDebt * debtAccumulator) + vault.initialEquity <= vaultLimit,
             "Vault is over the individual vault limit"

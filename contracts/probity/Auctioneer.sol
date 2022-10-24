@@ -274,7 +274,7 @@ contract Auctioneer is Stateful, Eventful {
         require(currentPrice != 0, "Auctioneer/buyItNow: Current price is now zero");
         uint256 lotValue = lot * currentPrice;
 
-        (uint256 biddableLot, , , address index) = getBiddableLot(auctionId, currentPrice, lot);
+        (uint256 biddableLot, , , ) = getBiddableLot(auctionId, currentPrice, lot);
         require(biddableLot > 0, "Auctioneer/buyItNow: Price has reach a point where BuyItNow is no longer available");
 
         uint256 lotToBuy = Math._min(lot, biddableLot);
@@ -350,6 +350,7 @@ contract Auctioneer is Stateful, Eventful {
         uint256 bidLot
     )
         public
+        view
         returns (
             uint256 biddableLot,
             uint256 totalBidValue,
@@ -359,7 +360,8 @@ contract Auctioneer is Stateful, Eventful {
     {
         Auction memory auction = auctions[auctionId];
 
-        (uint256 totalBidValue, uint256 totalBidLot, address index) = totalBidValueAtPrice(auctionId, bidPrice);
+        address index;
+        (totalBidValue, totalBidLot, index) = totalBidValueAtPrice(auctionId, bidPrice);
 
         if (auction.sellAllLot) {
             biddableLot = auction.lot - totalBidLot;
