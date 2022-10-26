@@ -18,7 +18,7 @@ interface VaultEngineLike {
             uint256 debtPrincipal
         );
 
-    function debtAccumulator() external returns (uint256 debtAccumulator);
+    function debtAccumulator() external returns (uint256 debtAccu);
 
     function assets(bytes32 assetId) external returns (uint256 adjustedPrice);
 
@@ -212,7 +212,7 @@ contract Liquidator is Stateful, Eventful {
         }
 
         if (underlying * adjustedPrice < equity * RAY) {
-            _liquidateEquityPosition(assetId, user, underlying, collateral, equity, initialEquity);
+            _liquidateEquityPosition(assetId, user, underlying, equity, initialEquity);
         }
     }
 
@@ -259,7 +259,6 @@ contract Liquidator is Stateful, Eventful {
         bytes32 assetId,
         address user,
         uint256 underlying,
-        uint256 collateral,
         uint256 equity,
         uint256 initialEquity
     ) internal {
