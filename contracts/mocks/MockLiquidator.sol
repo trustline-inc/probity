@@ -22,10 +22,6 @@ contract MockLiquidator {
         assets[assetId].auctioneer = auctioneer;
     }
 
-    function setShutdownState() external {
-        states["shutdown"] = true;
-    }
-
     function reduceAuctionDebt(uint256 amount) external {
         lastReduceAuctionDebt = amount;
     }

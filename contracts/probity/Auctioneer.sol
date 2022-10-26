@@ -389,7 +389,7 @@ contract Auctioneer is Stateful, Eventful {
 
     /**
      * @notice Cancels the auction
-     * @dev Only callable by Probity during shutdown
+     * @dev Only callable by Probity
      * @param auctionId The ID of the auction to cancel
      * @param recipient The address of the recipient (e.g., ReservePool)
      */

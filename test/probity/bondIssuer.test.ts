@@ -16,7 +16,6 @@ let owner: SignerWithAddress;
 let user: SignerWithAddress;
 let gov: SignerWithAddress;
 let reservePool: SignerWithAddress;
-let shutdown: SignerWithAddress;
 
 // Contracts
 let vaultEngine: MockVaultEngine;
@@ -44,7 +43,6 @@ describe("BondIssuer Unit Tests", function () {
     user = signers.alice!;
     gov = signers.charlie!;
     reservePool = signers.don!;
-    shutdown = signers.bob!;
 
     await bondIssuer.setReservePoolAddress(reservePool.address);
     await registry.setupAddress(bytes32("gov"), gov.address, true);
@@ -53,7 +51,6 @@ describe("BondIssuer Unit Tests", function () {
       reservePool.address,
       true
     );
-    await registry.setupAddress(bytes32("shutdown"), shutdown.address, true);
   });
 
   describe("tokensPerSystemCurrency Unit Tests", function () {
@@ -234,101 +231,6 @@ describe("BondIssuer Unit Tests", function () {
       expect(after.active).to.equal(true);
       expect(after.startTime.gt(0)).to.equal(true);
       expect(after.amount).to.equal(OFFER_AMOUNT);
-    });
-  });
-
-  describe("shutdownRedemption Unit Tests", function () {
-    const OFFER_AMOUNT = RAD.mul(10000);
-    const RESERVE_BAL = RAD.mul(10000000);
-    const BUY_AMOUNT = OFFER_AMOUNT.div(10);
-
-    beforeEach(async function () {
-      await bondIssuer.connect(reservePool).newOffering(OFFER_AMOUNT);
-      await vaultEngine.setSystemCurrency(reservePool.address, RESERVE_BAL);
-      await vaultEngine.setSystemCurrency(owner.address, RESERVE_BAL);
-      await vaultEngine.setSystemCurrency(user.address, RESERVE_BAL);
-
-      await bondIssuer.purchaseBond(BUY_AMOUNT);
-    });
-
-    it("fails if not in shutdown state", async () => {
-      await assertRevert(
-        bondIssuer
-          .connect(shutdown)
-          .shutdownRedemption(owner.address, BUY_AMOUNT),
-        "Stateful/onlyWhen: State check failed"
-      );
-      await bondIssuer.connect(shutdown).setShutdownState();
-      await bondIssuer
-        .connect(shutdown)
-        .shutdownRedemption(owner.address, BUY_AMOUNT);
-    });
-
-    it("fails if not called by shutdown", async () => {
-      await bondIssuer.connect(shutdown).setShutdownState();
-
-      await assertRevert(
-        bondIssuer.connect(user).shutdownRedemption(owner.address, BUY_AMOUNT),
-        "AccessControl/onlyBy: Caller does not have permission"
-      );
-      await registry.setupAddress(bytes32("shutdown"), user.address, true);
-      await bondIssuer
-        .connect(user)
-        .shutdownRedemption(owner.address, BUY_AMOUNT);
-    });
-
-    it("fails if reservePool doesn't have enough funds to redeem", async () => {
-      await bondIssuer.connect(shutdown).setShutdownState();
-
-      await vaultEngine.setSystemCurrency(reservePool.address, 0);
-      await assertRevert(
-        bondIssuer
-          .connect(shutdown)
-          .shutdownRedemption(owner.address, BUY_AMOUNT),
-        "BondIssuer/processRedemption: The reserve pool doesn't have enough funds"
-      );
-      await vaultEngine.setSystemCurrency(reservePool.address, RESERVE_BAL);
-      await bondIssuer
-        .connect(shutdown)
-        .shutdownRedemption(owner.address, BUY_AMOUNT);
-    });
-
-    it("fails if user doesn't have enough tokens to redeem", async () => {
-      await bondIssuer.connect(shutdown).setShutdownState();
-
-      await assertRevert(
-        bondIssuer
-          .connect(shutdown)
-          .shutdownRedemption(user.address, BUY_AMOUNT),
-        "BondIssuer/processRedemption: User doesn't have enough bond tokens to redeem this amount"
-      );
-      await bondIssuer
-        .connect(shutdown)
-        .shutdownRedemption(owner.address, BUY_AMOUNT);
-    });
-
-    it("tests that values are properly updated", async () => {
-      await bondIssuer.connect(shutdown).setShutdownState();
-
-      const before = await bondIssuer.bondTokens(owner.address);
-      await bondIssuer
-        .connect(shutdown)
-        .shutdownRedemption(owner.address, BUY_AMOUNT);
-      const after = await bondIssuer.bondTokens(owner.address);
-
-      expect(after.sub(before).abs()).to.equal(BUY_AMOUNT);
-    });
-
-    it("tests that correct amount of systemCurrency is transferred", async () => {
-      await bondIssuer.connect(shutdown).setShutdownState();
-
-      const before = await vaultEngine.systemCurrency(owner.address);
-      await bondIssuer
-        .connect(shutdown)
-        .shutdownRedemption(owner.address, BUY_AMOUNT);
-      const after = await vaultEngine.systemCurrency(owner.address);
-
-      expect(after.sub(before).abs()).to.equal(BUY_AMOUNT);
     });
   });
 
