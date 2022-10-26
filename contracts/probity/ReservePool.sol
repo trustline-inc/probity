@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
@@ -48,6 +48,15 @@ contract ReservePool is Stateful, Eventful {
     event SystemDebtIncreased(uint256 amountToIncrase);
     event SystemDebtSettled(uint256 amountSettle);
     event SystemCurrencyTransferred(address to, uint256 amount);
+
+    /////////////////////////////////////////
+    // Errors
+    /////////////////////////////////////////
+
+    error settlementAmountMustBeLowerThanDebt();
+    error insufficientBalance();
+    error systemCurrencyBalanceMustBeZero();
+    error debtStillUnderThreshold();
 
     /////////////////////////////////////////
     // Constructor
@@ -98,14 +107,9 @@ contract ReservePool is Stateful, Eventful {
      * @param amountToSettle The amount of bad debt to settle
      */
     function settle(uint256 amountToSettle) external onlyByProbity {
-        require(
-            amountToSettle <= vaultEngine.systemDebt(address(this)),
-            "ReservePool/settle: Settlement amount is more than the debt"
-        );
-        require(
-            vaultEngine.systemCurrency(address(this)) >= amountToSettle,
-            "ReservePool/settle: Not enough balance to settle"
-        );
+        if (amountToSettle > vaultEngine.systemDebt(address(this))) revert settlementAmountMustBeLowerThanDebt();
+
+        if (vaultEngine.systemCurrency(address(this)) < amountToSettle) revert insufficientBalance();
 
         vaultEngine.settle(amountToSettle);
 
@@ -137,15 +141,9 @@ contract ReservePool is Stateful, Eventful {
      * @notice Starts a sale for future reserve pool profits
      */
     function startBondSale() external onlyByProbity {
-        require(
-            vaultEngine.systemDebt(address(this)) - debtOnAuction > debtThreshold,
-            "ReservePool/startBondSale: Debt threshold is not yet crossed"
-        );
+        if (vaultEngine.systemDebt(address(this)) - debtOnAuction < debtThreshold) revert debtStillUnderThreshold();
 
-        require(
-            vaultEngine.systemCurrency(address(this)) == 0,
-            "ReservePool/startBondSale: SystemCurrency balance is still positive"
-        );
+        if (vaultEngine.systemCurrency(address(this)) != 0) revert systemCurrencyBalanceMustBeZero();
 
         bondSeller.newOffering(debtThreshold);
     }

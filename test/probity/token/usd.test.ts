@@ -39,7 +39,7 @@ describe("USD Token Unit Test", function () {
   it("test mint can only be called by vault contract", async () => {
     await assertRevert(
       usd.mint(user.address, AMOUNT_TO_MINT),
-      "AccessControl/onlyBy: Caller does not have permission"
+      "callerDoesNotHaveRequiredRole"
     );
 
     // add owner to registry as 'treasury' then check if owner can now mint
@@ -61,7 +61,7 @@ describe("USD Token Unit Test", function () {
 
     await assertRevert(
       usd.connect(user).burn(user.address, AMOUNT_TO_BURN),
-      "AccessControl/onlyBy: Caller does not have permission"
+      "callerDoesNotHaveRequiredRole"
     );
 
     const balanceBefore = await usd.balanceOf(user.address);
@@ -86,7 +86,7 @@ describe("USD Token Unit Test", function () {
 
     await assertRevert(
       usd.connect(user).transfer(owner.address, AMOUNT_TO_MINT),
-      "Stateful/onlyWhen: State check failed"
+      "stateCheckFailed"
     );
   });
 });

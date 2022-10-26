@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
@@ -37,10 +37,17 @@ contract PriceFeed is Stateful, Eventful {
     mapping(bytes32 => Asset) public assets;
 
     /////////////////////////////////////////
+    // Errors
+    /////////////////////////////////////////
+
+    error assetNotInitialized();
+    error assetAlreadyInitialized();
+
+    /////////////////////////////////////////
     // Modifiers
     /////////////////////////////////////////
     modifier collateralExists(bytes32 assetId) {
-        require(address(assets[assetId].ftso) != address(0), "PriceFeed/AssetExists: Asset is not set");
+        if (address(assets[assetId].ftso) == address(0)) revert assetNotInitialized();
         _;
     }
 
@@ -65,10 +72,8 @@ contract PriceFeed is Stateful, Eventful {
         uint256 liquidationRatio,
         FtsoLike ftso
     ) external onlyBy("gov") {
-        require(
-            address(assets[assetId].ftso) == address(0),
-            "PriceFeed/initAsset: This asset has already been initialized"
-        );
+        if (address(assets[assetId].ftso) != address(0)) revert assetAlreadyInitialized();
+
         assets[assetId].liquidationRatio = liquidationRatio;
         assets[assetId].ftso = ftso;
     }
@@ -108,8 +113,7 @@ contract PriceFeed is Stateful, Eventful {
      * @dev The FTSO has a price precision of 5
      * @param assetId The ID of the asset to to update
      */
-    function updateAdjustedPrice(bytes32 assetId) external {
-        require(address(assets[assetId].ftso) != address(0), "PriceFeed/UpdatePrice: Asset is not initialized");
+    function updateAdjustedPrice(bytes32 assetId) external collateralExists(assetId) {
         uint256 price = this.getPrice(assetId);
         uint256 adjustedPrice = Math._rdiv(price, assets[assetId].liquidationRatio * 1e9);
         vaultEngine.updateAdjustedPrice(assetId, adjustedPrice);

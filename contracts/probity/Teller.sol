@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
@@ -62,6 +62,12 @@ contract Teller is Stateful, Eventful {
     event RatesUpdated(uint256 timestamp, uint256 debtAccumulator, uint256 equityAccumulator);
 
     /////////////////////////////////////////
+    // Errors
+    /////////////////////////////////////////
+
+    error lendingPoolSupplyCanNotBeZero();
+
+    /////////////////////////////////////////
     // Constructor
     /////////////////////////////////////////
     constructor(
@@ -111,7 +117,7 @@ contract Teller is Stateful, Eventful {
         uint256 lendingPoolPrincipal = vaultEngine.lendingPoolPrincipal();
         uint256 lendingPoolSupply = vaultEngine.lendingPoolSupply();
 
-        require(lendingPoolSupply > 0, "Teller/updateAccumulators: Lending pool supply cannot be zero");
+        if (lendingPoolSupply == 0) revert lendingPoolSupplyCanNotBeZero();
 
         uint256 utilization = Math._wdiv(lendingPoolPrincipal, lendingPoolSupply);
 

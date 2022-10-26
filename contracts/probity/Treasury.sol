@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 import "../dependencies/Stateful.sol";
-import "hardhat/console.sol";
 
 interface VaultEngineLike {
     function addSystemCurrency(address user, uint256 amount) external;

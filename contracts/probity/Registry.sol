@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 /**
  * @title Registry contract
@@ -22,13 +22,19 @@ contract Registry {
     mapping(address => Role) public addressToRole;
 
     /////////////////////////////////////////
+    // Errors
+    /////////////////////////////////////////
+
+    error callerIsNotGov();
+
+    /////////////////////////////////////////
     // Modifiers
     /////////////////////////////////////////
     /**
      * @dev check if caller is from Governance contract address
      */
     modifier onlyByGov() {
-        require(addressToRole[msg.sender].name == "gov", "Registry/onlyByGov: caller is not from 'gov' address");
+        if (addressToRole[msg.sender].name != "gov") revert callerIsNotGov();
         _;
     }
 

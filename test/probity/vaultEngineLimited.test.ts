@@ -111,7 +111,7 @@ describe("Vault Engine Limited Unit Tests", function () {
           UNDERLYING_AMOUNT,
           EQUITY_AMOUNT
         ),
-        "Vault is over the individual vault limit"
+        "vaultLimitReached()"
       );
 
       await vaultEngine
@@ -159,7 +159,7 @@ describe("Vault Engine Limited Unit Tests", function () {
           UNDERLYING_AMOUNT,
           DEBT_AMOUNT
         ),
-        "Vault is over the individual vault limit"
+        "vaultLimitReached()"
       );
 
       await vaultEngine

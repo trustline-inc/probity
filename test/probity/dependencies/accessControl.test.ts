@@ -41,7 +41,7 @@ describe("AccessControl Unit Test", function () {
       accessControl
         .connect(user)
         .setRegistryAddress(newRegistryAddress.address),
-      "AccessControl/onlyBy: Caller does not have permission"
+      "callerDoesNotHaveRequiredRole"
     );
     await registry.setupAddress(bytes32("gov"), user.address, true);
 

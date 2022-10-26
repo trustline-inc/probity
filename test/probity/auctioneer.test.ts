@@ -35,9 +35,7 @@ import {
 } from "../utils/constants";
 import { BigNumber } from "ethers";
 import assertRevert from "../utils/assertRevert";
-import { sign } from "crypto";
 import parseEvents from "../utils/parseEvents";
-import increaseTime from "../utils/increaseTime";
 const expect = chai.expect;
 
 // Wallets
@@ -115,7 +113,7 @@ describe("Auctioneer Unit Tests", function () {
           ADDRESS_ZERO,
           false
         ),
-        "AccessControl/onlyBy: Caller does not have permission"
+        "callerDoesNotHaveRequiredRole"
       );
 
       await registry.setupAddress(bytes32("liquidator"), user1.address, true);
@@ -235,27 +233,18 @@ describe("Auctioneer Unit Tests", function () {
     it("fails if auction is over", async () => {
       await auctioneer.buyItNow(0, RAY.mul(2), LOT_SIZE);
 
-      await assertRevert(
-        auctioneer.resetAuction(0),
-        "Auctioneer/resetAuction: Auction is over"
-      );
+      await assertRevert(auctioneer.resetAuction(0), "auctionIsOver()");
     });
 
     it("fails if current price is not zero", async () => {
-      await assertRevert(
-        auctioneer.resetAuction(0),
-        "Auctioneer/resetAuction: This auction hasn't expired, doesn't exist or no more asset to auction"
-      );
+      await assertRevert(auctioneer.resetAuction(0), "resetCriteriaNotMet()");
 
       await priceCalc.setPrice(0);
     });
 
     it("fails if auction startTime is zero", async () => {
       await priceCalc.setPrice(0);
-      await assertRevert(
-        auctioneer.resetAuction(1),
-        "Auctioneer/resetAuction: This auction hasn't expired, doesn't exist or no more asset to auction"
-      );
+      await assertRevert(auctioneer.resetAuction(1), "resetCriteriaNotMet()");
 
       await auctioneer.resetAuction(0);
     });
@@ -337,7 +326,7 @@ describe("Auctioneer Unit Tests", function () {
 
       await assertRevert(
         auctioneer.connect(user1).placeBid(0, RAY, LOT_SIZE.div(10)),
-        "Auctioneer/placeBid: Auction is over"
+        "auctionIsOver()"
       );
     });
 
@@ -346,7 +335,7 @@ describe("Auctioneer Unit Tests", function () {
 
       await assertRevert(
         auctioneer.placeBid(0, RAY, LOT_SIZE.div(10)),
-        "Auctioneer/placeBid: This user has already placed a bid"
+        "userBidAlreadyExists()"
       );
     });
 
@@ -490,10 +479,7 @@ describe("Auctioneer Unit Tests", function () {
     });
 
     it("fails if bid doesn't exists for caller", async () => {
-      await assertRevert(
-        auctioneer.cancelBid(0),
-        "Auctioneer/cancelBid: No bids exists for the caller"
-      );
+      await assertRevert(auctioneer.cancelBid(0), "userBidDoesNotExists()");
 
       await auctioneer.placeBid(0, RAY, LOT_SIZE.div(10));
 
@@ -558,14 +544,14 @@ describe("Auctioneer Unit Tests", function () {
 
       await assertRevert(
         auctioneer.connect(user1).buyItNow(0, RAY.mul(2), LOT_SIZE),
-        "Auctioneer/buyItNow: Auction is over"
+        "auctionIsOver()"
       );
     });
 
     it("fails if current price is higher than max buyItNow price", async () => {
       await assertRevert(
         auctioneer.connect(user1).buyItNow(0, RAY, LOT_SIZE.div(10)),
-        "Auctioneer/buyItNow: Current price is higher than max price"
+        "currentPriceIsHigherThanMaxPrice()"
       );
 
       await auctioneer.buyItNow(0, RAY.mul(12).div(10), LOT_SIZE);
@@ -576,7 +562,7 @@ describe("Auctioneer Unit Tests", function () {
 
       await assertRevert(
         auctioneer.connect(user1).buyItNow(0, RAY, LOT_SIZE.div(10)),
-        "Auctioneer/buyItNow: Current price is now zero"
+        "currentPriceIsZero()"
       );
     });
 
@@ -588,7 +574,7 @@ describe("Auctioneer Unit Tests", function () {
 
       await assertRevert(
         auctioneer.connect(user1).buyItNow(0, RAY.mul(5), LOT_SIZE.div(10)),
-        "Auctioneer/buyItNow: Price has reach a point where BuyItNow is no longer available"
+        "buyItNowNoLongerAvailable()"
       );
     });
 
@@ -859,10 +845,7 @@ describe("Auctioneer Unit Tests", function () {
     });
 
     it("fails if caller has no bid", async () => {
-      await assertRevert(
-        auctioneer.finalizeSale(0),
-        "Auctioneer/finalizeSale: The caller has no active bids"
-      );
+      await assertRevert(auctioneer.finalizeSale(0), "userBidDoesNotExists()");
 
       await auctioneer.placeBid(0, RAY.mul(12).div(10), LOT_SIZE.div(10));
       await priceCalc.setPrice(RAY);
@@ -875,7 +858,7 @@ describe("Auctioneer Unit Tests", function () {
 
       await assertRevert(
         auctioneer.finalizeSale(0),
-        "Auctioneer/finalizeSale: The current price has not passed the bid price"
+        "currentPriceIsNotYetBelowBidPrice()"
       );
     });
 
@@ -1196,7 +1179,7 @@ describe("Auctioneer Unit Tests", function () {
     it("tests that only Probity can call the function", async () => {
       await assertRevert(
         auctioneer.connect(user1).cancelAuction(0, owner.address),
-        "AccessControl/onlyByProbity: Caller must be from Probity system contract"
+        "callerIsNotFromProbitySystem()"
       );
 
       await auctioneer

@@ -107,7 +107,7 @@ describe("Vault Engine Unit Tests", function () {
           UNDERLYING_AMOUNT,
           EQUITY_AMOUNT.add(1)
         ),
-        "Vault/modifyEquity: Supply ceiling reached"
+        "assetMaximumAmountReached()"
       );
 
       await vaultEngine.modifyEquity(
@@ -150,7 +150,7 @@ describe("Vault Engine Unit Tests", function () {
           UNDERLYING_AMOUNT,
           EQUITY_AMOUNT_UNDER_FLOOR
         ),
-        "Vault/modifyEquity: Equity smaller than floor"
+        "vaultSizeMinimumNotReached()"
       );
 
       // Increase equity
@@ -484,7 +484,7 @@ describe("Vault Engine Unit Tests", function () {
           MINIMUM_AMOUNT.sub(1),
           EQUITY_AMOUNT
         ),
-        "Vault/certify: Not enough underlying"
+        "insufficientUnderlyingAsset()"
       );
 
       // Increase equity
@@ -556,7 +556,7 @@ describe("Vault Engine Unit Tests", function () {
       const ASSET_ID = bytes32("new Asset ");
       await assertRevert(
         vaultEngine.connect(user).initAsset(ASSET_ID, 2),
-        "AccessControl/onlyBy: Caller does not have permission"
+        "callerDoesNotHaveRequiredRole"
       );
 
       await registry
@@ -575,7 +575,7 @@ describe("Vault Engine Unit Tests", function () {
         vaultEngine
           .connect(user)
           .addSystemCurrency(user.address, AMOUNT_TO_ADD),
-        "AccessControl/onlyBy: Caller does not have permission"
+        "callerDoesNotHaveRequiredRole"
       );
 
       await registry
@@ -705,7 +705,7 @@ describe("Vault Engine Unit Tests", function () {
           UNDERLYING_AMOUNT,
           treasuryBalance.div(RAY).add(1)
         ),
-        "Vault/modifyDebt: Treasury doesn't have enough equity to loan this amount"
+        "insufficientFundInTreasury()"
       );
 
       await vaultEngine.modifyDebt(
@@ -725,7 +725,7 @@ describe("Vault Engine Unit Tests", function () {
           COLLATERAL_AMOUNT,
           DEBT_AMOUNT.add(1)
         ),
-        "Vault/modifyDebt: Debt ceiling reached"
+        "assetMaximumAmountReached()"
       );
 
       await vaultEngine.modifyDebt(
@@ -764,7 +764,7 @@ describe("Vault Engine Unit Tests", function () {
           COLLATERAL_AMOUNT,
           DEBT_AMOUNT_UNDER_FLOOR
         ),
-        "Vault/modifyDebt: Debt smaller than floor"
+        "vaultSizeMinimumNotReached()"
       );
 
       await vaultEngine.modifyDebt(
@@ -956,7 +956,7 @@ describe("Vault Engine Unit Tests", function () {
           MINIMUM_AMOUNT.sub(1),
           DEBT_AMOUNT
         ),
-        "Vault/certify: Not enough collateral"
+        "insufficientCollateralAsset()"
       );
 
       await vaultEngine.modifyDebt(ASSET_ID.FLR, MINIMUM_AMOUNT, DEBT_AMOUNT);
@@ -1288,7 +1288,7 @@ describe("Vault Engine Unit Tests", function () {
           equityRateIncrease,
           BigNumber.from(0)
         ),
-        "AccessControl/onlyBy: Caller does not have permission"
+        "callerDoesNotHaveRequiredRole"
       );
       await vaultEngine
         .connect(user)
@@ -1358,7 +1358,7 @@ describe("Vault Engine Unit Tests", function () {
             equityRateIncrease,
             BigNumber.from(0)
           ),
-        "VaultEngine/updateAccumulators: The equity rate increase is larger than the debt rate increase"
+        "equityCreatedCanNotBeGreaterThanDebtCreated()"
       );
 
       equityRateIncrease = BigNumber.from("125509667994754929166541");
@@ -1385,7 +1385,7 @@ describe("Vault Engine Unit Tests", function () {
             equityRateIncrease,
             protocolRateIncrease
           ),
-        "VaultEngine/updateAccumulators: The equity rate increase is larger than the debt rate increase"
+        "equityCreatedCanNotBeGreaterThanDebtCreated()"
       );
 
       protocolRateIncrease = BigNumber.from(0);

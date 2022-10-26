@@ -52,7 +52,7 @@ describe("PriceFeed Unit Tests", function () {
         priceFeed
           .connect(user)
           .initAsset(ASSET_ID, DEFAULT_LIQUIDATION_RATIO, ftso.address),
-        "AccessControl/onlyBy: Caller does not have permission"
+        "callerDoesNotHaveRequiredRole"
       );
       await priceFeed
         .connect(gov)
@@ -69,7 +69,7 @@ describe("PriceFeed Unit Tests", function () {
       );
       await assertRevert(
         priceFeed.initAsset(ASSET_ID, DEFAULT_LIQUIDATION_RATIO, ftso.address),
-        "PriceFeed/initAsset: This asset has already been initialized"
+        "assetAlreadyInitialized()"
       );
 
       await priceFeed.initAsset(
@@ -111,7 +111,7 @@ describe("PriceFeed Unit Tests", function () {
         priceFeed
           .connect(user)
           .updateLiquidationRatio(ASSET_ID, NEW_LIQUIDATION_RATIO),
-        "AccessControl/onlyBy: Caller does not have permission"
+        "callerDoesNotHaveRequiredRole"
       );
       await priceFeed
         .connect(gov)
@@ -162,7 +162,7 @@ describe("PriceFeed Unit Tests", function () {
 
       await assertRevert(
         priceFeed.connect(user).updateFtso(ASSET_ID, NEW_FTSO_ADDRESS),
-        "AccessControl/onlyBy: Caller does not have permission"
+        "callerDoesNotHaveRequiredRole"
       );
       await priceFeed.connect(gov).updateFtso(ASSET_ID, NEW_FTSO_ADDRESS);
     });
@@ -242,7 +242,7 @@ describe("PriceFeed Unit Tests", function () {
     it("fails if asset has not been initialized", async () => {
       await assertRevert(
         priceFeed.updateAdjustedPrice(ASSET_ID),
-        "PriceFeed/UpdatePrice: Asset is not initialized"
+        "assetNotInitialized()"
       );
       await priceFeed.initAsset(
         ASSET_ID,

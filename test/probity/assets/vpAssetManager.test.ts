@@ -190,7 +190,7 @@ describe("VP AssetManager  Unit Test", function () {
     it("fails if no new epoch to claim", async () => {
       await assertRevert(
         vpAssetManager.userCollectReward(0),
-        "Delegatable/userCollectReward: No new epoch to claim"
+        "noEpochToClaim()"
       );
 
       await vpAssetManager.claimReward(0);
@@ -296,7 +296,7 @@ describe("VP AssetManager  Unit Test", function () {
 
       await assertRevert(
         vpAssetManager.collectRewardForUser(owner.address),
-        "AccessControl/onlyBy: Caller does not have permission"
+        "callerDoesNotHaveRequiredRole"
       );
 
       await registry
@@ -359,7 +359,7 @@ describe("VP AssetManager  Unit Test", function () {
         vpAssetManager
           .connect(gov)
           .changeDataProviders([owner.address], NEW_DATA_PCTS),
-        "Delegatable/changeDataProviders: Length of providers and pct mismatch"
+        "providerAndPctLengthMismatch()"
       );
 
       await vpAssetManager
@@ -374,7 +374,7 @@ describe("VP AssetManager  Unit Test", function () {
         vpAssetManager
           .connect(gov)
           .changeDataProviders(NEW_DATA_PROVIDER, [5000, 4000]),
-        "Delegatable/changeDataProviders: Provided percentages does not add up to 100%"
+        "pctDoesNotAddUpToHundred()"
       );
 
       await vpAssetManager
@@ -449,7 +449,7 @@ describe("VP AssetManager  Unit Test", function () {
 
     await assertRevert(
       vpAssetManager.connect(user).deposit(AMOUNT_TO_MINT),
-      "AccessControl/onlyBy: Caller does not have permission"
+      "callerDoesNotHaveRequiredRole"
     );
 
     await registry

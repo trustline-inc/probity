@@ -38,7 +38,7 @@ describe("Stateful Unit Test", function () {
     const stateName = bytes32("test");
     await assertRevert(
       stateful.connect(user).setState(stateName, true),
-      "AccessControl/onlyBy: Caller does not have permission"
+      "callerDoesNotHaveRequiredRole"
     );
 
     let state = await stateful.states(stateName);
