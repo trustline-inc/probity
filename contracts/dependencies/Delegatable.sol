@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 import "./Stateful.sol";
 import "./Math.sol";
@@ -72,6 +72,14 @@ contract Delegatable is Stateful {
     mapping(address => uint256) public userLastClaimedEpoch; // user's last claimed Epoch
     mapping(address => uint256) public recentTotalDeposit; // user's total recent deposit since last claimed epoch
     mapping(address => mapping(uint256 => uint256)) public recentDeposits; // user's recent deposit during each epoch
+
+    ///////////////////////////////////
+    // Errors
+    ///////////////////////////////////
+
+    error noEpochToClaim();
+    error providerAndPctLengthMismatch();
+    error pctDoesNotAddUpToHundred();
 
     ///////////////////////////////////
     // Constructor
@@ -160,10 +168,7 @@ contract Delegatable is Stateful {
      *        lastClaimedEpoch
      */
     function userCollectReward(uint256 epochToEnd) external {
-        require(
-            lastClaimedEpoch > userLastClaimedEpoch[msg.sender],
-            "Delegatable/userCollectReward: No new epoch to claim"
-        );
+        if (lastClaimedEpoch <= userLastClaimedEpoch[msg.sender]) revert noEpochToClaim();
 
         _userCollectReward(epochToEnd, msg.sender);
     }
@@ -190,10 +195,8 @@ contract Delegatable is Stateful {
      *             The pct must add up to 100% (10000)
      */
     function changeDataProviders(address[] memory providers, uint256[] memory pcts) external onlyBy("gov") {
-        require(
-            providers.length == pcts.length,
-            "Delegatable/changeDataProviders: Length of providers and pct mismatch"
-        );
+        if (providers.length != pcts.length) revert providerAndPctLengthMismatch();
+
         uint256 totalPct = 0;
 
         for (uint256 index = 0; index < providers.length; index++) {
@@ -201,10 +204,7 @@ contract Delegatable is Stateful {
             totalPct += pcts[index];
         }
 
-        require(
-            totalPct == HUNDRED_PERCENT,
-            "Delegatable/changeDataProviders: Provided percentages does not add up to 100%"
-        );
+        if (totalPct != HUNDRED_PERCENT) revert pctDoesNotAddUpToHundred();
 
         dataProviders = providers;
     }

@@ -1,5 +1,6 @@
 require("dotenv").config();
 import "hardhat-ethernal";
+import "hardhat-contract-sizer";
 import "solidity-coverage";
 import "@typechain/hardhat";
 import "@nomiclabs/hardhat-ethers";

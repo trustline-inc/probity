@@ -48,7 +48,7 @@ describe("Native Asset Manager Unit Test", function () {
   it("fails if caller is not a whitelisted user", async () => {
     await assertRevert(
       nativeAssetManager.connect(user).deposit({ value: AMOUNT_TO_DEPOSIT }),
-      "AccessControl/onlyBy: Caller does not have permission"
+      "callerDoesNotHaveRequiredRole"
     );
 
     await registry

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 interface IRegistry {
     function checkIfProbitySystem(address addr) external returns (bool);
@@ -18,6 +18,13 @@ contract AccessControl {
     IRegistry public registry; // registry contract
 
     ///////////////////////////////////
+    // Errors
+    ///////////////////////////////////
+
+    error callerDoesNotHaveRequiredRole(bytes32 roleName);
+    error callerIsNotFromProbitySystem();
+
+    ///////////////////////////////////
     // Modifiers
     ///////////////////////////////////
 
@@ -26,7 +33,7 @@ contract AccessControl {
      * @param name in the registry
      */
     modifier onlyBy(bytes32 name) {
-        require(registry.checkRole(name, msg.sender), "AccessControl/onlyBy: Caller does not have permission");
+        if (!registry.checkRole(name, msg.sender)) revert callerDoesNotHaveRequiredRole(name);
         _;
     }
 
@@ -34,10 +41,7 @@ contract AccessControl {
      * @dev check if the caller is from one of the Probity system's contract
      */
     modifier onlyByProbity() {
-        require(
-            registry.checkIfProbitySystem(msg.sender),
-            "AccessControl/onlyByProbity: Caller must be from Probity system contract"
-        );
+        if (!registry.checkIfProbitySystem(msg.sender)) revert callerIsNotFromProbitySystem();
         _;
     }
 

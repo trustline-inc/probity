@@ -96,7 +96,7 @@ describe("Vault Engine Unrestricted Unit Tests", function () {
           UNDERLYING_AMOUNT,
           EQUITY_AMOUNT
         ),
-        "AccessControl/onlyBy: Caller does not have permission"
+        "callerDoesNotHaveRequiredRole"
       );
 
       await registry
@@ -159,7 +159,7 @@ describe("Vault Engine Unrestricted Unit Tests", function () {
         .setupAddress(bytes32("notWhitelisted"), owner.address, false);
       await assertRevert(
         vaultEngine.modifyDebt(ASSET_ID.FLR, COLL_AMOUNT, DEBT_AMOUNT),
-        "AccessControl/onlyBy: Caller does not have permission"
+        "callerDoesNotHaveRequiredRole"
       );
 
       await registry

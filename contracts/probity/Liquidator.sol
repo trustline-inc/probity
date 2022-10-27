@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
@@ -102,6 +102,15 @@ contract Liquidator is Stateful, Eventful {
     mapping(bytes32 => Asset) public assets;
 
     /////////////////////////////////////////
+    // Errors
+    /////////////////////////////////////////
+
+    error assetAlreadyInitialized();
+    error vaultIsEmpty();
+    error positionsNotReadyForLiquidation();
+    error insufficientFundsInTreasury();
+
+    /////////////////////////////////////////
     // Constructor
     /////////////////////////////////////////
     constructor(
@@ -130,10 +139,8 @@ contract Liquidator is Stateful, Eventful {
         AuctioneerLike auctioneer,
         address vpAssetManager
     ) external onlyBy("gov") {
-        require(
-            address(assets[assetId].auctioneer) == address(0),
-            "Liquidator/initAsset: This asset has already been initialized"
-        );
+        if (address(assets[assetId].auctioneer) != address(0)) revert assetAlreadyInitialized();
+
         assets[assetId].auctioneer = auctioneer;
         assets[assetId].vpAssetManagerAddress = vpAssetManager;
         assets[assetId].debtPenaltyFee = 1.7E17;
@@ -200,12 +207,10 @@ contract Liquidator is Stateful, Eventful {
             uint256 debtPrincipal
         ) = vaultEngine.vaults(assetId, user);
 
-        require((underlying + collateral) != 0 && (debt + equity != 0), "Lidquidator: Nothing to liquidate");
+        if ((underlying + collateral) == 0 || (debt + equity == 0)) revert vaultIsEmpty();
 
-        require(
-            collateral * adjustedPrice < debt * debtAccumulator || underlying * adjustedPrice < initialEquity,
-            "Liquidator: Vault both equity and debt positions are above the liquidation ratio"
-        );
+        if (collateral * adjustedPrice >= debt * debtAccumulator && underlying * adjustedPrice >= initialEquity)
+            revert positionsNotReadyForLiquidation();
 
         if (collateral * adjustedPrice < debt * debtAccumulator) {
             _liquidateDebtPosition(assetId, user, collateral, debt, debtPrincipal, debtAccumulator);
@@ -262,10 +267,7 @@ contract Liquidator is Stateful, Eventful {
         uint256 equity,
         uint256 initialEquity
     ) internal {
-        require(
-            vaultEngine.systemCurrency(treasuryAddress) >= equity,
-            "VaultEngine/liquidateEquityPosition: Not enough treasury funds"
-        );
+        if (vaultEngine.systemCurrency(treasuryAddress) < equity) revert insufficientFundsInTreasury();
 
         Asset memory asset = assets[assetId];
 

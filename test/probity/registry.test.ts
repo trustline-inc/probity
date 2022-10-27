@@ -38,7 +38,7 @@ describe("Registry Unit Tests", function () {
         registry
           .connect(user)
           .setupAddress(bytes32("test"), user.address, false),
-        "Registry/onlyByGov: caller is not from 'gov' address"
+        "callerIsNotGov()"
       );
 
       await registry
@@ -93,7 +93,7 @@ describe("Registry Unit Tests", function () {
     it("fails if caller is not by gov", async () => {
       await assertRevert(
         registry.connect(user).removeAddress(ADDRESS),
-        "Registry/onlyByGov: caller is not from 'gov' address"
+        "callerIsNotGov()"
       );
 
       await registry.connect(gov).removeAddress(ADDRESS);

@@ -86,7 +86,7 @@ describe("ERC20 Asset Manager Unit Test", function () {
 
     await assertRevert(
       mockErc20AssetManager.connect(user).deposit(AMOUNT_TO_MINT),
-      "AccessControl/onlyBy: Caller does not have permission"
+      "callerDoesNotHaveRequiredRole"
     );
 
     await registry

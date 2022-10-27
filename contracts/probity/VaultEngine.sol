@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
@@ -79,6 +79,20 @@ contract VaultEngine is Stateful, Eventful {
     event SystemDebtIncreased(address indexed caller, uint256 amount);
 
     /////////////////////////////////////////
+    // Errors
+    /////////////////////////////////////////
+
+    error treasuryAddressNotSet();
+    error insufficientUnderlyingAsset();
+    error insufficientCollateralAsset();
+    error equityCreatedCanNotBeGreaterThanDebtCreated();
+    error assetNotAllowedAsCollateral();
+    error assetNotAllowedAsUnderlying();
+    error insufficientFundInTreasury();
+    error vaultSizeMinimumNotReached();
+    error assetMaximumAmountReached();
+
+    /////////////////////////////////////////
     // Constructor
     /////////////////////////////////////////
 
@@ -104,7 +118,7 @@ contract VaultEngine is Stateful, Eventful {
      * @param newTreasuryAddress to use
      */
     function updateTreasuryAddress(address newTreasuryAddress) external {
-        require(registry.checkRole("treasury", newTreasuryAddress), "Treasury address is not valid");
+        if (!registry.checkRole("treasury", newTreasuryAddress)) revert treasuryAddressNotSet();
         treasury = newTreasuryAddress;
     }
 
@@ -215,11 +229,6 @@ contract VaultEngine is Stateful, Eventful {
         Vault memory vault = vaults[assetId][msg.sender];
         uint256 interestAmount = vault.normEquity * equityAccumulator - vault.initialEquity;
         uint256 normEquityToCollect = interestAmount / equityAccumulator;
-
-        require(
-            (vault.normEquity * equityAccumulator - interestAmount) >= vault.initialEquity,
-            "VaultEngine/_collectInterest: interestAmount to be collected is more than available"
-        );
 
         _collectInterest(assetId, normEquityToCollect * equityAccumulator);
 
@@ -404,7 +413,7 @@ contract VaultEngine is Stateful, Eventful {
         uint256 equityRateIncrease,
         uint256 protocolFeeRates
     ) external onlyBy("teller") {
-        require(treasury != address(0), "VaultEngine/updateAccumulators: treasury address is not set");
+        if (treasury == address(0)) revert treasuryAddressNotSet();
         emit LogVarUpdate("Vault", "debtAccumulator", debtAccumulator, debtRateIncrease);
         emit LogVarUpdate("Vault", "equityAccumulator", equityAccumulator, equityRateIncrease);
 
@@ -416,10 +425,7 @@ contract VaultEngine is Stateful, Eventful {
 
         uint256 protocolFeeToCollect = lendingPoolEquity * protocolFeeRates;
 
-        require(
-            newEquity + protocolFeeToCollect <= newDebt,
-            "VaultEngine/updateAccumulators: The equity rate increase is larger than the debt rate increase"
-        );
+        if (newEquity + protocolFeeToCollect > newDebt) revert equityCreatedCanNotBeGreaterThanDebtCreated();
 
         systemCurrency[reservePool] += protocolFeeToCollect;
     }
@@ -451,11 +457,8 @@ contract VaultEngine is Stateful, Eventful {
         int256 underlyingAmount,
         int256 equityAmount
     ) internal {
-        require(treasury != address(0), "VaultEngine/_modifyEquity: treasury address is not set");
-        require(
-            assets[assetId].category == Category.UNDERLYING || assets[assetId].category == Category.BOTH,
-            "Vault/modifyEquity: Asset not allowed as underlying"
-        );
+        if (treasury == address(0)) revert treasuryAddressNotSet();
+        if (assets[assetId].category == Category.COLLATERAL) revert assetNotAllowedAsUnderlying();
 
         if (!vaultExists[msg.sender]) {
             vaultList.push(msg.sender);
@@ -489,14 +492,11 @@ contract VaultEngine is Stateful, Eventful {
         lendingPoolEquity = Math._add(lendingPoolEquity, equityAmount);
         lendingPoolSupply = Math._add(lendingPoolSupply, initialEquityToChange);
 
-        require(
-            Math._mul(vault.normEquity, equityAccumulator) <= assets[assetId].ceiling,
-            "Vault/modifyEquity: Supply ceiling reached"
-        );
-        require(
-            vault.normEquity == 0 || (vault.normEquity * RAY) > assets[assetId].floor,
-            "Vault/modifyEquity: Equity smaller than floor"
-        );
+        if (Math._mul(assets[assetId].normEquity, equityAccumulator) > assets[assetId].ceiling)
+            revert assetMaximumAmountReached();
+        if (vault.normEquity != 0 && (vault.normEquity * RAY) < assets[assetId].floor)
+            revert vaultSizeMinimumNotReached();
+
         _certifyEquityPosition(assetId, vault);
 
         systemCurrency[treasury] = Math._add(systemCurrency[treasury], initialEquityToChange);
@@ -509,11 +509,8 @@ contract VaultEngine is Stateful, Eventful {
         int256 collAmount,
         int256 debtAmount
     ) internal {
-        require(treasury != address(0), "VaultEngine/_modifyDebt: treasury address is not set");
-        require(
-            assets[assetId].category == Category.COLLATERAL || assets[assetId].category == Category.BOTH,
-            "Vault/modifyDebt: Asset not allowed as collateral"
-        );
+        if (treasury == address(0)) revert treasuryAddressNotSet();
+        if (assets[assetId].category == Category.UNDERLYING) revert assetNotAllowedAsCollateral();
 
         if (!vaultExists[msg.sender]) {
             vaultList.push(msg.sender);
@@ -523,10 +520,7 @@ contract VaultEngine is Stateful, Eventful {
         int256 debtCreated = Math._mul(debtAccumulator, debtAmount);
 
         if (debtAmount > 0) {
-            require(
-                systemCurrency[treasury] >= uint256(debtAmount) * debtAccumulator,
-                "Vault/modifyDebt: Treasury doesn't have enough equity to loan this amount"
-            );
+            if (systemCurrency[treasury] < uint256(debtAmount) * debtAccumulator) revert insufficientFundInTreasury();
         }
 
         Vault memory vault = vaults[assetId][msg.sender];
@@ -549,11 +543,9 @@ contract VaultEngine is Stateful, Eventful {
 
         totalSystemCurrency = Math._add(totalSystemCurrency, debtCreated);
 
-        require(vault.normDebt * debtAccumulator <= assets[assetId].ceiling, "Vault/modifyDebt: Debt ceiling reached");
-        require(
-            vault.normDebt == 0 || (vault.normDebt * RAY) > assets[assetId].floor,
-            "Vault/modifyDebt: Debt smaller than floor"
-        );
+        if (assets[assetId].normDebt * debtAccumulator > assets[assetId].ceiling) revert assetMaximumAmountReached();
+        if (vault.normDebt != 0 && (vault.normDebt * RAY) < assets[assetId].floor) revert vaultSizeMinimumNotReached();
+
         _certifyDebtPosition(assetId, vault);
 
         systemCurrency[msg.sender] = Math._add(systemCurrency[msg.sender], debtCreated);
@@ -570,10 +562,8 @@ contract VaultEngine is Stateful, Eventful {
      * @param vault The vault to certify
      */
     function _certifyEquityPosition(bytes32 assetId, Vault memory vault) internal view {
-        require(
-            vault.initialEquity <= vault.underlying * assets[assetId].adjustedPrice,
-            "Vault/certify: Not enough underlying"
-        );
+        if (vault.initialEquity > vault.underlying * assets[assetId].adjustedPrice)
+            revert insufficientUnderlyingAsset();
     }
 
     /**
@@ -582,9 +572,7 @@ contract VaultEngine is Stateful, Eventful {
      * @param vault The vault to certify
      */
     function _certifyDebtPosition(bytes32 assetId, Vault memory vault) internal view {
-        require(
-            (vault.normDebt * debtAccumulator) <= vault.collateral * assets[assetId].adjustedPrice,
-            "Vault/certify: Not enough collateral"
-        );
+        if ((vault.normDebt * debtAccumulator) > vault.collateral * assets[assetId].adjustedPrice)
+            revert insufficientCollateralAsset();
     }
 }

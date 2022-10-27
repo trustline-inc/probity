@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 import "./VaultEngine.sol";
 
@@ -20,6 +20,12 @@ contract VaultEngineLimited is VaultEngine {
 
     // For testing on the Songbird network
     uint256 public vaultLimit;
+
+    /////////////////////////////////////////
+    // Errors
+    /////////////////////////////////////////
+
+    error vaultLimitReached();
 
     /////////////////////////////////////////
     // Constructor
@@ -63,9 +69,6 @@ contract VaultEngineLimited is VaultEngine {
      * @notice Check if user's vault is under vault limit
      */
     function _enforceVaultLimit(Vault memory vault) internal view {
-        require(
-            (vault.normDebt * debtAccumulator) + vault.initialEquity <= vaultLimit,
-            "Vault is over the individual vault limit"
-        );
+        if ((vault.normDebt * debtAccumulator) + vault.initialEquity > vaultLimit) revert vaultLimitReached();
     }
 }

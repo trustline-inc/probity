@@ -88,7 +88,7 @@ describe("Liquidator Unit Tests", function () {
           EXPECTED_AUCTIONEER_ADDRESS,
           ADDRESS_ZERO
         ),
-        "Liquidator/initAsset: This asset has already been initialized"
+        "assetAlreadyInitialized()"
       );
     });
 
@@ -181,7 +181,7 @@ describe("Liquidator Unit Tests", function () {
 
       await assertRevert(
         liquidator.connect(user).reduceAuctionDebt(REDUCE_AUCTION_DEBT_AMOUNT),
-        "AccessControl/onlyBy: Caller does not have permission"
+        "callerDoesNotHaveRequiredRole"
       );
 
       await registry.setupAddress(bytes32("auctioneer"), user.address, true);
@@ -260,7 +260,7 @@ describe("Liquidator Unit Tests", function () {
 
       await assertRevert(
         liquidator.liquidateVault(ASSET_ID.FLR, user.address),
-        "Lidquidator: Nothing to liquidate"
+        "vaultIsEmpty()"
       );
 
       await vaultEngine.updateVault(
@@ -292,7 +292,7 @@ describe("Liquidator Unit Tests", function () {
 
       await assertRevert(
         liquidator.liquidateVault(ASSET_ID.FLR, user.address),
-        "Liquidator: Vault both equity and debt positions are above the liquidation ratio"
+        "positionsNotReadyForLiquidation()"
       );
 
       await vaultEngine.updateVault(
@@ -325,7 +325,7 @@ describe("Liquidator Unit Tests", function () {
 
       await assertRevert(
         liquidator.liquidateVault(ASSET_ID.FLR, user.address),
-        "VaultEngine/liquidateEquityPosition: Not enough treasury funds"
+        "insufficientFundsInTreasury()"
       );
 
       await vaultEngine.setSystemCurrency(treasury.address, RAD.mul(100000));

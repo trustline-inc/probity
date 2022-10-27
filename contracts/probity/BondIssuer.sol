@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
@@ -54,6 +54,17 @@ contract BondIssuer is Stateful, Eventful {
     uint256 public totalBondTokens; // [RAD]
 
     /////////////////////////////////////////
+    // Errors
+    /////////////////////////////////////////
+
+    error reservePoolAlreadySet();
+    error saleActive();
+    error saleNotActive();
+    error purchaseAmountIsHigherThanAvailable(uint256 purchaseAmount, uint256 available);
+    error notEnoughBondsToRedeem(uint256 requested, uint256 userBondBalance);
+    error insufficientFundsInReservePool(uint256 currentBalance);
+
+    /////////////////////////////////////////
     // Constructor
     /////////////////////////////////////////
     constructor(address registryAddress, VaultEngineLike vaultEngineAddress) Stateful(registryAddress) {
@@ -86,7 +97,7 @@ contract BondIssuer is Stateful, Eventful {
      * @param _reservePoolAddress reservePoolAddress
      */
     function setReservePoolAddress(address _reservePoolAddress) external onlyBy("gov") {
-        require(reservePoolAddress == address(0), "BondIssuer/setReservePoolAddress: reservePool Address already set");
+        if (reservePoolAddress != address(0)) revert reservePoolAlreadySet();
         reservePoolAddress = _reservePoolAddress;
     }
 
@@ -122,7 +133,7 @@ contract BondIssuer is Stateful, Eventful {
      * @param amount to be sold
      */
     function newOffering(uint256 amount) external onlyBy("reservePool") {
-        require(offering.active == false, "ReservePool/startBondSale: the current offering is not over yet");
+        if (offering.active != false) revert saleActive();
 
         offering.active = true;
         offering.startTime = block.timestamp;
@@ -134,11 +145,8 @@ contract BondIssuer is Stateful, Eventful {
      * @param value The bond face value
      */
     function purchaseBond(uint256 value) external {
-        require(offering.active, "ReservePool/purchaseBond: Bonds are not currently offered for sale");
-        require(
-            offering.amount >= value,
-            "ReservePool/purchaseBond: Can't purchase more bondTokens than offering amount"
-        );
+        if (!offering.active) revert saleNotActive();
+        if (offering.amount < value) revert purchaseAmountIsHigherThanAvailable(value, offering.amount);
 
         vaultEngine.moveSystemCurrency(msg.sender, reservePoolAddress, value);
         uint256 amountToBuy = ((value * tokensPerSystemCurrency()) / ONE);
@@ -168,17 +176,12 @@ contract BondIssuer is Stateful, Eventful {
      * @param amount The amount to redeem
      */
     function _processRedemption(address user, uint256 amount) internal {
-        require(
-            vaultEngine.systemCurrency(address(reservePoolAddress)) -
-                vaultEngine.systemDebt(address(reservePoolAddress)) >=
-                amount,
-            "BondIssuer/processRedemption: The reserve pool doesn't have enough funds"
-        );
+        uint256 reservePoolBalance = vaultEngine.systemCurrency(address(reservePoolAddress)) -
+            vaultEngine.systemDebt(address(reservePoolAddress));
 
-        require(
-            bondTokens[user] >= amount,
-            "BondIssuer/processRedemption: User doesn't have enough bond tokens to redeem this amount"
-        );
+        if (reservePoolBalance < amount) revert insufficientFundsInReservePool(reservePoolBalance);
+
+        if (bondTokens[user] < amount) revert notEnoughBondsToRedeem(amount, bondTokens[user]);
 
         bondTokens[user] -= amount;
         vaultEngine.moveSystemCurrency(address(reservePoolAddress), user, amount);

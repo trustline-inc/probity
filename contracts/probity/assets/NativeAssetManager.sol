@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.4;
 
 import "../../dependencies/Stateful.sol";
 
@@ -27,6 +27,12 @@ contract NativeAssetManager is Stateful {
     event WithdrawNativeCrypto(address indexed user, uint256 amount);
 
     /////////////////////////////////////////
+    // Errors
+    /////////////////////////////////////////
+
+    error transferFailed();
+
+    /////////////////////////////////////////
     // Constructor
     /////////////////////////////////////////
     constructor(
@@ -48,7 +54,7 @@ contract NativeAssetManager is Stateful {
 
     function withdraw(uint256 amount) external onlyWhen("paused", false) {
         vaultEngine.modifyStandbyAmount(assetId, msg.sender, -int256(amount));
-        require(payable(msg.sender).send(amount), "NativeAssetManager/withdraw: fail to send FLR");
+        if (!payable(msg.sender).send(amount)) revert transferFailed();
         emit WithdrawNativeCrypto(msg.sender, amount);
     }
 }

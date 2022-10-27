@@ -107,7 +107,7 @@ describe("BondIssuer Unit Tests", function () {
     it("fails if caller is not 'gov'", async () => {
       await assertRevert(
         bondIssuer.connect(user).setReservePoolAddress(reservePool.address),
-        "AccessControl/onlyBy: Caller does not have permission"
+        "callerDoesNotHaveRequiredRole"
       );
       await registry.setupAddress(bytes32("gov"), user.address, true);
       await bondIssuer.connect(user).setReservePoolAddress(reservePool.address);
@@ -117,7 +117,7 @@ describe("BondIssuer Unit Tests", function () {
       await bondIssuer.connect(gov).setReservePoolAddress(reservePool.address);
       await assertRevert(
         bondIssuer.connect(gov).setReservePoolAddress(reservePool.address),
-        "BondIssuer/setReservePoolAddress: reservePool Address already set"
+        "reservePoolAlreadySet()"
       );
     });
 
@@ -136,7 +136,7 @@ describe("BondIssuer Unit Tests", function () {
     it("fails if caller is not 'gov'", async () => {
       await assertRevert(
         bondIssuer.connect(user).updateMaxDiscount(NEW_MAX_PRICE),
-        "AccessControl/onlyBy: Caller does not have permission"
+        "callerDoesNotHaveRequiredRole"
       );
       await registry.setupAddress(bytes32("gov"), user.address, true);
       await bondIssuer.connect(user).updateMaxDiscount(NEW_MAX_PRICE);
@@ -156,7 +156,7 @@ describe("BondIssuer Unit Tests", function () {
     it("fails if caller is not gov", async () => {
       await assertRevert(
         bondIssuer.connect(user).updateStepPeriod(NEW_STEP_PERIOD),
-        "AccessControl/onlyBy: Caller does not have permission"
+        "callerDoesNotHaveRequiredRole"
       );
       await registry.setupAddress(bytes32("gov"), user.address, true);
       await bondIssuer.connect(user).updateStepPeriod(NEW_STEP_PERIOD);
@@ -178,7 +178,7 @@ describe("BondIssuer Unit Tests", function () {
         bondIssuer
           .connect(user)
           .updateDiscountIncreasePerStep(NEW_PRICE_INCREASE_PER_STEP),
-        "AccessControl/onlyBy: Caller does not have permission"
+        "callerDoesNotHaveRequiredRole"
       );
       await registry.setupAddress(bytes32("gov"), user.address, true);
       await bondIssuer
@@ -202,7 +202,7 @@ describe("BondIssuer Unit Tests", function () {
     it("fails if caller is not by reservePool", async () => {
       await assertRevert(
         bondIssuer.connect(user).newOffering(OFFER_AMOUNT),
-        "AccessControl/onlyBy: Caller does not have permission"
+        "callerDoesNotHaveRequiredRole"
       );
       await registry.setupAddress(bytes32("reservePool"), user.address, true);
       await bondIssuer.connect(user).newOffering(OFFER_AMOUNT);
@@ -213,7 +213,7 @@ describe("BondIssuer Unit Tests", function () {
       await bondIssuer.connect(user).newOffering(OFFER_AMOUNT);
       await assertRevert(
         bondIssuer.connect(user).newOffering(OFFER_AMOUNT),
-        "ReservePool/startBondSale: the current offering is not over yet"
+        "saleActive()"
       );
     });
 
@@ -245,7 +245,7 @@ describe("BondIssuer Unit Tests", function () {
     it("fails if offering is not active", async () => {
       await assertRevert(
         bondIssuer.purchaseBond(OFFER_AMOUNT.div(2)),
-        "ReservePool/purchaseBond: Bonds are not currently offered for sale"
+        "saleNotActive()"
       );
       await bondIssuer.connect(reservePool).newOffering(OFFER_AMOUNT);
       await bondIssuer.purchaseBond(OFFER_AMOUNT.div(2));
@@ -256,7 +256,7 @@ describe("BondIssuer Unit Tests", function () {
 
       await assertRevert(
         bondIssuer.purchaseBond(OFFER_AMOUNT.add(1)),
-        "ReservePool/purchaseBond: Can't purchase more bondTokens than offering amount"
+        "purchaseAmountIsHigherThanAvailable"
       );
       await bondIssuer.purchaseBond(OFFER_AMOUNT);
     });
@@ -331,7 +331,7 @@ describe("BondIssuer Unit Tests", function () {
       await vaultEngine.setSystemCurrency(reservePool.address, 0);
       await assertRevert(
         bondIssuer.redeemBondTokens(BUY_AMOUNT),
-        "BondIssuer/processRedemption: The reserve pool doesn't have enough funds"
+        "insufficientFundsInReservePool"
       );
       await vaultEngine.setSystemCurrency(reservePool.address, RESERVE_BAL);
       await bondIssuer.redeemBondTokens(BUY_AMOUNT);
@@ -340,7 +340,7 @@ describe("BondIssuer Unit Tests", function () {
     it("fails if user doesn't have enough tokens to redeem", async () => {
       await assertRevert(
         bondIssuer.connect(user).redeemBondTokens(BUY_AMOUNT),
-        "BondIssuer/processRedemption: User doesn't have enough bond tokens to redeem this amount"
+        "notEnoughBondsToRedeem"
       );
       await bondIssuer.connect(user).purchaseBond(BUY_AMOUNT);
       await bondIssuer.connect(user).redeemBondTokens(BUY_AMOUNT);
