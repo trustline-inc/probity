@@ -29,8 +29,8 @@ contract AccessControl {
     ///////////////////////////////////
 
     /**
-     * @dev check if the caller has been registered with name in the registry
-     * @param name in the registry
+     * @dev check if the caller has been registered with a specific role in the registry
+     * @param name role name in the registry
      */
     modifier onlyBy(bytes32 name) {
         if (!registry.checkRole(name, msg.sender)) revert callerDoesNotHaveRequiredRole(name);
@@ -57,7 +57,7 @@ contract AccessControl {
     ///////////////////////////////////
 
     /**
-     * @dev check if the caller is from one of the Probity system's contract
+     * @dev set the new registry address, used to replace registry module
      */
     function setRegistryAddress(IRegistry newRegistryAddress) external onlyBy("gov") {
         registry = newRegistryAddress;
