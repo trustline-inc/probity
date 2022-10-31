@@ -59,13 +59,13 @@ contract ERC20AssetManager is Stateful {
     /////////////////////////////////////////
     // External Functions
     /////////////////////////////////////////
-    function deposit(uint256 amount) external onlyWhen("paused", false) onlyBy("whitelisted") {
+    function deposit(uint256 amount) external onlyWhen("paused", false) {
         if (!token.transferFrom(msg.sender, address(this), amount)) revert transferFailed();
         vaultEngine.modifyStandbyAmount(assetId, msg.sender, int256(amount));
         emit DepositToken(msg.sender, amount, address(token));
     }
 
-    function withdraw(uint256 amount) external onlyWhen("paused", false) onlyBy("whitelisted") {
+    function withdraw(uint256 amount) external onlyWhen("paused", false) {
         if (!token.transfer(msg.sender, amount)) revert transferFailed();
         vaultEngine.modifyStandbyAmount(assetId, msg.sender, -int256(amount));
         emit WithdrawToken(msg.sender, amount, address(token));
