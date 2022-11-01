@@ -167,7 +167,8 @@ contract Delegatable is Stateful {
      * @param epochToEnd stop at this epoch instead of the lastClaimedEpoch, leave zero to process up until
      *        lastClaimedEpoch
      */
-    function userCollectReward(uint256 epochToEnd) external {
+
+    function userCollectReward(uint256 epochToEnd) external onlyWhen("paused", false) {
         if (lastClaimedEpoch <= userLastClaimedEpoch[msg.sender]) revert noEpochToClaim();
 
         _userCollectReward(epochToEnd, msg.sender);

@@ -108,7 +108,7 @@ contract Teller is Stateful, Eventful {
     /**
      * @dev Updates the debt and equity rate accumulators
      */
-    function updateAccumulators() external {
+    function updateAccumulators() external onlyWhen("paused", false) {
         uint256 debtAccumulator = vaultEngine.debtAccumulator();
         uint256 lendingPoolDebt = vaultEngine.lendingPoolDebt();
         uint256 lendingPoolEquity = vaultEngine.lendingPoolEquity();

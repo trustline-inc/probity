@@ -147,6 +147,15 @@ describe("Teller Unit Tests", function () {
       await teller.updateAccumulators();
     });
 
+    it("fails when contract is in paused state", async () => {
+      await vaultEngine.setLendingPoolSupply(EQUITY_TO_SET);
+      await teller.setState(bytes32("paused"), true);
+      await assertRevert(teller.updateAccumulators(), "stateCheckFailed");
+
+      await teller.setState(bytes32("paused"), false);
+      await teller.updateAccumulators();
+    });
+
     it("tests that APR is set properly for 20% utilization", async () => {
       await vaultEngine.setLendingPoolPrincipal(WAD.mul(25));
       await vaultEngine.setLendingPoolSupply(WAD.mul(100));

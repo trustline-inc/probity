@@ -117,7 +117,7 @@ contract VaultEngine is Stateful, Eventful {
      * @dev update the treasuryAddress
      * @param newTreasuryAddress to use
      */
-    function updateTreasuryAddress(address newTreasuryAddress) external {
+    function updateTreasuryAddress(address newTreasuryAddress) external onlyBy("gov") {
         if (!registry.checkRole("treasury", newTreasuryAddress)) revert treasuryAddressNotSet();
         treasury = newTreasuryAddress;
     }
@@ -225,7 +225,7 @@ contract VaultEngine is Stateful, Eventful {
      * @dev Accrues vault interest and PBT
      * @param assetId The ID of the vault asset type
      */
-    function collectInterest(bytes32 assetId) public {
+    function collectInterest(bytes32 assetId) public onlyWhen("paused", false) {
         Vault memory vault = vaults[assetId][msg.sender];
         uint256 interestAmount = vault.normEquity * equityAccumulator - vault.initialEquity;
         uint256 normEquityToCollect = interestAmount / equityAccumulator;
@@ -245,7 +245,7 @@ contract VaultEngine is Stateful, Eventful {
         bytes32 assetId,
         int256 underlyingAmount,
         int256 equityAmount
-    ) external virtual {
+    ) external virtual onlyWhen("paused", false) {
         _modifyEquity(assetId, underlyingAmount, equityAmount);
     }
 
@@ -259,7 +259,7 @@ contract VaultEngine is Stateful, Eventful {
         bytes32 assetId,
         int256 collAmount,
         int256 debtAmount
-    ) external virtual {
+    ) external virtual onlyWhen("paused", false) {
         _modifyDebt(assetId, collAmount, debtAmount);
     }
 
