@@ -437,27 +437,6 @@ describe("VP AssetManager  Unit Test", function () {
     );
   });
 
-  it("fails if caller is not a whitelisted user", async () => {
-    await registry
-      .connect(gov)
-      .setupAddress(bytes32("notWhitelisted"), user.address, false);
-
-    await mockVpToken.mint(user.address, AMOUNT_TO_MINT);
-    await mockVpToken
-      .connect(user)
-      .approve(vpAssetManager.address, AMOUNT_TO_MINT);
-
-    await assertRevert(
-      vpAssetManager.connect(user).deposit(AMOUNT_TO_MINT),
-      "callerDoesNotHaveRequiredRole"
-    );
-
-    await registry
-      .connect(gov)
-      .setupAddress(bytes32("whitelisted"), user.address, false);
-    await vpAssetManager.connect(user).deposit(AMOUNT_TO_MINT);
-  });
-
   it("test DepositVPAssetManager event is emitted properly", async () => {
     await mockVpToken.mint(owner.address, AMOUNT_TO_MINT);
     await mockVpToken.approve(vpAssetManager.address, AMOUNT_TO_MINT);

@@ -46,7 +46,7 @@ contract VPAssetManager is Delegatable {
     // External Functions
     /////////////////////////////////////////
 
-    function deposit(uint256 amount) external onlyWhen("paused", false) onlyBy("whitelisted") {
+    function deposit(uint256 amount) external onlyWhen("paused", false) {
         if (!token.transferFrom(msg.sender, address(this), amount)) revert transferFailed();
         vaultEngine.modifyStandbyAmount(assetId, msg.sender, int256(amount));
         uint256 currentRewardEpoch = ftsoManager.getCurrentRewardEpoch();
