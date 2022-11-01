@@ -330,7 +330,6 @@ contract VaultEngine is Stateful, Eventful {
         vault.underlying = Math._add(vault.underlying, assetToReturn);
         vault.standbyAmount = Math._sub(vault.standbyAmount, assetToReturn);
         vault.normEquity = Math._add(vault.normEquity, equityAmount);
-        vault.initialEquity = Math._add(vault.initialEquity, initialEquityAmount);
         asset.normEquity = Math._add(asset.normEquity, equityAmount);
         lendingPoolEquity = Math._add(lendingPoolEquity, equityAmount);
 
@@ -338,7 +337,9 @@ contract VaultEngine is Stateful, Eventful {
             vaults[assetId][auctioneer].standbyAmount,
             assetToAuction
         );
-        lendingPoolSupply = lendingPoolSupply; // TODO: Fix
+
+        vault.initialEquity = Math._add(vault.initialEquity, initialEquityAmount);
+        lendingPoolSupply = Math._add(lendingPoolSupply, initialEquityAmount);
 
         emit EquityLiquidated(account, assetToAuction, assetToReturn, equityAmount);
     }

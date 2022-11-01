@@ -1235,10 +1235,11 @@ describe("Vault Engine Unit Tests", function () {
         .setupAddress(bytes32("liquidator"), user.address, true);
     });
 
-    it("reduces initial equity", async () => {
+    it("reduces initial equity and lendingPool Supply", async () => {
       const AMOUNT_TO_LIQUIDATE = EQUITY_AMOUNT.div(2); // 1000 FLR
-      const before = (await vaultEngine.vaults(ASSET_ID.FLR, owner.address))
-        .initialEquity;
+      const before = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
+      const initialEquityBefore = before.initialEquity;
+      const lendingPoolSupplyBefore = await vaultEngine.lendingPoolSupply();
 
       await vaultEngine
         .connect(user)
@@ -1252,10 +1253,16 @@ describe("Vault Engine Unit Tests", function () {
           BigNumber.from("0").sub(EQUITY_AMOUNT.mul(RAY))
         );
 
-      const after = (await vaultEngine.vaults(ASSET_ID.FLR, owner.address))
-        .initialEquity;
+      const after = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
+      const initialEquityAfter = after.initialEquity;
+      const lendingPoolSupplyAfter = await vaultEngine.lendingPoolSupply();
 
-      expect(after.sub(before).abs()).to.equal(EQUITY_AMOUNT.mul(RAY));
+      expect(initialEquityAfter.sub(initialEquityBefore).abs()).to.equal(
+        EQUITY_AMOUNT.mul(RAY)
+      );
+      expect(
+        lendingPoolSupplyAfter.sub(lendingPoolSupplyBefore).abs()
+      ).to.equal(EQUITY_AMOUNT.mul(RAY));
     });
 
     it("tests that lendingPoolEquity is lowered properly", async () => {
