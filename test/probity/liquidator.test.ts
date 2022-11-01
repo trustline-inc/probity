@@ -309,6 +309,28 @@ describe("Liquidator Unit Tests", function () {
       await liquidator.liquidateVault(ASSET_ID.FLR, user.address);
     });
 
+    it("fails when contract is in paused state", async () => {
+      await vaultEngine.updateVault(
+        ASSET_ID.FLR,
+        user.address,
+        0,
+        UNDERLYING,
+        COLLATERAL,
+        DEBT,
+        EQUITY,
+        EQUITY.mul(RAY)
+      );
+
+      await liquidator.setState(bytes32("paused"), true);
+      await assertRevert(
+        liquidator.liquidateVault(ASSET_ID.FLR, user.address),
+        "stateCheckFailed"
+      );
+
+      await liquidator.setState(bytes32("paused"), false);
+      await liquidator.liquidateVault(ASSET_ID.FLR, user.address);
+    });
+
     it("fails if treasury has not enough funds when liquidating equity position ", async () => {
       await vaultEngine.updateVault(
         ASSET_ID.FLR,

@@ -234,7 +234,7 @@ contract Auctioneer is Stateful, Eventful {
         uint256 auctionId,
         uint256 bidPrice,
         uint256 bidLot
-    ) external onlyIfAuctionNotOver(auctionId) {
+    ) external onlyIfAuctionNotOver(auctionId) onlyWhen("paused", false) {
         if (bids[auctionId][msg.sender].price != 0) revert userBidAlreadyExists();
 
         (uint256 biddableLot, uint256 totalBidValue, uint256 totalBidLot, address indexToAdd) = getBiddableLot(
@@ -284,7 +284,7 @@ contract Auctioneer is Stateful, Eventful {
         uint256 auctionId,
         uint256 maxPrice,
         uint256 lot
-    ) external onlyIfAuctionNotOver(auctionId) {
+    ) external onlyIfAuctionNotOver(auctionId) onlyWhen("paused", false) {
         Auction memory auction = auctions[auctionId];
         uint256 currentPrice = calculatePrice(auctionId);
         if (currentPrice > maxPrice) revert currentPriceIsHigherThanMaxPrice();
@@ -322,7 +322,7 @@ contract Auctioneer is Stateful, Eventful {
      * @notice Finalize a sale for a bid if the current price is at or below the bid price
      * @param auctionId The ID of the auction to finalize
      */
-    function finalizeSale(uint256 auctionId) public {
+    function finalizeSale(uint256 auctionId) public onlyWhen("paused", false) {
         if (bids[auctionId][msg.sender].price == 0) revert userBidDoesNotExists();
         if ((calculatePrice(auctionId) * nextBidRatio) / ONE > bids[auctionId][msg.sender].price)
             revert currentPriceIsNotYetBelowBidPrice();

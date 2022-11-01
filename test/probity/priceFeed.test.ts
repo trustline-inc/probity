@@ -12,7 +12,14 @@ import {
 import { deployTest, probity } from "../../lib/deployer";
 import { ethers } from "hardhat";
 import * as chai from "chai";
-import { ADDRESS_ZERO, bytes32, BYTES32_ZERO, WAD } from "../utils/constants";
+import {
+  ADDRESS_ZERO,
+  ASSET_ID,
+  bytes32,
+  BYTES32_ZERO,
+  RAY,
+  WAD,
+} from "../utils/constants";
 import assertRevert from "../utils/assertRevert";
 import parseEvents from "../utils/parseEvents";
 import { BigNumber } from "ethers";
@@ -249,6 +256,23 @@ describe("PriceFeed Unit Tests", function () {
         DEFAULT_LIQUIDATION_RATIO,
         ftso.address
       );
+      await priceFeed.updateAdjustedPrice(ASSET_ID);
+    });
+
+    it("fails when contract is in paused state", async () => {
+      await priceFeed.initAsset(
+        ASSET_ID,
+        DEFAULT_LIQUIDATION_RATIO,
+        ftso.address
+      );
+
+      await priceFeed.setState(bytes32("paused"), true);
+      await assertRevert(
+        priceFeed.updateAdjustedPrice(ASSET_ID),
+        "stateCheckFailed"
+      );
+
+      await priceFeed.setState(bytes32("paused"), false);
       await priceFeed.updateAdjustedPrice(ASSET_ID);
     });
 

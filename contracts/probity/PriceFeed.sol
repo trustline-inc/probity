@@ -113,7 +113,7 @@ contract PriceFeed is Stateful, Eventful {
      * @dev The FTSO has a price precision of 5
      * @param assetId The ID of the asset to to update
      */
-    function updateAdjustedPrice(bytes32 assetId) external collateralExists(assetId) {
+    function updateAdjustedPrice(bytes32 assetId) external collateralExists(assetId) onlyWhen("paused", false) {
         uint256 price = this.getPrice(assetId);
         uint256 adjustedPrice = Math._rdiv(price, assets[assetId].liquidationRatio * 1e9);
         vaultEngine.updateAdjustedPrice(assetId, adjustedPrice);

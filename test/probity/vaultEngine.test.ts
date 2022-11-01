@@ -103,7 +103,6 @@ describe("Vault Engine Unit Tests", function () {
       await assertRevert(
         vaultEngine.modifyEquity(
           ASSET_ID.FLR,
-
           UNDERLYING_AMOUNT,
           EQUITY_AMOUNT.add(1)
         ),
@@ -115,6 +114,25 @@ describe("Vault Engine Unit Tests", function () {
 
         UNDERLYING_AMOUNT,
         EQUITY_AMOUNT.sub(1)
+      );
+    });
+
+    it("fails when contract is in paused state", async () => {
+      await vaultEngine.connect(gov).setState(bytes32("paused"), true);
+      await assertRevert(
+        vaultEngine.modifyEquity(
+          ASSET_ID.FLR,
+          UNDERLYING_AMOUNT,
+          EQUITY_AMOUNT
+        ),
+        "stateCheckFailed"
+      );
+
+      await vaultEngine.connect(gov).setState(bytes32("paused"), false);
+      await vaultEngine.modifyEquity(
+        ASSET_ID.FLR,
+        UNDERLYING_AMOUNT,
+        EQUITY_AMOUNT
       );
     });
 
@@ -715,6 +733,21 @@ describe("Vault Engine Unit Tests", function () {
       );
     });
 
+    it("fails when contract is in paused state", async () => {
+      await vaultEngine.connect(gov).setState(bytes32("paused"), true);
+      await assertRevert(
+        vaultEngine.modifyDebt(ASSET_ID.FLR, COLLATERAL_AMOUNT, DEBT_AMOUNT),
+        "stateCheckFailed"
+      );
+
+      await vaultEngine.connect(gov).setState(bytes32("paused"), false);
+      await vaultEngine.modifyDebt(
+        ASSET_ID.FLR,
+        COLLATERAL_AMOUNT,
+        DEBT_AMOUNT
+      );
+    });
+
     it("fails if debt ceiling has been reached", async () => {
       const NEW_CEILING = RAD.mul(1000);
       await vaultEngine.connect(gov).updateCeiling(ASSET_ID.FLR, NEW_CEILING);
@@ -1096,6 +1129,17 @@ describe("Vault Engine Unit Tests", function () {
           EQUITY_TO_RAISE,
           BigNumber.from(0)
         );
+    });
+
+    it("fails when contract is in paused state", async () => {
+      await vaultEngine.connect(gov).setState(bytes32("paused"), true);
+      await assertRevert(
+        vaultEngine.collectInterest(ASSET_ID.FLR),
+        "stateCheckFailed"
+      );
+
+      await vaultEngine.connect(gov).setState(bytes32("paused"), false);
+      await vaultEngine.collectInterest(ASSET_ID.FLR);
     });
 
     it("increases the PBT balance", async () => {

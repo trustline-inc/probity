@@ -38,7 +38,7 @@ contract VaultEngineLimited is VaultEngine {
         bytes32 assetId,
         int256 underlyingAmount,
         int256 equityAmount
-    ) external override onlyBy("whitelisted") {
+    ) external override onlyBy("whitelisted") onlyWhen("paused", false) {
         _modifyEquity(assetId, underlyingAmount, equityAmount);
         _enforceVaultLimit(vaults[assetId][msg.sender]);
     }
@@ -53,7 +53,7 @@ contract VaultEngineLimited is VaultEngine {
         bytes32 assetId,
         int256 collAmount,
         int256 debtAmount
-    ) external override onlyBy("whitelisted") {
+    ) external override onlyBy("whitelisted") onlyWhen("paused", false) {
         _modifyDebt(assetId, collAmount, debtAmount);
         _enforceVaultLimit(vaults[assetId][msg.sender]);
     }

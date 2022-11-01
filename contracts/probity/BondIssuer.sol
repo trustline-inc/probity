@@ -144,7 +144,7 @@ contract BondIssuer is Stateful, Eventful {
      * @notice Purchases a bond
      * @param value The bond face value
      */
-    function purchaseBond(uint256 value) external {
+    function purchaseBond(uint256 value) external onlyWhen("paused", false) {
         if (!offering.active) revert saleNotActive();
         if (offering.amount < value) revert purchaseAmountIsHigherThanAvailable(value, offering.amount);
 
@@ -162,7 +162,7 @@ contract BondIssuer is Stateful, Eventful {
      * @notice Redeems bondTokens for assets
      * @param amount The amount to redeem
      */
-    function redeemBondTokens(uint256 amount) external {
+    function redeemBondTokens(uint256 amount) external onlyWhen("paused", false) {
         _processRedemption(msg.sender, amount);
     }
 

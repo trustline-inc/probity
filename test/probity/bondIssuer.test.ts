@@ -6,7 +6,7 @@ import { BondIssuer, MockVaultEngine, Registry } from "../../typechain";
 import { deployTest, probity } from "../../lib/deployer";
 import { ethers } from "hardhat";
 import * as chai from "chai";
-import { bytes32, RAD, WAD, ADDRESS_ZERO } from "../utils/constants";
+import { bytes32, RAD, WAD, ADDRESS_ZERO, RAY } from "../utils/constants";
 import assertRevert from "../utils/assertRevert";
 import increaseTime from "../utils/increaseTime";
 const expect = chai.expect;
@@ -261,6 +261,18 @@ describe("BondIssuer Unit Tests", function () {
       await bondIssuer.purchaseBond(OFFER_AMOUNT);
     });
 
+    it("fails when contract is in paused state", async () => {
+      await bondIssuer.connect(reservePool).newOffering(OFFER_AMOUNT);
+      await bondIssuer.connect(gov).setState(bytes32("paused"), true);
+      await assertRevert(
+        bondIssuer.purchaseBond(OFFER_AMOUNT),
+        "stateCheckFailed"
+      );
+
+      await bondIssuer.connect(gov).setState(bytes32("paused"), false);
+      await bondIssuer.purchaseBond(OFFER_AMOUNT);
+    });
+
     it("tests that correct amount of systemCurrency are transferred", async () => {
       await bondIssuer.connect(reservePool).newOffering(OFFER_AMOUNT);
       const before = await vaultEngine.systemCurrency(owner.address);
@@ -343,6 +355,19 @@ describe("BondIssuer Unit Tests", function () {
         "notEnoughBondsToRedeem"
       );
       await bondIssuer.connect(user).purchaseBond(BUY_AMOUNT);
+      await bondIssuer.connect(user).redeemBondTokens(BUY_AMOUNT);
+    });
+
+    it("fails when contract is in paused state", async () => {
+      await bondIssuer.connect(user).purchaseBond(BUY_AMOUNT);
+
+      await bondIssuer.connect(gov).setState(bytes32("paused"), true);
+      await assertRevert(
+        bondIssuer.connect(user).redeemBondTokens(BUY_AMOUNT),
+        "stateCheckFailed"
+      );
+
+      await bondIssuer.connect(gov).setState(bytes32("paused"), false);
       await bondIssuer.connect(user).redeemBondTokens(BUY_AMOUNT);
     });
 

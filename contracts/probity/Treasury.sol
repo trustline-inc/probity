@@ -75,7 +75,7 @@ contract Treasury is Stateful {
      * @dev exchange ERC20 of the systemCurrency from user to systemCurrency balance in Vault Engine
      * @param amount to exchange
      */
-    function depositSystemCurrency(uint256 amount) external {
+    function depositSystemCurrency(uint256 amount) external onlyWhen("paused", false) {
         vaultEngine.addSystemCurrency(msg.sender, amount * 1e27);
         systemCurrency.burn(msg.sender, amount);
         emit DepositSystemCurrency(msg.sender, amount);
@@ -85,7 +85,7 @@ contract Treasury is Stateful {
      * @dev exchange the systemCurrency balance from Vault to ERC20 version
      * @param amount to exchange
      */
-    function withdrawSystemCurrency(uint256 amount) external {
+    function withdrawSystemCurrency(uint256 amount) external onlyWhen("paused", false) {
         vaultEngine.removeSystemCurrency(msg.sender, amount * 1e27);
         systemCurrency.mint(msg.sender, amount);
         emit WithdrawSystemCurrency(msg.sender, amount);
@@ -96,7 +96,7 @@ contract Treasury is Stateful {
      * @param recipient of the transfer
      * @param amount to transfer
      */
-    function transferSystemCurrency(address recipient, uint256 amount) external {
+    function transferSystemCurrency(address recipient, uint256 amount) external onlyWhen("paused", false) {
         vaultEngine.moveSystemCurrency(msg.sender, recipient, amount * 1e27);
         emit TransferSystemCurrency(msg.sender, recipient, amount);
     }
@@ -105,7 +105,7 @@ contract Treasury is Stateful {
      * @dev withdraw PBT balance from VaultEngine to ERC20 counterpart
      * @param amount to withdraw
      */
-    function withdrawPbt(uint256 amount) external {
+    function withdrawPbt(uint256 amount) external onlyWhen("paused", false) {
         vaultEngine.reducePbt(msg.sender, amount * 1e27);
         pbt.mint(msg.sender, amount);
         emit WithdrawPbt(msg.sender, amount);

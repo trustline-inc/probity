@@ -194,7 +194,7 @@ contract Liquidator is Stateful, Eventful {
      * @param assetId The ID of the collateral type
      * @param user The address of the vault to liquidate
      */
-    function liquidateVault(bytes32 assetId, address user) external {
+    function liquidateVault(bytes32 assetId, address user) external onlyWhen("paused", false) {
         uint256 debtAccumulator = vaultEngine.debtAccumulator();
         uint256 adjustedPrice = vaultEngine.assets(assetId);
         (
