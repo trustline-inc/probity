@@ -387,4 +387,65 @@ describe("BondIssuer Unit Tests", function () {
       expect(after.sub(before).abs()).to.equal(BUY_AMOUNT);
     });
   });
+
+  describe("redeemBondTokensForUser Unit Tests", function () {
+    const OFFER_AMOUNT = RAD.mul(10000);
+    const RESERVE_BAL = RAD.mul(10000000);
+    const BUY_AMOUNT = OFFER_AMOUNT.div(10);
+    beforeEach(async function () {
+      await bondIssuer.connect(reservePool).newOffering(OFFER_AMOUNT);
+      await vaultEngine.setSystemCurrency(reservePool.address, RESERVE_BAL);
+      await vaultEngine.setSystemCurrency(owner.address, RESERVE_BAL);
+      await vaultEngine.setSystemCurrency(user.address, RESERVE_BAL);
+
+      await bondIssuer.purchaseBond(BUY_AMOUNT);
+    });
+
+    it("fails if reservePool doesn't have enough funds to redeem", async () => {
+      await vaultEngine.setSystemCurrency(reservePool.address, 0);
+      await assertRevert(
+        bondIssuer
+          .connect(gov)
+          .redeemBondTokensForUser(owner.address, BUY_AMOUNT),
+        "insufficientFundsInReservePool"
+      );
+      await vaultEngine.setSystemCurrency(reservePool.address, RESERVE_BAL);
+      await bondIssuer
+        .connect(gov)
+        .redeemBondTokensForUser(owner.address, BUY_AMOUNT);
+    });
+
+    it("fails if user doesn't have enough tokens to redeem", async () => {
+      await assertRevert(
+        bondIssuer
+          .connect(gov)
+          .redeemBondTokensForUser(user.address, BUY_AMOUNT),
+        "notEnoughBondsToRedeem"
+      );
+      await bondIssuer.connect(user).purchaseBond(BUY_AMOUNT);
+      await bondIssuer
+        .connect(gov)
+        .redeemBondTokensForUser(user.address, BUY_AMOUNT);
+    });
+
+    it("tests that values are properly updated", async () => {
+      const before = await bondIssuer.bondTokens(owner.address);
+      await bondIssuer
+        .connect(gov)
+        .redeemBondTokensForUser(owner.address, BUY_AMOUNT);
+      const after = await bondIssuer.bondTokens(owner.address);
+
+      expect(after.sub(before).abs()).to.equal(BUY_AMOUNT);
+    });
+
+    it("tests that correct amount of systemCurrency is transferred", async () => {
+      const before = await vaultEngine.systemCurrency(owner.address);
+      await bondIssuer
+        .connect(gov)
+        .redeemBondTokensForUser(owner.address, BUY_AMOUNT);
+      const after = await vaultEngine.systemCurrency(owner.address);
+
+      expect(after.sub(before).abs()).to.equal(BUY_AMOUNT);
+    });
+  });
 });

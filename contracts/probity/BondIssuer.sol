@@ -166,6 +166,14 @@ contract BondIssuer is Stateful, Eventful {
         _processRedemption(msg.sender, amount);
     }
 
+    /**
+     * @notice Redeems bondTokens for assets on behalf of users
+     * @param amount The amount to redeem
+     */
+    function redeemBondTokensForUser(address user, uint256 amount) external onlyByProbity {
+        _processRedemption(user, amount);
+    }
+
     /////////////////////////////////////////
     // Internal functions
     /////////////////////////////////////////
