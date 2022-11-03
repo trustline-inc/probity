@@ -117,13 +117,9 @@ yarn
 
 ### Development
 
-Run a local [Flare](https://gitlab.com/flarenetwork/flare) node.
+To start a local network, use `yarn run node`. Alternatively, you can [run a local Flare network](https://gitlab.com/flarenetwork/flare).
 
-Hardhat will use the account listed in `hardhat.config.ts` for the network. You'll want to make sure that account is funded first.
-
-You should run an initial transaction before deploying contracts:
-
-> You should also run this for the `internal` network
+Using the `flare_local` network will require you to create an initial transaction first. You can do so like this:
 
 ```
 npm run createInitialTx <network>
@@ -131,7 +127,7 @@ npm run createInitialTx <network>
 
 ### Testing
 
-Use the npm command to run tests on the local Hardhat network:
+Use the npm command to run tests on the in-process Hardhat network:
 
 ```
 npm run test
@@ -149,14 +145,16 @@ We use [GitHub Packages](https://docs.github.com/en/packages/working-with-a-gith
 
 ### Deployment
 
-Deploy the smart contract in the local network using the `deploy` script.
+Deploy the smart contract in the local network using the `deploy` script. Set `ETHERNAL_EMAIL` and `ETHERNAL_PASSWORD` to use [Ethernal](https://tryethernal.com/).
 
-> Set the `FLARE_DIR` envioronment variables. Optionally set `NATIVE_TOKEN=<CFLR|SGB|FLR|XRP|ETH>` if you are deploying locally.
+> If you're using the `flare_local` network, set the `FLARE_DIR` envioronment variable.
+
+> Optionally set `NATIVE_TOKEN=<SGB|FLR|XRP|ETH>` if you are deploying locally.
 
 For example:
 
 ```
-NATIVE_TOKEN=<symbol> FLARE_DIR=~/Desktop/flare npm run deploy:<dev|prod> <network>
+NATIVE_TOKEN=<symbol> npm run deploy:<dev|prod> <network>
 ```
 
 If you get the error `ProviderError: err: Invalid value for block.coinbase`, that means you have to first run `npm run createInitialTx local`, which creates a genesis transaction in order for the network to start properly.
@@ -165,10 +163,10 @@ If you get the error `ProviderError: err: Invalid value for block.coinbase`, tha
 
 You can use a script to initialize the system with a new asset type.
 
-> Override the native token on the `local` or `internal` networks with `NATIVE_TOKEN=<CFLR|SGB|FLR|XRP|ETH>`.
+> Override the native token on the `local` or `internal` networks with `NATIVE_TOKEN=<SGB|FLR|XRP|ETH>`.
 
 ```
-NATIVE_TOKEN=<symbol> FLARE_DIR=~/Desktop/flare yarn run initialize <network>
+NATIVE_TOKEN=<symbol> yarn run initialize <network>
 ```
 
 ## Administrator Tools
@@ -219,11 +217,7 @@ yarn run whitelistAddress <network>
 
 ### Internal Network
 
-The internal network is only accessible to the Linqto/Trustline developers and partners.
-
-The network chain ID `4294967295` and the native token is `LNQ`.
-
-> NOTE: Contracts have not been deployed to the local network.
+> NOTE: Contracts have not been deployed to the internal network.
 
 | Contract | Address |
 | -------- | ------- |
