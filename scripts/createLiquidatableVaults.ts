@@ -1,5 +1,5 @@
 /**
- * Script that perpetually calls Teller.updateAccumulator()
+ * Creates vaults with assets that are up for auction
  */
 import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-web3";
@@ -18,7 +18,7 @@ const ethAssetId = web3.utils.keccak256("ETH");
 const usdAssetId = web3.utils.keccak256("USD");
 
 (async () => {
-  console.log("PLEASE MAKE SURE priceUpdate Script Is Turned OFF!!");
+  console.log("PLEASE MAKE SURE priceUpdate script is turned OFF!!");
 
   const [
     gov,
