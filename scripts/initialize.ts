@@ -5,6 +5,7 @@ import "@nomiclabs/hardhat-web3";
 import * as hre from "hardhat";
 import { artifacts, ethers, web3 } from "hardhat";
 import { getNativeToken } from "../lib/utils";
+import { ADDRESS_ZERO } from "../test/utils/constants";
 
 const nativeToken: string = getNativeToken();
 const networkName = hre.network.name;
@@ -164,7 +165,7 @@ const init = async () => {
       .callStatic.initAsset(
         NATIVE_ASSETS[nativeToken],
         process.env.AUCTIONEER,
-        "0x11EeB875AAc42eEe7CB37668360206B0056F6eEd",
+        ADDRESS_ZERO,
         {
           gasLimit: 300000,
         }
@@ -174,7 +175,7 @@ const init = async () => {
       .initAsset(
         NATIVE_ASSETS[nativeToken],
         process.env.AUCTIONEER,
-        "0x11EeB875AAc42eEe7CB37668360206B0056F6eEd",
+        ADDRESS_ZERO,
         {
           gasLimit: 300000,
         }
