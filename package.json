@@ -21,6 +21,7 @@
     "pauseProbity": "DELAY=20000 npx hardhat run ./scripts/pauseProbity.ts --network",
     "unpauseProbity": "DELAY=20000 npx hardhat run scripts/unpauseProbity.ts --network",
     "whitelistAddress": "npx hardhat run ./scripts/whitelistAddress.ts --network",
+    "createLiquidableVaults": "npx hardhat run ./scripts/createLiquidatableVaults.ts --network",
     "deploy:dev": "npx hardhat run ./scripts/deploy.ts --network",
     "deploy:prod": "DEPLOYMENT_DELAY=20000 npx hardhat run ./scripts/deploy.ts --network",
     "deployAsset": "npx hardhat run ./scripts/deployNewAsset.ts --network",
