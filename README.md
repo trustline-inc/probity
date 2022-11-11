@@ -2,31 +2,33 @@
 
 [![Build](https://github.com/trustline-inc/probity/actions/workflows/build.yml/badge.svg)](https://github.com/trustline-inc/probity/actions/workflows/build.yml)
 
-You can view the contract code in the [`contracts`](./contracts) folder. We will add a full API reference soon. You can find everything else in the [documentation&nbsp;📖 ](https://docs.trustline.co/trustline/-MX0imPEPxcvrbI-teLl/)
+You can view the contract code in the [`contracts`](./contracts) folder. We will add a full API reference soon. You can find everything else in the [documentation&nbsp;📖 ](https://docs.trustline.co/products/)
 
 ## Table of Contents
 
 <!--ts-->
 
 - [Overview](#overview)
-- [Installation](#installation)
-- [Usage](#usage)
+- [NodeJS Package](#nodejs-package)
+  - [Installation](#installation)
+  - [Usage](#usage)
 - [Development](#development)
+  - [Requirements](#requirements)
+  - [Recommended IDE](#recommended-ide)
   - [Installation](#installation-1)
-  - [IDE](#ide)
+  - [Local Network](#local-network)
   - [Testing](#testing)
   - [Publishing](#publishing)
-- [Deployment](#deployment)
-  - [Local](#local-deployment)
-  - [Remote](#remote-deployment)
-- [Initialization](#initialization)
-- [Utility Scripts](#utility-scripts)
+  - [Deployment](#deployment)
+  - [Initialization](#initialization)
+- [Administrator Tools](#administrator-tools)
+  - [System Info](#system-info)
+  - [Fiat Tokens](#fiat-tokens)
   - [Rate Updater](#rate-updater)
   - [Price Updater](#price-updater)
+  - [Allow Address](#allow-address)
 - [Contract Addresses](#contract-addresses)
-  - [Coston](#coston-network)
-  - [Songbird](#songbird-network)
-  - [Flare](#flare-network)
+  - [Internal Network](#internal-network)
   <!--te-->
 
 ## Overview
@@ -59,14 +61,10 @@ Below is a code snippet that shows how to import the contract ABI and call a con
 import UsdABI from "@trustline-inc/probity/artifacts/contracts/tokens/Usd.sol/USD.json";
 import { Contract } from "ethers";
 
-const USD_ERC20_ADDRESS = "0xBB62591BdEd66c1df6C3e9A912f3eC8c4F234455";
+const USD_ADDRESS = "0xBB62591BdEd66c1df6C3e9A912f3eC8c4F234455";
 
-const usdErc20 = new Contract(
-  USD_ERC20_ADDRESS,
-  UsdABI.abi,
-  library.getSigner()
-);
-const totalSupply = await usdErc20.totalSupply();
+const usd = new Contract(USD_ADDRESS, UsdABI.abi, library.getSigner());
+const totalSupply = await usd.totalSupply();
 console.log("Total supply:", totalSupply);
 ```
 
@@ -115,7 +113,7 @@ Install node dependencies:
 yarn
 ```
 
-### Development
+### Local Network
 
 To start a local network, use `yarn run node`. Alternatively, you can [run a local Flare network](https://gitlab.com/flarenetwork/flare).
 
@@ -227,14 +225,4 @@ yarn run whitelistAddress <network>
 | -------- | ------- |
 |          |         |
 
-### Coston 2 Network
-
-Coston 2 contract address will be listed here. The network native token is `CFLR`.
-
-### Songbird Network
-
-Songbird contract addresses will be listed here. The Songbird network's native token is `SGB`.
-
-### Flare Network
-
-Flare contract addresses will be listed here. The Flare network's native token is `FLR`.
+Other networks to be introduced in time.
