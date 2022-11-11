@@ -1,7 +1,7 @@
 {
   "name": "@trustline-inc/probity",
   "version": "1.0.0-alpha30",
-  "license": "MIT",
+  "license": "BUSL-1.1",
   "description": "Probity smart contracts",
   "scripts": {
     "node": "npx hardhat node",

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: Business Source License 1.1
 
 // These math functions comes from multiple files inside the MakerDao's DSS repository
 // https://github.com/makerdao/dss
