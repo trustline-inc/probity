@@ -1,5 +1,5 @@
 /**
- * Script that perpetually calls Teller.updateAccumulator()
+ * Script that issues USD
  */
 import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-web3";
@@ -8,6 +8,7 @@ import { Contract } from "ethers";
 import config from "../hardhat.config";
 import { RAD } from "../test/utils/constants";
 
+const beneficiary = "";
 const wallet = new ethers.Wallet.fromMnemonic(
   config.networks.localhost?.accounts.mnemonic,
   "m/44'/60'/0'/0/1"
@@ -26,6 +27,8 @@ const amount = RAD.mul(1_000_000);
     gov
   );
   const treasury = new Contract(process.env.TREASURY!, TreasuryABI.abi, gov);
+  const UsdABI = await artifacts.readArtifact("Usd");
+  const usd = new Contract(process.env.USD!, UsdABI.abi, gov);
 
   console.log("Issuing USD...", {
     to: wallet.address,
@@ -68,6 +71,10 @@ const amount = RAD.mul(1_000_000);
     console.log(tx);
     result = await tx.wait();
     console.log(result);
+
+    if (beneficiary) {
+      usd.connect(wallet).transfer(beneficiary, amount.div(RAD).toString());
+    }
   } catch (error) {
     console.log(error);
   }
