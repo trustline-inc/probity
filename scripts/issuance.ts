@@ -9,10 +9,12 @@ import config from "../hardhat.config";
 import { RAD } from "../test/utils/constants";
 
 const beneficiary = "";
+const provider = new ethers.providers.JsonRpcProvider("http://127.0.0.1:8545/");
+const path = "m/44'/60'/0'/0/1";
 const wallet = new ethers.Wallet.fromMnemonic(
   config.networks.localhost?.accounts.mnemonic,
-  "m/44'/60'/0'/0/1"
-);
+  path
+).connect(provider);
 const amount = RAD.mul(1_000_000);
 
 (async () => {
