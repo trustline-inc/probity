@@ -13,6 +13,13 @@ contract USD is ERC20, Stateful {
     constructor(address registryAddress) Stateful(registryAddress) ERC20("USD", "USD") {}
 
     /**
+     * @dev TODO: may change decimals to 2 (commonly understood) or 6 (similar to USDC)
+     */
+    function decimals() public pure override returns (uint8) {
+        return 18;
+    }
+
+    /**
      * @dev minting capability for Treasury module
      * @param account the address to mint tokens for
      * @param amount of tokens to mint

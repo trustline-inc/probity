@@ -13,6 +13,13 @@ contract LQO is ERC20, Stateful {
     constructor(address registryAddress) Stateful(registryAddress) ERC20("LQO", "LQO") {}
 
     /**
+     * @dev fractional unit subscriptions are not currently allowed
+     */
+    function decimals() public pure override returns (uint8) {
+        return 0;
+    }
+
+    /**
      * @dev minting capability for gov
      * @param account the address to mint tokens for
      * @param amount of tokens to mint
