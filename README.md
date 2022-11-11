@@ -9,7 +9,7 @@ You can view the contract code in the [`contracts`](./contracts) folder. We will
 <!--ts-->
 
 - [Overview](#overview)
-- [NodeJS Package](#nodejs-package)
+- [NPM Package](#npm-package)
   - [Installation](#installation)
   - [Usage](#usage)
 - [Development](#development)
