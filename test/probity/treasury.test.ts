@@ -4,7 +4,6 @@ import "@nomiclabs/hardhat-ethers";
 import {
   Registry,
   USD,
-  PBT,
   Treasury,
   NativeAssetManager,
   MockVaultEngine,
@@ -24,7 +23,6 @@ let user: SignerWithAddress;
 
 // Contracts
 let usd: USD;
-let pbt: PBT;
 let vaultEngine: MockVaultEngine;
 let treasury: Treasury;
 let registry: Registry;
@@ -41,7 +39,6 @@ describe("Treasury Unit Tests", function () {
     // Set contracts
     registry = contracts.registry!;
     usd = contracts.usd!;
-    pbt = contracts.pbt!;
     flrAsset = contracts.nativeAssetManager!;
 
     owner = signers.owner!;
@@ -56,7 +53,7 @@ describe("Treasury Unit Tests", function () {
     treasury = contracts.treasury!;
     vaultEngine = contracts.mockVaultEngine!;
 
-    await registry.setupAddress(bytes32("treasury"), owner.address, true);
+    await registry.register(bytes32("treasury"), owner.address, true);
   });
 
   describe("depositSystemCurrency Unit Tests", function () {
@@ -170,38 +167,4 @@ describe("Treasury Unit Tests", function () {
     });
   });
 
-  describe("withdrawPbt Unit Tests", function () {
-    beforeEach(async function () {
-      await vaultEngine.addPbt(owner.address, AMOUNT_TO_MINT.mul(RAY));
-    });
-
-    it("tests that withdrawPbt call vaultEngine.reducePbt function", async () => {
-      const pbtBalanceBefore = await vaultEngine.pbt(owner.address);
-      await treasury.withdrawPbt(AMOUNT_TO_WITHDRAW);
-      const pbtBalanceAfter = await vaultEngine.pbt(owner.address);
-      expect(pbtBalanceBefore.sub(pbtBalanceAfter).div(RAY)).to.equal(
-        AMOUNT_TO_WITHDRAW
-      );
-    });
-
-    it("tests that pbt is minted for user's balance", async () => {
-      const pbtBalanceBefore = await pbt.balanceOf(owner.address);
-      await treasury.withdrawPbt(AMOUNT_TO_WITHDRAW);
-      const pbtBalanceAfter = await pbt.balanceOf(owner.address);
-      expect(pbtBalanceAfter.sub(pbtBalanceBefore)).to.equal(
-        AMOUNT_TO_WITHDRAW
-      );
-    });
-
-    it("tests that WithdrawPbt event is emitted properly", async () => {
-      const parsedEvents = await parseEvents(
-        treasury.withdrawPbt(AMOUNT_TO_WITHDRAW),
-        "WithdrawPbt",
-        treasury
-      );
-
-      expect(parsedEvents[0].args[0]).to.equal(owner.address);
-      expect(parsedEvents[0].args[1]).to.equal(AMOUNT_TO_WITHDRAW);
-    });
-  });
 });

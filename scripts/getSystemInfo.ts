@@ -38,10 +38,6 @@ const output = `{
     address: "${process.env.REGISTRY}",
     abi: RegistryABI.abi
   },
-  PBT: {
-    address: "${process.env.PBT}",
-    abi: PbtABI.abi
-  },
   RESERVE_POOL: {
     address: "${process.env.RESERVE_POOL}",
     abi: ReservePoolABI.abi
@@ -66,7 +62,6 @@ const output = `{
     "${process.env.NATIVE_ASSET_MANAGER}": NativeAssetManagerABI,
     "${process.env.USD_MANAGER}": Erc20AssetManagerABI,
     "${process.env.REGISTRY}": RegistryABI,
-    "${process.env.PBT}": PbtABI,
     "${process.env.RESERVE_POOL}": ReservePoolABI,
     "${process.env.TELLER}": TellerABI,
     "${process.env.TREASURY}": TreasuryABI,

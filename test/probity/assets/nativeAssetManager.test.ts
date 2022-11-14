@@ -14,7 +14,7 @@ const expect = chai.expect;
 // Wallets
 let owner: SignerWithAddress;
 let user: SignerWithAddress;
-let gov: SignerWithAddress;
+let admin: SignerWithAddress;
 
 // Contracts
 let nativeAssetManager: NativeAssetManager;
@@ -37,12 +37,12 @@ describe("Native Asset Manager Unit Test", function () {
 
     owner = signers.owner!;
     user = signers.alice!;
-    gov = signers.bob!;
+    admin = signers.bob!;
 
-    await registry.setupAddress(bytes32("gov"), gov.address, true);
+    await registry.register(bytes32("admin"), admin.address, true);
     await registry
-      .connect(gov)
-      .setupAddress(bytes32("whitelisted"), owner.address, false);
+      .connect(admin)
+      .register(bytes32("whitelisted"), owner.address, false);
   });
 
   it("test DepositNativeCrypto event is emitted properly", async () => {

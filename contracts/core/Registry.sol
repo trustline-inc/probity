@@ -4,7 +4,7 @@ pragma solidity ^0.8.4;
 
 /**
  * @title Registry contract
- * @notice Stores the relevant address for the probity system with a role
+ * @notice Stores module and EOA addresses with a role designation
  */
 contract Registry {
     /////////////////////////////////////////
@@ -13,43 +13,47 @@ contract Registry {
 
     struct Role {
         bytes32 name; // name of the role
-        bool isProbitySystem; // true if address a part of probity system contract
+        bool isProbitySystem; // true if address a part of probity system
     }
 
     /////////////////////////////////////////
     // State Variables
     /////////////////////////////////////////
+
     mapping(address => Role) public addressToRole;
 
     /////////////////////////////////////////
     // Errors
     /////////////////////////////////////////
 
-    error callerIsNotGov();
+    error callerIsNotAdmin();
 
     /////////////////////////////////////////
     // Modifiers
     /////////////////////////////////////////
+
     /**
-     * @dev check if caller is from Governance contract address
+     * @dev check if caller is from governance contract address
      */
-    modifier onlyByGov() {
-        if (addressToRole[msg.sender].name != "gov") revert callerIsNotGov();
+    modifier onlyByAdmin() {
+        if (addressToRole[msg.sender].name != "admin") revert callerIsNotAdmin();
         _;
     }
 
     /////////////////////////////////////////
     // Events
     /////////////////////////////////////////
+
     event ContractAdded(bytes32 roleName, address contractAddress, bool isProbitySystem);
     event ContractRemoved(bytes32 roleName, address contractAddress);
 
     /////////////////////////////////////////
     // Constructor
     /////////////////////////////////////////
-    constructor(address govAddress) {
-        addressToRole[govAddress].name = "gov";
-        addressToRole[govAddress].isProbitySystem = true;
+
+    constructor(address adminAddress) {
+        addressToRole[adminAddress].name = "admin";
+        addressToRole[adminAddress].isProbitySystem = true;
     }
 
     /////////////////////////////////////////
@@ -57,25 +61,22 @@ contract Registry {
     /////////////////////////////////////////
 
     /**
-     * @dev add an address to registry with the role
+     * @dev registers an address with the given role
      * @param roleName of the address to be added
      * @param addr the vault owner's address
+     * TODO: Change order of params (address, bytes32, bool)
      */
-    function setupAddress(
-        bytes32 roleName,
-        address addr,
-        bool isProbitySystem
-    ) external onlyByGov {
+    function register(bytes32 roleName, address addr, bool isProbitySystem) external onlyByAdmin {
         addressToRole[addr].name = roleName;
         addressToRole[addr].isProbitySystem = isProbitySystem;
         emit ContractAdded(roleName, addr, isProbitySystem);
     }
 
     /**
-     * @dev remove an address from registry
+     * @dev unregister an address
      * @param addr to be removed
      */
-    function removeAddress(address addr) external onlyByGov {
+    function unregister(address addr) external onlyByAdmin {
         bytes32 roleName = addressToRole[addr].name;
         addressToRole[addr].name = bytes32("");
         addressToRole[addr].isProbitySystem = false;

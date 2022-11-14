@@ -2,11 +2,14 @@
 
 pragma solidity ^0.8.4;
 
-import "../dependencies/Stateful.sol";
-import "../dependencies/Eventful.sol";
+import "../deps/Stateful.sol";
+import "../deps/Eventful.sol";
 
 interface VaultEngineLike {
-    function vaults(bytes32 assetId, address user)
+    function vaults(
+        bytes32 assetId,
+        address user
+    )
         external
         returns (
             uint256 standbyAmount,
@@ -18,7 +21,7 @@ interface VaultEngineLike {
             uint256 debtPrincipal
         );
 
-    function debtAccumulator() external returns (uint256 debtAccu);
+    function rateForDebt() external returns (uint256 debtAccu);
 
     function assets(bytes32 assetId) external returns (uint256 adjustedPrice);
 
@@ -90,8 +93,8 @@ contract Liquidator is Stateful, Eventful {
     /////////////////////////////////////////
     // State Variables
     /////////////////////////////////////////
-    uint256 private constant RAY = 10**27;
-    uint256 private constant WAD = 10**18;
+    uint256 private constant RAY = 10 ** 27;
+    uint256 private constant WAD = 10 ** 18;
 
     VaultEngineLike public immutable vaultEngine;
     ReservePoolLike public immutable reserve;
@@ -134,11 +137,7 @@ contract Liquidator is Stateful, Eventful {
      * @param assetId The ID of the asset type
      * @param auctioneer The contract address of the auctioneer
      */
-    function initAsset(
-        bytes32 assetId,
-        AuctioneerLike auctioneer,
-        address vpAssetManager
-    ) external onlyBy("gov") {
+    function initAsset(bytes32 assetId, AuctioneerLike auctioneer, address vpAssetManager) external onlyBy("admin") {
         if (address(assets[assetId].auctioneer) != address(0)) revert assetAlreadyInitialized();
 
         assets[assetId].auctioneer = auctioneer;
@@ -153,11 +152,7 @@ contract Liquidator is Stateful, Eventful {
      * @param debtPenalty The new debt position penalty
      * @param equityPenalty The new equity position penalty
      */
-    function updatePenalties(
-        bytes32 assetId,
-        uint256 debtPenalty,
-        uint256 equityPenalty
-    ) external onlyBy("gov") {
+    function updatePenalties(bytes32 assetId, uint256 debtPenalty, uint256 equityPenalty) external onlyBy("admin") {
         emit LogVarUpdate("liquidator", assetId, "debtPenaltyFee", assets[assetId].debtPenaltyFee, debtPenalty);
         emit LogVarUpdate("liquidator", assetId, "equityPenaltyFee", assets[assetId].equityPenaltyFee, equityPenalty);
 
@@ -170,7 +165,7 @@ contract Liquidator is Stateful, Eventful {
      * @param assetId The ID of the collateral type
      * @param newAuctioneer The address of the new auctioneer
      */
-    function updateAuctioneer(bytes32 assetId, AuctioneerLike newAuctioneer) external onlyBy("gov") {
+    function updateAuctioneer(bytes32 assetId, AuctioneerLike newAuctioneer) external onlyBy("admin") {
         emit LogVarUpdate(
             "adjustedPriceFeed",
             assetId,
@@ -195,7 +190,7 @@ contract Liquidator is Stateful, Eventful {
      * @param user The address of the vault to liquidate
      */
     function liquidateVault(bytes32 assetId, address user) external onlyWhen("paused", false) {
-        uint256 debtAccumulator = vaultEngine.debtAccumulator();
+        uint256 rateForDebt = vaultEngine.rateForDebt();
         uint256 adjustedPrice = vaultEngine.assets(assetId);
         (
             ,
@@ -209,11 +204,11 @@ contract Liquidator is Stateful, Eventful {
 
         if ((underlying + collateral) == 0 || (debt + equity == 0)) revert vaultIsEmpty();
 
-        if (collateral * adjustedPrice >= debt * debtAccumulator && underlying * adjustedPrice >= initialEquity)
+        if (collateral * adjustedPrice >= debt * rateForDebt && underlying * adjustedPrice >= initialEquity)
             revert positionsNotReadyForLiquidation();
 
-        if (collateral * adjustedPrice < debt * debtAccumulator) {
-            _liquidateDebtPosition(assetId, user, collateral, debt, debtPrincipal, debtAccumulator);
+        if (collateral * adjustedPrice < debt * rateForDebt) {
+            _liquidateDebtPosition(assetId, user, collateral, debt, debtPrincipal, rateForDebt);
         }
 
         if (underlying * adjustedPrice < equity * RAY) {
@@ -231,7 +226,7 @@ contract Liquidator is Stateful, Eventful {
         uint256 collateral,
         uint256 debt,
         uint256 debtPrincipal,
-        uint256 debtAccumulator
+        uint256 rateForDebt
     ) internal {
         Asset memory asset = assets[assetId];
         // Transfer the debt to reserve pool
@@ -246,7 +241,7 @@ contract Liquidator is Stateful, Eventful {
             -int256(debtPrincipal)
         );
 
-        uint256 debtPosition = debt * debtAccumulator;
+        uint256 debtPosition = debt * rateForDebt;
         uint256 fundraiseTarget = debtPosition + ((debtPosition * assets[assetId].debtPenaltyFee) / WAD);
 
         asset.auctioneer.startAuction(

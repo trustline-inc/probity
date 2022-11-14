@@ -36,14 +36,14 @@ describe("AccessControl Unit Test", function () {
     newRegistryAddress = signers.charlie!;
   });
 
-  it("test that only gov can change registry address", async () => {
+  it("test that only admin can change registry address", async () => {
     await assertRevert(
       accessControl
         .connect(user)
         .setRegistryAddress(newRegistryAddress.address),
       "callerDoesNotHaveRequiredRole"
     );
-    await registry.setupAddress(bytes32("gov"), user.address, true);
+    await registry.register(bytes32("admin"), user.address, true);
 
     await accessControl
       .connect(user)

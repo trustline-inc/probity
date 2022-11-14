@@ -36,11 +36,11 @@ const init = async () => {
 
   // first check if the owner is a governance address
   const isGov = await contracts.registry["checkValidity(bytes32,address)"](
-    bytes32("gov"),
+    bytes32("admin"),
     owner.address
   );
   if (!isGov) {
-    console.error(`Provided address is not "gov" address`);
+    console.error(`Provided address is not "admin" address`);
     process.exit(1);
   }
 

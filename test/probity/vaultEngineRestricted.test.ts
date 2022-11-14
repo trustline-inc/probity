@@ -20,7 +20,7 @@ import assertRevert from "../utils/assertRevert";
 // Wallets
 let owner: SignerWithAddress;
 let user: SignerWithAddress;
-let gov: SignerWithAddress;
+let admin: SignerWithAddress;
 let coll: SignerWithAddress;
 let assetManager: SignerWithAddress;
 
@@ -51,11 +51,11 @@ describe("Vault Engine Unrestricted Unit Tests", function () {
 
     owner = signers.owner!;
     user = signers.alice!;
-    gov = signers.charlie!;
+    admin = signers.charlie!;
     coll = signers.don!;
     assetManager = signers.lender!;
 
-    await registry.setupAddress(bytes32("gov"), gov.address, true);
+    await registry.register(bytes32("admin"), admin.address, true);
     await vaultEngine.updateTreasuryAddress(contracts.treasury!.address);
   });
 
@@ -69,15 +69,15 @@ describe("Vault Engine Unrestricted Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR, 2);
+      await vaultEngine.connect(admin).initAsset(ASSET_ID.FLR, 2);
       await vaultEngine
-        .connect(gov)
+        .connect(admin)
         .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
       await registry
-        .connect(gov)
-        .setupAddress(bytes32("assetManager"), assetManager.address, true);
+        .connect(admin)
+        .register(bytes32("assetManager"), assetManager.address, true);
       await vaultEngine
-        .connect(gov)
+        .connect(admin)
         .updateAdjustedPrice(ASSET_ID.FLR, RAY.mul(1));
       await vaultEngine
         .connect(assetManager)
@@ -86,8 +86,8 @@ describe("Vault Engine Unrestricted Unit Tests", function () {
 
     it("only allows whitelisted users to call modifyEquity", async () => {
       await registry
-        .connect(gov)
-        .setupAddress(bytes32("notWhitelisted"), owner.address, false);
+        .connect(admin)
+        .register(bytes32("notWhitelisted"), owner.address, false);
 
       await assertRevert(
         vaultEngine.modifyEquity(
@@ -100,8 +100,8 @@ describe("Vault Engine Unrestricted Unit Tests", function () {
       );
 
       await registry
-        .connect(gov)
-        .setupAddress(bytes32("whitelisted"), owner.address, false);
+        .connect(admin)
+        .register(bytes32("whitelisted"), owner.address, false);
 
       await vaultEngine.modifyEquity(
         ASSET_ID.FLR,
@@ -124,15 +124,15 @@ describe("Vault Engine Unrestricted Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR, 2);
+      await vaultEngine.connect(admin).initAsset(ASSET_ID.FLR, 2);
       await vaultEngine
-        .connect(gov)
+        .connect(admin)
         .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
       await registry
-        .connect(gov)
-        .setupAddress(bytes32("assetManager"), assetManager.address, true);
+        .connect(admin)
+        .register(bytes32("assetManager"), assetManager.address, true);
       await vaultEngine
-        .connect(gov)
+        .connect(admin)
         .updateAdjustedPrice(ASSET_ID.FLR, RAY.mul(1));
       await vaultEngine
         .connect(assetManager)
@@ -143,8 +143,8 @@ describe("Vault Engine Unrestricted Unit Tests", function () {
         );
 
       await registry
-        .connect(gov)
-        .setupAddress(bytes32("whitelisted"), owner.address, false);
+        .connect(admin)
+        .register(bytes32("whitelisted"), owner.address, false);
 
       await vaultEngine.modifyEquity(
         ASSET_ID.FLR,
@@ -155,16 +155,16 @@ describe("Vault Engine Unrestricted Unit Tests", function () {
 
     it("only allows whitelisted users to call modifyDebt", async () => {
       await registry
-        .connect(gov)
-        .setupAddress(bytes32("notWhitelisted"), owner.address, false);
+        .connect(admin)
+        .register(bytes32("notWhitelisted"), owner.address, false);
       await assertRevert(
         vaultEngine.modifyDebt(ASSET_ID.FLR, COLL_AMOUNT, DEBT_AMOUNT),
         "callerDoesNotHaveRequiredRole"
       );
 
       await registry
-        .connect(gov)
-        .setupAddress(bytes32("whitelisted"), owner.address, false);
+        .connect(admin)
+        .register(bytes32("whitelisted"), owner.address, false);
 
       await vaultEngine.modifyDebt(ASSET_ID.FLR, COLL_AMOUNT, DEBT_AMOUNT);
     });

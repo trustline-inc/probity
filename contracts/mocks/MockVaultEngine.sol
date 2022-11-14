@@ -52,12 +52,11 @@ contract MockVaultEngine {
     mapping(bytes32 => bool) public states;
     mapping(bytes32 => Asset) public assets;
     mapping(address => uint256) public systemCurrency;
-    mapping(address => uint256) public pbt;
     mapping(address => uint256) public systemDebt;
 
-    uint256 private constant RAY = 10**27;
-    uint256 public debtAccumulator = RAY; // Cumulative debt rate
-    uint256 public equityAccumulator = RAY; // Cumulative equity rate
+    uint256 private constant RAY = 10 ** 27;
+    uint256 public rateForDebt = RAY; // Cumulative debt rate
+    uint256 public rateForEquity = RAY; // Cumulative equity rate
     uint256 public protocolFeeRates;
     uint256 public lendingPoolPrincipal;
     uint256 public lendingPoolSupply;
@@ -76,11 +75,7 @@ contract MockVaultEngine {
         systemCurrency[user] -= amount;
     }
 
-    function moveSystemCurrency(
-        address from,
-        address to,
-        uint256 amount
-    ) external {
+    function moveSystemCurrency(address from, address to, uint256 amount) external {
         systemCurrency[from] -= amount;
         systemCurrency[to] += amount;
     }
@@ -91,15 +86,6 @@ contract MockVaultEngine {
 
     function setSystemDebt(address user, uint256 amount) external {
         systemDebt[user] = amount;
-    }
-
-    function reducePbt(address user, uint256 amount) external {
-        pbt[user] -= amount;
-    }
-
-    // added for testing purposes
-    function addPbt(address user, uint256 amount) external {
-        pbt[user] += amount;
     }
 
     function setLendingPoolDebt(uint256 newLendingPoolDebt) external {
@@ -148,21 +134,17 @@ contract MockVaultEngine {
 
     function updateAccumulators(
         address reservePool_,
-        uint256 debtAccumulatorIncrease,
-        uint256 equityAccumulatorIncrease,
+        uint256 rateForDebtIncrease,
+        uint256 rateForEquityIncrease,
         uint256 protocolFeeRates_
     ) external {
-        debtAccumulator += debtAccumulatorIncrease;
-        equityAccumulator += equityAccumulatorIncrease;
+        rateForDebt += rateForDebtIncrease;
+        rateForEquity += rateForEquityIncrease;
         protocolFeeRates = protocolFeeRates_;
         reservePool = reservePool_;
     }
 
-    function updateNormValues(
-        bytes32 assetId,
-        uint256 normDebt,
-        uint256 normEquity
-    ) external {
+    function updateNormValues(bytes32 assetId, uint256 normDebt, uint256 normEquity) external {
         assets[assetId].normDebt = normDebt;
         assets[assetId].normEquity = normEquity;
     }
@@ -237,12 +219,7 @@ contract MockVaultEngine {
         );
     }
 
-    function moveAsset(
-        bytes32 assetId,
-        address from,
-        address to,
-        uint256 amount
-    ) external {
+    function moveAsset(bytes32 assetId, address from, address to, uint256 amount) external {
         vaults[assetId][from].standbyAmount -= amount;
         vaults[assetId][to].standbyAmount += amount;
     }

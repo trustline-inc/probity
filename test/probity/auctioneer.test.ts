@@ -44,7 +44,7 @@ let user1: SignerWithAddress;
 let user2: SignerWithAddress;
 let user3: SignerWithAddress;
 let liquidatorCaller: SignerWithAddress;
-let gov: SignerWithAddress;
+let admin: SignerWithAddress;
 
 // Contracts
 let vaultEngine: MockVaultEngine;
@@ -88,16 +88,16 @@ describe("Auctioneer Unit Tests", function () {
     user1 = signers.alice!;
     user2 = signers.don!;
     user3 = signers.lender!;
-    gov = signers.borrower!;
+    admin = signers.borrower!;
     liquidatorCaller = signers.charlie!;
 
-    await registry.setupAddress(
+    await registry.register(
       bytes32("liquidator"),
       liquidatorCaller.address,
       true
     );
 
-    await registry.setupAddress(bytes32("gov"), gov.address, true);
+    await registry.register(bytes32("admin"), admin.address, true);
 
     await priceCalc.setPrice(RAY.mul(12).div(10));
     await priceFeed.setPrice(ASSET_ID.FLR, RAY);
@@ -121,7 +121,7 @@ describe("Auctioneer Unit Tests", function () {
         "callerDoesNotHaveRequiredRole"
       );
 
-      await registry.setupAddress(bytes32("liquidator"), user1.address, true);
+      await registry.register(bytes32("liquidator"), user1.address, true);
 
       await auctioneer
         .connect(user1)
@@ -336,13 +336,13 @@ describe("Auctioneer Unit Tests", function () {
     });
 
     it("fails when contract is in paused state", async () => {
-      await auctioneer.connect(gov).setState(bytes32("paused"), true);
+      await auctioneer.connect(admin).setState(bytes32("paused"), true);
       await assertRevert(
         auctioneer.placeBid(0, RAY, LOT_SIZE.div(10)),
         "stateCheckFailed"
       );
 
-      await auctioneer.connect(gov).setState(bytes32("paused"), false);
+      await auctioneer.connect(admin).setState(bytes32("paused"), false);
       await auctioneer.placeBid(0, RAY, LOT_SIZE.div(10));
     });
 
@@ -565,13 +565,13 @@ describe("Auctioneer Unit Tests", function () {
     });
 
     it("fails when contract is in paused state", async () => {
-      await auctioneer.connect(gov).setState(bytes32("paused"), true);
+      await auctioneer.connect(admin).setState(bytes32("paused"), true);
       await assertRevert(
         auctioneer.buyItNow(0, RAY.mul(2), LOT_SIZE),
         "stateCheckFailed"
       );
 
-      await auctioneer.connect(gov).setState(bytes32("paused"), false);
+      await auctioneer.connect(admin).setState(bytes32("paused"), false);
       await auctioneer.buyItNow(0, RAY.mul(2), LOT_SIZE);
     });
 
@@ -884,10 +884,10 @@ describe("Auctioneer Unit Tests", function () {
       await auctioneer.placeBid(0, RAY.mul(12).div(10), LOT_SIZE.div(10));
       await priceCalc.setPrice(RAY);
 
-      await auctioneer.connect(gov).setState(bytes32("paused"), true);
+      await auctioneer.connect(admin).setState(bytes32("paused"), true);
       await assertRevert(auctioneer.finalizeSale(0), "stateCheckFailed");
 
-      await auctioneer.connect(gov).setState(bytes32("paused"), false);
+      await auctioneer.connect(admin).setState(bytes32("paused"), false);
       await auctioneer.finalizeSale(0);
     });
 

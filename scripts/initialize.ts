@@ -34,7 +34,7 @@ ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
  */
 const init = async () => {
   // Wallets
-  const [gov]: SignerWithAddress[] = await ethers.getSigners();
+  const [admin]: SignerWithAddress[] = await ethers.getSigners();
   const TRUSTLINE_INC = "0x11EeB875AAc42eEe7CB37668360206B0056F6eEd";
   const allowlist = [TRUSTLINE_INC];
 
@@ -47,21 +47,21 @@ const init = async () => {
   // Contracts
   let registry, liquidator, priceFeed, vaultEngine;
   try {
-    registry = new ethers.Contract(process.env.REGISTRY!, RegistryABI.abi, gov);
+    registry = new ethers.Contract(process.env.REGISTRY!, RegistryABI.abi, admin);
     liquidator = new ethers.Contract(
       process.env.LIQUIDATOR!,
       LiquidatorABI.abi,
-      gov
+      admin
     );
     priceFeed = new ethers.Contract(
       process.env.PRICE_FEED!,
       PriceFeedABI.abi,
-      gov
+      admin
     );
     vaultEngine = new ethers.Contract(
       process.env.VAULT_ENGINE!,
       VaultEngineABI.abi,
-      gov
+      admin
     );
   } catch (error) {
     console.log(error);
@@ -76,8 +76,8 @@ const init = async () => {
       console.log(`Allowing address: ${address}`);
       try {
         let tx = await registry
-          .connect(gov)
-          .setupAddress(
+          .connect(admin)
+          .register(
             ethers.utils.formatBytes32String("whitelisted"),
             address,
             false,
@@ -96,7 +96,7 @@ const init = async () => {
     console.log(`Initializing native token collateral: ${nativeToken}`);
     let category = 1; // collateral category code
     let tx = await vaultEngine
-      .connect(gov)
+      .connect(admin)
       .initAsset(NATIVE_ASSETS[nativeToken], category, { gasLimit: 400000 });
     await tx.wait();
     console.log(`Vault: ${nativeToken} initialized`);
@@ -106,7 +106,7 @@ const init = async () => {
     console.log(`Initializing ${erc20Token} token`);
     category = 0; // underlying category code
     tx = await vaultEngine
-      .connect(gov)
+      .connect(admin)
       .initAsset(ERC20_ASSETS[erc20Token], category, { gasLimit: 400000 });
     await tx.wait();
     console.log(`Vault: ${erc20Token} initialized`);
@@ -115,7 +115,7 @@ const init = async () => {
     if (networkName === "songbird") {
       const limit = 1000;
       tx = await vaultEngine
-        .connect(gov)
+        .connect(admin)
         .updateIndividualVaultLimit(RAD.mul(limit), {
           gasLimit: 300000,
         });
@@ -126,7 +126,7 @@ const init = async () => {
     // Update vault debt ceiling to 10M USD
     const ceiling = 10_000_000;
     tx = await vaultEngine
-      .connect(gov)
+      .connect(admin)
       .updateCeiling(NATIVE_ASSETS[nativeToken], RAD.mul(ceiling), {
         gasLimit: 300000,
       });
@@ -134,7 +134,7 @@ const init = async () => {
     console.log(`Vault: ceiling updated to ${ceiling} ${nativeToken}`);
 
     tx = await vaultEngine
-      .connect(gov)
+      .connect(admin)
       .updateCeiling(ERC20_ASSETS[erc20Token], RAD.mul(ceiling), {
         gasLimit: 300000,
       });
@@ -144,7 +144,7 @@ const init = async () => {
     // Update vault debt floor to 1 USD
     const floor = 1;
     tx = await vaultEngine
-      .connect(gov)
+      .connect(admin)
       .updateFloor(NATIVE_ASSETS[nativeToken], WAD.mul(floor), {
         gasLimit: 300000,
       });
@@ -152,7 +152,7 @@ const init = async () => {
     console.log(`Vault: floor updated to ${floor} ${nativeToken}`);
 
     tx = await vaultEngine
-      .connect(gov)
+      .connect(admin)
       .updateFloor(ERC20_ASSETS[erc20Token], WAD.mul(floor), {
         gasLimit: 300000,
       });
@@ -161,7 +161,7 @@ const init = async () => {
 
     // Initialize native token in Liquidator (sets default penalty fees)
     await liquidator
-      .connect(gov)
+      .connect(admin)
       .callStatic.initAsset(
         NATIVE_ASSETS[nativeToken],
         process.env.AUCTIONEER,
@@ -171,7 +171,7 @@ const init = async () => {
         }
       );
     tx = await liquidator
-      .connect(gov)
+      .connect(admin)
       .initAsset(
         NATIVE_ASSETS[nativeToken],
         process.env.AUCTIONEER,
@@ -191,8 +191,8 @@ const init = async () => {
       process.env.FTSO,
       { gasLimit: 300000 },
     ];
-    await priceFeed.connect(gov).callStatic.initAsset(...args);
-    tx = await priceFeed.connect(gov).initAsset(...args);
+    await priceFeed.connect(admin).callStatic.initAsset(...args);
+    tx = await priceFeed.connect(admin).initAsset(...args);
     await tx.wait();
     console.log(
       `PriceFeed: ${nativeToken} price initialized with ${ethers.utils
@@ -208,8 +208,8 @@ const init = async () => {
       process.env.FTSO,
       { gasLimit: 300000 },
     ];
-    await priceFeed.connect(gov).callStatic.initAsset(...args);
-    tx = await priceFeed.connect(gov).initAsset(...args);
+    await priceFeed.connect(admin).callStatic.initAsset(...args);
+    tx = await priceFeed.connect(admin).initAsset(...args);
     await tx.wait();
     console.log(
       `PriceFeed: ${erc20Token} price initialized with ${ethers.utils
@@ -219,14 +219,14 @@ const init = async () => {
 
     // Fetch native token price
     tx = await priceFeed
-      .connect(gov)
+      .connect(admin)
       .updateAdjustedPrice(NATIVE_ASSETS[nativeToken], { gasLimit: 300000 });
     await tx.wait();
     console.log(`PriceFeed: ${nativeToken} price updated`);
 
     // Fetch ERC20 token price
     tx = await priceFeed
-      .connect(gov)
+      .connect(admin)
       .updateAdjustedPrice(ERC20_ASSETS[erc20Token], { gasLimit: 300000 });
     await tx.wait();
     console.log(`PriceFeed: ${erc20Token} price updated`);

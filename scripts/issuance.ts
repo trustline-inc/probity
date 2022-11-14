@@ -18,7 +18,7 @@ const wallet = new ethers.Wallet.fromMnemonic(
 const amount = RAD.mul(1_000_000);
 
 (async () => {
-  const [gov]: SignerWithAddress[] = await ethers.getSigners();
+  const [admin]: SignerWithAddress[] = await ethers.getSigners();
   const VaultEngineIssuerABI = await artifacts.readArtifact(
     "VaultEngineIssuer"
   );
@@ -26,16 +26,16 @@ const amount = RAD.mul(1_000_000);
   const vaultEngine = new Contract(
     process.env.VAULT_ENGINE!,
     VaultEngineIssuerABI.abi,
-    gov
+    admin
   );
-  const treasury = new Contract(process.env.TREASURY!, TreasuryABI.abi, gov);
+  const treasury = new Contract(process.env.TREASURY!, TreasuryABI.abi, admin);
   const UsdABI = await artifacts.readArtifact("Usd");
-  const usd = new Contract(process.env.USD!, UsdABI.abi, gov);
+  const usd = new Contract(process.env.USD!, UsdABI.abi, admin);
 
   console.log("Issuing USD...", {
     to: wallet.address,
     amount: amount.div(RAD).toString(),
-    from: gov.address,
+    from: admin.address,
     vaultEngine: vaultEngine.address,
   });
 
@@ -53,8 +53,8 @@ const amount = RAD.mul(1_000_000);
     console.log(result);
 
     // Fund beneficiary wallet 1 ETH to pay for withdraw tx fee
-    console.log("Tx: gov.sendTransaction");
-    tx = await gov.sendTransaction({
+    console.log("Tx: admin.sendTransaction");
+    tx = await admin.sendTransaction({
       to: wallet.address,
       value: ethers.BigNumber.from("1000000000000000000"),
     });

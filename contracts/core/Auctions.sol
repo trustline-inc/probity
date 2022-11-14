@@ -2,23 +2,14 @@
 
 pragma solidity ^0.8.4;
 
-import "../dependencies/Stateful.sol";
-import "../dependencies/Eventful.sol";
-import "../dependencies/Math.sol";
+import "../deps/Stateful.sol";
+import "../deps/Eventful.sol";
+import "../deps/Math.sol";
 
 interface VaultEngineLike {
-    function moveAsset(
-        bytes32 collateral,
-        address from,
-        address to,
-        uint256 amount
-    ) external;
+    function moveAsset(bytes32 collateral, address from, address to, uint256 amount) external;
 
-    function moveSystemCurrency(
-        address from,
-        address to,
-        uint256 amount
-    ) external;
+    function moveSystemCurrency(address from, address to, uint256 amount) external;
 }
 
 interface VPAssetManagerLike {
@@ -363,16 +354,7 @@ contract Auctioneer is Stateful, Eventful {
         uint256 auctionId,
         uint256 bidPrice,
         uint256 bidLot
-    )
-        public
-        view
-        returns (
-            uint256 biddableLot,
-            uint256 totalBidValue,
-            uint256 totalBidLot,
-            address indexToAdd
-        )
-    {
+    ) public view returns (uint256 biddableLot, uint256 totalBidValue, uint256 totalBidLot, address indexToAdd) {
         Auction memory auction = auctions[auctionId];
 
         address index;
@@ -425,15 +407,10 @@ contract Auctioneer is Stateful, Eventful {
      * @param auctionId The ID of the auction
      * @param price to stop at
      */
-    function totalBidValueAtPrice(uint256 auctionId, uint256 price)
-        public
-        view
-        returns (
-            uint256 totalBidValue,
-            uint256 totalLot,
-            address prev
-        )
-    {
+    function totalBidValueAtPrice(
+        uint256 auctionId,
+        uint256 price
+    ) public view returns (uint256 totalBidValue, uint256 totalLot, address prev) {
         if (nextHighestBidder[auctionId][HEAD] == address(0)) {
             return (totalBidValue, totalLot, HEAD);
         }
@@ -495,12 +472,7 @@ contract Auctioneer is Stateful, Eventful {
      * @param startingLot allow the function to start at a predetermined lot instead of looping from beginning
      * @param prev address of the bidder in the linked list that holds the cumulative value and lot
      */
-    function _cancelOldBids(
-        uint256 auctionId,
-        uint256 startingValue,
-        uint256 startingLot,
-        address prev
-    ) internal {
+    function _cancelOldBids(uint256 auctionId, uint256 startingValue, uint256 startingLot, address prev) internal {
         address index = nextHighestBidder[auctionId][prev];
         uint256 amountLeft = auctions[auctionId].debt - startingValue;
         uint256 lotLeft = auctions[auctionId].lot - startingLot;
@@ -557,11 +529,7 @@ contract Auctioneer is Stateful, Eventful {
      * @param bidder address of the bidder
      * @param newLot new lot value for bidder
      */
-    function _modifyBid(
-        uint256 auctionId,
-        address bidder,
-        uint256 newLot
-    ) internal {
+    function _modifyBid(uint256 auctionId, address bidder, uint256 newLot) internal {
         vaultEngine.moveSystemCurrency(
             address(this),
             bidder,
@@ -589,11 +557,7 @@ contract Auctioneer is Stateful, Eventful {
      * @param bidder address of the bidder
      * @param prev index of the prev bidder in bids
      */
-    function _removeBid(
-        uint256 auctionId,
-        address bidder,
-        address prev
-    ) internal {
+    function _removeBid(uint256 auctionId, address bidder, address prev) internal {
         vaultEngine.moveSystemCurrency(
             address(this),
             bidder,

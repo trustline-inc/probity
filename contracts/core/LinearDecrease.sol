@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.4;
 
-import "../../dependencies/Math.sol";
+import "../deps/Math.sol";
 
 interface PriceCalc {
     function price(uint256 startingPrice, uint256 timeElapsed) external returns (uint256 calculatedPrice);
@@ -16,7 +16,7 @@ contract LinearDecrease is PriceCalc {
     /////////////////////////////////////////
     // State Variables
     /////////////////////////////////////////
-    uint256 private constant RAY = 10**27;
+    uint256 private constant RAY = 10 ** 27;
 
     uint256 public timeToZero = 2 days;
 
@@ -29,12 +29,10 @@ contract LinearDecrease is PriceCalc {
      * @param startingPrice to be used in calculation
      * @param timeElapsed in seconds
      */
-    function price(uint256 startingPrice, uint256 timeElapsed)
-        external
-        view
-        override
-        returns (uint256 calculatedPrice)
-    {
+    function price(
+        uint256 startingPrice,
+        uint256 timeElapsed
+    ) external view override returns (uint256 calculatedPrice) {
         if (timeElapsed >= timeToZero) return 0;
         return Math._rmul(startingPrice, Math._mul(timeToZero - timeElapsed, RAY) / timeToZero);
     }

@@ -3,24 +3,16 @@
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "../dependencies/Stateful.sol";
+import "../deps/Stateful.sol";
 
 interface TokenLike {
     function transfer(address recipient, uint256 amount) external returns (bool);
 
-    function transferFrom(
-        address sender,
-        address recipient,
-        uint256 amount
-    ) external returns (bool);
+    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
 }
 
 interface VaultEngineLike {
-    function modifyStandbyAmount(
-        bytes32 collateral,
-        address user,
-        int256 amount
-    ) external;
+    function modifyStandbyAmount(bytes32 collateral, address user, int256 amount) external;
 }
 
 contract MockErc20AssetManager is Stateful {
@@ -33,11 +25,7 @@ contract MockErc20AssetManager is Stateful {
 
     error transferFailed();
 
-    constructor(
-        address registryAddress,
-        bytes32 id,
-        TokenLike asset
-    ) Stateful(registryAddress) {
+    constructor(address registryAddress, bytes32 id, TokenLike asset) Stateful(registryAddress) {
         assetId = id;
         token = asset;
     }

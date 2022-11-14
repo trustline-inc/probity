@@ -22,7 +22,7 @@ const expect = chai.expect;
 // Wallets
 let owner: SignerWithAddress;
 let user: SignerWithAddress;
-let gov: SignerWithAddress;
+let admin: SignerWithAddress;
 let coll: SignerWithAddress;
 
 // Contracts
@@ -52,14 +52,14 @@ describe("Vault Engine Limited Unit Tests", function () {
 
     owner = signers.owner!;
     user = signers.alice!;
-    gov = signers.charlie!;
+    admin = signers.charlie!;
     coll = signers.don!;
 
-    await registry.setupAddress(bytes32("gov"), gov.address, true);
-    await registry.setupAddress(bytes32("whitelisted"), user.address, false);
-    await registry.setupAddress(bytes32("whitelisted"), owner.address, false);
+    await registry.register(bytes32("admin"), admin.address, true);
+    await registry.register(bytes32("whitelisted"), user.address, false);
+    await registry.register(bytes32("whitelisted"), owner.address, false);
     await vaultEngine
-      .connect(gov)
+      .connect(admin)
       .updateTreasuryAddress(contracts.treasury!.address);
   });
 
@@ -69,22 +69,22 @@ describe("Vault Engine Limited Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR, 2);
+      await vaultEngine.connect(admin).initAsset(ASSET_ID.FLR, 2);
       await vaultEngine
-        .connect(gov)
+        .connect(admin)
         .updateCeiling(ASSET_ID.FLR, RAD.mul(10000000));
       await registry
-        .connect(gov)
-        .setupAddress(bytes32("assetManager"), coll.address, true);
+        .connect(admin)
+        .register(bytes32("assetManager"), coll.address, true);
     });
 
     it("updateIndividualVaultLimit works properly", async () => {
       const NEW_INDIVIDUAL_VAULT_LIMTI = RAD.mul(500);
-      expect(await vaultEngine.connect(gov).vaultLimit()).to.equal(0);
+      expect(await vaultEngine.connect(admin).vaultLimit()).to.equal(0);
       await vaultEngine
-        .connect(gov)
+        .connect(admin)
         .updateIndividualVaultLimit(NEW_INDIVIDUAL_VAULT_LIMTI);
-      expect(await vaultEngine.connect(gov).vaultLimit()).to.equal(
+      expect(await vaultEngine.connect(admin).vaultLimit()).to.equal(
         NEW_INDIVIDUAL_VAULT_LIMTI
       );
     });
@@ -103,7 +103,7 @@ describe("Vault Engine Limited Unit Tests", function () {
           COLL_AMOUNT.add(UNDERLYING_AMOUNT)
         );
       await vaultEngine
-        .connect(gov)
+        .connect(admin)
         .updateAdjustedPrice(ASSET_ID.FLR, RAY.mul(1));
 
       await assertRevert(
@@ -117,7 +117,7 @@ describe("Vault Engine Limited Unit Tests", function () {
       );
 
       await vaultEngine
-        .connect(gov)
+        .connect(admin)
         .updateIndividualVaultLimit(NEW_INDIVIDUAL_VAULT_LIMTI);
 
       await vaultEngine.modifyEquity(
@@ -142,10 +142,10 @@ describe("Vault Engine Limited Unit Tests", function () {
           COLL_AMOUNT.add(UNDERLYING_AMOUNT)
         );
       await vaultEngine
-        .connect(gov)
+        .connect(admin)
         .updateAdjustedPrice(ASSET_ID.FLR, RAY.mul(1));
 
-      await vaultEngine.connect(gov).updateIndividualVaultLimit(RAD.mul(500));
+      await vaultEngine.connect(admin).updateIndividualVaultLimit(RAD.mul(500));
 
       await vaultEngine.modifyEquity(
         ASSET_ID.FLR,
@@ -165,7 +165,7 @@ describe("Vault Engine Limited Unit Tests", function () {
       );
 
       await vaultEngine
-        .connect(gov)
+        .connect(admin)
         .updateIndividualVaultLimit(NEW_INDIVIDUAL_VAULT_LIMIT);
 
       await vaultEngine.modifyDebt(

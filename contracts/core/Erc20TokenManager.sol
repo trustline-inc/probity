@@ -2,24 +2,16 @@
 
 pragma solidity ^0.8.4;
 
-import "../../dependencies/Stateful.sol";
+import "../deps/Stateful.sol";
 
 interface VaultEngineLike {
-    function modifyStandbyAmount(
-        bytes32 collateral,
-        address user,
-        int256 amount
-    ) external;
+    function modifyStandbyAmount(bytes32 collateral, address user, int256 amount) external;
 }
 
 interface TokenLike {
     function transfer(address recipient, uint256 amount) external returns (bool);
 
-    function transferFrom(
-        address sender,
-        address recipient,
-        uint256 amount
-    ) external returns (bool);
+    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
 }
 
 contract ERC20AssetManager is Stateful {

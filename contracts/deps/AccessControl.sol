@@ -60,7 +60,7 @@ contract AccessControl {
     /**
      * @dev set the new registry address, used to replace registry module
      */
-    function setRegistryAddress(IRegistry newRegistryAddress) external onlyBy("gov") {
+    function setRegistryAddress(IRegistry newRegistryAddress) external onlyBy("admin") {
         registry = newRegistryAddress;
     }
 }

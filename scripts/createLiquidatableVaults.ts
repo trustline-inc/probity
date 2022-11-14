@@ -21,14 +21,14 @@ const usdAssetId = web3.utils.keccak256("USD");
   console.log("PLEASE MAKE SURE priceUpdate script is turned OFF!!");
 
   const [
-    gov,
+    admin,
     lender,
     borrower1,
     borrower2,
     borrower3,
     borrower4,
   ]: SignerWithAddress[] = await ethers.getSigners();
-  const contracts = await getContracts(gov);
+  const contracts = await getContracts(admin);
 
   await whiteListUsers(contracts, [
     lender,
@@ -72,7 +72,7 @@ const usdAssetId = web3.utils.keccak256("USD");
   ]);
 })();
 
-const getContracts = async (gov: SignerWithAddress) => {
+const getContracts = async (admin: SignerWithAddress) => {
   const VaultEngineIssuerABI = await artifacts.readArtifact(
     "VaultEngineIssuer"
   );
@@ -80,9 +80,9 @@ const getContracts = async (gov: SignerWithAddress) => {
   const vaultEngine = new Contract(
     process.env.VAULT_ENGINE!,
     VaultEngineIssuerABI.abi,
-    gov
+    admin
   );
-  const treasury = new Contract(process.env.TREASURY!, TreasuryABI.abi, gov);
+  const treasury = new Contract(process.env.TREASURY!, TreasuryABI.abi, admin);
 
   const RegistryABI = await artifacts.readArtifact("Registry");
 
@@ -90,7 +90,7 @@ const getContracts = async (gov: SignerWithAddress) => {
   const registry = new ethers.Contract(
     process.env.REGISTRY!,
     RegistryABI.abi,
-    gov
+    admin
   );
 
   const AuctioneerABI = await artifacts.readArtifact("Auctioneer");
@@ -99,13 +99,13 @@ const getContracts = async (gov: SignerWithAddress) => {
   const auctioneer = new ethers.Contract(
     process.env.AUCTIONEER!,
     AuctioneerABI.abi,
-    gov
+    admin
   );
 
   const UsdABI = await artifacts.readArtifact("USD");
 
   // Contracts
-  const usd = new ethers.Contract(process.env.USD!, UsdABI.abi, gov);
+  const usd = new ethers.Contract(process.env.USD!, UsdABI.abi, admin);
 
   const LiquidatorABI = await artifacts.readArtifact("Liquidator");
 
@@ -113,7 +113,7 @@ const getContracts = async (gov: SignerWithAddress) => {
   const liquidator = new ethers.Contract(
     process.env.LIQUIDATOR!,
     LiquidatorABI.abi,
-    gov
+    admin
   );
 
   const UsdManagerABI = await artifacts.readArtifact("ERC20AssetManager");
@@ -122,7 +122,7 @@ const getContracts = async (gov: SignerWithAddress) => {
   const usdManager = new ethers.Contract(
     process.env.USD_MANAGER!,
     UsdManagerABI.abi,
-    gov
+    admin
   );
 
   const NativeAssetManagerABI = await artifacts.readArtifact(
@@ -133,18 +133,18 @@ const getContracts = async (gov: SignerWithAddress) => {
   const nativeAssetManager = new ethers.Contract(
     process.env.NATIVE_ASSET_MANAGER!,
     NativeAssetManagerABI.abi,
-    gov
+    admin
   );
 
   const PriceFeedABI = await artifacts.readArtifact("PriceFeed");
   const priceFeed = new ethers.Contract(
     process.env.PRICE_FEED!,
     PriceFeedABI.abi,
-    gov
+    admin
   );
 
   const FtsoABI = await artifacts.readArtifact("MockFtso");
-  const ftso = new Contract(process.env.FTSO!, FtsoABI.abi, gov);
+  const ftso = new Contract(process.env.FTSO!, FtsoABI.abi, admin);
 
   return {
     treasury,
@@ -168,8 +168,8 @@ const whiteListUsers = async (contracts, users: SignerWithAddress[]) => {
       false,
       { gasLimit: 300000 },
     ];
-    await contracts.registry.callStatic.setupAddress(...args);
-    const result = await contracts.registry.setupAddress(...args);
+    await contracts.registry.callStatic.register(...args);
+    const result = await contracts.registry.register(...args);
 
     await result.wait();
 
@@ -216,9 +216,9 @@ const createEquityPosition = async (
   await contracts.usdManager.connect(user).deposit(amount.underlying);
   const assetPrice = (await contracts.vaultEngine.assets(usdAssetId))
     .adjustedPrice;
-  const equityAccumulator = await contracts.vaultEngine.equityAccumulator();
+  const rateForEquity = await contracts.vaultEngine.rateForEquity();
 
-  const equityAmount = amount.underlying.mul(assetPrice).div(equityAccumulator);
+  const equityAmount = amount.underlying.mul(assetPrice).div(rateForEquity);
 
   await contracts.vaultEngine
     .connect(user)
@@ -236,7 +236,7 @@ const createDebtPosition = async (
 
   const assetPrice = (await contracts.vaultEngine.assets(ethAssetId))
     .adjustedPrice;
-  const debtAccumulator = await contracts.vaultEngine.debtAccumulator();
+  const rateForDebt = await contracts.vaultEngine.rateForDebt();
 
   const vault = await contracts.vaultEngine.vaults(ethAssetId, user.address);
   const currentCollateral = vault.collateral;
@@ -244,7 +244,7 @@ const createDebtPosition = async (
   const debtAmount = amount.collateral
     .add(currentCollateral)
     .mul(assetPrice)
-    .div(debtAccumulator);
+    .div(rateForDebt);
   const debtAmountToIncrease = debtAmount.sub(currentDebt);
 
   await contracts.vaultEngine

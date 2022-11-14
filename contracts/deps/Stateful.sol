@@ -56,7 +56,7 @@ contract Stateful is AccessControl {
      * @param name of the state
      * @param set whether of not the state is true
      */
-    function setState(bytes32 name, bool set) external onlyBy("gov") {
+    function setState(bytes32 name, bool set) external onlyBy("admin") {
         states[name] = set;
         emit LogStateChange(name, set);
     }

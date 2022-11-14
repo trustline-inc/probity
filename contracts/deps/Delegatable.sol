@@ -22,29 +22,18 @@ interface FtsoManagerLike {
 interface VPTokenManagerLike {
     function transfer(address recipient, uint256 amount) external returns (bool);
 
-    function transferFrom(
-        address sender,
-        address recipient,
-        uint256 amount
-    ) external returns (bool);
+    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
 
     function delegate(address _to, uint256 _bips) external;
 }
 
 interface VaultEngineLike {
-    function vaults(bytes32 assetId, address user)
-        external
-        returns (
-            uint256 standbyAmount,
-            uint256 underlying,
-            uint256 collateral
-        );
-
-    function modifyStandbyAmount(
+    function vaults(
         bytes32 assetId,
-        address user,
-        int256 amount
-    ) external;
+        address user
+    ) external returns (uint256 standbyAmount, uint256 underlying, uint256 collateral);
+
+    function modifyStandbyAmount(bytes32 assetId, address user, int256 amount) external;
 }
 
 /**
@@ -196,7 +185,7 @@ contract Delegatable is Stateful {
      * @param pcts list of percentage for the corresponding provider
      *             The pct must add up to 100% (10000)
      */
-    function changeDataProviders(address[] memory providers, uint256[] memory pcts) external onlyBy("gov") {
+    function changeDataProviders(address[] memory providers, uint256[] memory pcts) external onlyBy("admin") {
         if (providers.length != pcts.length) revert providerAndPctLengthMismatch();
 
         uint256 totalPct = 0;

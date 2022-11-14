@@ -28,7 +28,7 @@ const expect = chai.expect;
 
 // Wallets
 let user: SignerWithAddress;
-let gov: SignerWithAddress;
+let admin: SignerWithAddress;
 
 // Contracts
 let registry: Registry;
@@ -49,12 +49,12 @@ describe("PriceFeed Unit Tests", function () {
     priceFeed = contracts.priceFeed!;
     ftso = contracts.ftso!;
 
-    gov = signers.owner!;
+    admin = signers.owner!;
     user = signers.alice!;
   });
 
   describe("initAsset Unit Tests", function () {
-    it("fails if caller is not by gov", async () => {
+    it("fails if caller is not by admin", async () => {
       await assertRevert(
         priceFeed
           .connect(user)
@@ -62,7 +62,7 @@ describe("PriceFeed Unit Tests", function () {
         "callerDoesNotHaveRequiredRole"
       );
       await priceFeed
-        .connect(gov)
+        .connect(admin)
         .initAsset(ASSET_ID, DEFAULT_LIQUIDATION_RATIO, ftso.address);
     });
 
@@ -113,7 +113,7 @@ describe("PriceFeed Unit Tests", function () {
       );
     });
 
-    it("fails if caller is not by gov", async () => {
+    it("fails if caller is not by admin", async () => {
       await assertRevert(
         priceFeed
           .connect(user)
@@ -121,7 +121,7 @@ describe("PriceFeed Unit Tests", function () {
         "callerDoesNotHaveRequiredRole"
       );
       await priceFeed
-        .connect(gov)
+        .connect(admin)
         .updateLiquidationRatio(ASSET_ID, NEW_LIQUIDATION_RATIO);
     });
 
@@ -164,14 +164,14 @@ describe("PriceFeed Unit Tests", function () {
       );
     });
 
-    it("fails if caller is not by gov", async () => {
+    it("fails if caller is not by admin", async () => {
       const NEW_FTSO_ADDRESS = user.address;
 
       await assertRevert(
         priceFeed.connect(user).updateFtso(ASSET_ID, NEW_FTSO_ADDRESS),
         "callerDoesNotHaveRequiredRole"
       );
-      await priceFeed.connect(gov).updateFtso(ASSET_ID, NEW_FTSO_ADDRESS);
+      await priceFeed.connect(admin).updateFtso(ASSET_ID, NEW_FTSO_ADDRESS);
     });
 
     it("tests that all the variables are properly updated ", async () => {

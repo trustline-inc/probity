@@ -25,7 +25,7 @@ const expect = chai.expect;
 // Wallets
 let owner: SignerWithAddress;
 let user: SignerWithAddress;
-let gov: SignerWithAddress;
+let admin: SignerWithAddress;
 let assetManager: SignerWithAddress;
 
 // Contracts
@@ -59,12 +59,12 @@ describe("Vault Engine Unit Tests", function () {
     // Set signers
     owner = signers.owner!;
     user = signers.alice!;
-    gov = signers.charlie!;
+    admin = signers.charlie!;
     assetManager = signers.don!;
 
-    await registry.setupAddress(bytes32("gov"), gov.address, true);
-    await registry.setupAddress(bytes32("whitelisted"), user.address, false);
-    await registry.setupAddress(bytes32("whitelisted"), owner.address, false);
+    await registry.register(bytes32("admin"), admin.address, true);
+    await registry.register(bytes32("whitelisted"), user.address, false);
+    await registry.register(bytes32("whitelisted"), owner.address, false);
   });
 
   describe("modifyEquity Unit Tests", function () {
@@ -77,15 +77,15 @@ describe("Vault Engine Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR, 2);
+      await vaultEngine.connect(admin).initAsset(ASSET_ID.FLR, 2);
       await vaultEngine
-        .connect(gov)
+        .connect(admin)
         .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
       await registry
-        .connect(gov)
-        .setupAddress(bytes32("assetManager"), assetManager.address, true);
+        .connect(admin)
+        .register(bytes32("assetManager"), assetManager.address, true);
       await vaultEngine
-        .connect(gov)
+        .connect(admin)
         .updateAdjustedPrice(ASSET_ID.FLR, RAY.mul(1));
       await vaultEngine
         .connect(assetManager)
@@ -98,7 +98,7 @@ describe("Vault Engine Unit Tests", function () {
 
     it("fails if supply ceiling has been reached", async () => {
       const NEW_CEILING = RAD.mul(2000);
-      await vaultEngine.connect(gov).updateCeiling(ASSET_ID.FLR, NEW_CEILING);
+      await vaultEngine.connect(admin).updateCeiling(ASSET_ID.FLR, NEW_CEILING);
 
       await assertRevert(
         vaultEngine.modifyEquity(
@@ -118,7 +118,7 @@ describe("Vault Engine Unit Tests", function () {
     });
 
     it("fails when contract is in paused state", async () => {
-      await vaultEngine.connect(gov).setState(bytes32("paused"), true);
+      await vaultEngine.connect(admin).setState(bytes32("paused"), true);
       await assertRevert(
         vaultEngine.modifyEquity(
           ASSET_ID.FLR,
@@ -128,7 +128,7 @@ describe("Vault Engine Unit Tests", function () {
         "stateCheckFailed"
       );
 
-      await vaultEngine.connect(gov).setState(bytes32("paused"), false);
+      await vaultEngine.connect(admin).setState(bytes32("paused"), false);
       await vaultEngine.modifyEquity(
         ASSET_ID.FLR,
         UNDERLYING_AMOUNT,
@@ -138,8 +138,8 @@ describe("Vault Engine Unit Tests", function () {
 
     it("tests that non whitelisted user can call modifyEquity", async () => {
       await registry
-        .connect(gov)
-        .setupAddress(bytes32("notWhitelisted"), owner.address, true);
+        .connect(admin)
+        .register(bytes32("notWhitelisted"), owner.address, true);
 
       await vaultEngine.modifyEquity(
         ASSET_ID.FLR,
@@ -154,11 +154,11 @@ describe("Vault Engine Unit Tests", function () {
 
       // Add owner to the whitelist
       await registry
-        .connect(gov)
-        .setupAddress(bytes32("whitelisted"), owner.address, false);
+        .connect(admin)
+        .register(bytes32("whitelisted"), owner.address, false);
 
       // Update FLR asset floor
-      await vaultEngine.connect(gov).updateFloor(ASSET_ID.FLR, FLOOR_AMOUNT);
+      await vaultEngine.connect(admin).updateFloor(ASSET_ID.FLR, FLOOR_AMOUNT);
 
       // Increase equity (expect revert)
       await assertRevert(
@@ -276,8 +276,8 @@ describe("Vault Engine Unit Tests", function () {
       const equityRateIncrease = BigNumber.from("125509667994754929166541000");
 
       await registry
-        .connect(gov)
-        .setupAddress(bytes32("teller"), user.address, true);
+        .connect(admin)
+        .register(bytes32("teller"), user.address, true);
 
       // Increase equity
       await vaultEngine.modifyEquity(
@@ -311,11 +311,11 @@ describe("Vault Engine Unit Tests", function () {
           BigNumber.from(0)
         );
 
-      const equityAccumulator = await vaultEngine.equityAccumulator();
+      const rateForEquity = await vaultEngine.rateForEquity();
       const vaultBefore = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
-      const equityCreated = EQUITY_AMOUNT.div(2).mul(equityAccumulator);
+      const equityCreated = EQUITY_AMOUNT.div(2).mul(rateForEquity);
       const initialEquityToChange = vaultBefore.normEquity
-        .mul(equityAccumulator)
+        .mul(rateForEquity)
         .sub(equityCreated);
       const EXPECTED_INITIAL_EQUITY = vaultBefore.initialEquity.sub(
         vaultBefore.initialEquity.sub(initialEquityToChange)
@@ -347,8 +347,8 @@ describe("Vault Engine Unit Tests", function () {
       );
 
       await registry
-        .connect(gov)
-        .setupAddress(bytes32("teller"), user.address, true);
+        .connect(admin)
+        .register(bytes32("teller"), user.address, true);
 
       // Increase equity
       await vaultEngine.modifyEquity(
@@ -378,11 +378,11 @@ describe("Vault Engine Unit Tests", function () {
           BigNumber.from(0)
         );
 
-      const equityAccumulator = await vaultEngine.equityAccumulator();
+      const rateForEquity = await vaultEngine.rateForEquity();
       const vaultBefore = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
-      const equityCreated = EQUITY_AMOUNT.mul(equityAccumulator);
+      const equityCreated = EQUITY_AMOUNT.mul(rateForEquity);
       const initialEquityToChange = vaultBefore.initialEquity.sub(
-        vaultBefore.normEquity.mul(equityAccumulator).sub(equityCreated)
+        vaultBefore.normEquity.mul(rateForEquity).sub(equityCreated)
       );
       const EXPECTED_SYSTEM_CURRENCY_DIFF = equityCreated.sub(
         initialEquityToChange
@@ -444,8 +444,8 @@ describe("Vault Engine Unit Tests", function () {
 
       // Update accumulators
       await registry
-        .connect(gov)
-        .setupAddress(bytes32("teller"), user.address, true);
+        .connect(admin)
+        .register(bytes32("teller"), user.address, true);
       await vaultEngine
         .connect(user)
         .updateAccumulators(
@@ -570,7 +570,7 @@ describe("Vault Engine Unit Tests", function () {
   });
 
   describe("initAsset Unit Tests", function () {
-    it("fails if the caller is not gov", async () => {
+    it("fails if the caller is not admin", async () => {
       const ASSET_ID = bytes32("new Asset ");
       await assertRevert(
         vaultEngine.connect(user).initAsset(ASSET_ID, 2),
@@ -578,8 +578,8 @@ describe("Vault Engine Unit Tests", function () {
       );
 
       await registry
-        .connect(gov)
-        .setupAddress(bytes32("gov"), user.address, true);
+        .connect(admin)
+        .register(bytes32("admin"), user.address, true);
 
       await vaultEngine.connect(user).initAsset(ASSET_ID, 2);
     });
@@ -597,8 +597,8 @@ describe("Vault Engine Unit Tests", function () {
       );
 
       await registry
-        .connect(gov)
-        .setupAddress(bytes32("treasury"), user.address, true);
+        .connect(admin)
+        .register(bytes32("treasury"), user.address, true);
 
       await vaultEngine
         .connect(user)
@@ -607,8 +607,8 @@ describe("Vault Engine Unit Tests", function () {
 
     it("test that correct amount is added", async () => {
       await registry
-        .connect(gov)
-        .setupAddress(bytes32("treasury"), user.address, true);
+        .connect(admin)
+        .register(bytes32("treasury"), user.address, true);
 
       const before = await vaultEngine.systemCurrency(user.address);
 
@@ -634,15 +634,15 @@ describe("Vault Engine Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR, 2);
+      await vaultEngine.connect(admin).initAsset(ASSET_ID.FLR, 2);
       await vaultEngine
-        .connect(gov)
+        .connect(admin)
         .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
       await registry
-        .connect(gov)
-        .setupAddress(bytes32("assetManager"), assetManager.address, true);
+        .connect(admin)
+        .register(bytes32("assetManager"), assetManager.address, true);
 
-      await vaultEngine.connect(gov).updateAdjustedPrice(ASSET_ID.FLR, RAY);
+      await vaultEngine.connect(admin).updateAdjustedPrice(ASSET_ID.FLR, RAY);
 
       await vaultEngine
         .connect(assetManager)
@@ -684,15 +684,15 @@ describe("Vault Engine Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR, 2);
+      await vaultEngine.connect(admin).initAsset(ASSET_ID.FLR, 2);
       await vaultEngine
-        .connect(gov)
+        .connect(admin)
         .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
       await registry
-        .connect(gov)
-        .setupAddress(bytes32("assetManager"), assetManager.address, true);
+        .connect(admin)
+        .register(bytes32("assetManager"), assetManager.address, true);
       await vaultEngine
-        .connect(gov)
+        .connect(admin)
         .updateAdjustedPrice(ASSET_ID.FLR, RAY.mul(1));
 
       await vaultEngine
@@ -710,8 +710,8 @@ describe("Vault Engine Unit Tests", function () {
 
     it("fails if treasury doesn't have enough capital", async () => {
       await registry
-        .connect(gov)
-        .setupAddress(bytes32("treasury"), user.address, true);
+        .connect(admin)
+        .register(bytes32("treasury"), user.address, true);
 
       const treasuryBalance = await vaultEngine.systemCurrency(
         treasury.address
@@ -734,13 +734,13 @@ describe("Vault Engine Unit Tests", function () {
     });
 
     it("fails when contract is in paused state", async () => {
-      await vaultEngine.connect(gov).setState(bytes32("paused"), true);
+      await vaultEngine.connect(admin).setState(bytes32("paused"), true);
       await assertRevert(
         vaultEngine.modifyDebt(ASSET_ID.FLR, COLLATERAL_AMOUNT, DEBT_AMOUNT),
         "stateCheckFailed"
       );
 
-      await vaultEngine.connect(gov).setState(bytes32("paused"), false);
+      await vaultEngine.connect(admin).setState(bytes32("paused"), false);
       await vaultEngine.modifyDebt(
         ASSET_ID.FLR,
         COLLATERAL_AMOUNT,
@@ -750,7 +750,7 @@ describe("Vault Engine Unit Tests", function () {
 
     it("fails if debt ceiling has been reached", async () => {
       const NEW_CEILING = RAD.mul(1000);
-      await vaultEngine.connect(gov).updateCeiling(ASSET_ID.FLR, NEW_CEILING);
+      await vaultEngine.connect(admin).updateCeiling(ASSET_ID.FLR, NEW_CEILING);
 
       await assertRevert(
         vaultEngine.modifyDebt(
@@ -770,8 +770,8 @@ describe("Vault Engine Unit Tests", function () {
 
     it("tests that non whitelisted user can call modifyDebt", async () => {
       await registry
-        .connect(gov)
-        .setupAddress(bytes32("notWhitelisted"), owner.address, false);
+        .connect(admin)
+        .register(bytes32("notWhitelisted"), owner.address, false);
 
       await vaultEngine.modifyDebt(
         ASSET_ID.FLR,
@@ -786,10 +786,10 @@ describe("Vault Engine Unit Tests", function () {
       const DEBT_AMOUNT_UNDER_FLOOR = FLOOR_AMOUNT.div(RAY).sub(1);
 
       await registry
-        .connect(gov)
-        .setupAddress(bytes32("whitelisted"), owner.address, false);
+        .connect(admin)
+        .register(bytes32("whitelisted"), owner.address, false);
 
-      await vaultEngine.connect(gov).updateFloor(ASSET_ID.FLR, FLOOR_AMOUNT);
+      await vaultEngine.connect(admin).updateFloor(ASSET_ID.FLR, FLOOR_AMOUNT);
 
       await assertRevert(
         vaultEngine.modifyDebt(
@@ -866,8 +866,8 @@ describe("Vault Engine Unit Tests", function () {
       await vaultEngine.modifyDebt(ASSET_ID.FLR, ASSET_AMOUNT, DEBT_AMOUNT);
 
       await registry
-        .connect(gov)
-        .setupAddress(bytes32("teller"), user.address, true);
+        .connect(admin)
+        .register(bytes32("teller"), user.address, true);
       await vaultEngine
         .connect(user)
         .updateAccumulators(
@@ -892,10 +892,10 @@ describe("Vault Engine Unit Tests", function () {
 
       const after = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
       const poolPrincipalAfter = await vaultEngine.lendingPoolPrincipal();
-      let debtAccumulator = await vaultEngine.debtAccumulator();
+      let rateForDebt = await vaultEngine.rateForDebt();
 
       const EXPECTED_PRINCIPAL = balance.debt.add(
-        DEBT_TO_MODIFY.mul(debtAccumulator)
+        DEBT_TO_MODIFY.mul(rateForDebt)
       );
 
       const EXPECTED_DIFF = before.debtPrincipal.sub(EXPECTED_PRINCIPAL);
@@ -912,8 +912,8 @@ describe("Vault Engine Unit Tests", function () {
       await vaultEngine.modifyDebt(ASSET_ID.FLR, ASSET_AMOUNT, DEBT_AMOUNT);
 
       await registry
-        .connect(gov)
-        .setupAddress(bytes32("teller"), user.address, true);
+        .connect(admin)
+        .register(bytes32("teller"), user.address, true);
       await vaultEngine
         .connect(user)
         .updateAccumulators(
@@ -941,10 +941,10 @@ describe("Vault Engine Unit Tests", function () {
       const treasuryBalanceAfter = await vaultEngine.systemCurrency(
         treasury.address
       );
-      let debtAccumulator = await vaultEngine.debtAccumulator();
+      let rateForDebt = await vaultEngine.rateForDebt();
 
       const EXPECTED_PRINCIPAL = balance.debt.add(
-        DEBT_TO_MODIFY.mul(debtAccumulator)
+        DEBT_TO_MODIFY.mul(rateForDebt)
       );
 
       const EXPECTED_DIFF = before.debtPrincipal.sub(EXPECTED_PRINCIPAL);
@@ -1010,8 +1010,8 @@ describe("Vault Engine Unit Tests", function () {
 
       // Update accumulators
       await registry
-        .connect(gov)
-        .setupAddress(bytes32("teller"), user.address, true);
+        .connect(admin)
+        .register(bytes32("teller"), user.address, true);
       await vaultEngine
         .connect(user)
         .updateAccumulators(
@@ -1088,15 +1088,15 @@ describe("Vault Engine Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR, 2);
+      await vaultEngine.connect(admin).initAsset(ASSET_ID.FLR, 2);
       await vaultEngine
-        .connect(gov)
+        .connect(admin)
         .updateCeiling(ASSET_ID.FLR, RAD.mul(10000000));
       await registry
-        .connect(gov)
-        .setupAddress(bytes32("assetManager"), assetManager.address, true);
+        .connect(admin)
+        .register(bytes32("assetManager"), assetManager.address, true);
       await vaultEngine
-        .connect(gov)
+        .connect(admin)
         .updateAdjustedPrice(ASSET_ID.FLR, RAY.mul(1));
 
       await vaultEngine
@@ -1118,8 +1118,8 @@ describe("Vault Engine Unit Tests", function () {
         .modifyDebt(ASSET_ID.FLR, COLL_AMOUNT, DEBT_AMOUNT);
 
       await registry
-        .connect(gov)
-        .setupAddress(bytes32("teller"), user.address, true);
+        .connect(admin)
+        .register(bytes32("teller"), user.address, true);
 
       await vaultEngine
         .connect(user)
@@ -1132,43 +1132,25 @@ describe("Vault Engine Unit Tests", function () {
     });
 
     it("fails when contract is in paused state", async () => {
-      await vaultEngine.connect(gov).setState(bytes32("paused"), true);
+      await vaultEngine.connect(admin).setState(bytes32("paused"), true);
       await assertRevert(
         vaultEngine.collectInterest(ASSET_ID.FLR),
         "stateCheckFailed"
       );
 
-      await vaultEngine.connect(gov).setState(bytes32("paused"), false);
+      await vaultEngine.connect(admin).setState(bytes32("paused"), false);
       await vaultEngine.collectInterest(ASSET_ID.FLR);
-    });
-
-    it("increases the PBT balance", async () => {
-      const ownerVault = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
-      const equityAccumulator = await vaultEngine.equityAccumulator();
-      const interestAmount = ownerVault.normEquity
-        .mul(equityAccumulator)
-        .sub(ownerVault.initialEquity);
-      const EXPECTED_VALUE = interestAmount
-        .div(equityAccumulator)
-        .mul(equityAccumulator);
-
-      const before = await vaultEngine.pbt(owner.address);
-      expect(before).to.equal(0);
-      await vaultEngine.collectInterest(ASSET_ID.FLR);
-
-      const after = await vaultEngine.pbt(owner.address);
-      expect(after).to.equal(EXPECTED_VALUE);
     });
 
     it("increases Systemcurrency balance", async () => {
       const ownerVault = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
-      const equityAccumulator = await vaultEngine.equityAccumulator();
+      const rateForEquity = await vaultEngine.rateForEquity();
       const interestAmount = ownerVault.normEquity
-        .mul(equityAccumulator)
+        .mul(rateForEquity)
         .sub(ownerVault.initialEquity);
       const EXPECTED_VALUE = interestAmount
-        .div(equityAccumulator)
-        .mul(equityAccumulator);
+        .div(rateForEquity)
+        .mul(rateForEquity);
 
       const before = await vaultEngine.systemCurrency(owner.address);
       expect(before).to.equal(0);
@@ -1204,13 +1186,13 @@ describe("Vault Engine Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR, 2);
+      await vaultEngine.connect(admin).initAsset(ASSET_ID.FLR, 2);
       await vaultEngine
-        .connect(gov)
+        .connect(admin)
         .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
       await registry
-        .connect(gov)
-        .setupAddress(bytes32("assetManager"), assetManager.address, true);
+        .connect(admin)
+        .register(bytes32("assetManager"), assetManager.address, true);
       await vaultEngine
         .connect(assetManager)
         .modifyStandbyAmount(
@@ -1219,7 +1201,7 @@ describe("Vault Engine Unit Tests", function () {
           ASSET_AMOUNT.add(UNDERLYING_AMOUNT)
         );
       await vaultEngine
-        .connect(gov)
+        .connect(admin)
         .updateAdjustedPrice(ASSET_ID.FLR, RAY.mul(1));
 
       await vaultEngine.modifyEquity(
@@ -1231,8 +1213,8 @@ describe("Vault Engine Unit Tests", function () {
       await vaultEngine.modifyDebt(ASSET_ID.FLR, ASSET_AMOUNT, DEBT_AMOUNT);
 
       await registry
-        .connect(gov)
-        .setupAddress(bytes32("liquidator"), user.address, true);
+        .connect(admin)
+        .register(bytes32("liquidator"), user.address, true);
     });
 
     it("reduces initial equity and lendingPool Supply", async () => {
@@ -1297,13 +1279,13 @@ describe("Vault Engine Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR, 2);
+      await vaultEngine.connect(admin).initAsset(ASSET_ID.FLR, 2);
       await vaultEngine
-        .connect(gov)
+        .connect(admin)
         .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
       await registry
-        .connect(gov)
-        .setupAddress(bytes32("assetManager"), assetManager.address, true);
+        .connect(admin)
+        .register(bytes32("assetManager"), assetManager.address, true);
       await vaultEngine
         .connect(assetManager)
         .modifyStandbyAmount(
@@ -1312,7 +1294,7 @@ describe("Vault Engine Unit Tests", function () {
           ASSET_AMOUNT.add(UNDERLYING_AMOUNT)
         );
       await vaultEngine
-        .connect(gov)
+        .connect(admin)
         .updateAdjustedPrice(ASSET_ID.FLR, RAY.mul(1));
 
       await vaultEngine.modifyEquity(
@@ -1324,8 +1306,8 @@ describe("Vault Engine Unit Tests", function () {
       await vaultEngine.modifyDebt(ASSET_ID.FLR, ASSET_AMOUNT, DEBT_AMOUNT);
 
       await registry
-        .connect(gov)
-        .setupAddress(bytes32("teller"), user.address, true);
+        .connect(admin)
+        .register(bytes32("teller"), user.address, true);
     });
 
     it("only allows teller to update rate accumulators", async () => {
@@ -1352,8 +1334,8 @@ describe("Vault Engine Unit Tests", function () {
     });
 
     it("updates the debt and equity accumulators", async () => {
-      const debtAccuBefore = await vaultEngine.debtAccumulator();
-      const equityAccuBefore = await vaultEngine.equityAccumulator();
+      const debtAccuBefore = await vaultEngine.rateForDebt();
+      const equityAccuBefore = await vaultEngine.rateForEquity();
       const debtRateIncrease = BigNumber.from("251035088626883475473007");
       const equityRateIncrease = BigNumber.from("125509667994754929166541");
       await vaultEngine
@@ -1365,8 +1347,8 @@ describe("Vault Engine Unit Tests", function () {
           BigNumber.from(0)
         );
 
-      const debtAccuAfter = await vaultEngine.debtAccumulator();
-      const equityAccuAfter = await vaultEngine.equityAccumulator();
+      const debtAccuAfter = await vaultEngine.rateForDebt();
+      const equityAccuAfter = await vaultEngine.rateForEquity();
       expect(debtAccuBefore.add(debtRateIncrease)).to.equal(debtAccuAfter);
       expect(equityAccuBefore.add(equityRateIncrease)).to.equal(
         equityAccuAfter

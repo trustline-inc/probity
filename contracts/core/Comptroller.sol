@@ -2,30 +2,20 @@
 
 pragma solidity ^0.8.4;
 
-import "../dependencies/Stateful.sol";
+import "../deps/Stateful.sol";
 
-interface VaultEngineLike {
+interface LedgerLike {
     function addSystemCurrency(address user, uint256 amount) external;
 
     function removeSystemCurrency(address user, uint256 amount) external;
 
-    function moveSystemCurrency(
-        address from,
-        address to,
-        uint256 amount
-    ) external;
-
-    function reducePbt(address user, uint256 amount) external;
+    function moveSystemCurrency(address from, address to, uint256 amount) external;
 }
 
 interface TokenLike {
     function transfer(address recipient, uint256 amount) external returns (bool);
 
-    function transferFrom(
-        address sender,
-        address recipient,
-        uint256 amount
-    ) external returns (bool);
+    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
 
     function mint(address user, uint256 amount) external;
 
@@ -34,7 +24,7 @@ interface TokenLike {
 
 /**
  * @title Treasury Contract
- * @notice Treasury exchanges the systemCurrency/pbt balances between the VaultEngine and their ERC20 counterpart
+ * @notice Treasury exchanges the system currency balance between the VaultEngine and ERC20 counterpart
  */
 contract Treasury is Stateful {
     /////////////////////////////////////////
@@ -42,8 +32,7 @@ contract Treasury is Stateful {
     /////////////////////////////////////////
 
     TokenLike public immutable systemCurrency;
-    TokenLike public immutable pbt;
-    VaultEngineLike public immutable vaultEngine;
+    LedgerLike public immutable ledger;
 
     /////////////////////////////////////////
     // Events
@@ -51,7 +40,6 @@ contract Treasury is Stateful {
     event DepositSystemCurrency(address indexed user, uint256 amount);
     event WithdrawSystemCurrency(address indexed user, uint256 amount);
     event TransferSystemCurrency(address indexed from, address indexed to, uint256 amount);
-    event WithdrawPbt(address indexed user, uint256 amount);
 
     /////////////////////////////////////////
     // Constructor
@@ -59,12 +47,10 @@ contract Treasury is Stateful {
     constructor(
         address registryAddress,
         TokenLike systemCurrencyAddress,
-        TokenLike pbtAddress,
-        VaultEngineLike vaultEngineAddress
+        LedgerLike ledgerAddress
     ) Stateful(registryAddress) {
         systemCurrency = systemCurrencyAddress;
-        vaultEngine = vaultEngineAddress;
-        pbt = pbtAddress;
+        ledger = ledgerAddress;
     }
 
     /////////////////////////////////////////
@@ -76,7 +62,7 @@ contract Treasury is Stateful {
      * @param amount to exchange
      */
     function depositSystemCurrency(uint256 amount) external onlyWhen("paused", false) {
-        vaultEngine.addSystemCurrency(msg.sender, amount * 1e27);
+        ledger.addSystemCurrency(msg.sender, amount * 1e27);
         systemCurrency.burn(msg.sender, amount);
         emit DepositSystemCurrency(msg.sender, amount);
     }
@@ -86,7 +72,7 @@ contract Treasury is Stateful {
      * @param amount to exchange
      */
     function withdrawSystemCurrency(uint256 amount) external onlyWhen("paused", false) {
-        vaultEngine.removeSystemCurrency(msg.sender, amount * 1e27);
+        ledger.removeSystemCurrency(msg.sender, amount * 1e27);
         systemCurrency.mint(msg.sender, amount);
         emit WithdrawSystemCurrency(msg.sender, amount);
     }
@@ -97,17 +83,7 @@ contract Treasury is Stateful {
      * @param amount to transfer
      */
     function transferSystemCurrency(address recipient, uint256 amount) external onlyWhen("paused", false) {
-        vaultEngine.moveSystemCurrency(msg.sender, recipient, amount * 1e27);
+        ledger.moveSystemCurrency(msg.sender, recipient, amount * 1e27);
         emit TransferSystemCurrency(msg.sender, recipient, amount);
-    }
-
-    /**
-     * @dev withdraw PBT balance from VaultEngine to ERC20 counterpart
-     * @param amount to withdraw
-     */
-    function withdrawPbt(uint256 amount) external onlyWhen("paused", false) {
-        vaultEngine.reducePbt(msg.sender, amount * 1e27);
-        pbt.mint(msg.sender, amount);
-        emit WithdrawPbt(msg.sender, amount);
     }
 }

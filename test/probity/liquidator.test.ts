@@ -184,7 +184,7 @@ describe("Liquidator Unit Tests", function () {
         "callerDoesNotHaveRequiredRole"
       );
 
-      await registry.setupAddress(bytes32("auctioneer"), user.address, true);
+      await registry.register(bytes32("auctioneer"), user.address, true);
 
       await liquidator
         .connect(user)
@@ -192,7 +192,7 @@ describe("Liquidator Unit Tests", function () {
     });
 
     it("tests that reservePool's reduceAuctionDebt is called with correct parameters", async () => {
-      await registry.setupAddress(bytes32("auctioneer"), user.address, true);
+      await registry.register(bytes32("auctioneer"), user.address, true);
 
       const REDUCE_AUCTION_DEBT_AMOUNT = RAD.mul(2837);
 

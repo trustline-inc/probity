@@ -2,30 +2,30 @@
 
 pragma solidity ^0.8.4;
 
-import "./VaultEngineRestricted.sol";
+import "./LedgerRestricted.sol";
 
 /**
- * @title VaultEngineIssuer contract
+ * @title LedgerIssuer contract
  * @author Matthew Rosendin <matt@trustline.co, @mrosendin>
  * @author Shine Lee <shine@trustline.co, @shine2lay>
  * @notice The core accounting module for the Probity system
- * This contract inherits VaultEngineRestricted and adds a feature to manage issuance and redemptions.
+ * This contract inherits LedgerRestricted and adds a feature to manage issuance and redemptions.
  */
 
-contract VaultEngineIssuer is VaultEngineRestricted {
+contract LedgerIssuer is LedgerRestricted {
     /////////////////////////////////////////
     // Constructor
     /////////////////////////////////////////
 
     // solhint-disable-next-line
-    constructor(address registryAddress) VaultEngineRestricted(registryAddress) {}
+    constructor(address registryAddress) LedgerRestricted(registryAddress) {}
 
     /**
      * @notice Issues system currency to an account
      * @param account The holder of the issued system currency
      * @param amount The amount to issue
      */
-    function modifySupply(address account, int256 amount) external virtual onlyBy("gov") {
+    function modifySupply(address account, int256 amount) external virtual onlyBy("admin") {
         _modifySupply(account, amount);
     }
 

@@ -32,8 +32,8 @@ const init = async () => {
       false,
       { gasLimit: 300000 },
     ];
-    await registry.callStatic.setupAddress(...args);
-    const result = await registry.setupAddress(...args);
+    await registry.callStatic.register(...args);
+    const result = await registry.register(...args);
 
     await result.wait();
 

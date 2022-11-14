@@ -34,7 +34,7 @@ describe("Stateful Unit Test", function () {
     user = signers.alice!;
   });
 
-  it("test setState can only be called by gov address", async () => {
+  it("test setState can only be called by admin address", async () => {
     const stateName = bytes32("test");
     await assertRevert(
       stateful.connect(user).setState(stateName, true),

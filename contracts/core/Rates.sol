@@ -2,14 +2,14 @@
 
 pragma solidity ^0.8.4;
 
-import "../dependencies/Stateful.sol";
-import "../dependencies/Eventful.sol";
-import "../dependencies/Math.sol";
+import "../deps/Stateful.sol";
+import "../deps/Eventful.sol";
+import "../deps/Math.sol";
 
 interface VaultEngineLike {
-    function debtAccumulator() external returns (uint256);
+    function rateForDebt() external returns (uint256);
 
-    function equityAccumulator() external returns (uint256);
+    function rateForEquity() external returns (uint256);
 
     function lendingPoolDebt() external returns (uint256);
 
@@ -40,8 +40,8 @@ contract Teller is Stateful, Eventful {
     /////////////////////////////////////////
     // State Variables
     /////////////////////////////////////////
-    uint256 private constant WAD = 10**18;
-    uint256 private constant RAY = 10**27;
+    uint256 private constant WAD = 10 ** 18;
+    uint256 private constant RAY = 10 ** 27;
     // Set max APR to 100%
     uint256 public constant MAX_APR = WAD * 2 * 1e9;
 
@@ -59,7 +59,7 @@ contract Teller is Stateful, Eventful {
     // Events
     /////////////////////////////////////////
     event AssetInitialized(bytes32 indexed assetId, uint256 protocolFee);
-    event RatesUpdated(uint256 timestamp, uint256 debtAccumulator, uint256 equityAccumulator);
+    event RatesUpdated(uint256 timestamp, uint256 rateForDebt, uint256 rateForEquity);
 
     /////////////////////////////////////////
     // Errors
@@ -91,7 +91,7 @@ contract Teller is Stateful, Eventful {
     // External Functions
     /////////////////////////////////////////
 
-    function setProtocolFee(uint256 newProtocolFee) external onlyBy("gov") {
+    function setProtocolFee(uint256 newProtocolFee) external onlyBy("admin") {
         emit LogVarUpdate(bytes32("teller"), bytes32("protocolFee"), protocolFee, newProtocolFee);
         protocolFee = newProtocolFee;
     }
@@ -100,7 +100,7 @@ contract Teller is Stateful, Eventful {
      * @dev update the reservePool address
      * @param newReservePool the new reserve Pool's address
      */
-    function setReservePoolAddress(address newReservePool) public onlyBy("gov") {
+    function setReservePoolAddress(address newReservePool) public onlyBy("admin") {
         emit LogVarUpdate(bytes32("teller"), bytes32("reservePool"), reservePool, newReservePool);
         reservePool = newReservePool;
     }
@@ -109,7 +109,7 @@ contract Teller is Stateful, Eventful {
      * @dev Updates the debt and equity rate accumulators
      */
     function updateAccumulators() external onlyWhen("paused", false) {
-        uint256 debtAccumulator = vaultEngine.debtAccumulator();
+        uint256 rateForDebt = vaultEngine.rateForDebt();
         uint256 lendingPoolDebt = vaultEngine.lendingPoolDebt();
         uint256 lendingPoolEquity = vaultEngine.lendingPoolEquity();
 
@@ -126,9 +126,9 @@ contract Teller is Stateful, Eventful {
             apr = MAX_APR;
         } else {
             uint256 oneMinusUtilization = RAY - (utilization * 1e9);
-            uint256 oneDividedByOneMinusUtilization = Math._rdiv(10**27 * 0.01, oneMinusUtilization);
+            uint256 oneDividedByOneMinusUtilization = Math._rdiv(10 ** 27 * 0.01, oneMinusUtilization);
 
-            uint256 round = 0.0025 * 10**27;
+            uint256 round = 0.0025 * 10 ** 27;
             apr = oneDividedByOneMinusUtilization + RAY;
             apr = ((apr + round - 1) / round) * round;
 
@@ -144,18 +144,18 @@ contract Teller is Stateful, Eventful {
         }
 
         // Update debt accumulator
-        uint256 debtRateIncrease = Math._rmul(Math._rpow(mpr, (block.timestamp - lastUpdated)), debtAccumulator) -
-            debtAccumulator;
+        uint256 debtRateIncrease = Math._rmul(Math._rpow(mpr, (block.timestamp - lastUpdated)), rateForDebt) -
+            rateForDebt;
 
         uint256 debtCreated = debtRateIncrease * lendingPoolDebt;
-        uint256 equityAccumulatorDiff = debtCreated / lendingPoolEquity;
+        uint256 rateForEquityDiff = debtCreated / lendingPoolEquity;
 
         uint256 protocolFeeRate = 0;
         if (protocolFee != 0) {
-            protocolFeeRate = (equityAccumulatorDiff * protocolFee) / WAD;
+            protocolFeeRate = (rateForEquityDiff * protocolFee) / WAD;
         }
 
-        uint256 equityRateIncrease = equityAccumulatorDiff - protocolFeeRate;
+        uint256 equityRateIncrease = rateForEquityDiff - protocolFeeRate;
 
         // Update values
         lastUpdated = block.timestamp;

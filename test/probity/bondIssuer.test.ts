@@ -14,7 +14,7 @@ const expect = chai.expect;
 // Wallets
 let owner: SignerWithAddress;
 let user: SignerWithAddress;
-let gov: SignerWithAddress;
+let admin: SignerWithAddress;
 let reservePool: SignerWithAddress;
 
 // Contracts
@@ -41,12 +41,12 @@ describe("BondIssuer Unit Tests", function () {
 
     owner = signers.owner!;
     user = signers.alice!;
-    gov = signers.charlie!;
+    admin = signers.charlie!;
     reservePool = signers.don!;
 
     await bondIssuer.setReservePoolAddress(reservePool.address);
-    await registry.setupAddress(bytes32("gov"), gov.address, true);
-    await registry.setupAddress(
+    await registry.register(bytes32("admin"), admin.address, true);
+    await registry.register(
       bytes32("reservePool"),
       reservePool.address,
       true
@@ -102,21 +102,21 @@ describe("BondIssuer Unit Tests", function () {
       registry = contracts.registry!;
       bondIssuer = contracts.bondIssuer!;
 
-      await registry.setupAddress(bytes32("gov"), gov.address, true);
+      await registry.register(bytes32("admin"), admin.address, true);
     });
-    it("fails if caller is not 'gov'", async () => {
+    it("fails if caller is not 'admin'", async () => {
       await assertRevert(
         bondIssuer.connect(user).setReservePoolAddress(reservePool.address),
         "callerDoesNotHaveRequiredRole"
       );
-      await registry.setupAddress(bytes32("gov"), user.address, true);
+      await registry.register(bytes32("admin"), user.address, true);
       await bondIssuer.connect(user).setReservePoolAddress(reservePool.address);
     });
 
     it("fails if reservePoolAddress has already been set", async () => {
-      await bondIssuer.connect(gov).setReservePoolAddress(reservePool.address);
+      await bondIssuer.connect(admin).setReservePoolAddress(reservePool.address);
       await assertRevert(
-        bondIssuer.connect(gov).setReservePoolAddress(reservePool.address),
+        bondIssuer.connect(admin).setReservePoolAddress(reservePool.address),
         "reservePoolAlreadySet()"
       );
     });
@@ -124,7 +124,7 @@ describe("BondIssuer Unit Tests", function () {
     it("tests that values are properly set", async () => {
       const before = await bondIssuer.reservePoolAddress();
       expect(before).to.equal(ADDRESS_ZERO);
-      await bondIssuer.connect(gov).setReservePoolAddress(reservePool.address);
+      await bondIssuer.connect(admin).setReservePoolAddress(reservePool.address);
       const after = await bondIssuer.reservePoolAddress();
       expect(after).to.equal(reservePool.address);
     });
@@ -133,19 +133,19 @@ describe("BondIssuer Unit Tests", function () {
   describe("updateMaxDiscount Unit Tests", function () {
     const DEFAULT_MAX_PRICE = WAD.mul(15).div(10);
     const NEW_MAX_PRICE = WAD.mul(2);
-    it("fails if caller is not 'gov'", async () => {
+    it("fails if caller is not 'admin'", async () => {
       await assertRevert(
         bondIssuer.connect(user).updateMaxDiscount(NEW_MAX_PRICE),
         "callerDoesNotHaveRequiredRole"
       );
-      await registry.setupAddress(bytes32("gov"), user.address, true);
+      await registry.register(bytes32("admin"), user.address, true);
       await bondIssuer.connect(user).updateMaxDiscount(NEW_MAX_PRICE);
     });
 
     it("tests that values are properly set", async () => {
       const before = await bondIssuer.maxDiscount();
       expect(before).to.equal(DEFAULT_MAX_PRICE);
-      await bondIssuer.connect(gov).updateMaxDiscount(NEW_MAX_PRICE);
+      await bondIssuer.connect(admin).updateMaxDiscount(NEW_MAX_PRICE);
       const after = await bondIssuer.maxDiscount();
       expect(after).to.equal(NEW_MAX_PRICE);
     });
@@ -153,19 +153,19 @@ describe("BondIssuer Unit Tests", function () {
 
   describe("updateStepPeriod Unit Tests", function () {
     const NEW_STEP_PERIOD = DEFAULT_SALE_STEP_PERIOD / 2;
-    it("fails if caller is not gov", async () => {
+    it("fails if caller is not admin", async () => {
       await assertRevert(
         bondIssuer.connect(user).updateStepPeriod(NEW_STEP_PERIOD),
         "callerDoesNotHaveRequiredRole"
       );
-      await registry.setupAddress(bytes32("gov"), user.address, true);
+      await registry.register(bytes32("admin"), user.address, true);
       await bondIssuer.connect(user).updateStepPeriod(NEW_STEP_PERIOD);
     });
 
     it("tests that values are properly set", async () => {
       const before = await bondIssuer.stepPeriod();
       expect(before).to.equal(DEFAULT_SALE_STEP_PERIOD);
-      await bondIssuer.connect(gov).updateStepPeriod(NEW_STEP_PERIOD);
+      await bondIssuer.connect(admin).updateStepPeriod(NEW_STEP_PERIOD);
       const after = await bondIssuer.stepPeriod();
       expect(after).to.equal(NEW_STEP_PERIOD);
     });
@@ -173,14 +173,14 @@ describe("BondIssuer Unit Tests", function () {
 
   describe("updateDiscountIncreasePerStep Unit Tests", function () {
     const NEW_PRICE_INCREASE_PER_STEP = DEFAULT_PER_STEP_INCREASE.div(2);
-    it("fails if caller is not by gov", async () => {
+    it("fails if caller is not by admin", async () => {
       await assertRevert(
         bondIssuer
           .connect(user)
           .updateDiscountIncreasePerStep(NEW_PRICE_INCREASE_PER_STEP),
         "callerDoesNotHaveRequiredRole"
       );
-      await registry.setupAddress(bytes32("gov"), user.address, true);
+      await registry.register(bytes32("admin"), user.address, true);
       await bondIssuer
         .connect(user)
         .updateDiscountIncreasePerStep(NEW_PRICE_INCREASE_PER_STEP);
@@ -190,7 +190,7 @@ describe("BondIssuer Unit Tests", function () {
       const before = await bondIssuer.discountIncreasePerStep();
       expect(before).to.equal(DEFAULT_PER_STEP_INCREASE);
       await bondIssuer
-        .connect(gov)
+        .connect(admin)
         .updateDiscountIncreasePerStep(NEW_PRICE_INCREASE_PER_STEP);
       const after = await bondIssuer.discountIncreasePerStep();
       expect(after).to.equal(NEW_PRICE_INCREASE_PER_STEP);
@@ -204,12 +204,12 @@ describe("BondIssuer Unit Tests", function () {
         bondIssuer.connect(user).newOffering(OFFER_AMOUNT),
         "callerDoesNotHaveRequiredRole"
       );
-      await registry.setupAddress(bytes32("reservePool"), user.address, true);
+      await registry.register(bytes32("reservePool"), user.address, true);
       await bondIssuer.connect(user).newOffering(OFFER_AMOUNT);
     });
 
     it("fails if current Offering is not over yet", async () => {
-      await registry.setupAddress(bytes32("reservePool"), user.address, true);
+      await registry.register(bytes32("reservePool"), user.address, true);
       await bondIssuer.connect(user).newOffering(OFFER_AMOUNT);
       await assertRevert(
         bondIssuer.connect(user).newOffering(OFFER_AMOUNT),
@@ -218,7 +218,7 @@ describe("BondIssuer Unit Tests", function () {
     });
 
     it("tests that values are properly set", async () => {
-      await registry.setupAddress(bytes32("reservePool"), user.address, true);
+      await registry.register(bytes32("reservePool"), user.address, true);
 
       const before = await bondIssuer.offering();
       expect(before.active).to.equal(false);
@@ -263,13 +263,13 @@ describe("BondIssuer Unit Tests", function () {
 
     it("fails when contract is in paused state", async () => {
       await bondIssuer.connect(reservePool).newOffering(OFFER_AMOUNT);
-      await bondIssuer.connect(gov).setState(bytes32("paused"), true);
+      await bondIssuer.connect(admin).setState(bytes32("paused"), true);
       await assertRevert(
         bondIssuer.purchaseBond(OFFER_AMOUNT),
         "stateCheckFailed"
       );
 
-      await bondIssuer.connect(gov).setState(bytes32("paused"), false);
+      await bondIssuer.connect(admin).setState(bytes32("paused"), false);
       await bondIssuer.purchaseBond(OFFER_AMOUNT);
     });
 
@@ -361,13 +361,13 @@ describe("BondIssuer Unit Tests", function () {
     it("fails when contract is in paused state", async () => {
       await bondIssuer.connect(user).purchaseBond(BUY_AMOUNT);
 
-      await bondIssuer.connect(gov).setState(bytes32("paused"), true);
+      await bondIssuer.connect(admin).setState(bytes32("paused"), true);
       await assertRevert(
         bondIssuer.connect(user).redeemBondTokens(BUY_AMOUNT),
         "stateCheckFailed"
       );
 
-      await bondIssuer.connect(gov).setState(bytes32("paused"), false);
+      await bondIssuer.connect(admin).setState(bytes32("paused"), false);
       await bondIssuer.connect(user).redeemBondTokens(BUY_AMOUNT);
     });
 
@@ -405,33 +405,33 @@ describe("BondIssuer Unit Tests", function () {
       await vaultEngine.setSystemCurrency(reservePool.address, 0);
       await assertRevert(
         bondIssuer
-          .connect(gov)
+          .connect(admin)
           .redeemBondTokensForUser(owner.address, BUY_AMOUNT),
         "insufficientFundsInReservePool"
       );
       await vaultEngine.setSystemCurrency(reservePool.address, RESERVE_BAL);
       await bondIssuer
-        .connect(gov)
+        .connect(admin)
         .redeemBondTokensForUser(owner.address, BUY_AMOUNT);
     });
 
     it("fails if user doesn't have enough tokens to redeem", async () => {
       await assertRevert(
         bondIssuer
-          .connect(gov)
+          .connect(admin)
           .redeemBondTokensForUser(user.address, BUY_AMOUNT),
         "notEnoughBondsToRedeem"
       );
       await bondIssuer.connect(user).purchaseBond(BUY_AMOUNT);
       await bondIssuer
-        .connect(gov)
+        .connect(admin)
         .redeemBondTokensForUser(user.address, BUY_AMOUNT);
     });
 
     it("tests that values are properly updated", async () => {
       const before = await bondIssuer.bondTokens(owner.address);
       await bondIssuer
-        .connect(gov)
+        .connect(admin)
         .redeemBondTokensForUser(owner.address, BUY_AMOUNT);
       const after = await bondIssuer.bondTokens(owner.address);
 
@@ -441,7 +441,7 @@ describe("BondIssuer Unit Tests", function () {
     it("tests that correct amount of systemCurrency is transferred", async () => {
       const before = await vaultEngine.systemCurrency(owner.address);
       await bondIssuer
-        .connect(gov)
+        .connect(admin)
         .redeemBondTokensForUser(owner.address, BUY_AMOUNT);
       const after = await vaultEngine.systemCurrency(owner.address);
 

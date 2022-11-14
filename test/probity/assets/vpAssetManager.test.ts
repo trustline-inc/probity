@@ -23,7 +23,7 @@ const expect = chai.expect;
 // Wallets
 let owner: SignerWithAddress;
 let user: SignerWithAddress;
-let gov: SignerWithAddress;
+let admin: SignerWithAddress;
 let auctioneerCaller: SignerWithAddress;
 
 // Contracts
@@ -53,20 +53,20 @@ describe("VP AssetManager  Unit Test", function () {
 
     owner = signers.owner!;
     user = signers.alice!;
-    gov = signers.bob!;
+    admin = signers.bob!;
     auctioneerCaller = signers.charlie!;
 
-    await registry.setupAddress(bytes32("gov"), gov.address, true);
+    await registry.register(bytes32("admin"), admin.address, true);
     await registry
-      .connect(gov)
-      .setupAddress(bytes32("whitelisted"), owner.address, false);
+      .connect(admin)
+      .register(bytes32("whitelisted"), owner.address, false);
     await registry
-      .connect(gov)
-      .setupAddress(bytes32("whitelisted"), user.address, false);
+      .connect(admin)
+      .register(bytes32("whitelisted"), user.address, false);
 
     await registry
-      .connect(gov)
-      .setupAddress(bytes32("auctioneer"), auctioneerCaller.address, false);
+      .connect(admin)
+      .register(bytes32("auctioneer"), auctioneerCaller.address, false);
 
     await mockVpToken.mint(owner.address, AMOUNT_TO_MINT);
 
@@ -287,8 +287,8 @@ describe("VP AssetManager  Unit Test", function () {
       await vpAssetManager.claimReward(0);
 
       await registry
-        .connect(gov)
-        .setupAddress(
+        .connect(admin)
+        .register(
           bytes32("notAuctioneer"),
           auctioneerCaller.address,
           false
@@ -300,8 +300,8 @@ describe("VP AssetManager  Unit Test", function () {
       );
 
       await registry
-        .connect(gov)
-        .setupAddress(bytes32("auctioneer"), auctioneerCaller.address, false);
+        .connect(admin)
+        .register(bytes32("auctioneer"), auctioneerCaller.address, false);
 
       await vpAssetManager
         .connect(auctioneerCaller)
@@ -357,13 +357,13 @@ describe("VP AssetManager  Unit Test", function () {
       const NEW_DATA_PCTS = [5000, 5000];
       await assertRevert(
         vpAssetManager
-          .connect(gov)
+          .connect(admin)
           .changeDataProviders([owner.address], NEW_DATA_PCTS),
         "providerAndPctLengthMismatch()"
       );
 
       await vpAssetManager
-        .connect(gov)
+        .connect(admin)
         .changeDataProviders(NEW_DATA_PROVIDER, NEW_DATA_PCTS);
     });
 
@@ -372,13 +372,13 @@ describe("VP AssetManager  Unit Test", function () {
       const NEW_DATA_PCTS = [5000, 5000];
       await assertRevert(
         vpAssetManager
-          .connect(gov)
+          .connect(admin)
           .changeDataProviders(NEW_DATA_PROVIDER, [5000, 4000]),
         "pctDoesNotAddUpToHundred()"
       );
 
       await vpAssetManager
-        .connect(gov)
+        .connect(admin)
         .changeDataProviders(NEW_DATA_PROVIDER, NEW_DATA_PCTS);
     });
 
@@ -389,7 +389,7 @@ describe("VP AssetManager  Unit Test", function () {
       const dataProviderBefore = await vpAssetManager.getDataProviders();
       expect(dataProviderBefore.length).to.equal(0);
       await vpAssetManager
-        .connect(gov)
+        .connect(admin)
         .changeDataProviders(NEW_DATA_PROVIDER, NEW_DATA_PCTS);
 
       const dataProviderAfter = await vpAssetManager.getDataProviders();
@@ -401,8 +401,8 @@ describe("VP AssetManager  Unit Test", function () {
 
   it("fails if token transferFrom failed when depositing", async () => {
     await registry
-      .connect(gov)
-      .setupAddress(bytes32("whitelisted"), user.address, false);
+      .connect(admin)
+      .register(bytes32("whitelisted"), user.address, false);
 
     await assertRevert(
       vpAssetManager.connect(user).deposit(AMOUNT_TO_MINT),
@@ -419,8 +419,8 @@ describe("VP AssetManager  Unit Test", function () {
 
   it("fails if token transfer failed when withdrawing", async () => {
     await registry
-      .connect(gov)
-      .setupAddress(bytes32("whitelisted"), user.address, false);
+      .connect(admin)
+      .register(bytes32("whitelisted"), user.address, false);
 
     await mockVpToken.mint(user.address, AMOUNT_TO_MINT);
     await mockVpToken

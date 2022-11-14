@@ -19,7 +19,7 @@ const expect = chai.expect;
 // Wallets
 let owner: SignerWithAddress;
 let user: SignerWithAddress;
-let gov: SignerWithAddress;
+let admin: SignerWithAddress;
 
 // Contracts
 let mockErc20AssetManager: MockErc20AssetManager;
@@ -44,15 +44,15 @@ describe("ERC20 Asset Manager Unit Test", function () {
 
     owner = signers.owner!;
     user = signers.alice!;
-    gov = signers.bob!;
+    admin = signers.bob!;
 
-    await registry.setupAddress(bytes32("gov"), gov.address, true);
+    await registry.register(bytes32("admin"), admin.address, true);
     await registry
-      .connect(gov)
-      .setupAddress(bytes32("whitelisted"), owner.address, false);
+      .connect(admin)
+      .register(bytes32("whitelisted"), owner.address, false);
     await registry
-      .connect(gov)
-      .setupAddress(
+      .connect(admin)
+      .register(
         bytes32("assetManager"),
         mockErc20AssetManager.address,
         true
@@ -62,8 +62,8 @@ describe("ERC20 Asset Manager Unit Test", function () {
 
   it("fails if token transferFrom failed when depositing", async () => {
     await registry
-      .connect(gov)
-      .setupAddress(bytes32("whitelisted"), user.address, false);
+      .connect(admin)
+      .register(bytes32("whitelisted"), user.address, false);
 
     await assertRevert(
       mockErc20AssetManager.connect(user).deposit(AMOUNT_TO_MINT),
@@ -94,8 +94,8 @@ describe("ERC20 Asset Manager Unit Test", function () {
 
   it("fails if token transfer failed when withdrawing", async () => {
     await registry
-      .connect(gov)
-      .setupAddress(bytes32("whitelisted"), user.address, false);
+      .connect(admin)
+      .register(bytes32("whitelisted"), user.address, false);
 
     await erc20.mint(user.address, AMOUNT_TO_MINT);
     await erc20

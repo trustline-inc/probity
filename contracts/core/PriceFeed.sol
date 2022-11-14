@@ -2,9 +2,9 @@
 
 pragma solidity ^0.8.4;
 
-import "../dependencies/Stateful.sol";
-import "../dependencies/Eventful.sol";
-import "../dependencies/Math.sol";
+import "../deps/Stateful.sol";
+import "../deps/Eventful.sol";
+import "../deps/Math.sol";
 
 interface VaultEngineLike {
     function updateAdjustedPrice(bytes32 assetId, uint256 price) external;
@@ -67,11 +67,7 @@ contract PriceFeed is Stateful, Eventful {
      * @param liquidationRatio liquidationRatio for the asset
      * @param ftso the ftso address for the asset
      */
-    function initAsset(
-        bytes32 assetId,
-        uint256 liquidationRatio,
-        FtsoLike ftso
-    ) external onlyBy("gov") {
+    function initAsset(bytes32 assetId, uint256 liquidationRatio, FtsoLike ftso) external onlyBy("admin") {
         if (address(assets[assetId].ftso) != address(0)) revert assetAlreadyInitialized();
 
         assets[assetId].liquidationRatio = liquidationRatio;
@@ -84,7 +80,7 @@ contract PriceFeed is Stateful, Eventful {
      * @param assetId The ID of the asset to update
      * @param liquidationRatio The new ratio
      */
-    function updateLiquidationRatio(bytes32 assetId, uint256 liquidationRatio) external onlyBy("gov") {
+    function updateLiquidationRatio(bytes32 assetId, uint256 liquidationRatio) external onlyBy("admin") {
         emit LogVarUpdate("priceFeed", assetId, "liquidationRatio", assets[assetId].liquidationRatio, liquidationRatio);
         assets[assetId].liquidationRatio = liquidationRatio;
     }
@@ -94,7 +90,7 @@ contract PriceFeed is Stateful, Eventful {
      * @param assetId The ID of the asset to update
      * @param newFtso The address of the new FTSO
      */
-    function updateFtso(bytes32 assetId, FtsoLike newFtso) external onlyBy("gov") {
+    function updateFtso(bytes32 assetId, FtsoLike newFtso) external onlyBy("admin") {
         emit LogVarUpdate("priceFeed", assetId, "ftso", address(assets[assetId].ftso), address(newFtso));
         assets[assetId].ftso = newFtso;
     }

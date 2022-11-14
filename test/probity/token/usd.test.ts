@@ -43,7 +43,7 @@ describe("USD Token Unit Test", function () {
     );
 
     // add owner to registry as 'treasury' then check if owner can now mint
-    await registry.setupAddress(bytes32("treasury"), owner.address, true);
+    await registry.register(bytes32("treasury"), owner.address, true);
 
     const balanceBefore = await usd.balanceOf(user.address);
 
@@ -55,7 +55,7 @@ describe("USD Token Unit Test", function () {
 
   it("test burn can only be called by vault contract", async () => {
     // add owner to registry as 'treasury' then check if owner can now mint
-    await registry.setupAddress(bytes32("treasury"), owner.address, true);
+    await registry.register(bytes32("treasury"), owner.address, true);
 
     await usd.mint(user.address, AMOUNT_TO_MINT);
 
@@ -73,7 +73,7 @@ describe("USD Token Unit Test", function () {
   });
 
   it("tests that token can not be transferred when contract is paused", async () => {
-    await registry.setupAddress(bytes32("treasury"), user.address, true);
+    await registry.register(bytes32("treasury"), user.address, true);
 
     const balanceBefore = await usd.balanceOf(user.address);
 

@@ -2,14 +2,10 @@
 
 pragma solidity ^0.8.4;
 
-import "../../dependencies/Stateful.sol";
+import "../deps/Stateful.sol";
 
 interface VaultEngineLike {
-    function modifyStandbyAmount(
-        bytes32 assetId,
-        address user,
-        int256 amount
-    ) external;
+    function modifyStandbyAmount(bytes32 assetId, address user, int256 amount) external;
 }
 
 contract NativeAssetManager is Stateful {
@@ -35,11 +31,7 @@ contract NativeAssetManager is Stateful {
     /////////////////////////////////////////
     // Constructor
     /////////////////////////////////////////
-    constructor(
-        address registryAddress,
-        bytes32 id,
-        VaultEngineLike vaultEngineAddress
-    ) Stateful(registryAddress) {
+    constructor(address registryAddress, bytes32 id, VaultEngineLike vaultEngineAddress) Stateful(registryAddress) {
         assetId = id;
         vaultEngine = vaultEngineAddress;
     }

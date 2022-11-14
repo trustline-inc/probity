@@ -20,7 +20,7 @@ const expect = chai.expect;
 let owner: SignerWithAddress;
 let user: SignerWithAddress;
 let liquidator: SignerWithAddress;
-let gov: SignerWithAddress;
+let admin: SignerWithAddress;
 
 // Contracts
 let vaultEngine: MockVaultEngine;
@@ -48,9 +48,9 @@ describe("ReservePool Unit Tests", function () {
     owner = signers.owner!;
     user = signers.alice!;
     liquidator = signers.charlie!;
-    gov = signers.don!;
+    admin = signers.don!;
 
-    await registry.setupAddress(
+    await registry.register(
       bytes32("liquidator"),
       liquidator.address,
       true
@@ -60,7 +60,7 @@ describe("ReservePool Unit Tests", function () {
   describe("updateDebtThreshold Unit Tests", function () {
     const NEW_THRESHOLD = RAD.mul(20283);
 
-    it("fails if caller is not 'gov'", async () => {
+    it("fails if caller is not 'admin'", async () => {
       await assertRevert(
         reservePool.connect(user).updateDebtThreshold(NEW_THRESHOLD),
         "callerDoesNotHaveRequiredRole"
@@ -85,12 +85,12 @@ describe("ReservePool Unit Tests", function () {
         reservePool.connect(user).addAuctionDebt(AUCTION_DEBT_TO_ADD),
         "callerDoesNotHaveRequiredRole"
       );
-      await registry.setupAddress(bytes32("liquidator"), user.address, true);
+      await registry.register(bytes32("liquidator"), user.address, true);
       await reservePool.connect(user).addAuctionDebt(AUCTION_DEBT_TO_ADD);
     });
 
     it("tests that values are properly set", async () => {
-      await registry.setupAddress(bytes32("liquidator"), user.address, true);
+      await registry.register(bytes32("liquidator"), user.address, true);
 
       const before = await reservePool.debtOnAuction();
       await reservePool.connect(user).addAuctionDebt(AUCTION_DEBT_TO_ADD);
@@ -112,7 +112,7 @@ describe("ReservePool Unit Tests", function () {
         reservePool.connect(user).reduceAuctionDebt(AUCTION_DEBT_TO_REDUCE),
         "callerDoesNotHaveRequiredRole"
       );
-      await registry.setupAddress(bytes32("liquidator"), user.address, true);
+      await registry.register(bytes32("liquidator"), user.address, true);
       await reservePool.connect(user).reduceAuctionDebt(AUCTION_DEBT_TO_REDUCE);
     });
 
@@ -146,7 +146,7 @@ describe("ReservePool Unit Tests", function () {
         reservePool.connect(user).settle(AMOUNT_TO_SETTLE),
         "callerIsNotFromProbitySystem()"
       );
-      await registry.setupAddress(bytes32("liquidator"), user.address, true);
+      await registry.register(bytes32("liquidator"), user.address, true);
       await reservePool.connect(user).settle(AMOUNT_TO_SETTLE);
     });
 
@@ -184,7 +184,7 @@ describe("ReservePool Unit Tests", function () {
         reservePool.connect(user).increaseSystemDebt(AMOUNT_TO_INCREASE),
         "callerIsNotFromProbitySystem()"
       );
-      await registry.setupAddress(bytes32("liquidator"), user.address, true);
+      await registry.register(bytes32("liquidator"), user.address, true);
       await reservePool.connect(user).increaseSystemDebt(AMOUNT_TO_INCREASE);
     });
 
@@ -206,21 +206,21 @@ describe("ReservePool Unit Tests", function () {
         .setSystemCurrency(reservePool.address, AMOUNT_TO_SEND);
     });
 
-    it("fails if caller is not by gov", async () => {
+    it("fails if caller is not by admin", async () => {
       await assertRevert(
         reservePool
           .connect(user)
           .sendSystemCurrency(owner.address, AMOUNT_TO_SEND),
         "callerDoesNotHaveRequiredRole"
       );
-      await registry.setupAddress(bytes32("gov"), user.address, true);
+      await registry.register(bytes32("admin"), user.address, true);
       await reservePool
         .connect(user)
         .sendSystemCurrency(owner.address, AMOUNT_TO_SEND);
     });
 
     it("tests that values are properly set", async () => {
-      await registry.setupAddress(bytes32("gov"), user.address, true);
+      await registry.register(bytes32("admin"), user.address, true);
 
       const before = await vaultEngine.systemCurrency(owner.address);
       await reservePool
@@ -245,7 +245,7 @@ describe("ReservePool Unit Tests", function () {
         reservePool.connect(user).startBondSale(),
         "callerIsNotFromProbitySystem()"
       );
-      await registry.setupAddress(bytes32("gov"), user.address, true);
+      await registry.register(bytes32("admin"), user.address, true);
       await reservePool.connect(user).startBondSale();
     });
 

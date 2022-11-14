@@ -36,7 +36,7 @@ function sleep(ms: number) {
  */
 const init = async () => {
   // Wallets
-  const [gov, treasury, user]: SignerWithAddress[] = await ethers.getSigners();
+  const [admin, treasury, user]: SignerWithAddress[] = await ethers.getSigners();
   const TRUSTLINE_INC = "0x6310B7E8bDFD25EFbeDfB17987Ba69D9191a45bD";
   const allowlist = [TRUSTLINE_INC];
 
@@ -51,25 +51,25 @@ const init = async () => {
   const registry = new ethers.Contract(
     process.env.REGISTRY!,
     RegistryABI.abi,
-    gov
+    admin
   );
 
   const USD_MANAGER = new ethers.Contract(
     process.env.USD_MANAGER,
     ERC20AssetManagerABI.abi,
-    gov
+    admin
   );
 
-  const USD = new ethers.Contract(process.env.USD, ERC20TokenABI.abi, gov);
+  const USD = new ethers.Contract(process.env.USD, ERC20TokenABI.abi, admin);
 
   const vaultEngine = new ethers.Contract(
     process.env.VAULT_ENGINE,
     VaultEngineABI.abi,
-    gov
+    admin
   );
 
-  // await registry.connect(gov).setupAddress(bytes32("treasury"), treasury.address, true);
-  // await registry.connect(gov).setupAddress(bytes32("whitelisted"), user.address, false);
+  // await registry.connect(admin).register(bytes32("treasury"), treasury.address, true);
+  // await registry.connect(admin).register(bytes32("whitelisted"), user.address, false);
   // await sleep(5000)
   // await USD.connect(treasury).mint(user.address, WAD.mul(1_000_000))
   // await sleep(5000)

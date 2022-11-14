@@ -3,37 +3,37 @@
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "../../dependencies/Stateful.sol";
+import "../deps/Stateful.sol";
 
 /**
- * @title LQO token contract
- * @notice LQO ERC20 Token Contract
+ * @title USD token contract
+ * @notice USD ERC20 Token Contract
  */
-contract LQO is ERC20, Stateful {
-    constructor(address registryAddress) Stateful(registryAddress) ERC20("LQO", "LQO") {}
+contract USD is ERC20, Stateful {
+    constructor(address registryAddress) Stateful(registryAddress) ERC20("USD", "USD") {}
 
     /**
-     * @dev fractional unit subscriptions are not currently allowed
+     * @dev TODO: may change decimals to 2 (commonly understood) or 6 (similar to USDC)
      */
     function decimals() public pure override returns (uint8) {
-        return 0;
+        return 18;
     }
 
     /**
-     * @dev minting capability for gov
+     * @dev minting capability for Treasury module
      * @param account the address to mint tokens for
      * @param amount of tokens to mint
      */
-    function mint(address account, uint256 amount) external onlyBy("gov") {
+    function mint(address account, uint256 amount) external onlyBy("treasury") {
         _mint(account, amount);
     }
 
     /**
-     * @dev burning capability for gov
+     * @dev burning capability for Treasury module
      * @param account the address to burn tokens for
      * @param amount of tokens to burn
      */
-    function burn(address account, uint256 amount) external onlyBy("gov") {
+    function burn(address account, uint256 amount) external onlyBy("treasury") {
         _burn(account, amount);
     }
 

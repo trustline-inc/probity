@@ -38,7 +38,7 @@ const expect = chai.expect;
 let owner: SignerWithAddress;
 let user: SignerWithAddress;
 let userWithRole: SignerWithAddress;
-let gov: SignerWithAddress;
+let admin: SignerWithAddress;
 
 // Contracts
 let usd: USD;
@@ -87,20 +87,20 @@ describe("Probity happy flow", function () {
 
     owner = signers.owner!;
     user = signers.alice!;
-    gov = signers.charlie!;
+    admin = signers.charlie!;
     userWithRole = signers.don!;
 
-    await registry.setupAddress(bytes32("gov"), gov.address, true);
-    await registry.setupAddress(
+    await registry.register(bytes32("admin"), admin.address, true);
+    await registry.register(
       bytes32("auctioneer"),
       userWithRole.address,
       true
     );
-    await registry.setupAddress(bytes32("whitelisted"), user.address, false);
-    await registry.setupAddress(bytes32("whitelisted"), owner.address, false);
+    await registry.register(bytes32("whitelisted"), user.address, false);
+    await registry.register(bytes32("whitelisted"), owner.address, false);
     await registry
-      .connect(gov)
-      .setupAddress(
+      .connect(admin)
+      .register(
         bytes32("assetManager"),
         mockErc20AssetManager.address,
         true
@@ -181,12 +181,12 @@ describe("Probity happy flow", function () {
     await flrAssetManager.deposit({ value: STANDBY_AMOUNT });
 
     // Initialize the FLR asset
-    await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR, 2);
+    await vaultEngine.connect(admin).initAsset(ASSET_ID.FLR, 2);
     await vaultEngine
-      .connect(gov)
+      .connect(admin)
       .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
     await priceFeed
-      .connect(gov)
+      .connect(admin)
       .initAsset(ASSET_ID.FLR, WAD.mul(15).div(10), ftso.address);
     await priceFeed.updateAdjustedPrice(ASSET_ID.FLR);
 
@@ -247,12 +247,12 @@ describe("Probity happy flow", function () {
     await flrAssetManager.connect(user).deposit({ value: STANDBY_AMOUNT });
 
     // Initialize the FLR asset
-    await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR, 2);
+    await vaultEngine.connect(admin).initAsset(ASSET_ID.FLR, 2);
     await vaultEngine
-      .connect(gov)
+      .connect(admin)
       .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
     await priceFeed
-      .connect(gov)
+      .connect(admin)
       .initAsset(ASSET_ID.FLR, WAD.mul(15).div(10), ftso.address);
     await priceFeed.updateAdjustedPrice(ASSET_ID.FLR);
 
@@ -342,7 +342,7 @@ describe("Probity happy flow", function () {
 
     const TRANSFER_AMOUNT = LOAN_AMOUNT.mul(RAY);
     await vaultEngine
-      .connect(gov)
+      .connect(admin)
       .moveSystemCurrency(user.address, owner.address, TRANSFER_AMOUNT);
 
     // repay all the loan with extra Systemcurrency
@@ -368,13 +368,13 @@ describe("Probity happy flow", function () {
     await flrAssetManager.deposit({ value: STANDBY_AMOUNT });
 
     // Initialize the FLR asset
-    await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR, 2);
+    await vaultEngine.connect(admin).initAsset(ASSET_ID.FLR, 2);
     await vaultEngine
-      .connect(gov)
+      .connect(admin)
       .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
 
     await priceFeed
-      .connect(gov)
+      .connect(admin)
       .initAsset(ASSET_ID.FLR, WAD.mul(15).div(10), ftso.address);
     await priceFeed.updateAdjustedPrice(ASSET_ID.FLR);
 
@@ -426,13 +426,13 @@ describe("Probity happy flow", function () {
     await flrAssetManager.deposit({ value: STANDBY_AMOUNT });
 
     // Initialize the FLR asset
-    await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR, 2);
+    await vaultEngine.connect(admin).initAsset(ASSET_ID.FLR, 2);
     await vaultEngine
-      .connect(gov)
+      .connect(admin)
       .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
 
     await priceFeed
-      .connect(gov)
+      .connect(admin)
       .initAsset(ASSET_ID.FLR, WAD.mul(15).div(10), ftso.address);
     await priceFeed.updateAdjustedPrice(ASSET_ID.FLR);
 
@@ -448,18 +448,18 @@ describe("Probity happy flow", function () {
     await flrAssetManager.deposit({ value: STANDBY_AMOUNT });
 
     // Initialize the FLR asset
-    await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR, 2);
+    await vaultEngine.connect(admin).initAsset(ASSET_ID.FLR, 2);
     await vaultEngine
-      .connect(gov)
+      .connect(admin)
       .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
 
     await priceFeed
-      .connect(gov)
+      .connect(admin)
       .initAsset(ASSET_ID.FLR, WAD.mul(15).div(10), ftso.address);
     await priceFeed.updateAdjustedPrice(ASSET_ID.FLR);
 
     // update protocol Fee
-    await teller.connect(gov).setProtocolFee(ethers.utils.parseEther("0.02"));
+    await teller.connect(admin).setProtocolFee(ethers.utils.parseEther("0.02"));
 
     // increase equity
     await vaultEngine.modifyEquity(
@@ -481,8 +481,8 @@ describe("Probity happy flow", function () {
     // increase time
     await increaseTime(5000);
 
-    const debtAccuBefore = await vaultEngine.debtAccumulator();
-    const equityAccuBefore = await vaultEngine.equityAccumulator();
+    const debtAccuBefore = await vaultEngine.rateForDebt();
+    const equityAccuBefore = await vaultEngine.rateForEquity();
     const reserveBalBefore = await vaultEngine.systemCurrency(reserve.address);
     const totalDebtBefore = await vaultEngine.lendingPoolDebt();
     const lendingPoolEquityBefore = await vaultEngine.lendingPoolEquity();
@@ -490,19 +490,19 @@ describe("Probity happy flow", function () {
     // call teller.updateAccumulators
     await teller.updateAccumulators();
 
-    const debtAccuAfter = await vaultEngine.debtAccumulator();
-    const equityAccuAfter = await vaultEngine.equityAccumulator();
+    const debtAccuAfter = await vaultEngine.rateForDebt();
+    const equityAccuAfter = await vaultEngine.rateForEquity();
     const reserveBalAfter = await vaultEngine.systemCurrency(reserve.address);
     const totalDebtAfter = await vaultEngine.lendingPoolDebt();
     const lendingPoolEquityAfter = await vaultEngine.lendingPoolEquity();
 
     // check the debt's accumulator update
-    const debtAccumulatorDiff = debtAccuAfter.sub(debtAccuBefore);
-    expect(debtAccumulatorDiff.gt(0)).to.equal(true);
+    const rateForDebtDiff = debtAccuAfter.sub(debtAccuBefore);
+    expect(rateForDebtDiff.gt(0)).to.equal(true);
 
     // check the equity's accumulator update
-    const equityAccumulatorDiff = equityAccuAfter.sub(equityAccuBefore);
-    expect(equityAccumulatorDiff.gt(0)).to.equal(true);
+    const rateForEquityDiff = equityAccuAfter.sub(equityAccuBefore);
+    expect(rateForEquityDiff.gt(0)).to.equal(true);
 
     // check reserveBal increase
     const reserveBalDiff = reserveBalAfter.sub(reserveBalBefore);
@@ -514,15 +514,15 @@ describe("Probity happy flow", function () {
     await flrAssetManager.deposit({ value: STANDBY_AMOUNT.mul(2) });
 
     // Initialize the FLR asset
-    await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR, 2);
+    await vaultEngine.connect(admin).initAsset(ASSET_ID.FLR, 2);
     await vaultEngine
-      .connect(gov)
+      .connect(admin)
       .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
 
     await liquidator
-      .connect(gov)
+      .connect(admin)
       .initAsset(ASSET_ID.FLR, auctioneer.address, ADDRESS_ZERO);
-    await priceFeed.connect(gov).initAsset(ASSET_ID.FLR, WAD, ftso.address);
+    await priceFeed.connect(admin).initAsset(ASSET_ID.FLR, WAD, ftso.address);
     await priceFeed.updateAdjustedPrice(ASSET_ID.FLR);
 
     // Increase equity
@@ -543,7 +543,7 @@ describe("Probity happy flow", function () {
 
     // Set liquidation ratio to 220%
     await priceFeed
-      .connect(gov)
+      .connect(admin)
       .updateLiquidationRatio(ASSET_ID.FLR, WAD.mul(22).div(10));
     await priceFeed.updateAdjustedPrice(ASSET_ID.FLR);
 
@@ -568,15 +568,15 @@ describe("Probity happy flow", function () {
     await flrAssetManager.deposit({ value: STANDBY_AMOUNT.mul(2) });
 
     // Initialize the FLR asset
-    await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR, 2);
+    await vaultEngine.connect(admin).initAsset(ASSET_ID.FLR, 2);
     await vaultEngine
-      .connect(gov)
+      .connect(admin)
       .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
 
     await liquidator
-      .connect(gov)
+      .connect(admin)
       .initAsset(ASSET_ID.FLR, auctioneer.address, ADDRESS_ZERO);
-    await priceFeed.connect(gov).initAsset(ASSET_ID.FLR, WAD, ftso.address);
+    await priceFeed.connect(admin).initAsset(ASSET_ID.FLR, WAD, ftso.address);
     await priceFeed.updateAdjustedPrice(ASSET_ID.FLR);
 
     // Increase equity
@@ -597,7 +597,7 @@ describe("Probity happy flow", function () {
 
     // Set liquidation ratio to 220%
     await priceFeed
-      .connect(gov)
+      .connect(admin)
       .updateLiquidationRatio(ASSET_ID.FLR, WAD.mul(22).div(10));
     await priceFeed.updateAdjustedPrice(ASSET_ID.FLR);
 
@@ -665,15 +665,15 @@ describe("Probity happy flow", function () {
     await flrAssetManager.deposit({ value: STANDBY_AMOUNT.mul(2) });
 
     // Initialize the FLR asset
-    await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR, 2);
+    await vaultEngine.connect(admin).initAsset(ASSET_ID.FLR, 2);
     await vaultEngine
-      .connect(gov)
+      .connect(admin)
       .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
 
     await liquidator
-      .connect(gov)
+      .connect(admin)
       .initAsset(ASSET_ID.FLR, auctioneer.address, ADDRESS_ZERO);
-    await priceFeed.connect(gov).initAsset(ASSET_ID.FLR, WAD, ftso.address);
+    await priceFeed.connect(admin).initAsset(ASSET_ID.FLR, WAD, ftso.address);
     await priceFeed.updateAdjustedPrice(ASSET_ID.FLR);
 
     // Increase equity
@@ -686,7 +686,7 @@ describe("Probity happy flow", function () {
 
     // Set liquidation ratio to 220%
     await priceFeed
-      .connect(gov)
+      .connect(admin)
       .updateLiquidationRatio(ASSET_ID.FLR, WAD.mul(22).div(10));
     await priceFeed.updateAdjustedPrice(ASSET_ID.FLR);
 
@@ -755,15 +755,15 @@ describe("Probity happy flow", function () {
     await flrAssetManager.deposit({ value: STANDBY_AMOUNT.mul(2) });
 
     // Initialize the FLR asset
-    await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR, 2);
+    await vaultEngine.connect(admin).initAsset(ASSET_ID.FLR, 2);
     await vaultEngine
-      .connect(gov)
+      .connect(admin)
       .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
 
     await liquidator
-      .connect(gov)
+      .connect(admin)
       .initAsset(ASSET_ID.FLR, auctioneer.address, ADDRESS_ZERO);
-    await priceFeed.connect(gov).initAsset(ASSET_ID.FLR, WAD, ftso.address);
+    await priceFeed.connect(admin).initAsset(ASSET_ID.FLR, WAD, ftso.address);
     await priceFeed.updateAdjustedPrice(ASSET_ID.FLR);
 
     // Increase equity
@@ -784,7 +784,7 @@ describe("Probity happy flow", function () {
 
     // Set liquidation ratio to 220%
     await priceFeed
-      .connect(gov)
+      .connect(admin)
       .updateLiquidationRatio(ASSET_ID.FLR, WAD.mul(22).div(10));
     await priceFeed.updateAdjustedPrice(ASSET_ID.FLR);
 
@@ -827,14 +827,14 @@ describe("Probity happy flow", function () {
 
     // Set debt threshold to 10 USD
     const debtThreshold = RAD.mul(10);
-    await reserve.connect(gov).updateDebtThreshold(debtThreshold);
+    await reserve.connect(admin).updateDebtThreshold(debtThreshold);
 
     // Expect debt threshold to be reduced
     const _debtThreshold = await reserve.debtThreshold();
     expect(_debtThreshold).to.equal(debtThreshold);
 
     // Start an IOU sale (systemDebt - debtOnAuction > debtThreshold)
-    await reserve.connect(gov).startBondSale();
+    await reserve.connect(admin).startBondSale();
 
     await ethers.provider.send("evm_increaseTime", [21601]);
     await ethers.provider.send("evm_mine", []);

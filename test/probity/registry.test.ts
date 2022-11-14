@@ -13,7 +13,7 @@ const expect = chai.expect;
 
 // Wallets
 let user: SignerWithAddress;
-let gov: SignerWithAddress;
+let admin: SignerWithAddress;
 let user2: SignerWithAddress;
 
 // Contracts
@@ -27,23 +27,23 @@ describe("Registry Unit Tests", function () {
     // Set contracts
     registry = contracts.registry!;
 
-    gov = signers.owner!;
+    admin = signers.owner!;
     user = signers.alice!;
     user2 = signers.charlie!;
   });
 
   describe("setUpAddress Unit Tests", function () {
-    it("fails if caller is not by gov", async () => {
+    it("fails if caller is not by admin", async () => {
       await assertRevert(
         registry
           .connect(user)
-          .setupAddress(bytes32("test"), user.address, false),
-        "callerIsNotGov()"
+          .register(bytes32("test"), user.address, false),
+        "callerIsNotAdmin()"
       );
 
       await registry
-        .connect(gov)
-        .setupAddress(bytes32("test"), user.address, false);
+        .connect(admin)
+        .register(bytes32("test"), user.address, false);
     });
 
     it("tests that proper values are updated", async () => {
@@ -55,7 +55,7 @@ describe("Registry Unit Tests", function () {
       expect(roleBefore.name).to.equal(BYTES32_ZERO);
       expect(roleBefore.isProbitySystem).to.equal(false);
 
-      await registry.connect(gov).setupAddress(ROLE_NAME, ADDRESS, IS_PROBITY);
+      await registry.connect(admin).register(ROLE_NAME, ADDRESS, IS_PROBITY);
 
       const roleAfter = await registry.addressToRole(ADDRESS);
       expect(roleAfter.name).to.equal(ROLE_NAME);
@@ -68,7 +68,7 @@ describe("Registry Unit Tests", function () {
       const IS_PROBITY = false;
 
       let parsedEvents = await parseEvents(
-        registry.setupAddress(ROLE_NAME, ADDRESS, IS_PROBITY),
+        registry.register(ROLE_NAME, ADDRESS, IS_PROBITY),
         "ContractAdded",
         registry
       );
@@ -79,7 +79,7 @@ describe("Registry Unit Tests", function () {
     });
   });
 
-  describe("removeAddress Unit Tests", function () {
+  describe("unregister Unit Tests", function () {
     const ROLE_NAME = bytes32("very very special role");
     let ADDRESS: string;
     const IS_PROBITY = true;
@@ -87,16 +87,16 @@ describe("Registry Unit Tests", function () {
     beforeEach(async function () {
       ADDRESS = user.address;
 
-      await registry.setupAddress(ROLE_NAME, ADDRESS, IS_PROBITY);
+      await registry.register(ROLE_NAME, ADDRESS, IS_PROBITY);
     });
 
-    it("fails if caller is not by gov", async () => {
+    it("fails if caller is not by admin", async () => {
       await assertRevert(
-        registry.connect(user).removeAddress(ADDRESS),
-        "callerIsNotGov()"
+        registry.connect(user).unregister(ADDRESS),
+        "callerIsNotAdmin()"
       );
 
-      await registry.connect(gov).removeAddress(ADDRESS);
+      await registry.connect(admin).unregister(ADDRESS);
     });
 
     it("tests that proper values are updated", async () => {
@@ -104,7 +104,7 @@ describe("Registry Unit Tests", function () {
       expect(roleBefore.name).to.equal(ROLE_NAME);
       expect(roleBefore.isProbitySystem).to.equal(IS_PROBITY);
 
-      await registry.connect(gov).removeAddress(ADDRESS);
+      await registry.connect(admin).unregister(ADDRESS);
 
       const roleAfter = await registry.addressToRole(ADDRESS);
       expect(roleAfter.name).to.equal(BYTES32_ZERO);
@@ -113,7 +113,7 @@ describe("Registry Unit Tests", function () {
 
     it("tests that ContractRemoved is emitted properly", async () => {
       let parsedEvents = await parseEvents(
-        registry.removeAddress(ADDRESS),
+        registry.unregister(ADDRESS),
         "ContractRemoved",
         registry
       );
@@ -133,8 +133,8 @@ describe("Registry Unit Tests", function () {
       ADDRESS = user.address;
       PROBITY_SYSTEM_ADDRESS = user2.address;
 
-      await registry.setupAddress(ROLE_NAME, ADDRESS, false);
-      await registry.setupAddress(
+      await registry.register(ROLE_NAME, ADDRESS, false);
+      await registry.register(
         PROBITY_SYSTEM_NAME,
         PROBITY_SYSTEM_ADDRESS,
         true
@@ -166,7 +166,7 @@ describe("Registry Unit Tests", function () {
     beforeEach(async function () {
       ADDRESS = user.address;
 
-      await registry.setupAddress(ROLE_NAME, ADDRESS, false);
+      await registry.register(ROLE_NAME, ADDRESS, false);
     });
 
     it("tests that it return false for non registered address", async () => {
