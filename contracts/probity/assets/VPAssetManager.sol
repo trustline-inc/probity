@@ -50,7 +50,7 @@ contract VPAssetManager is Delegatable {
         if (!token.transferFrom(msg.sender, address(this), amount)) revert transferFailed();
         vaultEngine.modifyStandbyAmount(assetId, msg.sender, int256(amount));
         uint256 currentRewardEpoch = ftsoManager.getCurrentRewardEpoch();
-        recentDeposits[msg.sender][ftsoManager.getCurrentRewardEpoch()] += amount;
+        recentDeposits[msg.sender][currentRewardEpoch] += amount;
         recentTotalDeposit[msg.sender] += amount;
         totalDepositsForEpoch[currentRewardEpoch] += int256(amount);
 
@@ -66,12 +66,12 @@ contract VPAssetManager is Delegatable {
         totalDepositsForEpoch[currentRewardEpoch] -= int256(amount);
 
         // only reduce recentDeposits if it exists
-        if (recentDeposits[msg.sender][ftsoManager.getCurrentRewardEpoch()] >= amount) {
-            recentDeposits[msg.sender][ftsoManager.getCurrentRewardEpoch()] -= amount;
+        if (recentDeposits[msg.sender][currentRewardEpoch] >= amount) {
+            recentDeposits[msg.sender][currentRewardEpoch] -= amount;
             recentTotalDeposit[msg.sender] -= amount;
-        } else if (recentDeposits[msg.sender][ftsoManager.getCurrentRewardEpoch()] > 0) {
-            recentTotalDeposit[msg.sender] -= recentDeposits[msg.sender][ftsoManager.getCurrentRewardEpoch()];
-            recentDeposits[msg.sender][ftsoManager.getCurrentRewardEpoch()] -= 0;
+        } else if (recentDeposits[msg.sender][currentRewardEpoch] > 0) {
+            recentTotalDeposit[msg.sender] -= recentDeposits[msg.sender][currentRewardEpoch];
+            recentDeposits[msg.sender][currentRewardEpoch] -= 0;
         }
 
         emit WithdrawVPAssetManager(msg.sender, amount, address(token));
