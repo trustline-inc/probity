@@ -20,7 +20,16 @@ interface VaultEngineLike {
 
     function debtAccumulator() external returns (uint256 debtAccu);
 
-    function assets(bytes32 assetId) external returns (uint256 adjustedPrice);
+    function assets(bytes32 assetId)
+        external
+        returns (
+            uint256 adjustedPrice,
+            uint256 normDebt,
+            uint256 normEquity,
+            uint256 ceiling,
+            uint256 floor,
+            uint256 category
+        );
 
     function systemCurrency(address user) external returns (uint256);
 
@@ -196,7 +205,7 @@ contract Liquidator is Stateful, Eventful {
      */
     function liquidateVault(bytes32 assetId, address user) external onlyWhen("paused", false) {
         uint256 debtAccumulator = vaultEngine.debtAccumulator();
-        uint256 adjustedPrice = vaultEngine.assets(assetId);
+        (uint256 adjustedPrice, , , , , ) = vaultEngine.assets(assetId);
         (
             ,
             uint256 underlying,
