@@ -15,7 +15,14 @@ import {
 import { deployTest } from "../../lib/deployer";
 import { ethers } from "hardhat";
 import * as chai from "chai";
-import { bytes32, RAD, WAD, RAY, ASSET_ID } from "../utils/constants";
+import {
+  bytes32,
+  RAD,
+  WAD,
+  RAY,
+  ASSET_ID,
+  ASSET_CATEGORY,
+} from "../utils/constants";
 import assertRevert from "../utils/assertRevert";
 const expect = chai.expect;
 
@@ -69,7 +76,9 @@ describe("Vault Engine Limited Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR, 2);
+      await vaultEngine
+        .connect(gov)
+        .initAsset(ASSET_ID.FLR, ASSET_CATEGORY.BOTH);
       await vaultEngine
         .connect(gov)
         .updateCeiling(ASSET_ID.FLR, RAD.mul(10000000));

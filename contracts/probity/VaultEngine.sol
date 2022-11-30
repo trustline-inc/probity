@@ -28,6 +28,7 @@ contract VaultEngine is Stateful, Eventful {
     }
 
     enum Category {
+        UNSUPPORTED,
         UNDERLYING,
         COLLATERAL,
         BOTH
@@ -88,9 +89,19 @@ contract VaultEngine is Stateful, Eventful {
     error equityCreatedCanNotBeGreaterThanDebtCreated();
     error assetNotAllowedAsCollateral();
     error assetNotAllowedAsUnderlying();
+    error assetNotSupported();
     error insufficientFundInTreasury();
     error vaultSizeMinimumNotReached();
     error assetMaximumAmountReached();
+
+    /////////////////////////////////////////
+    // Modifiers
+    /////////////////////////////////////////
+
+    modifier onlyIfInitialized(bytes32 assetId) {
+        if (assets[assetId].category == Category.UNSUPPORTED) revert assetNotSupported();
+        _;
+    }
 
     /////////////////////////////////////////
     // Constructor
@@ -457,7 +468,7 @@ contract VaultEngine is Stateful, Eventful {
         bytes32 assetId,
         int256 underlyingAmount,
         int256 equityAmount
-    ) internal {
+    ) internal onlyIfInitialized(assetId) {
         if (treasury == address(0)) revert treasuryAddressNotSet();
         if (assets[assetId].category == Category.COLLATERAL) revert assetNotAllowedAsUnderlying();
 
@@ -509,7 +520,7 @@ contract VaultEngine is Stateful, Eventful {
         bytes32 assetId,
         int256 collAmount,
         int256 debtAmount
-    ) internal {
+    ) internal onlyIfInitialized(assetId) {
         if (treasury == address(0)) revert treasuryAddressNotSet();
         if (assets[assetId].category == Category.UNDERLYING) revert assetNotAllowedAsCollateral();
 

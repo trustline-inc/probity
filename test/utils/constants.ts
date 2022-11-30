@@ -35,6 +35,13 @@ const ASSET_ID = {
   USD: web3.utils.keccak256("USD"),
 };
 
+const ASSET_CATEGORY = {
+  UNSUPPORTED: 0,
+  UNDERLYING: 1,
+  COLLATERAL: 2,
+  BOTH: 3,
+};
+
 const bytes32 = (string: string) => ethers.utils.formatBytes32String(string);
 
 const MAX_APR: BigNumber = WAD.mul(2).mul(1e9);
@@ -450,4 +457,5 @@ export {
   RAY,
   bytes32,
   ASSET_ID,
+  ASSET_CATEGORY,
 };
