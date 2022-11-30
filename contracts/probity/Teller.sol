@@ -58,8 +58,7 @@ contract Teller is Stateful, Eventful {
     /////////////////////////////////////////
     // Events
     /////////////////////////////////////////
-    event AssetInitialized(bytes32 indexed assetId, uint256 protocolFee);
-    event RatesUpdated(uint256 timestamp, uint256 debtAccumulator, uint256 equityAccumulator);
+    event RatesUpdated(uint256 timestamp, uint256 debtAccumulatorIncrease, uint256 equityAccumulatorIncrease);
 
     /////////////////////////////////////////
     // Errors
@@ -160,5 +159,7 @@ contract Teller is Stateful, Eventful {
         // Update values
         lastUpdated = block.timestamp;
         vaultEngine.updateAccumulators(reservePool, debtRateIncrease, equityRateIncrease, protocolFeeRate);
+
+        emit RatesUpdated(lastUpdated, debtRateIncrease, equityRateIncrease);
     }
 }
