@@ -506,7 +506,7 @@ contract VaultEngine is Stateful, Eventful {
 
         if (Math._mul(assets[assetId].normEquity, equityAccumulator) > assets[assetId].ceiling)
             revert assetMaximumAmountReached();
-        if (vault.normEquity != 0 && (vault.normEquity * RAY) < assets[assetId].floor)
+        if (vault.normEquity != 0 && (vault.normEquity * equityAccumulator) < assets[assetId].floor)
             revert vaultSizeMinimumNotReached();
 
         _certifyEquityPosition(assetId, vault);
@@ -556,7 +556,8 @@ contract VaultEngine is Stateful, Eventful {
         totalSystemCurrency = Math._add(totalSystemCurrency, debtCreated);
 
         if (assets[assetId].normDebt * debtAccumulator > assets[assetId].ceiling) revert assetMaximumAmountReached();
-        if (vault.normDebt != 0 && (vault.normDebt * RAY) < assets[assetId].floor) revert vaultSizeMinimumNotReached();
+        if (vault.normDebt != 0 && (vault.normDebt * debtAccumulator) < assets[assetId].floor)
+            revert vaultSizeMinimumNotReached();
 
         _certifyDebtPosition(assetId, vault);
 
