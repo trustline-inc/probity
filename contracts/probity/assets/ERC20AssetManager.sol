@@ -3,6 +3,7 @@
 pragma solidity 0.8.4;
 
 import "../../dependencies/Stateful.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 interface VaultEngineLike {
     function modifyStandbyAmount(
@@ -12,22 +13,12 @@ interface VaultEngineLike {
     ) external;
 }
 
-interface TokenLike {
-    function transfer(address recipient, uint256 amount) external returns (bool);
-
-    function transferFrom(
-        address sender,
-        address recipient,
-        uint256 amount
-    ) external returns (bool);
-}
-
 contract ERC20AssetManager is Stateful {
     /////////////////////////////////////////
     // State Variables
     /////////////////////////////////////////
     VaultEngineLike public immutable vaultEngine;
-    TokenLike public immutable token;
+    IERC20 public immutable token;
     bytes32 public immutable assetId;
 
     /////////////////////////////////////////
@@ -48,7 +39,7 @@ contract ERC20AssetManager is Stateful {
     constructor(
         address registryAddress,
         bytes32 id,
-        TokenLike asset,
+        IERC20 asset,
         VaultEngineLike vaultEngineAddress
     ) Stateful(registryAddress) {
         assetId = id;
@@ -60,13 +51,13 @@ contract ERC20AssetManager is Stateful {
     // External Functions
     /////////////////////////////////////////
     function deposit(uint256 amount) external onlyWhen("paused", false) {
-        if (!token.transferFrom(msg.sender, address(this), amount)) revert transferFailed();
+        SafeERC20.safeTransferFrom(token, msg.sender, address(this), amount);
         vaultEngine.modifyStandbyAmount(assetId, msg.sender, int256(amount));
         emit DepositToken(msg.sender, amount, address(token));
     }
 
     function withdraw(uint256 amount) external onlyWhen("paused", false) {
-        if (!token.transfer(msg.sender, amount)) revert transferFailed();
+        SafeERC20.safeTransfer(token, msg.sender, amount);
         vaultEngine.modifyStandbyAmount(assetId, msg.sender, -int256(amount));
         emit WithdrawToken(msg.sender, amount, address(token));
     }

@@ -13,12 +13,6 @@ contract VPAssetManager is Delegatable {
     event WithdrawVPAssetManager(address indexed user, uint256 amount, address indexed token);
 
     /////////////////////////////////////////
-    // Errors
-    /////////////////////////////////////////
-
-    error transferFailed();
-
-    /////////////////////////////////////////
     // Constructor
     /////////////////////////////////////////
     constructor(
@@ -47,7 +41,8 @@ contract VPAssetManager is Delegatable {
     /////////////////////////////////////////
 
     function deposit(uint256 amount) external onlyWhen("paused", false) {
-        if (!token.transferFrom(msg.sender, address(this), amount)) revert transferFailed();
+        SafeERC20.safeTransferFrom(IERC20(address(token)), msg.sender, address(this), amount);
+
         vaultEngine.modifyStandbyAmount(assetId, msg.sender, int256(amount));
         uint256 currentRewardEpoch = ftsoManager.getCurrentRewardEpoch();
         recentDeposits[msg.sender][currentRewardEpoch] += amount;
@@ -58,7 +53,7 @@ contract VPAssetManager is Delegatable {
     }
 
     function withdraw(uint256 amount) external onlyWhen("paused", false) {
-        if (!token.transfer(msg.sender, amount)) revert transferFailed();
+        SafeERC20.safeTransfer(IERC20(address(token)), msg.sender, amount);
 
         vaultEngine.modifyStandbyAmount(assetId, msg.sender, -int256(amount));
 

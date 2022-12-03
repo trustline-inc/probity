@@ -3,6 +3,7 @@ pragma solidity 0.8.4;
 
 import "./Stateful.sol";
 import "./Math.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 interface FtsoRewardManagerLike {
     function claimRewardFromDataProviders(
@@ -240,6 +241,6 @@ contract Delegatable is Stateful {
 
         userLastClaimedEpoch[user] = lastEpoch;
 
-        token.transfer(user, rewardBalance);
+        SafeERC20.safeTransfer(IERC20(address(token)), user, rewardBalance);
     }
 }
