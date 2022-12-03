@@ -3,6 +3,7 @@
 pragma solidity 0.8.4;
 
 import "../../dependencies/Stateful.sol";
+import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 interface VaultEngineLike {
     function modifyStandbyAmount(
@@ -48,12 +49,12 @@ contract NativeAssetManager is Stateful {
     // External Functions
     /////////////////////////////////////////
     function deposit() external payable onlyWhen("paused", false) {
-        vaultEngine.modifyStandbyAmount(assetId, msg.sender, int256(msg.value));
+        vaultEngine.modifyStandbyAmount(assetId, msg.sender, SafeCast.toInt256(msg.value));
         emit DepositNativeCrypto(msg.sender, msg.value);
     }
 
     function withdraw(uint256 amount) external onlyWhen("paused", false) {
-        vaultEngine.modifyStandbyAmount(assetId, msg.sender, -int256(amount));
+        vaultEngine.modifyStandbyAmount(assetId, msg.sender, -SafeCast.toInt256(amount));
         if (!payable(msg.sender).send(amount)) revert transferFailed();
         emit WithdrawNativeCrypto(msg.sender, amount);
     }

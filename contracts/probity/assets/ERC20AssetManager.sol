@@ -4,6 +4,7 @@ pragma solidity 0.8.4;
 
 import "../../dependencies/Stateful.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 interface VaultEngineLike {
     function modifyStandbyAmount(
@@ -52,13 +53,13 @@ contract ERC20AssetManager is Stateful {
     /////////////////////////////////////////
     function deposit(uint256 amount) external onlyWhen("paused", false) {
         SafeERC20.safeTransferFrom(token, msg.sender, address(this), amount);
-        vaultEngine.modifyStandbyAmount(assetId, msg.sender, int256(amount));
+        vaultEngine.modifyStandbyAmount(assetId, msg.sender, SafeCast.toInt256(amount));
         emit DepositToken(msg.sender, amount, address(token));
     }
 
     function withdraw(uint256 amount) external onlyWhen("paused", false) {
         SafeERC20.safeTransfer(token, msg.sender, amount);
-        vaultEngine.modifyStandbyAmount(assetId, msg.sender, -int256(amount));
+        vaultEngine.modifyStandbyAmount(assetId, msg.sender, -SafeCast.toInt256(amount));
         emit WithdrawToken(msg.sender, amount, address(token));
     }
 }

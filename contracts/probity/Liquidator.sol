@@ -4,6 +4,7 @@ pragma solidity 0.8.4;
 
 import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
+import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 interface VaultEngineLike {
     function vaults(bytes32 assetId, address user)
@@ -250,9 +251,9 @@ contract Liquidator is Stateful, Eventful {
             user,
             address(asset.auctioneer),
             address(reserve),
-            -int256(collateral),
-            -int256(debt),
-            -int256(debtPrincipal)
+            -SafeCast.toInt256(collateral),
+            -SafeCast.toInt256(debt),
+            -SafeCast.toInt256(debtPrincipal)
         );
 
         uint256 debtPosition = debt * debtAccumulator;
@@ -295,10 +296,10 @@ contract Liquidator is Stateful, Eventful {
             assetId,
             user,
             address(asset.auctioneer),
-            -int256(assetToAuction),
-            -int256(assetToReturn),
-            -int256(equity),
-            -int256(initialEquity)
+            -SafeCast.toInt256(assetToAuction),
+            -SafeCast.toInt256(assetToReturn),
+            -SafeCast.toInt256(equity),
+            -SafeCast.toInt256(initialEquity)
         );
 
         assets[assetId].auctioneer.startAuction(

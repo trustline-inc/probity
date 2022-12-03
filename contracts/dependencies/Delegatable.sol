@@ -4,6 +4,7 @@ pragma solidity 0.8.4;
 import "./Stateful.sol";
 import "./Math.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 interface FtsoRewardManagerLike {
     function claimRewardFromDataProviders(
@@ -150,7 +151,7 @@ contract Delegatable is Stateful {
                 );
             } else {
                 // at epoch 0, totalDepositsForEpoch should not be negative
-                totalBalanceAtEpoch[epochId] = uint256(totalDepositsForEpoch[epochId]);
+                totalBalanceAtEpoch[epochId] = SafeCast.toUint256(totalDepositsForEpoch[epochId]);
             }
 
             // reward would be zero if totalBalanceAtEpoch is zero

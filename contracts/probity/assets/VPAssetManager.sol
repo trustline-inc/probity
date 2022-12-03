@@ -43,11 +43,11 @@ contract VPAssetManager is Delegatable {
     function deposit(uint256 amount) external onlyWhen("paused", false) {
         SafeERC20.safeTransferFrom(IERC20(address(token)), msg.sender, address(this), amount);
 
-        vaultEngine.modifyStandbyAmount(assetId, msg.sender, int256(amount));
+        vaultEngine.modifyStandbyAmount(assetId, msg.sender, SafeCast.toInt256(amount));
         uint256 currentRewardEpoch = ftsoManager.getCurrentRewardEpoch();
         recentDeposits[msg.sender][currentRewardEpoch] += amount;
         recentTotalDeposit[msg.sender] += amount;
-        totalDepositsForEpoch[currentRewardEpoch] += int256(amount);
+        totalDepositsForEpoch[currentRewardEpoch] += SafeCast.toInt256(amount);
 
         emit DepositVPAssetManager(msg.sender, amount, address(token));
     }
@@ -55,10 +55,10 @@ contract VPAssetManager is Delegatable {
     function withdraw(uint256 amount) external onlyWhen("paused", false) {
         SafeERC20.safeTransfer(IERC20(address(token)), msg.sender, amount);
 
-        vaultEngine.modifyStandbyAmount(assetId, msg.sender, -int256(amount));
+        vaultEngine.modifyStandbyAmount(assetId, msg.sender, -SafeCast.toInt256(amount));
 
         uint256 currentRewardEpoch = ftsoManager.getCurrentRewardEpoch();
-        totalDepositsForEpoch[currentRewardEpoch] -= int256(amount);
+        totalDepositsForEpoch[currentRewardEpoch] -= SafeCast.toInt256(amount);
 
         // only reduce recentDeposits if it exists
         if (recentDeposits[msg.sender][currentRewardEpoch] >= amount) {

@@ -5,6 +5,7 @@ pragma solidity 0.8.4;
 import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
 import "../dependencies/Math.sol";
+import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 /**
  * @title VaultEngine contract
@@ -489,11 +490,11 @@ contract VaultEngine is Stateful, Eventful {
         if (
             equityCreated < 0 && (Math._add(vault.normEquity * equityAccumulator, equityCreated) < vault.initialEquity)
         ) {
-            initialEquityToChange = -int256(
+            initialEquityToChange = -SafeCast.toInt256(
                 vault.initialEquity - Math._add(vault.normEquity * equityAccumulator, equityCreated)
             );
 
-            uint256 interestToCollect = uint256(-(equityCreated - initialEquityToChange));
+            uint256 interestToCollect = SafeCast.toUint256(-(equityCreated - initialEquityToChange));
             _collectInterest(assetId, interestToCollect);
         }
 
@@ -532,7 +533,8 @@ contract VaultEngine is Stateful, Eventful {
         int256 debtCreated = Math._mul(debtAccumulator, debtAmount);
 
         if (debtAmount > 0) {
-            if (systemCurrency[treasury] < uint256(debtAmount) * debtAccumulator) revert insufficientFundInTreasury();
+            if (systemCurrency[treasury] < SafeCast.toUint256(debtAmount) * debtAccumulator)
+                revert insufficientFundInTreasury();
         }
 
         Vault memory vault = vaults[assetId][msg.sender];
@@ -540,7 +542,9 @@ contract VaultEngine is Stateful, Eventful {
         // Reduce the debt principal only after interests are paid off
         int256 principalToChange = debtCreated;
         if (debtCreated < 0 && (Math._add(vault.normDebt * debtAccumulator, debtCreated) < vault.debtPrincipal)) {
-            principalToChange = -int256(vault.debtPrincipal - Math._add(vault.normDebt * debtAccumulator, debtCreated));
+            principalToChange = -SafeCast.toInt256(
+                vault.debtPrincipal - Math._add(vault.normDebt * debtAccumulator, debtCreated)
+            );
         }
 
         vault.debtPrincipal = Math._add(vault.debtPrincipal, principalToChange);
