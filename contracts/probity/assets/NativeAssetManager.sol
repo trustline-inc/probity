@@ -4,9 +4,11 @@ pragma solidity 0.8.4;
 
 import "../../dependencies/Stateful.sol";
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "../../interfaces/IVaultEngineLike.sol";
 
-contract NativeAssetManager is Stateful {
+contract NativeAssetManager is Stateful, ReentrancyGuard {
     /////////////////////////////////////////
     // State Variables
     /////////////////////////////////////////
@@ -46,9 +48,9 @@ contract NativeAssetManager is Stateful {
         emit DepositNativeCrypto(msg.sender, msg.value);
     }
 
-    function withdraw(uint256 amount) external onlyWhen("paused", false) {
+    function withdraw(uint256 amount) external onlyWhen("paused", false) nonReentrant {
         vaultEngine.modifyStandbyAmount(assetId, msg.sender, -SafeCast.toInt256(amount));
-        if (!payable(msg.sender).send(amount)) revert transferFailed();
+        Address.sendValue(payable(msg.sender), amount);
         emit WithdrawNativeCrypto(msg.sender, amount);
     }
 }
