@@ -45,8 +45,8 @@ contract VPAssetManager is Delegatable {
 
         vaultEngine.modifyStandbyAmount(assetId, msg.sender, SafeCast.toInt256(amount));
         uint256 currentRewardEpoch = ftsoManager.getCurrentRewardEpoch();
-        recentDeposits[msg.sender][currentRewardEpoch] += amount;
-        recentTotalDeposit[msg.sender] += amount;
+        recentDeposits[msg.sender][currentRewardEpoch] += SafeCast.toInt256(amount);
+        recentTotalDeposit[msg.sender] += SafeCast.toInt256(amount);
         totalDepositsForEpoch[currentRewardEpoch] += SafeCast.toInt256(amount);
 
         emit DepositVPAssetManager(msg.sender, amount, address(token));
@@ -60,14 +60,8 @@ contract VPAssetManager is Delegatable {
         uint256 currentRewardEpoch = ftsoManager.getCurrentRewardEpoch();
         totalDepositsForEpoch[currentRewardEpoch] -= SafeCast.toInt256(amount);
 
-        // only reduce recentDeposits if it exists
-        if (recentDeposits[msg.sender][currentRewardEpoch] >= amount) {
-            recentDeposits[msg.sender][currentRewardEpoch] -= amount;
-            recentTotalDeposit[msg.sender] -= amount;
-        } else if (recentDeposits[msg.sender][currentRewardEpoch] > 0) {
-            recentTotalDeposit[msg.sender] -= recentDeposits[msg.sender][currentRewardEpoch];
-            recentDeposits[msg.sender][currentRewardEpoch] -= 0;
-        }
+        recentDeposits[msg.sender][currentRewardEpoch] -= SafeCast.toInt256(amount);
+        recentTotalDeposit[msg.sender] -= SafeCast.toInt256(amount);
 
         emit WithdrawVPAssetManager(msg.sender, amount, address(token));
     }

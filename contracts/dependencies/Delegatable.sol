@@ -34,8 +34,8 @@ contract Delegatable is Stateful {
     mapping(uint256 => int256) public totalDepositsForEpoch;
     mapping(uint256 => uint256) public rewardPerUnitForEpoch; // Reward multiplier for each epoch
     mapping(address => uint256) public userLastClaimedEpoch; // user's last claimed Epoch
-    mapping(address => uint256) public recentTotalDeposit; // user's total recent deposit since last claimed epoch
-    mapping(address => mapping(uint256 => uint256)) public recentDeposits; // user's recent deposit during each epoch
+    mapping(address => int256) public recentTotalDeposit; // user's total recent deposit since last claimed epoch
+    mapping(address => mapping(uint256 => int256)) public recentDeposits; // user's recent deposit during each epoch
 
     ///////////////////////////////////
     // Errors
@@ -192,8 +192,8 @@ contract Delegatable is Stateful {
         for (uint256 epochId = userLastClaimedEpoch[user]; epochId <= lastEpoch; epochId++) {
             uint256 rewardableBalance = 0;
 
-            if (recentTotalDeposit[user] < currentBalance) {
-                rewardableBalance = currentBalance - recentTotalDeposit[user];
+            if (recentTotalDeposit[user] < SafeCast.toInt256(currentBalance)) {
+                rewardableBalance = Math._sub(currentBalance, recentTotalDeposit[user]);
             }
 
             recentTotalDeposit[user] -= recentDeposits[user][epochId];
