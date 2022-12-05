@@ -1,18 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 
-pragma solidity ^0.8.4;
+pragma solidity 0.8.4;
 
 import "../../dependencies/Math.sol";
-
-interface PriceCalc {
-    function price(uint256 startingPrice, uint256 timeElapsed) external returns (uint256 calculatedPrice);
-}
+import "../../interfaces/IPriceCalcLike.sol";
 
 /**
  * @title LinearDecrease contract
  * @notice Calculate the current price over a linearly decreasing function from starting price to zero over timeToZero
  */
-contract LinearDecrease is PriceCalc {
+contract LinearDecrease is IPriceCalcLike {
     /////////////////////////////////////////
     // State Variables
     /////////////////////////////////////////

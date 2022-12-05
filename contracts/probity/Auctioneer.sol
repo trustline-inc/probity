@@ -1,48 +1,23 @@
 // SPDX-License-Identifier: Apache-2.0
 
-pragma solidity ^0.8.4;
+pragma solidity 0.8.4;
 
 import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
 import "../dependencies/Math.sol";
-
-interface VaultEngineLike {
-    function moveAsset(
-        bytes32 collateral,
-        address from,
-        address to,
-        uint256 amount
-    ) external;
-
-    function moveSystemCurrency(
-        address from,
-        address to,
-        uint256 amount
-    ) external;
-}
-
-interface VPAssetManagerLike {
-    function collectRewardForUser(address user) external;
-}
-
-interface PriceCalc {
-    function price(uint256 startPrice, uint256 timeElapsed) external returns (uint256 calculatedPrice);
-}
-
-interface PriceFeedLike {
-    function getPrice(bytes32 assetId) external returns (uint256 _price);
-}
-
-interface LiquidatorLike {
-    function reduceAuctionDebt(uint256 amount) external;
-}
+import "../interfaces/IVaultEngineLike.sol";
+import "../interfaces/ILiquidatorLike.sol";
+import "../interfaces/IPriceFeedLike.sol";
+import "../interfaces/IVPAssetManangerLike.sol";
+import "../interfaces/IPriceCalcLike.sol";
+import "../interfaces/IAuctioneerLike.sol";
 
 /**
  * @title Auctioneer contract
  * @notice Auctioneer will auction off the asset in exchange for the systemCurrency
  */
 
-contract Auctioneer is Stateful, Eventful {
+contract Auctioneer is Stateful, Eventful, IAuctioneerLike {
     /////////////////////////////////////////
     // Type Declaration
     /////////////////////////////////////////
@@ -56,7 +31,7 @@ contract Auctioneer is Stateful, Eventful {
         uint256 startPrice;
         uint256 startTime;
         // should be zero if the asset doesn't have delegatable module implemented
-        VPAssetManagerLike vpAssetManagerAddress;
+        IVPAssetManagerLike vpAssetManagerAddress;
         bool sellAllLot; // if true, debt amount doesn't matter, auction will attempt to sell until lot is zero
         bool isOver;
     }
@@ -73,10 +48,10 @@ contract Auctioneer is Stateful, Eventful {
     uint256 private constant RAY = 1e27;
     address public constant HEAD = address(1);
 
-    VaultEngineLike public immutable vaultEngine;
-    PriceFeedLike public immutable priceFeed;
-    LiquidatorLike public liquidator;
-    PriceCalc public immutable priceCalc;
+    IVaultEngineLike public immutable vaultEngine;
+    IPriceFeedLike public immutable priceFeed;
+    ILiquidatorLike public liquidator;
+    IPriceCalcLike public immutable priceCalc;
 
     uint256 public totalAuctions;
     uint256 public nextBidRatio = 1.03E18; // the next bid must be 103% of current bid or higher
@@ -156,10 +131,10 @@ contract Auctioneer is Stateful, Eventful {
 
     constructor(
         address registryAddress,
-        VaultEngineLike vaultEngineAddress,
-        PriceCalc priceCalcAddress,
-        PriceFeedLike priceFeedAddress,
-        LiquidatorLike liquidatorAddress
+        IVaultEngineLike vaultEngineAddress,
+        IPriceCalcLike priceCalcAddress,
+        IPriceFeedLike priceFeedAddress,
+        ILiquidatorLike liquidatorAddress
     ) Stateful(registryAddress) {
         vaultEngine = vaultEngineAddress;
         priceCalc = priceCalcAddress;
@@ -186,9 +161,9 @@ contract Auctioneer is Stateful, Eventful {
         uint256 debtSize,
         address owner,
         address beneficiary,
-        VPAssetManagerLike vpAssetManagerAddress,
+        IVPAssetManagerLike vpAssetManagerAddress,
         bool sellAllLot
-    ) external onlyBy("liquidator") {
+    ) external override onlyBy("liquidator") {
         uint256 currentPrice = priceFeed.getPrice(assetId);
         uint256 startPrice = (currentPrice * priceBuffer) / ONE;
         uint256 auctionId = totalAuctions++;

@@ -1,50 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity ^0.8.4;
+pragma solidity 0.8.4;
 
 import "./Stateful.sol";
 import "./Math.sol";
-
-interface FtsoRewardManagerLike {
-    function claimRewardFromDataProviders(
-        address payable _recipient,
-        uint256[] memory _rewardEpochs,
-        address[] memory _dataProviders
-    ) external returns (uint256 _rewardAmount);
-
-    function getEpochsWithClaimableRewards() external view returns (uint256 _startEpochId, uint256 _endEpochId);
-}
-
-interface FtsoManagerLike {
-    function getCurrentRewardEpoch() external view returns (uint256);
-}
-
-interface VPTokenManagerLike {
-    function transfer(address recipient, uint256 amount) external returns (bool);
-
-    function transferFrom(
-        address sender,
-        address recipient,
-        uint256 amount
-    ) external returns (bool);
-
-    function delegate(address _to, uint256 _bips) external;
-}
-
-interface VaultEngineLike {
-    function vaults(bytes32 assetId, address user)
-        external
-        returns (
-            uint256 standbyAmount,
-            uint256 underlying,
-            uint256 collateral
-        );
-
-    function modifyStandbyAmount(
-        bytes32 assetId,
-        address user,
-        int256 amount
-    ) external;
-}
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import "../interfaces/IVaultEngineLike.sol";
+import "../interfaces/IVPTokenManagerLike.sol";
+import "../interfaces/IFtsoRewardManagerLike.sol";
+import "../interfaces/IFtsoManagerLike.sol";
 
 /**
  * @title Delegatable Contract
@@ -58,10 +22,10 @@ contract Delegatable is Stateful {
     uint256 private constant HUNDRED_PERCENT = 10000;
     uint256 private constant RAY = 1e27;
 
-    FtsoManagerLike public immutable ftsoManager;
-    FtsoRewardManagerLike public immutable ftsoRewardManager;
-    VaultEngineLike public immutable vaultEngine;
-    VPTokenManagerLike public immutable token;
+    IFtsoManagerLike public immutable ftsoManager;
+    IFtsoRewardManagerLike public immutable ftsoRewardManager;
+    IVaultEngineLike public immutable vaultEngine;
+    IVPTokenManagerLike public immutable token;
     bytes32 public immutable assetId;
 
     address[] public dataProviders; // List of data providers to delegate voting power
@@ -70,8 +34,8 @@ contract Delegatable is Stateful {
     mapping(uint256 => int256) public totalDepositsForEpoch;
     mapping(uint256 => uint256) public rewardPerUnitForEpoch; // Reward multiplier for each epoch
     mapping(address => uint256) public userLastClaimedEpoch; // user's last claimed Epoch
-    mapping(address => uint256) public recentTotalDeposit; // user's total recent deposit since last claimed epoch
-    mapping(address => mapping(uint256 => uint256)) public recentDeposits; // user's recent deposit during each epoch
+    mapping(address => int256) public recentTotalDeposit; // user's total recent deposit since last claimed epoch
+    mapping(address => mapping(uint256 => int256)) public recentDeposits; // user's recent deposit during each epoch
 
     ///////////////////////////////////
     // Errors
@@ -87,10 +51,10 @@ contract Delegatable is Stateful {
     constructor(
         address registryAddress,
         bytes32 collateralId,
-        FtsoManagerLike ftsoManagerAddress,
-        FtsoRewardManagerLike rewardManagerAddress,
-        VPTokenManagerLike tokenAddress,
-        VaultEngineLike vaultEngineAddress
+        IFtsoManagerLike ftsoManagerAddress,
+        IFtsoRewardManagerLike rewardManagerAddress,
+        IVPTokenManagerLike tokenAddress,
+        IVaultEngineLike vaultEngineAddress
     ) Stateful(registryAddress) {
         assetId = collateralId;
         ftsoManager = ftsoManagerAddress;
@@ -149,7 +113,7 @@ contract Delegatable is Stateful {
                 );
             } else {
                 // at epoch 0, totalDepositsForEpoch should not be negative
-                totalBalanceAtEpoch[epochId] = uint256(totalDepositsForEpoch[epochId]);
+                totalBalanceAtEpoch[epochId] = SafeCast.toUint256(totalDepositsForEpoch[epochId]);
             }
 
             // reward would be zero if totalBalanceAtEpoch is zero
@@ -215,7 +179,7 @@ contract Delegatable is Stateful {
     ///////////////////////////////////
 
     function _userCollectReward(uint256 epochToEnd, address user) internal {
-        (uint256 underlying, uint256 collateral, uint256 standbyAmount) = vaultEngine.vaults(assetId, user);
+        (uint256 underlying, uint256 collateral, uint256 standbyAmount, , , , ) = vaultEngine.vaults(assetId, user);
         uint256 currentBalance = standbyAmount + underlying + collateral;
         uint256 rewardBalance = 0;
 
@@ -228,8 +192,8 @@ contract Delegatable is Stateful {
         for (uint256 epochId = userLastClaimedEpoch[user]; epochId <= lastEpoch; epochId++) {
             uint256 rewardableBalance = 0;
 
-            if (recentTotalDeposit[user] < currentBalance) {
-                rewardableBalance = currentBalance - recentTotalDeposit[user];
+            if (recentTotalDeposit[user] < SafeCast.toInt256(currentBalance)) {
+                rewardableBalance = Math._sub(currentBalance, recentTotalDeposit[user]);
             }
 
             recentTotalDeposit[user] -= recentDeposits[user][epochId];
@@ -240,6 +204,6 @@ contract Delegatable is Stateful {
 
         userLastClaimedEpoch[user] = lastEpoch;
 
-        token.transfer(user, rewardBalance);
+        SafeERC20.safeTransfer(IERC20(address(token)), user, rewardBalance);
     }
 }

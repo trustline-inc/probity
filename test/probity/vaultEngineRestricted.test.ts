@@ -14,7 +14,14 @@ import {
 
 import { deployTest } from "../../lib/deployer";
 import { ethers } from "hardhat";
-import { bytes32, RAD, WAD, RAY, ASSET_ID } from "../utils/constants";
+import {
+  bytes32,
+  RAD,
+  WAD,
+  RAY,
+  ASSET_ID,
+  ASSET_CATEGORY,
+} from "../utils/constants";
 import assertRevert from "../utils/assertRevert";
 
 // Wallets
@@ -36,7 +43,7 @@ let treasury: Treasury;
 
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
-describe("Vault Engine Unrestricted Unit Tests", function () {
+describe("Vault Engine Restricted Unit Tests", function () {
   beforeEach(async function () {
     let { contracts, signers } = await deployTest("restricted");
     // Set contracts
@@ -69,7 +76,9 @@ describe("Vault Engine Unrestricted Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR, 2);
+      await vaultEngine
+        .connect(gov)
+        .initAsset(ASSET_ID.FLR, ASSET_CATEGORY.BOTH);
       await vaultEngine
         .connect(gov)
         .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
@@ -124,7 +133,9 @@ describe("Vault Engine Unrestricted Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR, 2);
+      await vaultEngine
+        .connect(gov)
+        .initAsset(ASSET_ID.FLR, ASSET_CATEGORY.BOTH);
       await vaultEngine
         .connect(gov)
         .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
