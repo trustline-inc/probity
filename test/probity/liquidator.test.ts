@@ -127,8 +127,8 @@ describe("Liquidator Unit Tests", function () {
     });
 
     it("tests that penaltyFees are updated correctly", async () => {
-      const NEW_DEBT_PENALTY_FEE = RAY.mul(123).div(100);
-      const NEW_SUPP_PENALTY_FEE = RAY.mul(107).div(100);
+      const NEW_DEBT_PENALTY_FEE = WAD.mul(87).div(100);
+      const NEW_SUPP_PENALTY_FEE = WAD.mul(23).div(100);
       const before = await liquidator.assets(ASSET_ID.FLR);
       expect(before.debtPenaltyFee).to.equal(DEFAULT_DEBT_PENALTY_FEE);
       expect(before.equityPenaltyFee).to.equal(DEFAULT_SUPP_PENALTY_FEE);

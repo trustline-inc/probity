@@ -49,6 +49,8 @@ contract BondIssuer is Stateful, Eventful, IBondIssuerLike {
     error purchaseAmountIsHigherThanAvailable(uint256 purchaseAmount, uint256 available);
     error notEnoughBondsToRedeem(uint256 requested, uint256 userBondBalance);
     error insufficientFundsInReservePool(uint256 currentBalance);
+    error valueProvidedIsAboveUpperBounds();
+    error valueProvidedIsBelowLowerBounds();
 
     /////////////////////////////////////////
     // Constructor
@@ -92,6 +94,8 @@ contract BondIssuer is Stateful, Eventful, IBondIssuerLike {
      * @param newMaxDiscount The maximum discount to set
      */
     function updateMaxDiscount(uint256 newMaxDiscount) external onlyBy("gov") {
+        if (newMaxDiscount < ONE) revert valueProvidedIsBelowLowerBounds();
+        if (newMaxDiscount > ONE * 2) revert valueProvidedIsAboveUpperBounds();
         emit LogVarUpdate("reserve", "maxDiscount", maxDiscount, newMaxDiscount);
         maxDiscount = newMaxDiscount;
     }
@@ -101,6 +105,8 @@ contract BondIssuer is Stateful, Eventful, IBondIssuerLike {
      * @param newStepPeriod The new period of time per step
      */
     function updateStepPeriod(uint256 newStepPeriod) external onlyBy("gov") {
+        if (newStepPeriod < 1 minutes) revert valueProvidedIsBelowLowerBounds();
+        if (newStepPeriod > 7 days) revert valueProvidedIsAboveUpperBounds();
         emit LogVarUpdate("reserve", "stepPeriod", stepPeriod, newStepPeriod);
         stepPeriod = newStepPeriod;
     }
@@ -110,6 +116,8 @@ contract BondIssuer is Stateful, Eventful, IBondIssuerLike {
      * @param newDiscountIncreasePerStep The new discount increase per step
      */
     function updateDiscountIncreasePerStep(uint256 newDiscountIncreasePerStep) external onlyBy("gov") {
+        if (newDiscountIncreasePerStep < ONE / 1000) revert valueProvidedIsBelowLowerBounds();
+        if (newDiscountIncreasePerStep > ONE / 10) revert valueProvidedIsAboveUpperBounds();
         emit LogVarUpdate("reserve", "discountIncreasePerStep", discountIncreasePerStep, newDiscountIncreasePerStep);
         discountIncreasePerStep = newDiscountIncreasePerStep;
     }

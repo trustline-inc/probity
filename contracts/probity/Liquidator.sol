@@ -51,6 +51,8 @@ contract Liquidator is Stateful, Eventful, ILiquidatorLike {
     error vaultIsEmpty();
     error positionsNotReadyForLiquidation();
     error insufficientFundsInTreasury();
+    error valueProvidedIsAboveUpperBounds();
+    error valueProvidedIsBelowLowerBounds();
 
     /////////////////////////////////////////
     // Constructor
@@ -100,6 +102,8 @@ contract Liquidator is Stateful, Eventful, ILiquidatorLike {
         uint256 debtPenalty,
         uint256 equityPenalty
     ) external onlyBy("gov") {
+        if (debtPenalty < WAD / 1000 || equityPenalty < WAD / 1000) revert valueProvidedIsBelowLowerBounds();
+        if (debtPenalty > WAD * 10 || equityPenalty > WAD) revert valueProvidedIsAboveUpperBounds();
         emit LogVarUpdate("liquidator", assetId, "debtPenaltyFee", assets[assetId].debtPenaltyFee, debtPenalty);
         emit LogVarUpdate("liquidator", assetId, "equityPenaltyFee", assets[assetId].equityPenaltyFee, equityPenalty);
 

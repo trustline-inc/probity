@@ -27,6 +27,7 @@ contract PriceFeed is Stateful, Eventful, IPriceFeedLike {
     // State Variables
     /////////////////////////////////////////
     uint256 private constant RAY = 1e27;
+    uint256 private constant WAD = 1e18;
     IVaultEngineLike public immutable vaultEngine;
 
     mapping(bytes32 => Asset) public assets;
@@ -37,6 +38,8 @@ contract PriceFeed is Stateful, Eventful, IPriceFeedLike {
 
     error assetNotInitialized();
     error assetAlreadyInitialized();
+    error valueProvidedIsAboveUpperBounds();
+    error valueProvidedIsBelowLowerBounds();
 
     /////////////////////////////////////////
     // Modifiers
@@ -80,6 +83,8 @@ contract PriceFeed is Stateful, Eventful, IPriceFeedLike {
      * @param liquidationRatio The new ratio
      */
     function updateLiquidationRatio(bytes32 assetId, uint256 liquidationRatio) external onlyBy("gov") {
+        if (liquidationRatio < WAD) revert valueProvidedIsBelowLowerBounds();
+        if (liquidationRatio > WAD * 10) revert valueProvidedIsAboveUpperBounds();
         emit LogVarUpdate("priceFeed", assetId, "liquidationRatio", assets[assetId].liquidationRatio, liquidationRatio);
         assets[assetId].liquidationRatio = liquidationRatio;
     }
