@@ -4,38 +4,21 @@ pragma solidity 0.8.4;
 
 import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
-
-interface VaultEngineLike {
-    function systemCurrency(address user) external returns (uint256);
-
-    function systemDebt(address user) external returns (uint256);
-
-    function settle(uint256 amount) external;
-
-    function increaseSystemDebt(uint256 amount) external;
-
-    function moveSystemCurrency(
-        address from,
-        address to,
-        uint256 amount
-    ) external;
-}
-
-interface BondIssuerLike {
-    function newOffering(uint256 amount) external;
-}
+import "../interfaces/IVaultEngineLike.sol";
+import "../interfaces/IBondIssuerLike.sol";
+import "../interfaces/IReservePoolLike.sol";
 
 /**
  * @title ReservePool contract
  * @notice Reserve Pool act as the Probity system's balance sheet
  * Reserve Pool is Probity's balance sheet, all the system debt and protocol fees will be held by this contract.
  */
-contract ReservePool is Stateful, Eventful {
+contract ReservePool is Stateful, Eventful, IReservePoolLike {
     /////////////////////////////////////////
     // State Variables
     /////////////////////////////////////////
-    VaultEngineLike public immutable vaultEngine;
-    BondIssuerLike public immutable bondSeller;
+    IVaultEngineLike public immutable vaultEngine;
+    IBondIssuerLike public immutable bondSeller;
 
     uint256 public debtOnAuction; // Debt currently on auction [RAD]
     uint256 public debtThreshold; // The bad debt threshold, after which to start issuing bonds [RAD]
@@ -63,8 +46,8 @@ contract ReservePool is Stateful, Eventful {
     /////////////////////////////////////////
     constructor(
         address registryAddress,
-        VaultEngineLike vaultEngineAddress,
-        BondIssuerLike bondSellerAdress
+        IVaultEngineLike vaultEngineAddress,
+        IBondIssuerLike bondSellerAdress
     ) Stateful(registryAddress) {
         vaultEngine = vaultEngineAddress;
         bondSeller = bondSellerAdress;
@@ -87,7 +70,7 @@ contract ReservePool is Stateful, Eventful {
      * @notice Adds auction debt. Only callable by Liquidator.
      * @param newDebt The amount of debt to add
      */
-    function addAuctionDebt(uint256 newDebt) external onlyBy("liquidator") {
+    function addAuctionDebt(uint256 newDebt) external override onlyBy("liquidator") {
         debtOnAuction += newDebt;
         emit DebtOnAuctionAdded(newDebt);
     }
@@ -96,7 +79,7 @@ contract ReservePool is Stateful, Eventful {
      * @notice Reduces auction debt. Only callable by Liquidator.
      * @param debtToReduce The amount of debt to reduce
      */
-    function reduceAuctionDebt(uint256 debtToReduce) external onlyBy("liquidator") {
+    function reduceAuctionDebt(uint256 debtToReduce) external override onlyBy("liquidator") {
         debtOnAuction -= debtToReduce;
 
         emit DebtOnAuctionRemoved(debtToReduce);

@@ -5,32 +5,9 @@ pragma solidity 0.8.4;
 import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
 import "../dependencies/Math.sol";
-
-interface VaultEngineLike {
-    function debtAccumulator() external returns (uint256);
-
-    function equityAccumulator() external returns (uint256);
-
-    function lendingPoolDebt() external returns (uint256);
-
-    function lendingPoolEquity() external returns (uint256);
-
-    function lendingPoolPrincipal() external returns (uint256);
-
-    function lendingPoolSupply() external returns (uint256);
-
-    function updateAccumulators(
-        address reservePool,
-        uint256 debtRateIncrease,
-        uint256 equityRateIncrease,
-        uint256 protocolFeeRates
-    ) external;
-}
-
-interface IAPR {
-    // solhint-disable-next-line
-    function APR_TO_MPR(uint256 APR) external returns (uint256);
-}
+import "./assets/ERC20AssetManager.sol";
+import "../interfaces/IVaultEngineLike.sol";
+import "../interfaces/IAPRLike.sol";
 
 /**
  * @title Teller contract
@@ -45,9 +22,9 @@ contract Teller is Stateful, Eventful {
     // Set max APR to 100%
     uint256 public constant MAX_APR = WAD * 2 * 1e9;
 
-    VaultEngineLike public immutable vaultEngine;
-    IAPR public immutable lowAprRate;
-    IAPR public immutable highAprRate;
+    IVaultEngineLike public immutable vaultEngine;
+    IAPRLike public immutable lowAprRate;
+    IAPRLike public immutable highAprRate;
 
     address public reservePool; // reservePool address will be the recipient of the protocol fees calculated
     uint256 public apr; // Annualized percentage rate
@@ -71,10 +48,10 @@ contract Teller is Stateful, Eventful {
     /////////////////////////////////////////
     constructor(
         address registryAddress,
-        VaultEngineLike vaultEngineAddress,
+        IVaultEngineLike vaultEngineAddress,
         address reservePoolAddress,
-        IAPR lowAprAddress,
-        IAPR highAprAddress
+        IAPRLike lowAprAddress,
+        IAPRLike highAprAddress
     ) Stateful(registryAddress) {
         vaultEngine = vaultEngineAddress;
         lowAprRate = lowAprAddress;

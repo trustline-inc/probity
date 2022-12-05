@@ -5,48 +5,10 @@ import "./Stateful.sol";
 import "./Math.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
-
-interface FtsoRewardManagerLike {
-    function claimRewardFromDataProviders(
-        address payable _recipient,
-        uint256[] memory _rewardEpochs,
-        address[] memory _dataProviders
-    ) external returns (uint256 _rewardAmount);
-
-    function getEpochsWithClaimableRewards() external view returns (uint256 _startEpochId, uint256 _endEpochId);
-}
-
-interface FtsoManagerLike {
-    function getCurrentRewardEpoch() external view returns (uint256);
-}
-
-interface VPTokenManagerLike {
-    function transfer(address recipient, uint256 amount) external returns (bool);
-
-    function transferFrom(
-        address sender,
-        address recipient,
-        uint256 amount
-    ) external returns (bool);
-
-    function delegate(address _to, uint256 _bips) external;
-}
-
-interface VaultEngineLike {
-    function vaults(bytes32 assetId, address user)
-        external
-        returns (
-            uint256 standbyAmount,
-            uint256 underlying,
-            uint256 collateral
-        );
-
-    function modifyStandbyAmount(
-        bytes32 assetId,
-        address user,
-        int256 amount
-    ) external;
-}
+import "../interfaces/IVaultEngineLike.sol";
+import "../interfaces/IVPTokenManagerLike.sol";
+import "../interfaces/IFtsoRewardManagerLike.sol";
+import "../interfaces/IFtsoManagerLike.sol";
 
 /**
  * @title Delegatable Contract
@@ -60,10 +22,10 @@ contract Delegatable is Stateful {
     uint256 private constant HUNDRED_PERCENT = 10000;
     uint256 private constant RAY = 1e27;
 
-    FtsoManagerLike public immutable ftsoManager;
-    FtsoRewardManagerLike public immutable ftsoRewardManager;
-    VaultEngineLike public immutable vaultEngine;
-    VPTokenManagerLike public immutable token;
+    IFtsoManagerLike public immutable ftsoManager;
+    IFtsoRewardManagerLike public immutable ftsoRewardManager;
+    IVaultEngineLike public immutable vaultEngine;
+    IVPTokenManagerLike public immutable token;
     bytes32 public immutable assetId;
 
     address[] public dataProviders; // List of data providers to delegate voting power
@@ -89,10 +51,10 @@ contract Delegatable is Stateful {
     constructor(
         address registryAddress,
         bytes32 collateralId,
-        FtsoManagerLike ftsoManagerAddress,
-        FtsoRewardManagerLike rewardManagerAddress,
-        VPTokenManagerLike tokenAddress,
-        VaultEngineLike vaultEngineAddress
+        IFtsoManagerLike ftsoManagerAddress,
+        IFtsoRewardManagerLike rewardManagerAddress,
+        IVPTokenManagerLike tokenAddress,
+        IVaultEngineLike vaultEngineAddress
     ) Stateful(registryAddress) {
         assetId = collateralId;
         ftsoManager = ftsoManagerAddress;
@@ -217,7 +179,7 @@ contract Delegatable is Stateful {
     ///////////////////////////////////
 
     function _userCollectReward(uint256 epochToEnd, address user) internal {
-        (uint256 underlying, uint256 collateral, uint256 standbyAmount) = vaultEngine.vaults(assetId, user);
+        (uint256 underlying, uint256 collateral, uint256 standbyAmount, , , , ) = vaultEngine.vaults(assetId, user);
         uint256 currentBalance = standbyAmount + underlying + collateral;
         uint256 rewardBalance = 0;
 

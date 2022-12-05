@@ -18,10 +18,10 @@ contract VPAssetManager is Delegatable {
     constructor(
         address registryAddress,
         bytes32 collateralHash,
-        FtsoManagerLike ftsoManagerAddress,
-        FtsoRewardManagerLike rewardManagerAddress,
-        VPTokenManagerLike tokenAddress,
-        VaultEngineLike vaultEngineAddress
+        IFtsoManagerLike ftsoManagerAddress,
+        IFtsoRewardManagerLike rewardManagerAddress,
+        IVPTokenManagerLike tokenAddress,
+        IVaultEngineLike vaultEngineAddress
     )
         Delegatable(
             registryAddress,

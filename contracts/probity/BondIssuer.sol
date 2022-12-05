@@ -4,29 +4,15 @@ pragma solidity 0.8.4;
 
 import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
-
-interface VaultEngineLike {
-    function systemCurrency(address user) external returns (uint256);
-
-    function systemDebt(address user) external returns (uint256);
-
-    function settle(uint256) external;
-
-    function increaseSystemDebt(uint256 amount) external;
-
-    function moveSystemCurrency(
-        address from,
-        address to,
-        uint256 amount
-    ) external;
-}
+import "../interfaces/IVaultEngineLike.sol";
+import "../interfaces/IBondIssuerLike.sol";
 
 /**
  * @title BondIssuer contract
  * @notice Sells zero-coupon bonds that are redeemable for excess reserves on a FIFO redemption basis.
  * @dev Bonds are redeemable for excess USD reserves starting at a 1:1 and up to 1:1.5 rate (precision of 1e-18).
  */
-contract BondIssuer is Stateful, Eventful {
+contract BondIssuer is Stateful, Eventful, IBondIssuerLike {
     /////////////////////////////////////////
     // Type Declarations
     /////////////////////////////////////////
@@ -40,7 +26,7 @@ contract BondIssuer is Stateful, Eventful {
     // State Variables
     /////////////////////////////////////////
     uint256 private constant ONE = 1E18;
-    VaultEngineLike public immutable vaultEngine;
+    IVaultEngineLike public immutable vaultEngine;
     address public reservePoolAddress;
 
     Offering public offering;
@@ -67,7 +53,7 @@ contract BondIssuer is Stateful, Eventful {
     /////////////////////////////////////////
     // Constructor
     /////////////////////////////////////////
-    constructor(address registryAddress, VaultEngineLike vaultEngineAddress) Stateful(registryAddress) {
+    constructor(address registryAddress, IVaultEngineLike vaultEngineAddress) Stateful(registryAddress) {
         vaultEngine = vaultEngineAddress;
     }
 
@@ -132,7 +118,7 @@ contract BondIssuer is Stateful, Eventful {
      * @notice new offering to be sold
      * @param amount to be sold
      */
-    function newOffering(uint256 amount) external onlyBy("reservePool") {
+    function newOffering(uint256 amount) external override onlyBy("reservePool") {
         if (offering.active != false) revert saleActive();
 
         offering.active = true;

@@ -1,11 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.8.4;
 
-interface IRegistry {
-    function checkIfProbitySystem(address addr) external returns (bool);
-
-    function checkRole(bytes32 name, address addr) external returns (bool);
-}
+import "../interfaces/IRegistryLike.sol";
 
 /**
  * @title AccessControl contract
@@ -15,7 +11,7 @@ contract AccessControl {
     ///////////////////////////////////
     // State Variables
     ///////////////////////////////////
-    IRegistry public registry; // registry contract
+    IRegistryLike public registry; // registry contract
 
     ///////////////////////////////////
     // Errors
@@ -49,7 +45,7 @@ contract AccessControl {
     // Constructor
     ///////////////////////////////////
     constructor(address registryAddress) {
-        registry = IRegistry(registryAddress);
+        registry = IRegistryLike(registryAddress);
     }
 
     ///////////////////////////////////
@@ -59,7 +55,7 @@ contract AccessControl {
     /**
      * @dev set the new registry address, used to replace registry module
      */
-    function setRegistryAddress(IRegistry newRegistryAddress) external onlyBy("gov") {
+    function setRegistryAddress(IRegistryLike newRegistryAddress) external onlyBy("gov") {
         registry = newRegistryAddress;
     }
 }

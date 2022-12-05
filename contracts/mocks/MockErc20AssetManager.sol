@@ -5,29 +5,13 @@ pragma solidity 0.8.4;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../dependencies/Stateful.sol";
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
-
-interface TokenLike {
-    function transfer(address recipient, uint256 amount) external returns (bool);
-
-    function transferFrom(
-        address sender,
-        address recipient,
-        uint256 amount
-    ) external returns (bool);
-}
-
-interface VaultEngineLike {
-    function modifyStandbyAmount(
-        bytes32 collateral,
-        address user,
-        int256 amount
-    ) external;
-}
+import "../interfaces/IVaultEngineLike.sol";
+import "../interfaces/ITokenLike.sol";
 
 contract MockErc20AssetManager is Stateful {
-    TokenLike public immutable token;
+    ITokenLike public immutable token;
     bytes32 public immutable assetId;
-    VaultEngineLike public vaultEngine;
+    IVaultEngineLike public vaultEngine;
 
     event DepositToken(address indexed user, uint256 amount, address indexed token);
     event WithdrawToken(address indexed user, uint256 amount, address indexed token);
@@ -37,13 +21,13 @@ contract MockErc20AssetManager is Stateful {
     constructor(
         address registryAddress,
         bytes32 id,
-        TokenLike asset
+        ITokenLike asset
     ) Stateful(registryAddress) {
         assetId = id;
         token = asset;
     }
 
-    function setVaultEngine(VaultEngineLike _vaultEngine) external {
+    function setVaultEngine(IVaultEngineLike _vaultEngine) external {
         vaultEngine = _vaultEngine;
     }
 

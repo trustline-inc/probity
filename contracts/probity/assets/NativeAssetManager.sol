@@ -4,21 +4,14 @@ pragma solidity 0.8.4;
 
 import "../../dependencies/Stateful.sol";
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
-
-interface VaultEngineLike {
-    function modifyStandbyAmount(
-        bytes32 assetId,
-        address user,
-        int256 amount
-    ) external;
-}
+import "../../interfaces/IVaultEngineLike.sol";
 
 contract NativeAssetManager is Stateful {
     /////////////////////////////////////////
     // State Variables
     /////////////////////////////////////////
     bytes32 public immutable assetId;
-    VaultEngineLike public immutable vaultEngine;
+    IVaultEngineLike public immutable vaultEngine;
 
     /////////////////////////////////////////
     // Events
@@ -39,7 +32,7 @@ contract NativeAssetManager is Stateful {
     constructor(
         address registryAddress,
         bytes32 id,
-        VaultEngineLike vaultEngineAddress
+        IVaultEngineLike vaultEngineAddress
     ) Stateful(registryAddress) {
         assetId = id;
         vaultEngine = vaultEngineAddress;

@@ -5,20 +5,13 @@ pragma solidity 0.8.4;
 import "../../dependencies/Stateful.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
-
-interface VaultEngineLike {
-    function modifyStandbyAmount(
-        bytes32 collateral,
-        address user,
-        int256 amount
-    ) external;
-}
+import "../../interfaces/IVaultEngineLike.sol";
 
 contract ERC20AssetManager is Stateful {
     /////////////////////////////////////////
     // State Variables
     /////////////////////////////////////////
-    VaultEngineLike public immutable vaultEngine;
+    IVaultEngineLike public immutable vaultEngine;
     IERC20 public immutable token;
     bytes32 public immutable assetId;
 
@@ -41,7 +34,7 @@ contract ERC20AssetManager is Stateful {
         address registryAddress,
         bytes32 id,
         IERC20 asset,
-        VaultEngineLike vaultEngineAddress
+        IVaultEngineLike vaultEngineAddress
     ) Stateful(registryAddress) {
         assetId = id;
         vaultEngine = vaultEngineAddress;
