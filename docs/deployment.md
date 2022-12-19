@@ -6,7 +6,7 @@ If you're deploying to a local Hardhat node, you can use simply do:
 ETHERNAL_PASSWORD=<password> bash ./init.sh
 ```
 
-To deploy to other networks, use the `deploy` script.
+To deploy to other networks, use the `deploy` script. Make sure that the account in `hardhat.config.ts` has enough funds for the deployment.
 
 > If you're using the `flare_local` network, set the `FLARE_DIR` envioronment variable.
 
