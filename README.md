@@ -30,16 +30,16 @@ You can view the contract code in the [`contracts`](./contracts) folder and the 
 
 ## Quick Start
 
-This repository contains the source code for the Probity smart contract system and examples to jumpstart development with Probity. The contract ABIs are accessible through the `@trustline-inc/probity` NPM package.
+This repository contains the source code for the Probity smart contract system and examples to jumpstart development with Probity. The contract ABIs are accessible through the [`@trustline/probity`](https://www.npmjs.com/package/@trustline/probity) NPM package.
 
 ### Installation
 
 This project uses [Node.js](https://nodejs.org/en/) and assumes you have it installed.
 
-Add `@trustline-inc/probity` to your project with `npm` or `yarn`:
+Add `@trustline/probity` to your project with `npm` or `yarn`:
 
 ```
-npm install @trustline-inc/probity --save
+npm install @trustline/probity --save
 ```
 
 ### Usage
@@ -52,7 +52,7 @@ Below is a code snippet that shows how to import the contract ABI and call a con
  * calling the `totalSupply` method on the ERC20 contract at
  * <address>.
  */
-import UsdABI from "@trustline-inc/probity/artifacts/contracts/tokens/Usd.sol/USD.json";
+import UsdABI from "@trustline/probity/artifacts/contracts/tokens/Usd.sol/USD.json";
 import { Contract } from "ethers";
 
 const USD_ERC20_ADDRESS = "<address>";
