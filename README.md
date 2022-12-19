@@ -4,25 +4,7 @@
 
 You can view the contract code in the [`contracts`](./contracts) folder and the audit report can be found in the [`audits`](./audits) folder. You can find everything else in the [documentation&nbsp;📖 ](https://docs.trustline.co/trustline/-MX0imPEPxcvrbI-teLl/)
 
-## Table of Contents
-
-<!--ts-->
-
-- [Quick Start](#quick-start)
-  - [Installation](#installation)
-  - [Usage](#usage)
-- [Development](#development)
-- [Deployment](#deployment)
-- [Administration](#administration)
-- [Contract Addresses](#contract-addresses)
-  - [Coston 2](#coston-2-network)
-  - [Songbird](#songbird-network)
-  - [Flare](#flare-network)
-- [License](#license)
-
-<!--te-->
-
-## Quick Start
+## Usage
 
 This repository contains the source code for the Probity smart contract system and examples to jumpstart development with Probity. The contract ABIs are accessible through the [`@trustline/probity`](https://www.npmjs.com/package/@trustline/probity) NPM package.
 
@@ -36,7 +18,7 @@ Add `@trustline/probity` to your project with `npm` or `yarn`:
 npm install @trustline/probity --save
 ```
 
-### Usage
+### Example
 
 Below is a code snippet that shows how to import the contract ABI and call a contract method using [`ethers`](https://docs.ethers.io/v5/).
 
