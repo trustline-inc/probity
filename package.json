@@ -53,9 +53,6 @@
   },
   "bugs": "https://github.com/trustline-inc/probity/issues",
   "homepage": "https://github.com/trustline-inc/probity",
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
-  },
   "devDependencies": {
     "@gnosis.pm/safe-core-sdk": "^2.0.0",
     "@gnosis.pm/safe-ethers-lib": "^1.0.0",
