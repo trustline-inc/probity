@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
-pragma solidity ^0.8.4;
+pragma solidity 0.8.4;
 
 import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
 import "../dependencies/Math.sol";
+import "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import "../interfaces/IVaultEngineLike.sol";
 
 /**
  * @title VaultEngine contract
@@ -13,7 +15,7 @@ import "../dependencies/Math.sol";
  * @notice The core accounting module for the Probity system
  */
 
-contract VaultEngine is Stateful, Eventful {
+contract VaultEngine is Stateful, Eventful, IVaultEngineLike {
     /////////////////////////////////////////
     // Type Declarations
     /////////////////////////////////////////
@@ -25,12 +27,6 @@ contract VaultEngine is Stateful, Eventful {
         uint256 normEquity; // Normalized equity balance [WAD]
         uint256 initialEquity; // Tracks the amount of equity (less interest) [RAD]
         uint256 debtPrincipal; // Tracks the principal amount of debt
-    }
-
-    enum Category {
-        UNDERLYING,
-        COLLATERAL,
-        BOTH
     }
 
     struct Asset {
@@ -48,22 +44,22 @@ contract VaultEngine is Stateful, Eventful {
     uint256 private constant RAY = 10**27;
 
     address public treasury;
-    uint256 public debtAccumulator; // Cumulative debt rate [RAY]
-    uint256 public equityAccumulator; // Cumulative equity rate [RAY]
+    uint256 public override debtAccumulator; // Cumulative debt rate [RAY]
+    uint256 public override equityAccumulator; // Cumulative equity rate [RAY]
     uint256 public systemCurrencyIssued; // The amount of currency issued by the governance address [RAD]
     uint256 public totalSystemCurrency; // Total system currency (outstanding debt + treasury balance) [RAD]
-    uint256 public lendingPoolEquity; // Total normalized shares of equity in the lending pool [RAD]
-    uint256 public lendingPoolDebt; // Total normalized amount of system currency owed by borrowers [RAD]
+    uint256 public override lendingPoolEquity; // Total normalized shares of equity in the lending pool [RAD]
+    uint256 public override lendingPoolDebt; // Total normalized amount of system currency owed by borrowers [RAD]
     uint256 public totalSystemDebt; // Total amount owed to users by Probity [RAD]
-    uint256 public lendingPoolSupply; // Total amount of system currency in lending pool w/o interest [RAD]
-    uint256 public lendingPoolPrincipal; // Total amount of loan principal (w/o interest) [RAD]
+    uint256 public override lendingPoolSupply; // Total amount of system currency in lending pool w/o interest [RAD]
+    uint256 public override lendingPoolPrincipal; // Total amount of loan principal (w/o interest) [RAD]
     address[] public vaultList; // List of vaults that had either equity and/or debt position
     mapping(address => bool) public vaultExists; // Boolean indicating whether a vault exists for a given address
-    mapping(address => uint256) public systemCurrency; // Vault owner's system currency balance [RAD]
+    mapping(address => uint256) public override systemCurrency; // Vault owner's system currency balance [RAD]
     mapping(address => uint256) public pbt; // Vault owner's governance token balance [RAD]
-    mapping(address => uint256) public systemDebt; // Vault owner's share of system debt [RAD]
-    mapping(bytes32 => Asset) public assets; // assetId -> asset
-    mapping(bytes32 => mapping(address => Vault)) public vaults; // assetId -> vault owner's address -> vault
+    mapping(address => uint256) public override systemDebt; // Vault owner's share of system debt [RAD]
+    mapping(bytes32 => Asset) public override assets; // assetId -> asset
+    mapping(bytes32 => mapping(address => Vault)) public override vaults; // assetId -> vault owner's address -> vault
 
     /////////////////////////////////////////
     // Events
@@ -88,9 +84,19 @@ contract VaultEngine is Stateful, Eventful {
     error equityCreatedCanNotBeGreaterThanDebtCreated();
     error assetNotAllowedAsCollateral();
     error assetNotAllowedAsUnderlying();
+    error assetNotSupported();
     error insufficientFundInTreasury();
     error vaultSizeMinimumNotReached();
     error assetMaximumAmountReached();
+
+    /////////////////////////////////////////
+    // Modifiers
+    /////////////////////////////////////////
+
+    modifier onlyIfInitialized(bytes32 assetId) {
+        if (assets[assetId].category == Category.UNSUPPORTED) revert assetNotSupported();
+        _;
+    }
 
     /////////////////////////////////////////
     // Constructor
@@ -158,7 +164,7 @@ contract VaultEngine is Stateful, Eventful {
         bytes32 assetId,
         address account,
         int256 amount
-    ) external onlyByProbity {
+    ) external override onlyByProbity {
         vaults[assetId][account].standbyAmount = Math._add(vaults[assetId][account].standbyAmount, amount);
     }
 
@@ -174,7 +180,7 @@ contract VaultEngine is Stateful, Eventful {
         address from,
         address to,
         uint256 amount
-    ) external onlyByProbity {
+    ) external override onlyByProbity {
         vaults[assetId][from].standbyAmount -= amount;
         vaults[assetId][to].standbyAmount += amount;
     }
@@ -189,7 +195,7 @@ contract VaultEngine is Stateful, Eventful {
         address from,
         address to,
         uint256 amount
-    ) external onlyByProbity {
+    ) external override onlyByProbity {
         systemCurrency[from] -= amount;
         systemCurrency[to] += amount;
     }
@@ -199,7 +205,7 @@ contract VaultEngine is Stateful, Eventful {
      * @param account The address of the beneficiary vault owner
      * @param amount The amount of systemCurrency to add
      */
-    function addSystemCurrency(address account, uint256 amount) external onlyBy("treasury") {
+    function addSystemCurrency(address account, uint256 amount) external override onlyBy("treasury") {
         systemCurrency[account] += amount;
     }
 
@@ -208,7 +214,7 @@ contract VaultEngine is Stateful, Eventful {
      * @param account The address of the beneficiary vault owner
      * @param amount The amount of systemCurrency to remove
      */
-    function removeSystemCurrency(address account, uint256 amount) external onlyByProbity {
+    function removeSystemCurrency(address account, uint256 amount) external override onlyByProbity {
         systemCurrency[account] -= amount;
     }
 
@@ -217,7 +223,7 @@ contract VaultEngine is Stateful, Eventful {
      * @param account The address of the vault to reduce PBT from.
      * @param amount The amount of PBT to reduce.
      */
-    function reducePbt(address account, uint256 amount) external onlyBy("treasury") {
+    function reducePbt(address account, uint256 amount) external override onlyBy("treasury") {
         pbt[account] -= amount;
     }
 
@@ -280,7 +286,7 @@ contract VaultEngine is Stateful, Eventful {
         int256 collateralAmount,
         int256 debtAmount,
         int256 principalAmount
-    ) external onlyByProbity {
+    ) external override onlyByProbity {
         Vault storage vault = vaults[assetId][account];
         Asset storage asset = assets[assetId];
 
@@ -323,7 +329,7 @@ contract VaultEngine is Stateful, Eventful {
         int256 assetToReturn,
         int256 equityAmount,
         int256 initialEquityAmount
-    ) external onlyByProbity {
+    ) external override onlyByProbity {
         Vault storage vault = vaults[assetId][account];
         Asset storage asset = assets[assetId];
 
@@ -348,7 +354,7 @@ contract VaultEngine is Stateful, Eventful {
      * @notice Used for settlement by the reserve pool
      * @param amount The amount to settle
      */
-    function settle(uint256 amount) external onlyByProbity {
+    function settle(uint256 amount) external override onlyByProbity {
         systemCurrency[msg.sender] -= amount;
         systemDebt[msg.sender] -= amount;
         totalSystemCurrency -= amount;
@@ -361,7 +367,7 @@ contract VaultEngine is Stateful, Eventful {
      * @param amount The amount of the debt increase
      * @dev Called by ReservePool
      */
-    function increaseSystemDebt(uint256 amount) external onlyByProbity {
+    function increaseSystemDebt(uint256 amount) external override onlyByProbity {
         systemCurrency[msg.sender] += amount;
         systemDebt[msg.sender] += amount;
         totalSystemCurrency += amount;
@@ -413,7 +419,7 @@ contract VaultEngine is Stateful, Eventful {
         uint256 debtRateIncrease,
         uint256 equityRateIncrease,
         uint256 protocolFeeRates
-    ) external onlyBy("teller") {
+    ) external override onlyBy("teller") {
         if (treasury == address(0)) revert treasuryAddressNotSet();
         emit LogVarUpdate("Vault", "debtAccumulator", debtAccumulator, debtRateIncrease);
         emit LogVarUpdate("Vault", "equityAccumulator", equityAccumulator, equityRateIncrease);
@@ -436,7 +442,7 @@ contract VaultEngine is Stateful, Eventful {
      * @param assetId The asset type ID
      * @param price The new price
      */
-    function updateAdjustedPrice(bytes32 assetId, uint256 price) external onlyByProbity {
+    function updateAdjustedPrice(bytes32 assetId, uint256 price) external override onlyByProbity {
         emit LogVarUpdate("Vault", assetId, "price", assets[assetId].adjustedPrice, price);
         assets[assetId].adjustedPrice = price;
     }
@@ -457,7 +463,7 @@ contract VaultEngine is Stateful, Eventful {
         bytes32 assetId,
         int256 underlyingAmount,
         int256 equityAmount
-    ) internal {
+    ) internal onlyIfInitialized(assetId) {
         if (treasury == address(0)) revert treasuryAddressNotSet();
         if (assets[assetId].category == Category.COLLATERAL) revert assetNotAllowedAsUnderlying();
 
@@ -478,11 +484,11 @@ contract VaultEngine is Stateful, Eventful {
         if (
             equityCreated < 0 && (Math._add(vault.normEquity * equityAccumulator, equityCreated) < vault.initialEquity)
         ) {
-            initialEquityToChange = -int256(
+            initialEquityToChange = -SafeCast.toInt256(
                 vault.initialEquity - Math._add(vault.normEquity * equityAccumulator, equityCreated)
             );
 
-            uint256 interestToCollect = uint256(-(equityCreated - initialEquityToChange));
+            uint256 interestToCollect = SafeCast.toUint256(-(equityCreated - initialEquityToChange));
             _collectInterest(assetId, interestToCollect);
         }
 
@@ -495,7 +501,7 @@ contract VaultEngine is Stateful, Eventful {
 
         if (Math._mul(assets[assetId].normEquity, equityAccumulator) > assets[assetId].ceiling)
             revert assetMaximumAmountReached();
-        if (vault.normEquity != 0 && (vault.normEquity * RAY) < assets[assetId].floor)
+        if (vault.normEquity != 0 && (vault.normEquity * equityAccumulator) < assets[assetId].floor)
             revert vaultSizeMinimumNotReached();
 
         _certifyEquityPosition(assetId, vault);
@@ -509,7 +515,7 @@ contract VaultEngine is Stateful, Eventful {
         bytes32 assetId,
         int256 collAmount,
         int256 debtAmount
-    ) internal {
+    ) internal onlyIfInitialized(assetId) {
         if (treasury == address(0)) revert treasuryAddressNotSet();
         if (assets[assetId].category == Category.UNDERLYING) revert assetNotAllowedAsCollateral();
 
@@ -521,7 +527,8 @@ contract VaultEngine is Stateful, Eventful {
         int256 debtCreated = Math._mul(debtAccumulator, debtAmount);
 
         if (debtAmount > 0) {
-            if (systemCurrency[treasury] < uint256(debtAmount) * debtAccumulator) revert insufficientFundInTreasury();
+            if (systemCurrency[treasury] < SafeCast.toUint256(debtAmount) * debtAccumulator)
+                revert insufficientFundInTreasury();
         }
 
         Vault memory vault = vaults[assetId][msg.sender];
@@ -529,7 +536,9 @@ contract VaultEngine is Stateful, Eventful {
         // Reduce the debt principal only after interests are paid off
         int256 principalToChange = debtCreated;
         if (debtCreated < 0 && (Math._add(vault.normDebt * debtAccumulator, debtCreated) < vault.debtPrincipal)) {
-            principalToChange = -int256(vault.debtPrincipal - Math._add(vault.normDebt * debtAccumulator, debtCreated));
+            principalToChange = -SafeCast.toInt256(
+                vault.debtPrincipal - Math._add(vault.normDebt * debtAccumulator, debtCreated)
+            );
         }
 
         vault.debtPrincipal = Math._add(vault.debtPrincipal, principalToChange);
@@ -545,7 +554,8 @@ contract VaultEngine is Stateful, Eventful {
         totalSystemCurrency = Math._add(totalSystemCurrency, debtCreated);
 
         if (assets[assetId].normDebt * debtAccumulator > assets[assetId].ceiling) revert assetMaximumAmountReached();
-        if (vault.normDebt != 0 && (vault.normDebt * RAY) < assets[assetId].floor) revert vaultSizeMinimumNotReached();
+        if (vault.normDebt != 0 && (vault.normDebt * debtAccumulator) < assets[assetId].floor)
+            revert vaultSizeMinimumNotReached();
 
         _certifyDebtPosition(assetId, vault);
 

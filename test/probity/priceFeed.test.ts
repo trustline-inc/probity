@@ -104,7 +104,7 @@ describe("PriceFeed Unit Tests", function () {
   });
 
   describe("updateLiquidationRatio Unit Tests", function () {
-    const NEW_LIQUIDATION_RATIO = DEFAULT_LIQUIDATION_RATIO.div(2);
+    const NEW_LIQUIDATION_RATIO = DEFAULT_LIQUIDATION_RATIO.mul(2).div(3);
     beforeEach(async function () {
       await priceFeed.initAsset(
         ASSET_ID,

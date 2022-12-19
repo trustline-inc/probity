@@ -1,18 +1,20 @@
 // SPDX-License-Identifier: Apache-2.0
 
-pragma solidity ^0.8.4;
+pragma solidity 0.8.4;
+
+import "../interfaces/IAPRLike.sol";
 
 /**
  * @title HighAPR contract
  * @notice Holds the constant array of APR_MPR mapping from 50.25% to 100% APR
  */
-contract HighAPR {
+contract HighAPR is IAPRLike {
     // Follows R^(1/31557600) * (1-U) * f(1/31557600) = 1
     ///////////////////////////////////
     // State Variables
     ///////////////////////////////////
     // solhint-disable-next-line
-    mapping(uint256 => uint256) public APR_TO_MPR;
+    mapping(uint256 => uint256) public override APR_TO_MPR;
 
     ///////////////////////////////////
     // Constructor

@@ -1,36 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
-pragma solidity ^0.8.4;
+pragma solidity 0.8.4;
 
 import "../dependencies/Stateful.sol";
-
-interface VaultEngineLike {
-    function addSystemCurrency(address user, uint256 amount) external;
-
-    function removeSystemCurrency(address user, uint256 amount) external;
-
-    function moveSystemCurrency(
-        address from,
-        address to,
-        uint256 amount
-    ) external;
-
-    function reducePbt(address user, uint256 amount) external;
-}
-
-interface TokenLike {
-    function transfer(address recipient, uint256 amount) external returns (bool);
-
-    function transferFrom(
-        address sender,
-        address recipient,
-        uint256 amount
-    ) external returns (bool);
-
-    function mint(address user, uint256 amount) external;
-
-    function burn(address user, uint256 amount) external;
-}
+import "../interfaces/IVaultEngineLike.sol";
+import "../interfaces/ITokenLike.sol";
 
 /**
  * @title Treasury Contract
@@ -41,9 +15,9 @@ contract Treasury is Stateful {
     // State Variables
     /////////////////////////////////////////
 
-    TokenLike public immutable systemCurrency;
-    TokenLike public immutable pbt;
-    VaultEngineLike public immutable vaultEngine;
+    ITokenLike public immutable systemCurrency;
+    ITokenLike public immutable pbt;
+    IVaultEngineLike public immutable vaultEngine;
 
     /////////////////////////////////////////
     // Events
@@ -58,9 +32,9 @@ contract Treasury is Stateful {
     /////////////////////////////////////////
     constructor(
         address registryAddress,
-        TokenLike systemCurrencyAddress,
-        TokenLike pbtAddress,
-        VaultEngineLike vaultEngineAddress
+        ITokenLike systemCurrencyAddress,
+        ITokenLike pbtAddress,
+        IVaultEngineLike vaultEngineAddress
     ) Stateful(registryAddress) {
         systemCurrency = systemCurrencyAddress;
         vaultEngine = vaultEngineAddress;
