@@ -10,13 +10,19 @@ import { HardhatUserConfig } from "hardhat/config";
 import Wallet from "ethereumjs-wallet";
 import fs from "fs";
 
-const privateKey = Wallet.fromV3(
-  fs.readFileSync(process.env.KEYSTORE_FILE).toString(),
-  process.env.KEYSTORE_PASSWORD,
-  true
-)
-  .getPrivateKey()
-  .toString("hex");
+// Default private key (use an encrypted keystore file instead)
+let privateKey =
+  "e8eb815fca4f7febe74b9cfb026c640ac6d607b0c6fd65df40b7584e285f19b3";
+
+if (process.env.KEYSTORE_FILE) {
+  privateKey = Wallet.fromV3(
+    fs.readFileSync(process.env.KEYSTORE_FILE).toString(),
+    process.env.KEYSTORE_PASSWORD,
+    true
+  )
+    .getPrivateKey()
+    .toString("hex");
+}
 
 // See https://hardhat.org/hardhat-runner/docs/config#available-config-options
 const config: HardhatUserConfig = {
