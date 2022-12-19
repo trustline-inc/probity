@@ -1,7 +1,7 @@
 {
   "name": "@trustline-inc/probity",
-  "version": "1.0.0-alpha32",
-  "license": "MIT",
+  "version": "1.0.0-beta1",
+  "license": "Apache-2.0",
   "description": "Probity smart contracts",
   "scripts": {
     "node": "npx hardhat node",
@@ -37,11 +37,12 @@
   "contributors": [
     {
       "name": "Matthew Rosendin",
-      "email": "matt@trustline.co"
+      "email": "mrosendin@linqto.com",
+      "url": "https://mrosendin.github.io"
     },
     {
       "name": "Shine Lee",
-      "email": "shine@trustline.co"
+      "email": "aungshine@gmail.com"
     }
   ],
   "files": [
@@ -50,6 +51,8 @@
   "repository": {
     "url": "https://github.com/trustline-inc/probity.git"
   },
+  "bugs": "https://github.com/trustline-inc/probity/issues",
+  "homepage": "https://github.com/trustline-inc/probity",
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
   },
@@ -95,5 +98,8 @@
     "hooks": {
       "pre-commit": "pretty-quick --staged"
     }
+  },
+  "dependencies": {
+    "ethereumjs-wallet": "^1.0.2"
   }
 }
