@@ -96,6 +96,7 @@ const NATIVE_ASSETS: { [key: string]: string } = {
   hardhat: process.env.NATIVE_TOKEN || "FLR",
   internal: process.env.NATIVE_TOKEN || "FLR",
   coston: "CFLR",
+  coston2: "C2FLR",
   songbird: "SGB",
   flare: "FLR",
 };
