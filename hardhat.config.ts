@@ -7,6 +7,16 @@ import "@nomiclabs/hardhat-ethers";
 import "@nomiclabs/hardhat-web3";
 import "@nomiclabs/hardhat-waffle";
 import { HardhatUserConfig } from "hardhat/config";
+import Wallet from "ethereumjs-wallet";
+import fs from "fs";
+
+const privateKey = Wallet.fromV3(
+  fs.readFileSync(process.env.KEYSTORE_FILE).toString(),
+  process.env.KEYSTORE_PASSWORD,
+  true
+)
+  .getPrivateKey()
+  .toString("hex");
 
 // See https://hardhat.org/hardhat-runner/docs/config#available-config-options
 const config: HardhatUserConfig = {
@@ -45,25 +55,18 @@ const config: HardhatUserConfig = {
     },
     flare_local: {
       url: "http://127.0.0.1:9650/ext/bc/C/rpc",
-      accounts: [
-        // TODO: Read this from encrypted keystore file
-        "e8eb815fca4f7febe74b9cfb026c640ac6d607b0c6fd65df40b7584e285f19b3",
-      ],
+      accounts: [privateKey],
       chainId: 4294967295,
     },
     coston: {
       url: "https://coston-api.flare.network/ext/bc/C/rpc",
-      accounts: [
-        "e8eb815fca4f7febe74b9cfb026c640ac6d607b0c6fd65df40b7584e285f19b3",
-      ],
+      accounts: [privateKey],
       chainId: 16,
     },
     songbird: {
       url: "https://songbird.towolabs.com/rpc",
       chainId: 19,
-      accounts: {
-        mnemonic: "",
-      },
+      accounts: [privateKey],
     },
   },
   solidity: "0.8.4",
