@@ -31,7 +31,7 @@ const config: HardhatUserConfig = {
     workspace: "Probity",
     email: process.env.ETHERNAL_EMAIL,
     password: process.env.ETHERNAL_PASSWORD,
-    disabled: process.env.NODE_ENV === "test",
+    disabled: true,
     uploadAst: true,
   },
   // See https://hardhat.org/hardhat-network/docs/reference#supported-fields
@@ -68,6 +68,11 @@ const config: HardhatUserConfig = {
       url: "https://coston-api.flare.network/ext/bc/C/rpc",
       accounts: [privateKey],
       chainId: 16,
+    },
+    coston2: {
+      url: "https://coston2-api.flare.network/ext/bc/C/rpc",
+      accounts: [privateKey],
+      chainId: 114,
     },
     songbird: {
       url: "https://songbird.towolabs.com/rpc",
