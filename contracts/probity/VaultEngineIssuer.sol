@@ -33,6 +33,7 @@ contract VaultEngineIssuer is VaultEngineRestricted {
         systemCurrency[account] = Math._add(systemCurrency[account], amount);
         systemCurrencyIssued = Math._add(systemCurrencyIssued, amount);
         totalSystemDebt = Math._add(totalSystemDebt, amount);
+        totalSystemCurrency = Math._add(totalSystemCurrency, amount);
         emit SupplyModified(msg.sender, account, amount);
     }
 }

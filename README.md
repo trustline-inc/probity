@@ -2,7 +2,7 @@
 
 [![Build](https://github.com/trustline-inc/probity/actions/workflows/build.yml/badge.svg)](https://github.com/trustline-inc/probity/actions/workflows/build.yml)
 
-You can view the contract code in the [`contracts`](./contracts) folder. We will add a full API reference soon. You can find everything else in the [documentation&nbsp;📖 ](https://docs.trustline.co/trustline/-MX0imPEPxcvrbI-teLl/)
+You can view the contract code in the [`contracts`](./contracts) folder. You can find everything else in the [documentation&nbsp;📖 ](https://docs.trustline.co/trustline/-MX0imPEPxcvrbI-teLl/)
 
 ## Table of Contents
 
@@ -31,7 +31,7 @@ You can view the contract code in the [`contracts`](./contracts) folder. We will
 
 ## Overview
 
-This repository contains the source code for the Probity smart contract system (AKA "protocol") and examples to jumpstart development with Probity.
+This repository contains the source code for the Probity smart contract system and examples to jumpstart development with Probity.
 
 ## NodeJS Package
 
@@ -59,7 +59,7 @@ Below is a code snippet that shows how to import the contract ABI and call a con
 import UsdABI from "@trustline-inc/probity/artifacts/contracts/tokens/Usd.sol/USD.json";
 import { Contract } from "ethers";
 
-const USD_ERC20_ADDRESS = "0xBB62591BdEd66c1df6C3e9A912f3eC8c4F234455";
+const USD_ERC20_ADDRESS = "<address>";
 
 const usdErc20 = new Contract(
   USD_ERC20_ADDRESS,
@@ -115,15 +115,11 @@ Install node dependencies:
 yarn
 ```
 
-### Development
+### Local Development
 
-Run a local [Flare](https://gitlab.com/flarenetwork/flare) node.
+To start a local network, use `yarn run node`. Alternatively, you can [run a local Flare network](https://gitlab.com/flarenetwork/flare).
 
-Hardhat will use the account listed in `hardhat.config.ts` for the network. You'll want to make sure that account is funded first.
-
-You should run an initial transaction before deploying contracts:
-
-> You should also run this for the `internal` network
+Using the `flare_local` network will require you to create an initial transaction first. You can do so like this:
 
 ```
 npm run createInitialTx <network>
@@ -131,7 +127,7 @@ npm run createInitialTx <network>
 
 ### Testing
 
-Use the npm command to run tests on the local Hardhat network:
+Use the npm command to run tests on the in-process Hardhat network:
 
 ```
 npm run test
@@ -149,14 +145,20 @@ We use [GitHub Packages](https://docs.github.com/en/packages/working-with-a-gith
 
 ### Deployment
 
-Deploy the smart contract in the local network using the `deploy` script.
+If you're deploying to a local Hardhat node, you can use simply do:
 
-> Set the `FLARE_DIR` envioronment variables. Optionally set `NATIVE_TOKEN=<CFLR|SGB|FLR|XRP|ETH>` if you are deploying locally.
+```
+ETHERNAL_PASSWORD=<password> bash ./init.sh
+```
+
+To deploy to other networks, use the `deploy` script.
+
+> If you're using the `flare_local` network, set the `FLARE_DIR` envioronment variable.
 
 For example:
 
 ```
-NATIVE_TOKEN=<symbol> FLARE_DIR=~/Desktop/flare npm run deploy:<dev|prod> <network>
+NATIVE_TOKEN=<symbol> npm run deploy:<dev|prod> <network>
 ```
 
 If you get the error `ProviderError: err: Invalid value for block.coinbase`, that means you have to first run `npm run createInitialTx local`, which creates a genesis transaction in order for the network to start properly.
@@ -165,10 +167,10 @@ If you get the error `ProviderError: err: Invalid value for block.coinbase`, tha
 
 You can use a script to initialize the system with a new asset type.
 
-> Override the native token on the `local` or `internal` networks with `NATIVE_TOKEN=<CFLR|SGB|FLR|XRP|ETH>`.
+> Override the native token on the `local` or `internal` networks with `NATIVE_TOKEN=<SGB|FLR|XRP|ETH>`.
 
 ```
-NATIVE_TOKEN=<symbol> FLARE_DIR=~/Desktop/flare yarn run initialize <network>
+NATIVE_TOKEN=<symbol> yarn run initialize <network>
 ```
 
 ## Administrator Tools
@@ -219,11 +221,7 @@ yarn run whitelistAddress <network>
 
 ### Internal Network
 
-The internal network is only accessible to the Linqto/Trustline developers and partners.
-
-The network chain ID `4294967295` and the native token is `LNQ`.
-
-> NOTE: Contracts have not been deployed to the local network.
+> NOTE: Contracts have not been deployed to the internal network.
 
 | Contract | Address |
 | -------- | ------- |

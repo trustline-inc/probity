@@ -1,16 +1,17 @@
 /**
- * Script that perpetually calls Teller.updateAccumulator()
+ * Script that issues USD
  */
 import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-web3";
 import { artifacts, ethers } from "hardhat";
 import { Contract } from "ethers";
+import config from "../hardhat.config";
 import { RAD } from "../test/utils/constants";
 
-// address: 0x11EeB875AAc42eEe7CB37668360206B0056F6eEd
-const wallet = new ethers.Wallet(
-  "a59bc90d864e28891df18f0cf49b2a1a53944467307c10d0650676f7a1394eec",
-  new ethers.providers.JsonRpcProvider(hre.network.url)
+const beneficiary = "";
+const wallet = new ethers.Wallet.fromMnemonic(
+  config.networks.localhost?.accounts.mnemonic,
+  "m/44'/60'/0'/0/1"
 );
 const amount = RAD.mul(1_000_000);
 
@@ -26,6 +27,8 @@ const amount = RAD.mul(1_000_000);
     gov
   );
   const treasury = new Contract(process.env.TREASURY!, TreasuryABI.abi, gov);
+  const UsdABI = await artifacts.readArtifact("Usd");
+  const usd = new Contract(process.env.USD!, UsdABI.abi, gov);
 
   console.log("Issuing USD...", {
     to: wallet.address,
@@ -59,13 +62,19 @@ const amount = RAD.mul(1_000_000);
 
     console.log("Tx: treasury.withdrawSystemCurrency");
     tx = await treasury
-      .connect(wallet)
+      .connect(
+        wallet.connect(new ethers.providers.JsonRpcProvider(hre.network.url))
+      )
       .withdrawSystemCurrency(ethers.utils.parseUnits(String(1_000_000), 18), {
         gasLimit: 400000,
       });
     console.log(tx);
     result = await tx.wait();
     console.log(result);
+
+    if (beneficiary) {
+      usd.connect(wallet).transfer(beneficiary, amount.div(RAD).toString());
+    }
   } catch (error) {
     console.log(error);
   }
