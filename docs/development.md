@@ -63,7 +63,7 @@ npm run test
 
 ### Publishing
 
-We use [GitHub Packages](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-npm-registry) to publish to the npm registry now. Below are the steps to publish a new version:
+Below are the steps to publish a new version:
 
 1. Update `version` in `package.json` and commit the change
 
