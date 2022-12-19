@@ -59,11 +59,14 @@
     "@nomiclabs/hardhat-ethers": "^2.2.0",
     "@nomiclabs/hardhat-waffle": "^2.0.3",
     "@nomiclabs/hardhat-web3": "^2.0.0",
+    "@openzeppelin/contracts": "^4.8.0",
     "@typechain/ethers-v5": "^8.0.0",
     "@typechain/hardhat": "^3.0.0",
     "@types/chai": "^4.2.15",
     "@types/mocha": "^8.2.1",
     "@types/node": "^14.14.41",
+    "@uniswap/v2-core": "^1.0.1",
+    "@uniswap/v2-periphery": "^1.1.0-beta.0",
     "axios": "^0.24.0",
     "bignumber.js": "^9.0.1",
     "chai": "^4.3.0",
@@ -92,10 +95,5 @@
     "hooks": {
       "pre-commit": "pretty-quick --staged"
     }
-  },
-  "dependencies": {
-    "@uniswap/v2-core": "^1.0.1",
-    "@uniswap/v2-periphery": "^1.1.0-beta.0"
-    "@openzeppelin/contracts": "^4.8.0"
   }
 }
