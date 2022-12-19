@@ -2,7 +2,7 @@
 
 [![Build](https://github.com/trustline-inc/probity/actions/workflows/build.yml/badge.svg)](https://github.com/trustline-inc/probity/actions/workflows/build.yml)
 
-You can view the contract code in the [`contracts`](./contracts) folder. We will add a full API reference soon. You can find everything else in the [documentation&nbsp;📖 ](https://docs.trustline.co/trustline/-MX0imPEPxcvrbI-teLl/)
+You can view the contract code in the [`contracts`](./contracts) folder. You can find everything else in the [documentation&nbsp;📖 ](https://docs.trustline.co/trustline/-MX0imPEPxcvrbI-teLl/)
 
 ## Table of Contents
 
@@ -31,7 +31,7 @@ You can view the contract code in the [`contracts`](./contracts) folder. We will
 
 ## Overview
 
-This repository contains the source code for the Probity smart contract system (AKA "protocol") and examples to jumpstart development with Probity.
+This repository contains the source code for the Probity smart contract system and examples to jumpstart development with Probity.
 
 ## NodeJS Package
 
@@ -59,7 +59,7 @@ Below is a code snippet that shows how to import the contract ABI and call a con
 import UsdABI from "@trustline-inc/probity/artifacts/contracts/tokens/Usd.sol/USD.json";
 import { Contract } from "ethers";
 
-const USD_ERC20_ADDRESS = "0xBB62591BdEd66c1df6C3e9A912f3eC8c4F234455";
+const USD_ERC20_ADDRESS = "<address>";
 
 const usdErc20 = new Contract(
   USD_ERC20_ADDRESS,
@@ -115,7 +115,7 @@ Install node dependencies:
 yarn
 ```
 
-### Development
+### Local Development
 
 To start a local network, use `yarn run node`. Alternatively, you can [run a local Flare network](https://gitlab.com/flarenetwork/flare).
 
