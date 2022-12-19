@@ -1,5 +1,5 @@
 {
-  "name": "@trustline-inc/probity",
+  "name": "@trustline/probity",
   "version": "1.0.0-beta1",
   "license": "Apache-2.0",
   "description": "Probity smart contracts",
