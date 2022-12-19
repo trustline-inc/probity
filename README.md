@@ -1,41 +1,36 @@
 # Probity
 
-[![Build](https://github.com/trustline-inc/probity/actions/workflows/build.yml/badge.svg)](https://github.com/trustline-inc/probity/actions/workflows/build.yml)
+[![Build](https://github.com/trustline-inc/probity/actions/workflows/build.yml/badge.svg)](https://github.com/trustline-inc/probity/actions/workflows/build.yml) <img alt="GitHub" src="https://img.shields.io/github/license/trustline-inc/probity">
 
-You can view the contract code in the [`contracts`](./contracts) folder. You can find everything else in the [documentation&nbsp;📖 ](https://docs.trustline.co/trustline/-MX0imPEPxcvrbI-teLl/)
+You can view the contract code in the [`contracts`](./contracts) folder and the audit report can be found in the [`audits`](./audits) folder. You can find everything else in the [documentation&nbsp;📖 ](https://docs.trustline.co/trustline/-MX0imPEPxcvrbI-teLl/)
 
 ## Table of Contents
 
 <!--ts-->
 
-- [Overview](#overview)
-- [Installation](#installation)
-- [Usage](#usage)
+- [Quick Start](#quick-start)
+  - [Installation](#installation)
+  - [Usage](#usage)
 - [Development](#development)
-  - [Installation](#installation-1)
-  - [IDE](#ide)
-  - [Testing](#testing)
-  - [Publishing](#publishing)
 - [Deployment](#deployment)
-  - [Local](#local-deployment)
-  - [Remote](#remote-deployment)
 - [Initialization](#initialization)
-- [Utility Scripts](#utility-scripts)
+- [Administration](#administration)
+  - [System Info](#system-info)
+  - [Fiat Tokens](#fiat-tokens)
   - [Rate Updater](#rate-updater)
   - [Price Updater](#price-updater)
+  - [Allow Address](#allow-address)
 - [Contract Addresses](#contract-addresses)
-  - [Coston](#coston-network)
+  - [Coston 2](#coston-2-network)
   - [Songbird](#songbird-network)
   - [Flare](#flare-network)
-  <!--te-->
+- [License](#license)
 
-## Overview
+<!--te-->
 
-This repository contains the source code for the Probity smart contract system and examples to jumpstart development with Probity.
+## Quick Start
 
-## NodeJS Package
-
-The NodeJS package provides contract ABIs for Probity.
+This repository contains the source code for the Probity smart contract system and examples to jumpstart development with Probity. The contract ABIs are accessible through the `@trustline-inc/probity` NPM package.
 
 ### Installation
 
@@ -53,8 +48,9 @@ Below is a code snippet that shows how to import the contract ABI and call a con
 
 ```javascript
 /**
- * This example gets the total supply of the USD token by calling the `totalSupply` method
- * on the ERC20 contract at `USD_ERC20_ADDRESS`
+ * This example gets the total supply of the USD token by
+ * calling the `totalSupply` method on the ERC20 contract at
+ * <address>.
  */
 import UsdABI from "@trustline-inc/probity/artifacts/contracts/tokens/Usd.sol/USD.json";
 import { Contract } from "ethers";
@@ -72,98 +68,13 @@ console.log("Total supply:", totalSupply);
 
 ## Development
 
-### Requirements
+See the [developer guide](./docs/development.md) for details.
 
-- NodeJS
-- Yarn
+## Deployment
 
-### Recommended IDE
+See the [deployment guide](./docs/deployment.md) for details.
 
-[Visual Studio Code](https://code.visualstudio.com/) is the recommended IDE. Here's how to install Solidity language support:
-
-We recommend installing the [Hardhat + Solidity](https://marketplace.visualstudio.com/items?itemName=NomicFoundation.hardhat-solidity) IDE extension from the VSCode marketplace.
-
-Also, get the Prettier VSCode plugin:
-
-```
-code --install-extension esbenp.prettier-vscode
-```
-
-### Installation
-
-**Solidity Installation**
-
-Make sure the Solidity compiler is installed. The compiler version must be >= `0.8.4`.
-
-To install `solc` run this command:
-
-```
-npm install -g solc
-```
-
-You can verify the version with like so:
-
-```
-solcjs --version
-```
-
-**Install Project Dependencies**
-
-Install node dependencies:
-
-```
-yarn
-```
-
-### Local Development
-
-To start a local network, use `yarn run node`. Alternatively, you can [run a local Flare network](https://gitlab.com/flarenetwork/flare).
-
-Using the `flare_local` network will require you to create an initial transaction first. You can do so like this:
-
-```
-npm run createInitialTx <network>
-```
-
-### Testing
-
-Use the npm command to run tests on the in-process Hardhat network:
-
-```
-npm run test
-```
-
-### Publishing
-
-We use [GitHub Packages](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-npm-registry) to publish to the npm registry now. Below are the steps to publish a new version:
-
-1. Update `version` in `package.json` and commit the change
-
-2. Create a tag that matches `version` for the commit and run `git push --follow-tags`
-
-3. [Create a new release](https://github.com/trustline-inc/probity/releases/new) for the tagged version
-
-### Deployment
-
-If you're deploying to a local Hardhat node, you can use simply do:
-
-```
-ETHERNAL_PASSWORD=<password> bash ./init.sh
-```
-
-To deploy to other networks, use the `deploy` script.
-
-> If you're using the `flare_local` network, set the `FLARE_DIR` envioronment variable.
-
-For example:
-
-```
-NATIVE_TOKEN=<symbol> npm run deploy:<dev|prod> <network>
-```
-
-If you get the error `ProviderError: err: Invalid value for block.coinbase`, that means you have to first run `npm run createInitialTx local`, which creates a genesis transaction in order for the network to start properly.
-
-### Initialization
+## Initialization
 
 You can use a script to initialize the system with a new asset type.
 
@@ -173,11 +84,11 @@ You can use a script to initialize the system with a new asset type.
 NATIVE_TOKEN=<symbol> yarn run initialize <network>
 ```
 
-## Administrator Tools
+## Administration
 
 ### System Info
 
-Use this command to paste the output into [probity-ui](https://github.com/trustline-inc/probity-ui):
+Use this command to paste the output into [trustline-inc/probity-ui](https://github.com/trustline-inc/probity-ui):
 
 ```
 yarn run getSystemInfo <network>
@@ -185,7 +96,7 @@ yarn run getSystemInfo <network>
 
 ### Fiat Tokens
 
-The system admin (AKA "governance address") is able to issue fiat tokens for lending in Probity when using `VaultEngineIssuer`.
+The system admin (also referred to as the "governance address") is able to issue fiat tokens for lending in Probity when using `VaultEngineIssuer`.
 
 ```
 yarn run issuance <network>
@@ -195,7 +106,7 @@ yarn run issuance <network>
 
 Run this command to update the debt and equity rate accumulators every 5 seconds.
 
-> Note: You must first commit funds to the lending pool, otherwise you will get execution error `Teller/updateAccumulators: Total equity cannot be zero`
+> Note: You must first commit funds to the lending pool, otherwise you will get an execution error.
 
 ```
 yarn run rateUpdater <network>
@@ -219,15 +130,9 @@ yarn run whitelistAddress <network>
 
 ## Contract Addresses
 
-### Internal Network
-
-> NOTE: Contracts have not been deployed to the internal network.
-
-| Contract | Address |
-| -------- | ------- |
-|          |         |
-
 ### Coston 2 Network
+
+> Note: This is a test network.
 
 Coston 2 contract address will be listed here. The network native token is `CFLR`.
 
@@ -238,3 +143,7 @@ Songbird contract addresses will be listed here. The Songbird network's native t
 ### Flare Network
 
 Flare contract addresses will be listed here. The Flare network's native token is `FLR`.
+
+## License
+
+[Apache 2.0](./LICENSE.md) © [Linqto Inc.](https://linqto.com)
