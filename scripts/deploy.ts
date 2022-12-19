@@ -26,13 +26,9 @@ async function main() {
     console.info("Deploying in Production Mode");
     deployment = await deployProd();
     const message =
-      "This deployment of Probity in Production does not include \
-      ERC20AssetManager, VPAssetManager and Auctioneer contracts. \
-      Please deploy them separately.";
+      "This deployment of Probity in Production does not include ERC20AssetManager, VPAssetManager and Auctioneer contracts. Please deploy them separately.";
     console.warn(message);
   }
-
-  console.log(`Deployment to ${hre.network.name} was a success!`);
 
   /*
    * Write contract deployment addresses to file and display table in console
@@ -44,6 +40,12 @@ async function main() {
   const table: ConsoleTableRow[] = [];
   let fileOutput = "";
   let { contracts } = deployment;
+
+  if (!contracts.length) {
+    console.log("No contracts were deployed.");
+    process.exit();
+  }
+
   for (let contractName in contracts) {
     if (contracts[contractName] == null) continue;
 
