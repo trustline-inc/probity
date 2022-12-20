@@ -2,7 +2,9 @@
 
 [![Build](https://github.com/trustline-inc/probity/actions/workflows/build.yml/badge.svg)](https://github.com/trustline-inc/probity/actions/workflows/build.yml) <img alt="NPM" src="https://img.shields.io/npm/l/@trustline/probity">
 
-You can view the contract code in the [`contracts`](./contracts) folder and the audit report can be found in the [`audits`](./audits) folder. You can find everything else in [the documentation](https://docs.trustline.co/products/).
+> Probity is a protocol for asset-based lending designed to run on EVM-compatible distributed ledgers.
+
+You can view the contract code in the [`contracts`](./contracts) folder and the audit report can be found in the [`audits`](./audits) folder. You can find everything else in the protocol [documentation](https://docs.trustline.co/products/).
 
 ## Usage
 
