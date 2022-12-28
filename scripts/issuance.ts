@@ -26,6 +26,8 @@ const amount = RAD.mul(1_000_000);
     owner
   );
   const treasury = new Contract(process.env.TREASURY!, TreasuryABI.abi, owner);
+  const UsdABI = await artifacts.readArtifact("USD");
+  const usd = new Contract(process.env.USD!, UsdABI.abi, owner);
 
   console.log("Issuing USD...", {
     account,

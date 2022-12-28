@@ -44,6 +44,12 @@ async function main() {
   const table: ConsoleTableRow[] = [];
   let fileOutput = "";
   let { contracts } = deployment;
+
+  if (!Object.keys(contracts).length) {
+    console.log("No contracts were deployed.");
+    process.exit();
+  }
+
   for (let contractName in contracts) {
     if (contracts[contractName] == null) continue;
 
