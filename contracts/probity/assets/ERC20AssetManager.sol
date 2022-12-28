@@ -1,34 +1,18 @@
 // SPDX-License-Identifier: Apache-2.0
 
-pragma solidity ^0.8.0;
+pragma solidity 0.8.4;
 
 import "../../dependencies/Stateful.sol";
-import "hardhat/console.sol";
-
-interface VaultEngineLike {
-    function modifyStandbyAmount(
-        bytes32 collateral,
-        address user,
-        int256 amount
-    ) external;
-}
-
-interface TokenLike {
-    function transfer(address recipient, uint256 amount) external returns (bool);
-
-    function transferFrom(
-        address sender,
-        address recipient,
-        uint256 amount
-    ) external returns (bool);
-}
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import "../../interfaces/IVaultEngineLike.sol";
 
 contract ERC20AssetManager is Stateful {
     /////////////////////////////////////////
     // State Variables
     /////////////////////////////////////////
-    VaultEngineLike public immutable vaultEngine;
-    TokenLike public immutable token;
+    IVaultEngineLike public immutable vaultEngine;
+    IERC20 public immutable token;
     bytes32 public immutable assetId;
 
     /////////////////////////////////////////
@@ -38,13 +22,19 @@ contract ERC20AssetManager is Stateful {
     event WithdrawToken(address indexed user, uint256 amount, address indexed token);
 
     /////////////////////////////////////////
+    // Errors
+    /////////////////////////////////////////
+
+    error transferFailed();
+
+    /////////////////////////////////////////
     // Constructor
     /////////////////////////////////////////
     constructor(
         address registryAddress,
         bytes32 id,
-        TokenLike asset,
-        VaultEngineLike vaultEngineAddress
+        IERC20 asset,
+        IVaultEngineLike vaultEngineAddress
     ) Stateful(registryAddress) {
         assetId = id;
         vaultEngine = vaultEngineAddress;
@@ -54,15 +44,15 @@ contract ERC20AssetManager is Stateful {
     /////////////////////////////////////////
     // External Functions
     /////////////////////////////////////////
-    function deposit(uint256 amount) external onlyWhen("paused", false) onlyBy("whitelisted") {
-        require(token.transferFrom(msg.sender, address(this), amount), "ERC20AssetManager/deposit: transfer failed");
-        vaultEngine.modifyStandbyAmount(assetId, msg.sender, int256(amount));
+    function deposit(uint256 amount) external onlyWhen("paused", false) {
+        SafeERC20.safeTransferFrom(token, msg.sender, address(this), amount);
+        vaultEngine.modifyStandbyAmount(assetId, msg.sender, SafeCast.toInt256(amount));
         emit DepositToken(msg.sender, amount, address(token));
     }
 
-    function withdraw(uint256 amount) external onlyWhen("paused", false) onlyBy("whitelisted") {
-        require(token.transfer(msg.sender, amount), "ERC20AssetManager/withdraw: transfer failed");
-        vaultEngine.modifyStandbyAmount(assetId, msg.sender, -int256(amount));
+    function withdraw(uint256 amount) external onlyWhen("paused", false) {
+        SafeERC20.safeTransfer(token, msg.sender, amount);
+        vaultEngine.modifyStandbyAmount(assetId, msg.sender, -SafeCast.toInt256(amount));
         emit WithdrawToken(msg.sender, amount, address(token));
     }
 }

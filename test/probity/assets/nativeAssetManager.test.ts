@@ -45,20 +45,6 @@ describe("Native Asset Manager Unit Test", function () {
       .setupAddress(bytes32("whitelisted"), owner.address, false);
   });
 
-  it("fails if caller is not a whitelisted user", async () => {
-    await assertRevert(
-      nativeAssetManager.connect(user).deposit({ value: AMOUNT_TO_DEPOSIT }),
-      "AccessControl/onlyBy: Caller does not have permission"
-    );
-
-    await registry
-      .connect(gov)
-      .setupAddress(bytes32("whitelisted"), user.address, false);
-    await nativeAssetManager
-      .connect(user)
-      .deposit({ value: AMOUNT_TO_DEPOSIT });
-  });
-
   it("test DepositNativeCrypto event is emitted properly", async () => {
     let parsedEvents = await parseEvents(
       nativeAssetManager.deposit({ value: AMOUNT_TO_DEPOSIT }),

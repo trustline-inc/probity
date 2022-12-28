@@ -1,32 +1,18 @@
 // SPDX-License-Identifier: Apache-2.0
 
-pragma solidity ^0.8.0;
+pragma solidity 0.8.4;
 
 import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
-
-interface VaultEngineLike {
-    function systemCurrency(address user) external returns (uint256);
-
-    function systemDebt(address user) external returns (uint256);
-
-    function settle(uint256) external;
-
-    function increaseSystemDebt(uint256 amount) external;
-
-    function moveSystemCurrency(
-        address from,
-        address to,
-        uint256 amount
-    ) external;
-}
+import "../interfaces/IVaultEngineLike.sol";
+import "../interfaces/IBondIssuerLike.sol";
 
 /**
  * @title BondIssuer contract
  * @notice Sells zero-coupon bonds that are redeemable for excess reserves on a FIFO redemption basis.
  * @dev Bonds are redeemable for excess USD reserves starting at a 1:1 and up to 1:1.5 rate (precision of 1e-18).
  */
-contract BondIssuer is Stateful, Eventful {
+contract BondIssuer is Stateful, Eventful, IBondIssuerLike {
     /////////////////////////////////////////
     // Type Declarations
     /////////////////////////////////////////
@@ -40,7 +26,7 @@ contract BondIssuer is Stateful, Eventful {
     // State Variables
     /////////////////////////////////////////
     uint256 private constant ONE = 1E18;
-    VaultEngineLike public immutable vaultEngine;
+    IVaultEngineLike public immutable vaultEngine;
     address public reservePoolAddress;
 
     Offering public offering;
@@ -54,9 +40,22 @@ contract BondIssuer is Stateful, Eventful {
     uint256 public totalBondTokens; // [RAD]
 
     /////////////////////////////////////////
+    // Errors
+    /////////////////////////////////////////
+
+    error reservePoolAlreadySet();
+    error saleActive();
+    error saleNotActive();
+    error purchaseAmountIsHigherThanAvailable(uint256 purchaseAmount, uint256 available);
+    error notEnoughBondsToRedeem(uint256 requested, uint256 userBondBalance);
+    error insufficientFundsInReservePool(uint256 currentBalance);
+    error valueProvidedIsAboveUpperBounds();
+    error valueProvidedIsBelowLowerBounds();
+
+    /////////////////////////////////////////
     // Constructor
     /////////////////////////////////////////
-    constructor(address registryAddress, VaultEngineLike vaultEngineAddress) Stateful(registryAddress) {
+    constructor(address registryAddress, IVaultEngineLike vaultEngineAddress) Stateful(registryAddress) {
         vaultEngine = vaultEngineAddress;
     }
 
@@ -86,7 +85,7 @@ contract BondIssuer is Stateful, Eventful {
      * @param _reservePoolAddress reservePoolAddress
      */
     function setReservePoolAddress(address _reservePoolAddress) external onlyBy("gov") {
-        require(reservePoolAddress == address(0), "BondIssuer/setReservePoolAddress: reservePool Address already set");
+        if (reservePoolAddress != address(0)) revert reservePoolAlreadySet();
         reservePoolAddress = _reservePoolAddress;
     }
 
@@ -95,6 +94,8 @@ contract BondIssuer is Stateful, Eventful {
      * @param newMaxDiscount The maximum discount to set
      */
     function updateMaxDiscount(uint256 newMaxDiscount) external onlyBy("gov") {
+        if (newMaxDiscount < ONE) revert valueProvidedIsBelowLowerBounds();
+        if (newMaxDiscount > ONE * 2) revert valueProvidedIsAboveUpperBounds();
         emit LogVarUpdate("reserve", "maxDiscount", maxDiscount, newMaxDiscount);
         maxDiscount = newMaxDiscount;
     }
@@ -104,6 +105,8 @@ contract BondIssuer is Stateful, Eventful {
      * @param newStepPeriod The new period of time per step
      */
     function updateStepPeriod(uint256 newStepPeriod) external onlyBy("gov") {
+        if (newStepPeriod < 1 minutes) revert valueProvidedIsBelowLowerBounds();
+        if (newStepPeriod > 7 days) revert valueProvidedIsAboveUpperBounds();
         emit LogVarUpdate("reserve", "stepPeriod", stepPeriod, newStepPeriod);
         stepPeriod = newStepPeriod;
     }
@@ -113,6 +116,8 @@ contract BondIssuer is Stateful, Eventful {
      * @param newDiscountIncreasePerStep The new discount increase per step
      */
     function updateDiscountIncreasePerStep(uint256 newDiscountIncreasePerStep) external onlyBy("gov") {
+        if (newDiscountIncreasePerStep < ONE / 1000) revert valueProvidedIsBelowLowerBounds();
+        if (newDiscountIncreasePerStep > ONE / 10) revert valueProvidedIsAboveUpperBounds();
         emit LogVarUpdate("reserve", "discountIncreasePerStep", discountIncreasePerStep, newDiscountIncreasePerStep);
         discountIncreasePerStep = newDiscountIncreasePerStep;
     }
@@ -121,8 +126,8 @@ contract BondIssuer is Stateful, Eventful {
      * @notice new offering to be sold
      * @param amount to be sold
      */
-    function newOffering(uint256 amount) external onlyBy("reservePool") {
-        require(offering.active == false, "ReservePool/startBondSale: the current offering is not over yet");
+    function newOffering(uint256 amount) external override onlyBy("reservePool") {
+        if (offering.active != false) revert saleActive();
 
         offering.active = true;
         offering.startTime = block.timestamp;
@@ -130,24 +135,12 @@ contract BondIssuer is Stateful, Eventful {
     }
 
     /**
-     * @notice Processes a redemption when the system is in shut down state
-     * @param user The user to process for
-     * @param amount The amount to redeem
-     */
-    function shutdownRedemption(address user, uint256 amount) external onlyWhen("shutdown", true) onlyBy("shutdown") {
-        _processRedemption(user, amount);
-    }
-
-    /**
      * @notice Purchases a bond
      * @param value The bond face value
      */
-    function purchaseBond(uint256 value) external {
-        require(offering.active, "ReservePool/purchaseBond: Bonds are not currently offered for sale");
-        require(
-            offering.amount >= value,
-            "ReservePool/purchaseBond: Can't purchase more bondTokens than offering amount"
-        );
+    function purchaseBond(uint256 value) external onlyWhen("paused", false) {
+        if (!offering.active) revert saleNotActive();
+        if (offering.amount < value) revert purchaseAmountIsHigherThanAvailable(value, offering.amount);
 
         vaultEngine.moveSystemCurrency(msg.sender, reservePoolAddress, value);
         uint256 amountToBuy = ((value * tokensPerSystemCurrency()) / ONE);
@@ -163,8 +156,16 @@ contract BondIssuer is Stateful, Eventful {
      * @notice Redeems bondTokens for assets
      * @param amount The amount to redeem
      */
-    function redeemBondTokens(uint256 amount) external {
+    function redeemBondTokens(uint256 amount) external onlyWhen("paused", false) {
         _processRedemption(msg.sender, amount);
+    }
+
+    /**
+     * @notice Redeems bondTokens for assets on behalf of users
+     * @param amount The amount to redeem
+     */
+    function redeemBondTokensForUser(address user, uint256 amount) external onlyByProbity {
+        _processRedemption(user, amount);
     }
 
     /////////////////////////////////////////
@@ -177,17 +178,12 @@ contract BondIssuer is Stateful, Eventful {
      * @param amount The amount to redeem
      */
     function _processRedemption(address user, uint256 amount) internal {
-        require(
-            vaultEngine.systemCurrency(address(reservePoolAddress)) -
-                vaultEngine.systemDebt(address(reservePoolAddress)) >=
-                amount,
-            "BondIssuer/processRedemption: The reserve pool doesn't have enough funds"
-        );
+        uint256 reservePoolBalance = vaultEngine.systemCurrency(address(reservePoolAddress)) -
+            vaultEngine.systemDebt(address(reservePoolAddress));
 
-        require(
-            bondTokens[user] >= amount,
-            "BondIssuer/processRedemption: User doesn't have enough bond tokens to redeem this amount"
-        );
+        if (reservePoolBalance < amount) revert insufficientFundsInReservePool(reservePoolBalance);
+
+        if (bondTokens[user] < amount) revert notEnoughBondsToRedeem(amount, bondTokens[user]);
 
         bondTokens[user] -= amount;
         vaultEngine.moveSystemCurrency(address(reservePoolAddress), user, amount);

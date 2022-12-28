@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-pragma solidity ^0.8.0;
+// These math functions comes from multiple files inside the MakerDao's DSS repository
+// https://github.com/makerdao/dss
+
+pragma solidity 0.8.4;
 
 library Math {
     uint256 private constant RAY = 1e27;

@@ -15,7 +15,14 @@ import {
 import { deployTest } from "../../lib/deployer";
 import { ethers } from "hardhat";
 import * as chai from "chai";
-import { bytes32, RAD, WAD, RAY, ASSET_ID } from "../utils/constants";
+import {
+  bytes32,
+  RAD,
+  WAD,
+  RAY,
+  ASSET_ID,
+  ASSET_CATEGORY,
+} from "../utils/constants";
 import assertRevert from "../utils/assertRevert";
 const expect = chai.expect;
 
@@ -58,7 +65,9 @@ describe("Vault Engine Limited Unit Tests", function () {
     await registry.setupAddress(bytes32("gov"), gov.address, true);
     await registry.setupAddress(bytes32("whitelisted"), user.address, false);
     await registry.setupAddress(bytes32("whitelisted"), owner.address, false);
-    await vaultEngine.updateTreasuryAddress(contracts.treasury!.address);
+    await vaultEngine
+      .connect(gov)
+      .updateTreasuryAddress(contracts.treasury!.address);
   });
 
   describe("vaultLimit Unit Tests", function () {
@@ -67,7 +76,9 @@ describe("Vault Engine Limited Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR, 2);
+      await vaultEngine
+        .connect(gov)
+        .initAsset(ASSET_ID.FLR, ASSET_CATEGORY.BOTH);
       await vaultEngine
         .connect(gov)
         .updateCeiling(ASSET_ID.FLR, RAD.mul(10000000));
@@ -111,7 +122,7 @@ describe("Vault Engine Limited Unit Tests", function () {
           UNDERLYING_AMOUNT,
           EQUITY_AMOUNT
         ),
-        "Vault is over the individual vault limit"
+        "vaultLimitReached()"
       );
 
       await vaultEngine
@@ -159,7 +170,7 @@ describe("Vault Engine Limited Unit Tests", function () {
           UNDERLYING_AMOUNT,
           DEBT_AMOUNT
         ),
-        "Vault is over the individual vault limit"
+        "vaultLimitReached()"
       );
 
       await vaultEngine

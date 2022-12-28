@@ -78,23 +78,6 @@ describe("ERC20 Asset Manager Unit Test", function () {
     await mockErc20AssetManager.connect(user).deposit(AMOUNT_TO_MINT);
   });
 
-  it("fails if caller is not a whitelisted user", async () => {
-    await erc20.mint(user.address, AMOUNT_TO_MINT);
-    await erc20
-      .connect(user)
-      .approve(mockErc20AssetManager.address, AMOUNT_TO_MINT);
-
-    await assertRevert(
-      mockErc20AssetManager.connect(user).deposit(AMOUNT_TO_MINT),
-      "AccessControl/onlyBy: Caller does not have permission"
-    );
-
-    await registry
-      .connect(gov)
-      .setupAddress(bytes32("whitelisted"), user.address, false);
-    await mockErc20AssetManager.connect(user).deposit(AMOUNT_TO_MINT);
-  });
-
   it("test DepositToken event is emitted properly", async () => {
     await erc20.mint(owner.address, AMOUNT_TO_MINT);
     await erc20.approve(mockErc20AssetManager.address, AMOUNT_TO_MINT);

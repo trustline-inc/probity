@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-pragma solidity ^0.8.0;
+pragma solidity 0.8.4;
 
 import "./VaultEngine.sol";
 
@@ -16,7 +16,7 @@ contract VaultEngineRestricted is VaultEngine {
     /////////////////////////////////////////
     // Data Variables
     /////////////////////////////////////////
-    uint256 private constant RAY = 10**27;
+    uint256 private constant RAY = 10 ** 27;
 
     /////////////////////////////////////////
     // Constructor
@@ -29,7 +29,7 @@ contract VaultEngineRestricted is VaultEngine {
         bytes32 assetId,
         int256 underlyingAmount,
         int256 equityAmount
-    ) external override onlyBy("whitelisted") {
+    ) external override onlyBy("whitelisted") onlyWhen("paused", false) {
         _modifyEquity(assetId, underlyingAmount, equityAmount);
     }
 
@@ -43,7 +43,7 @@ contract VaultEngineRestricted is VaultEngine {
         bytes32 assetId,
         int256 collAmount,
         int256 debtAmount
-    ) external override onlyBy("whitelisted") {
+    ) external override onlyBy("whitelisted") onlyWhen("paused", false) {
         _modifyDebt(assetId, collAmount, debtAmount);
     }
 }

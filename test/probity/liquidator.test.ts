@@ -77,10 +77,18 @@ describe("Liquidator Unit Tests", function () {
     it("fails if asset has already been initialized", async () => {
       const EXPECTED_AUCTIONEER_ADDRESS = user.address;
 
-      await liquidator.initAsset(ASSET_ID.FLR, EXPECTED_AUCTIONEER_ADDRESS);
+      await liquidator.initAsset(
+        ASSET_ID.FLR,
+        EXPECTED_AUCTIONEER_ADDRESS,
+        ADDRESS_ZERO
+      );
       await assertRevert(
-        liquidator.initAsset(ASSET_ID.FLR, EXPECTED_AUCTIONEER_ADDRESS),
-        "Liquidator/initAsset: This asset has already been initialized"
+        liquidator.initAsset(
+          ASSET_ID.FLR,
+          EXPECTED_AUCTIONEER_ADDRESS,
+          ADDRESS_ZERO
+        ),
+        "assetAlreadyInitialized()"
       );
     });
 
@@ -94,7 +102,11 @@ describe("Liquidator Unit Tests", function () {
       expect(before.debtPenaltyFee).to.equal(0);
       expect(before.equityPenaltyFee).to.equal(0);
 
-      await liquidator.initAsset(ASSET_ID.FLR, EXPECTED_AUCTIONEER_ADDRESS);
+      await liquidator.initAsset(
+        ASSET_ID.FLR,
+        EXPECTED_AUCTIONEER_ADDRESS,
+        ADDRESS_ZERO
+      );
 
       const after = await liquidator.assets(ASSET_ID.FLR);
       expect(after.auctioneer).to.equal(EXPECTED_AUCTIONEER_ADDRESS);
@@ -107,12 +119,16 @@ describe("Liquidator Unit Tests", function () {
     const DEFAULT_DEBT_PENALTY_FEE = WAD.mul(17).div(100);
     const DEFAULT_SUPP_PENALTY_FEE = WAD.mul(5).div(100);
     beforeEach(async function () {
-      await liquidator.initAsset(ASSET_ID.FLR, auctioneer.address);
+      await liquidator.initAsset(
+        ASSET_ID.FLR,
+        auctioneer.address,
+        ADDRESS_ZERO
+      );
     });
 
     it("tests that penaltyFees are updated correctly", async () => {
-      const NEW_DEBT_PENALTY_FEE = RAY.mul(123).div(100);
-      const NEW_SUPP_PENALTY_FEE = RAY.mul(107).div(100);
+      const NEW_DEBT_PENALTY_FEE = WAD.mul(87).div(100);
+      const NEW_SUPP_PENALTY_FEE = WAD.mul(23).div(100);
       const before = await liquidator.assets(ASSET_ID.FLR);
       expect(before.debtPenaltyFee).to.equal(DEFAULT_DEBT_PENALTY_FEE);
       expect(before.equityPenaltyFee).to.equal(DEFAULT_SUPP_PENALTY_FEE);
@@ -131,7 +147,11 @@ describe("Liquidator Unit Tests", function () {
 
   describe("updateAuctioneer Unit Tests", function () {
     beforeEach(async function () {
-      await liquidator.initAsset(ASSET_ID.FLR, auctioneer.address);
+      await liquidator.initAsset(
+        ASSET_ID.FLR,
+        auctioneer.address,
+        ADDRESS_ZERO
+      );
     });
 
     it("tests that auctioneer address is updated correctly", async () => {
@@ -149,7 +169,11 @@ describe("Liquidator Unit Tests", function () {
 
   describe("reduceAuctionDebt Unit Tests", function () {
     beforeEach(async function () {
-      await liquidator.initAsset(ASSET_ID.FLR, auctioneer.address);
+      await liquidator.initAsset(
+        ASSET_ID.FLR,
+        auctioneer.address,
+        ADDRESS_ZERO
+      );
     });
 
     it("fail if caller is not auctioneer contract", async () => {
@@ -157,7 +181,7 @@ describe("Liquidator Unit Tests", function () {
 
       await assertRevert(
         liquidator.connect(user).reduceAuctionDebt(REDUCE_AUCTION_DEBT_AMOUNT),
-        "AccessControl/onlyBy: Caller does not have permission"
+        "callerDoesNotHaveRequiredRole"
       );
 
       await registry.setupAddress(bytes32("auctioneer"), user.address, true);
@@ -193,7 +217,11 @@ describe("Liquidator Unit Tests", function () {
     const PRICE = RAY;
 
     beforeEach(async function () {
-      await liquidator.initAsset(ASSET_ID.FLR, auctioneer.address);
+      await liquidator.initAsset(
+        ASSET_ID.FLR,
+        auctioneer.address,
+        ADDRESS_ZERO
+      );
       await vaultEngine.updateAsset(
         ASSET_ID.FLR,
         PRICE,
@@ -232,7 +260,7 @@ describe("Liquidator Unit Tests", function () {
 
       await assertRevert(
         liquidator.liquidateVault(ASSET_ID.FLR, user.address),
-        "Lidquidator: Nothing to liquidate"
+        "vaultIsEmpty()"
       );
 
       await vaultEngine.updateVault(
@@ -264,7 +292,7 @@ describe("Liquidator Unit Tests", function () {
 
       await assertRevert(
         liquidator.liquidateVault(ASSET_ID.FLR, user.address),
-        "Liquidator: Vault both equity and debt positions are above the liquidation ratio"
+        "positionsNotReadyForLiquidation()"
       );
 
       await vaultEngine.updateVault(
@@ -278,6 +306,28 @@ describe("Liquidator Unit Tests", function () {
         EQUITY.mul(RAY)
       );
 
+      await liquidator.liquidateVault(ASSET_ID.FLR, user.address);
+    });
+
+    it("fails when contract is in paused state", async () => {
+      await vaultEngine.updateVault(
+        ASSET_ID.FLR,
+        user.address,
+        0,
+        UNDERLYING,
+        COLLATERAL,
+        DEBT,
+        EQUITY,
+        EQUITY.mul(RAY)
+      );
+
+      await liquidator.setState(bytes32("paused"), true);
+      await assertRevert(
+        liquidator.liquidateVault(ASSET_ID.FLR, user.address),
+        "stateCheckFailed"
+      );
+
+      await liquidator.setState(bytes32("paused"), false);
       await liquidator.liquidateVault(ASSET_ID.FLR, user.address);
     });
 
@@ -297,7 +347,7 @@ describe("Liquidator Unit Tests", function () {
 
       await assertRevert(
         liquidator.liquidateVault(ASSET_ID.FLR, user.address),
-        "VaultEngine/liquidateEquityPosition: Not enough treasury funds"
+        "insufficientFundsInTreasury()"
       );
 
       await vaultEngine.setSystemCurrency(treasury.address, RAD.mul(100000));

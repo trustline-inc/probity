@@ -18,6 +18,8 @@ import {
   MockPriceCalc,
   MockLiquidator,
   MockPriceFeed,
+  MockVPToken,
+  MockVPAssetManager,
 } from "../../typechain";
 
 import { deployTest, probity } from "../../lib/deployer";
@@ -33,9 +35,7 @@ import {
 } from "../utils/constants";
 import { BigNumber } from "ethers";
 import assertRevert from "../utils/assertRevert";
-import { sign } from "crypto";
 import parseEvents from "../utils/parseEvents";
-import increaseTime from "../utils/increaseTime";
 const expect = chai.expect;
 
 // Wallets
@@ -44,6 +44,7 @@ let user1: SignerWithAddress;
 let user2: SignerWithAddress;
 let user3: SignerWithAddress;
 let liquidatorCaller: SignerWithAddress;
+let gov: SignerWithAddress;
 
 // Contracts
 let vaultEngine: MockVaultEngine;
@@ -53,6 +54,7 @@ let auctioneer: Auctioneer;
 let priceFeed: MockPriceFeed;
 let liquidator: MockLiquidator;
 let priceCalc: MockPriceCalc;
+let mockVPAssetManager: MockVPAssetManager;
 
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
@@ -70,6 +72,7 @@ describe("Auctioneer Unit Tests", function () {
     priceCalc = contracts.mockPriceCalc!;
     priceFeed = contracts.mockPriceFeed!;
     liquidator = contracts.mockLiquidator!;
+    mockVPAssetManager = contracts.mockVpAssetManager!;
 
     contracts = await probity.deployAuctioneer({
       registry: registry,
@@ -85,6 +88,7 @@ describe("Auctioneer Unit Tests", function () {
     user1 = signers.alice!;
     user2 = signers.don!;
     user3 = signers.lender!;
+    gov = signers.borrower!;
     liquidatorCaller = signers.charlie!;
 
     await registry.setupAddress(
@@ -92,6 +96,9 @@ describe("Auctioneer Unit Tests", function () {
       liquidatorCaller.address,
       true
     );
+
+    await registry.setupAddress(bytes32("gov"), gov.address, true);
+
     await priceCalc.setPrice(RAY.mul(12).div(10));
     await priceFeed.setPrice(ASSET_ID.FLR, RAY);
   });
@@ -108,9 +115,10 @@ describe("Auctioneer Unit Tests", function () {
           DEBT_SIZE,
           COLL_OWNER,
           BENEFICIARY,
+          ADDRESS_ZERO,
           false
         ),
-        "AccessControl/onlyBy: Caller does not have permission"
+        "callerDoesNotHaveRequiredRole"
       );
 
       await registry.setupAddress(bytes32("liquidator"), user1.address, true);
@@ -123,6 +131,7 @@ describe("Auctioneer Unit Tests", function () {
           DEBT_SIZE,
           COLL_OWNER,
           BENEFICIARY,
+          ADDRESS_ZERO,
           false
         );
     });
@@ -150,6 +159,7 @@ describe("Auctioneer Unit Tests", function () {
           DEBT_SIZE,
           COLL_OWNER,
           BENEFICIARY,
+          ADDRESS_ZERO,
           false
         );
 
@@ -181,6 +191,7 @@ describe("Auctioneer Unit Tests", function () {
             DEBT_SIZE,
             COLL_OWNER,
             BENEFICIARY,
+            ADDRESS_ZERO,
             false
           ),
         "AuctionStarted",
@@ -204,6 +215,7 @@ describe("Auctioneer Unit Tests", function () {
           DEBT_SIZE,
           user1.address,
           reservePool.address,
+          ADDRESS_ZERO,
           false
         );
 
@@ -226,27 +238,18 @@ describe("Auctioneer Unit Tests", function () {
     it("fails if auction is over", async () => {
       await auctioneer.buyItNow(0, RAY.mul(2), LOT_SIZE);
 
-      await assertRevert(
-        auctioneer.resetAuction(0),
-        "Auctioneer/resetAuction: Auction is over"
-      );
+      await assertRevert(auctioneer.resetAuction(0), "auctionIsOver()");
     });
 
     it("fails if current price is not zero", async () => {
-      await assertRevert(
-        auctioneer.resetAuction(0),
-        "Auctioneer/resetAuction: This auction hasn't expired, doesn't exist or no more asset to auction"
-      );
+      await assertRevert(auctioneer.resetAuction(0), "resetCriteriaNotMet()");
 
       await priceCalc.setPrice(0);
     });
 
     it("fails if auction startTime is zero", async () => {
       await priceCalc.setPrice(0);
-      await assertRevert(
-        auctioneer.resetAuction(1),
-        "Auctioneer/resetAuction: This auction hasn't expired, doesn't exist or no more asset to auction"
-      );
+      await assertRevert(auctioneer.resetAuction(1), "resetCriteriaNotMet()");
 
       await auctioneer.resetAuction(0);
     });
@@ -302,6 +305,7 @@ describe("Auctioneer Unit Tests", function () {
           DEBT_SIZE,
           user1.address,
           reservePool.address,
+          ADDRESS_ZERO,
           false
         );
 
@@ -327,8 +331,19 @@ describe("Auctioneer Unit Tests", function () {
 
       await assertRevert(
         auctioneer.connect(user1).placeBid(0, RAY, LOT_SIZE.div(10)),
-        "Auctioneer/placeBid: Auction is over"
+        "auctionIsOver()"
       );
+    });
+
+    it("fails when contract is in paused state", async () => {
+      await auctioneer.connect(gov).setState(bytes32("paused"), true);
+      await assertRevert(
+        auctioneer.placeBid(0, RAY, LOT_SIZE.div(10)),
+        "stateCheckFailed"
+      );
+
+      await auctioneer.connect(gov).setState(bytes32("paused"), false);
+      await auctioneer.placeBid(0, RAY, LOT_SIZE.div(10));
     });
 
     it("fails if user already placed a bid", async () => {
@@ -336,7 +351,7 @@ describe("Auctioneer Unit Tests", function () {
 
       await assertRevert(
         auctioneer.placeBid(0, RAY, LOT_SIZE.div(10)),
-        "Auctioneer/placeBid: This user has already placed a bid"
+        "userBidAlreadyExists()"
       );
     });
 
@@ -459,6 +474,7 @@ describe("Auctioneer Unit Tests", function () {
           DEBT_SIZE,
           user1.address,
           reservePool.address,
+          ADDRESS_ZERO,
           false
         );
 
@@ -479,10 +495,7 @@ describe("Auctioneer Unit Tests", function () {
     });
 
     it("fails if bid doesn't exists for caller", async () => {
-      await assertRevert(
-        auctioneer.cancelBid(0),
-        "Auctioneer/cancelBid: No bids exists for the caller"
-      );
+      await assertRevert(auctioneer.cancelBid(0), "userBidDoesNotExists()");
 
       await auctioneer.placeBid(0, RAY, LOT_SIZE.div(10));
 
@@ -521,6 +534,7 @@ describe("Auctioneer Unit Tests", function () {
           DEBT_SIZE,
           user1.address,
           reservePool.address,
+          ADDRESS_ZERO,
           false
         );
 
@@ -546,14 +560,25 @@ describe("Auctioneer Unit Tests", function () {
 
       await assertRevert(
         auctioneer.connect(user1).buyItNow(0, RAY.mul(2), LOT_SIZE),
-        "Auctioneer/buyItNow: Auction is over"
+        "auctionIsOver()"
       );
+    });
+
+    it("fails when contract is in paused state", async () => {
+      await auctioneer.connect(gov).setState(bytes32("paused"), true);
+      await assertRevert(
+        auctioneer.buyItNow(0, RAY.mul(2), LOT_SIZE),
+        "stateCheckFailed"
+      );
+
+      await auctioneer.connect(gov).setState(bytes32("paused"), false);
+      await auctioneer.buyItNow(0, RAY.mul(2), LOT_SIZE);
     });
 
     it("fails if current price is higher than max buyItNow price", async () => {
       await assertRevert(
         auctioneer.connect(user1).buyItNow(0, RAY, LOT_SIZE.div(10)),
-        "Auctioneer/buyItNow: Current price is higher than max price"
+        "currentPriceIsHigherThanMaxPrice()"
       );
 
       await auctioneer.buyItNow(0, RAY.mul(12).div(10), LOT_SIZE);
@@ -564,7 +589,7 @@ describe("Auctioneer Unit Tests", function () {
 
       await assertRevert(
         auctioneer.connect(user1).buyItNow(0, RAY, LOT_SIZE.div(10)),
-        "Auctioneer/buyItNow: Current price is now zero"
+        "currentPriceIsZero()"
       );
     });
 
@@ -576,7 +601,7 @@ describe("Auctioneer Unit Tests", function () {
 
       await assertRevert(
         auctioneer.connect(user1).buyItNow(0, RAY.mul(5), LOT_SIZE.div(10)),
-        "Auctioneer/buyItNow: Price has reach a point where BuyItNow is no longer available"
+        "buyItNowNoLongerAvailable()"
       );
     });
 
@@ -631,6 +656,7 @@ describe("Auctioneer Unit Tests", function () {
           DEBT_SIZE,
           user1.address,
           reservePool.address,
+          ADDRESS_ZERO,
           true
         );
 
@@ -651,6 +677,38 @@ describe("Auctioneer Unit Tests", function () {
       const after = await auctioneer.bids(AUCTION_ID, owner.address);
       expect(after.price).to.equal(BID_PRICE);
       expect(after.lot).to.equal(LOT_SIZE.div(2));
+    });
+
+    it("tests that bids will be modified for existing bidder if buyItNow purchases a portion of it", async () => {
+      const AUCTION_ID = 1;
+
+      await auctioneer
+        .connect(liquidatorCaller)
+        .startAuction(
+          ASSET_ID.FLR,
+          LOT_SIZE,
+          DEBT_SIZE,
+          user1.address,
+          reservePool.address,
+          mockVPAssetManager.address,
+          true
+        );
+
+      const BID_PRICE = RAY.mul(11).div(10);
+      await auctioneer.connect(owner).placeBid(AUCTION_ID, BID_PRICE, LOT_SIZE);
+
+      const before = await mockVPAssetManager.rewardCollectedUser();
+      expect(before).to.equal(ADDRESS_ZERO);
+      // make sure to get buyItNow only buy partial of the current bid
+
+      await auctioneer.buyItNow(
+        AUCTION_ID,
+        RAY.mul(12).div(10),
+        LOT_SIZE.div(2)
+      );
+
+      const after = await mockVPAssetManager.rewardCollectedUser();
+      expect(after).to.equal(owner.address);
     });
 
     it("tests that new buyer can only buy the biddable amount based on current existing bids", async () => {
@@ -678,6 +736,7 @@ describe("Auctioneer Unit Tests", function () {
           DEBT_SIZE,
           user1.address,
           reservePool.address,
+          ADDRESS_ZERO,
           true
         );
 
@@ -718,6 +777,7 @@ describe("Auctioneer Unit Tests", function () {
           0,
           reservePool.address,
           reservePool.address,
+          ADDRESS_ZERO,
           true
         );
 
@@ -791,6 +851,7 @@ describe("Auctioneer Unit Tests", function () {
           DEBT_SIZE,
           user1.address,
           reservePool.address,
+          mockVPAssetManager.address,
           false
         );
 
@@ -811,14 +872,22 @@ describe("Auctioneer Unit Tests", function () {
     });
 
     it("fails if caller has no bid", async () => {
-      await assertRevert(
-        auctioneer.finalizeSale(0),
-        "Auctioneer/finalizeSale: The caller has no active bids"
-      );
+      await assertRevert(auctioneer.finalizeSale(0), "userBidDoesNotExists()");
 
       await auctioneer.placeBid(0, RAY.mul(12).div(10), LOT_SIZE.div(10));
       await priceCalc.setPrice(RAY);
 
+      await auctioneer.finalizeSale(0);
+    });
+
+    it("fails when contract is in paused state", async () => {
+      await auctioneer.placeBid(0, RAY.mul(12).div(10), LOT_SIZE.div(10));
+      await priceCalc.setPrice(RAY);
+
+      await auctioneer.connect(gov).setState(bytes32("paused"), true);
+      await assertRevert(auctioneer.finalizeSale(0), "stateCheckFailed");
+
+      await auctioneer.connect(gov).setState(bytes32("paused"), false);
       await auctioneer.finalizeSale(0);
     });
 
@@ -827,7 +896,7 @@ describe("Auctioneer Unit Tests", function () {
 
       await assertRevert(
         auctioneer.finalizeSale(0),
-        "Auctioneer/finalizeSale: The current price has not passed the bid price"
+        "currentPriceIsNotYetBelowBidPrice()"
       );
     });
 
@@ -897,6 +966,7 @@ describe("Auctioneer Unit Tests", function () {
           DEBT_SIZE,
           user1.address,
           reservePool.address,
+          ADDRESS_ZERO,
           true
         );
 
@@ -920,6 +990,35 @@ describe("Auctioneer Unit Tests", function () {
 
       const after = await auctioneer.auctions(AUCTION_ID);
       expect(after.debt).to.equal(DEBT_SIZE);
+    });
+
+    it("test that collectRewardForUser is called when vpassetManager address is set", async () => {
+      const AUCTION_ID = 1;
+      await auctioneer
+        .connect(liquidatorCaller)
+        .startAuction(
+          ASSET_ID.FLR,
+          LOT_SIZE,
+          DEBT_SIZE,
+          user1.address,
+          reservePool.address,
+          mockVPAssetManager.address,
+          true
+        );
+
+      await auctioneer
+        .connect(user1)
+        .placeBid(AUCTION_ID, RAY.div(10), LOT_SIZE.mul(4).div(10));
+
+      await priceCalc.setPrice(RAY.div(11));
+
+      const before = await mockVPAssetManager.rewardCollectedUser();
+      expect(before).to.equal(ADDRESS_ZERO);
+
+      await auctioneer.connect(user1).finalizeSale(AUCTION_ID);
+
+      const after = await mockVPAssetManager.rewardCollectedUser();
+      expect(after).to.equal(user1.address);
     });
 
     it("tests auctionDebt is reduced when the auction ended with non-zero debt", async () => {
@@ -994,6 +1093,7 @@ describe("Auctioneer Unit Tests", function () {
           0,
           reservePool.address,
           reservePool.address,
+          ADDRESS_ZERO,
           true
         );
 
@@ -1055,6 +1155,7 @@ describe("Auctioneer Unit Tests", function () {
           DEBT_SIZE,
           user1.address,
           reservePool.address,
+          ADDRESS_ZERO,
           false
         );
 
@@ -1089,6 +1190,7 @@ describe("Auctioneer Unit Tests", function () {
           DEBT_SIZE,
           user1.address,
           reservePool.address,
+          ADDRESS_ZERO,
           false
         );
 
@@ -1115,7 +1217,7 @@ describe("Auctioneer Unit Tests", function () {
     it("tests that only Probity can call the function", async () => {
       await assertRevert(
         auctioneer.connect(user1).cancelAuction(0, owner.address),
-        "AccessControl/onlyByProbity: Caller must be from Probity system contract"
+        "callerIsNotFromProbitySystem()"
       );
 
       await auctioneer

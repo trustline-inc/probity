@@ -1,44 +1,23 @@
 // SPDX-License-Identifier: Apache-2.0
 
-pragma solidity ^0.8.0;
+pragma solidity 0.8.4;
 
 import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
 import "../dependencies/Math.sol";
-
-interface VaultEngineLike {
-    function moveAsset(
-        bytes32 collateral,
-        address from,
-        address to,
-        uint256 amount
-    ) external;
-
-    function moveSystemCurrency(
-        address from,
-        address to,
-        uint256 amount
-    ) external;
-}
-
-interface PriceCalc {
-    function price(uint256 startPrice, uint256 timeElapsed) external returns (uint256 calculatedPrice);
-}
-
-interface PriceFeedLike {
-    function getPrice(bytes32 assetId) external returns (uint256 _price);
-}
-
-interface LiquidatorLike {
-    function reduceAuctionDebt(uint256 amount) external;
-}
+import "../interfaces/IVaultEngineLike.sol";
+import "../interfaces/ILiquidatorLike.sol";
+import "../interfaces/IPriceFeedLike.sol";
+import "../interfaces/IVPAssetManangerLike.sol";
+import "../interfaces/IPriceCalcLike.sol";
+import "../interfaces/IAuctioneerLike.sol";
 
 /**
  * @title Auctioneer contract
  * @notice Auctioneer will auction off the asset in exchange for the systemCurrency
  */
 
-contract Auctioneer is Stateful, Eventful {
+contract Auctioneer is Stateful, Eventful, IAuctioneerLike {
     /////////////////////////////////////////
     // Type Declaration
     /////////////////////////////////////////
@@ -51,6 +30,8 @@ contract Auctioneer is Stateful, Eventful {
         address beneficiary; // systemCurrency will go to this address
         uint256 startPrice;
         uint256 startTime;
+        // should be zero if the asset doesn't have delegatable module implemented
+        IVPAssetManagerLike vpAssetManagerAddress;
         bool sellAllLot; // if true, debt amount doesn't matter, auction will attempt to sell until lot is zero
         bool isOver;
     }
@@ -67,10 +48,10 @@ contract Auctioneer is Stateful, Eventful {
     uint256 private constant RAY = 1e27;
     address public constant HEAD = address(1);
 
-    VaultEngineLike public immutable vaultEngine;
-    PriceFeedLike public immutable priceFeed;
-    LiquidatorLike public liquidator;
-    PriceCalc public immutable priceCalc;
+    IVaultEngineLike public immutable vaultEngine;
+    IPriceFeedLike public immutable priceFeed;
+    ILiquidatorLike public liquidator;
+    IPriceCalcLike public immutable priceCalc;
 
     uint256 public totalAuctions;
     uint256 public nextBidRatio = 1.03E18; // the next bid must be 103% of current bid or higher
@@ -78,6 +59,15 @@ contract Auctioneer is Stateful, Eventful {
     mapping(uint256 => Auction) public auctions;
     mapping(uint256 => mapping(address => Bid)) public bids; // auctionId -> user address -> bid
     mapping(uint256 => mapping(address => address)) public nextHighestBidder; // sorted linked list of bidders
+
+    /////////////////////////////////////////
+    // Modifiers
+    /////////////////////////////////////////
+
+    modifier onlyIfAuctionNotOver(uint256 auctionId) {
+        if (auctions[auctionId].isOver) revert auctionIsOver();
+        _;
+    }
 
     /////////////////////////////////////////
     // Events
@@ -122,15 +112,29 @@ contract Auctioneer is Stateful, Eventful {
     event AuctionEnded(bytes32 indexed assetId, uint256 indexed auctionId);
 
     /////////////////////////////////////////
+    // Errors
+    /////////////////////////////////////////
+
+    error auctionIsOver();
+    error userBidAlreadyExists();
+    error userBidDoesNotExists();
+    error resetCriteriaNotMet();
+    error currentPriceIsHigherThanMaxPrice();
+    error currentPriceIsZero();
+    error buyItNowNoLongerAvailable();
+    error currentPriceIsNotYetBelowBidPrice();
+    error bidderIndexNotFound();
+
+    /////////////////////////////////////////
     // Constructor
     /////////////////////////////////////////
 
     constructor(
         address registryAddress,
-        VaultEngineLike vaultEngineAddress,
-        PriceCalc priceCalcAddress,
-        PriceFeedLike priceFeedAddress,
-        LiquidatorLike liquidatorAddress
+        IVaultEngineLike vaultEngineAddress,
+        IPriceCalcLike priceCalcAddress,
+        IPriceFeedLike priceFeedAddress,
+        ILiquidatorLike liquidatorAddress
     ) Stateful(registryAddress) {
         vaultEngine = vaultEngineAddress;
         priceCalc = priceCalcAddress;
@@ -157,8 +161,9 @@ contract Auctioneer is Stateful, Eventful {
         uint256 debtSize,
         address owner,
         address beneficiary,
+        IVPAssetManagerLike vpAssetManagerAddress,
         bool sellAllLot
-    ) external onlyBy("liquidator") {
+    ) external override onlyBy("liquidator") {
         uint256 currentPrice = priceFeed.getPrice(assetId);
         uint256 startPrice = (currentPrice * priceBuffer) / ONE;
         uint256 auctionId = totalAuctions++;
@@ -170,6 +175,7 @@ contract Auctioneer is Stateful, Eventful {
             beneficiary,
             startPrice,
             block.timestamp,
+            vpAssetManagerAddress,
             sellAllLot,
             false
         );
@@ -181,13 +187,9 @@ contract Auctioneer is Stateful, Eventful {
      * @notice Reset the auction if it is over and there are still lots to be sold
      * @param auctionId The ID of the auction to reset
      */
-    function resetAuction(uint256 auctionId) external {
-        require(!auctions[auctionId].isOver, "Auctioneer/resetAuction: Auction is over");
+    function resetAuction(uint256 auctionId) external onlyIfAuctionNotOver(auctionId) {
         Auction storage auction = auctions[auctionId];
-        require(
-            calculatePrice(auctionId) == 0 && auction.startTime != 0 && auction.lot != 0,
-            "Auctioneer/resetAuction: This auction hasn't expired, doesn't exist or no more asset to auction"
-        );
+        if (calculatePrice(auctionId) != 0 || auction.startTime == 0 || auction.lot == 0) revert resetCriteriaNotMet();
 
         uint256 currentPrice = priceFeed.getPrice(auctions[auctionId].assetId);
         uint256 startPrice = (currentPrice * priceBuffer) / ONE;
@@ -207,9 +209,8 @@ contract Auctioneer is Stateful, Eventful {
         uint256 auctionId,
         uint256 bidPrice,
         uint256 bidLot
-    ) external {
-        require(!auctions[auctionId].isOver, "Auctioneer/placeBid: Auction is over");
-        require(bids[auctionId][msg.sender].price == 0, "Auctioneer/placeBid: This user has already placed a bid");
+    ) external onlyIfAuctionNotOver(auctionId) onlyWhen("paused", false) {
+        if (bids[auctionId][msg.sender].price != 0) revert userBidAlreadyExists();
 
         (uint256 biddableLot, uint256 totalBidValue, uint256 totalBidLot, address indexToAdd) = getBiddableLot(
             auctionId,
@@ -235,7 +236,7 @@ contract Auctioneer is Stateful, Eventful {
      * @param auctionId The ID of the auction
      */
     function cancelBid(uint256 auctionId) external {
-        require(bids[auctionId][msg.sender].price > 0, "Auctioneer/cancelBid: No bids exists for the caller");
+        if (bids[auctionId][msg.sender].price == 0) revert userBidDoesNotExists();
 
         address prev = HEAD;
         while (nextHighestBidder[auctionId][prev] != address(0)) {
@@ -258,20 +259,24 @@ contract Auctioneer is Stateful, Eventful {
         uint256 auctionId,
         uint256 maxPrice,
         uint256 lot
-    ) external {
+    ) external onlyIfAuctionNotOver(auctionId) onlyWhen("paused", false) {
         Auction memory auction = auctions[auctionId];
-        require(!auction.isOver, "Auctioneer/buyItNow: Auction is over");
         uint256 currentPrice = calculatePrice(auctionId);
-        require(currentPrice <= maxPrice, "Auctioneer/buyItNow: Current price is higher than max price");
-        require(currentPrice != 0, "Auctioneer/buyItNow: Current price is now zero");
+        if (currentPrice > maxPrice) revert currentPriceIsHigherThanMaxPrice();
+        if (currentPrice == 0) revert currentPriceIsZero();
         uint256 lotValue = lot * currentPrice;
 
-        (uint256 biddableLot, , , address index) = getBiddableLot(auctionId, currentPrice, lot);
-        require(biddableLot > 0, "Auctioneer/buyItNow: Price has reach a point where BuyItNow is no longer available");
+        (uint256 biddableLot, , , ) = getBiddableLot(auctionId, currentPrice, lot);
+        if (biddableLot == 0) revert buyItNowNoLongerAvailable();
 
         uint256 lotToBuy = Math._min(lot, biddableLot);
         lotValue = lotToBuy * currentPrice;
         vaultEngine.moveSystemCurrency(msg.sender, auctions[auctionId].beneficiary, lotValue);
+
+        if (address(auction.vpAssetManagerAddress) != address(0)) {
+            auction.vpAssetManagerAddress.collectRewardForUser(msg.sender);
+        }
+
         vaultEngine.moveAsset(auctions[auctionId].assetId, address(this), msg.sender, lotToBuy);
 
         if (!auction.sellAllLot) {
@@ -292,14 +297,15 @@ contract Auctioneer is Stateful, Eventful {
      * @notice Finalize a sale for a bid if the current price is at or below the bid price
      * @param auctionId The ID of the auction to finalize
      */
-    function finalizeSale(uint256 auctionId) public {
-        require(bids[auctionId][msg.sender].price != 0, "Auctioneer/finalizeSale: The caller has no active bids");
-        require(
-            (calculatePrice(auctionId) * nextBidRatio) / ONE <= bids[auctionId][msg.sender].price,
-            "Auctioneer/finalizeSale: The current price has not passed the bid price"
-        );
+    function finalizeSale(uint256 auctionId) public onlyWhen("paused", false) {
+        if (bids[auctionId][msg.sender].price == 0) revert userBidDoesNotExists();
+        if ((calculatePrice(auctionId) * nextBidRatio) / ONE > bids[auctionId][msg.sender].price)
+            revert currentPriceIsNotYetBelowBidPrice();
         uint256 buyAmount = bids[auctionId][msg.sender].price * bids[auctionId][msg.sender].lot;
 
+        if (address(auctions[auctionId].vpAssetManagerAddress) != address(0)) {
+            auctions[auctionId].vpAssetManagerAddress.collectRewardForUser(msg.sender);
+        }
         vaultEngine.moveAsset(auctions[auctionId].assetId, address(this), msg.sender, bids[auctionId][msg.sender].lot);
 
         if (!auctions[auctionId].sellAllLot) {
@@ -332,18 +338,11 @@ contract Auctioneer is Stateful, Eventful {
         uint256 auctionId,
         uint256 bidPrice,
         uint256 bidLot
-    )
-        public
-        returns (
-            uint256 biddableLot,
-            uint256 totalBidValue,
-            uint256 totalBidLot,
-            address indexToAdd
-        )
-    {
+    ) public view returns (uint256 biddableLot, uint256 totalBidValue, uint256 totalBidLot, address indexToAdd) {
         Auction memory auction = auctions[auctionId];
 
-        (uint256 totalBidValue, uint256 totalBidLot, address index) = totalBidValueAtPrice(auctionId, bidPrice);
+        address index;
+        (totalBidValue, totalBidLot, index) = totalBidValueAtPrice(auctionId, bidPrice);
 
         if (auction.sellAllLot) {
             biddableLot = auction.lot - totalBidLot;
@@ -371,7 +370,7 @@ contract Auctioneer is Stateful, Eventful {
 
     /**
      * @notice Cancels the auction
-     * @dev Only callable by Probity during shutdown
+     * @dev Only callable by Probity
      * @param auctionId The ID of the auction to cancel
      * @param recipient The address of the recipient (e.g., ReservePool)
      */
@@ -392,15 +391,10 @@ contract Auctioneer is Stateful, Eventful {
      * @param auctionId The ID of the auction
      * @param price to stop at
      */
-    function totalBidValueAtPrice(uint256 auctionId, uint256 price)
-        public
-        view
-        returns (
-            uint256 totalBidValue,
-            uint256 totalLot,
-            address prev
-        )
-    {
+    function totalBidValueAtPrice(
+        uint256 auctionId,
+        uint256 price
+    ) public view returns (uint256 totalBidValue, uint256 totalLot, address prev) {
         if (nextHighestBidder[auctionId][HEAD] == address(0)) {
             return (totalBidValue, totalLot, HEAD);
         }
@@ -462,12 +456,7 @@ contract Auctioneer is Stateful, Eventful {
      * @param startingLot allow the function to start at a predetermined lot instead of looping from beginning
      * @param prev address of the bidder in the linked list that holds the cumulative value and lot
      */
-    function _cancelOldBids(
-        uint256 auctionId,
-        uint256 startingValue,
-        uint256 startingLot,
-        address prev
-    ) internal {
+    function _cancelOldBids(uint256 auctionId, uint256 startingValue, uint256 startingLot, address prev) internal {
         address index = nextHighestBidder[auctionId][prev];
         uint256 amountLeft = auctions[auctionId].debt - startingValue;
         uint256 lotLeft = auctions[auctionId].lot - startingLot;
@@ -524,11 +513,7 @@ contract Auctioneer is Stateful, Eventful {
      * @param bidder address of the bidder
      * @param newLot new lot value for bidder
      */
-    function _modifyBid(
-        uint256 auctionId,
-        address bidder,
-        uint256 newLot
-    ) internal {
+    function _modifyBid(uint256 auctionId, address bidder, uint256 newLot) internal {
         vaultEngine.moveSystemCurrency(
             address(this),
             bidder,
@@ -556,11 +541,7 @@ contract Auctioneer is Stateful, Eventful {
      * @param bidder address of the bidder
      * @param prev index of the prev bidder in bids
      */
-    function _removeBid(
-        uint256 auctionId,
-        address bidder,
-        address prev
-    ) internal {
+    function _removeBid(uint256 auctionId, address bidder, address prev) internal {
         vaultEngine.moveSystemCurrency(
             address(this),
             bidder,
@@ -600,6 +581,6 @@ contract Auctioneer is Stateful, Eventful {
 
             index = nextHighestBidder[auctionId][index];
         }
-        require(removed, "Auctioneer/_removeIndex: The index could not be found");
+        if (!removed) revert bidderIndexNotFound();
     }
 }

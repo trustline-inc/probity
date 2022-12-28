@@ -1,36 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
-pragma solidity ^0.8.0;
+pragma solidity 0.8.4;
 
 import "../dependencies/Stateful.sol";
 import "../dependencies/Eventful.sol";
 import "../dependencies/Math.sol";
-
-interface VaultEngineLike {
-    function debtAccumulator() external returns (uint256);
-
-    function equityAccumulator() external returns (uint256);
-
-    function lendingPoolDebt() external returns (uint256);
-
-    function lendingPoolEquity() external returns (uint256);
-
-    function lendingPoolPrincipal() external returns (uint256);
-
-    function lendingPoolSupply() external returns (uint256);
-
-    function updateAccumulators(
-        address reservePool,
-        uint256 debtRateIncrease,
-        uint256 equityRateIncrease,
-        uint256 protocolFeeRates
-    ) external;
-}
-
-interface IAPR {
-    // solhint-disable-next-line
-    function APR_TO_MPR(uint256 APR) external returns (uint256);
-}
+import "./assets/ERC20AssetManager.sol";
+import "../interfaces/IVaultEngineLike.sol";
+import "../interfaces/IAPRLike.sol";
 
 /**
  * @title Teller contract
@@ -40,14 +17,14 @@ contract Teller is Stateful, Eventful {
     /////////////////////////////////////////
     // State Variables
     /////////////////////////////////////////
-    uint256 private constant WAD = 10**18;
-    uint256 private constant RAY = 10**27;
+    uint256 private constant WAD = 10 ** 18;
+    uint256 private constant RAY = 10 ** 27;
     // Set max APR to 100%
     uint256 public constant MAX_APR = WAD * 2 * 1e9;
 
-    VaultEngineLike public immutable vaultEngine;
-    IAPR public immutable lowAprRate;
-    IAPR public immutable highAprRate;
+    IVaultEngineLike public immutable vaultEngine;
+    IAPRLike public immutable lowAprRate;
+    IAPRLike public immutable highAprRate;
 
     address public reservePool; // reservePool address will be the recipient of the protocol fees calculated
     uint256 public apr; // Annualized percentage rate
@@ -58,18 +35,23 @@ contract Teller is Stateful, Eventful {
     /////////////////////////////////////////
     // Events
     /////////////////////////////////////////
-    event AssetInitialized(bytes32 indexed assetId, uint256 protocolFee);
-    event RatesUpdated(uint256 timestamp, uint256 debtAccumulator, uint256 equityAccumulator);
+    event RatesUpdated(uint256 timestamp, uint256 debtAccumulatorIncrease, uint256 equityAccumulatorIncrease);
+
+    /////////////////////////////////////////
+    // Errors
+    /////////////////////////////////////////
+
+    error lendingPoolSupplyCanNotBeZero();
 
     /////////////////////////////////////////
     // Constructor
     /////////////////////////////////////////
     constructor(
         address registryAddress,
-        VaultEngineLike vaultEngineAddress,
+        IVaultEngineLike vaultEngineAddress,
         address reservePoolAddress,
-        IAPR lowAprAddress,
-        IAPR highAprAddress
+        IAPRLike lowAprAddress,
+        IAPRLike highAprAddress
     ) Stateful(registryAddress) {
         vaultEngine = vaultEngineAddress;
         lowAprRate = lowAprAddress;
@@ -102,7 +84,7 @@ contract Teller is Stateful, Eventful {
     /**
      * @dev Updates the debt and equity rate accumulators
      */
-    function updateAccumulators() external {
+    function updateAccumulators() external onlyWhen("paused", false) {
         uint256 debtAccumulator = vaultEngine.debtAccumulator();
         uint256 lendingPoolDebt = vaultEngine.lendingPoolDebt();
         uint256 lendingPoolEquity = vaultEngine.lendingPoolEquity();
@@ -111,7 +93,7 @@ contract Teller is Stateful, Eventful {
         uint256 lendingPoolPrincipal = vaultEngine.lendingPoolPrincipal();
         uint256 lendingPoolSupply = vaultEngine.lendingPoolSupply();
 
-        require(lendingPoolSupply > 0, "Teller/updateAccumulators: Lending pool supply cannot be zero");
+        if (lendingPoolSupply == 0) revert lendingPoolSupplyCanNotBeZero();
 
         uint256 utilization = Math._wdiv(lendingPoolPrincipal, lendingPoolSupply);
 
@@ -120,9 +102,9 @@ contract Teller is Stateful, Eventful {
             apr = MAX_APR;
         } else {
             uint256 oneMinusUtilization = RAY - (utilization * 1e9);
-            uint256 oneDividedByOneMinusUtilization = Math._rdiv(10**27 * 0.01, oneMinusUtilization);
+            uint256 oneDividedByOneMinusUtilization = Math._rdiv(10 ** 27 * 0.01, oneMinusUtilization);
 
-            uint256 round = 0.0025 * 10**27;
+            uint256 round = 0.0025 * 10 ** 27;
             apr = oneDividedByOneMinusUtilization + RAY;
             apr = ((apr + round - 1) / round) * round;
 
@@ -154,5 +136,7 @@ contract Teller is Stateful, Eventful {
         // Update values
         lastUpdated = block.timestamp;
         vaultEngine.updateAccumulators(reservePool, debtRateIncrease, equityRateIncrease, protocolFeeRate);
+
+        emit RatesUpdated(lastUpdated, debtRateIncrease, equityRateIncrease);
     }
 }

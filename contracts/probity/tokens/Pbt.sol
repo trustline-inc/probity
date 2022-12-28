@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-pragma solidity ^0.8.0;
+pragma solidity 0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../../dependencies/Stateful.sol";
@@ -33,22 +33,14 @@ contract PBT is ERC20, Stateful {
     /**
      * @dev disable approve function of Pbt token
      */
-    function _approve(
-        address,
-        address,
-        uint256
-    ) internal pure override {
+    function _approve(address, address, uint256) internal pure override {
         revert("Approve is disabled for PBT token");
     }
 
     /**
      * @dev disable transfer of Pbt Token
      */
-    function _transfer(
-        address,
-        address,
-        uint256
-    ) internal pure override {
+    function _transfer(address, address, uint256) internal pure override {
         revert("Transfer is disabled for PBT token");
     }
 }

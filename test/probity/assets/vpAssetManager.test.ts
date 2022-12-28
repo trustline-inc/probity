@@ -24,6 +24,7 @@ const expect = chai.expect;
 let owner: SignerWithAddress;
 let user: SignerWithAddress;
 let gov: SignerWithAddress;
+let auctioneerCaller: SignerWithAddress;
 
 // Contracts
 let vpAssetManager: VPAssetManager;
@@ -53,6 +54,7 @@ describe("VP AssetManager  Unit Test", function () {
     owner = signers.owner!;
     user = signers.alice!;
     gov = signers.bob!;
+    auctioneerCaller = signers.charlie!;
 
     await registry.setupAddress(bytes32("gov"), gov.address, true);
     await registry
@@ -61,6 +63,10 @@ describe("VP AssetManager  Unit Test", function () {
     await registry
       .connect(gov)
       .setupAddress(bytes32("whitelisted"), user.address, false);
+
+    await registry
+      .connect(gov)
+      .setupAddress(bytes32("auctioneer"), auctioneerCaller.address, false);
 
     await mockVpToken.mint(owner.address, AMOUNT_TO_MINT);
 
@@ -184,7 +190,7 @@ describe("VP AssetManager  Unit Test", function () {
     it("fails if no new epoch to claim", async () => {
       await assertRevert(
         vpAssetManager.userCollectReward(0),
-        "Delegatable/userCollectReward: No new epoch to claim"
+        "noEpochToClaim()"
       );
 
       await vpAssetManager.claimReward(0);
@@ -247,6 +253,104 @@ describe("VP AssetManager  Unit Test", function () {
     });
   });
 
+  describe("collectRewardForUser  Unit Test", function () {
+    const CLAIMABLE_START_EPOCH = 1;
+    const CLAIMABLE_END_EPOCH = 2;
+    const CURRENT_REWARD_EPOCH = 1;
+    const REWARD_AMOUNT = WAD;
+
+    beforeEach(async function () {
+      await mockVpToken.mint(user.address, AMOUNT_TO_MINT);
+      await mockVpToken
+        .connect(user)
+        .approve(vpAssetManager.address, AMOUNT_TO_MINT);
+
+      await mockFtsoManager.setCurrentRewardEpoch(CURRENT_REWARD_EPOCH);
+      await mockFtsoRewardManager.setStartAndEpochId(
+        CLAIMABLE_START_EPOCH,
+        CLAIMABLE_END_EPOCH
+      );
+      await mockFtsoRewardManager.setRewardAmount(REWARD_AMOUNT);
+
+      await vpAssetManager.deposit(AMOUNT_TO_MINT.div(100));
+
+      await mockFtsoManager.setCurrentRewardEpoch(CURRENT_REWARD_EPOCH + 1);
+      await vpAssetManager.deposit(AMOUNT_TO_MINT.div(50));
+      await vpAssetManager.connect(user).deposit(AMOUNT_TO_MINT.div(70));
+
+      await mockFtsoManager.setCurrentRewardEpoch(CURRENT_REWARD_EPOCH + 2);
+      await vpAssetManager.deposit(AMOUNT_TO_MINT.div(60));
+      await vpAssetManager.connect(user).deposit(AMOUNT_TO_MINT.div(90));
+    });
+
+    it("fails if caller is not auctioneer", async () => {
+      await vpAssetManager.claimReward(0);
+
+      await registry
+        .connect(gov)
+        .setupAddress(
+          bytes32("notAuctioneer"),
+          auctioneerCaller.address,
+          false
+        );
+
+      await assertRevert(
+        vpAssetManager.collectRewardForUser(owner.address),
+        "callerDoesNotHaveRequiredRole"
+      );
+
+      await registry
+        .connect(gov)
+        .setupAddress(bytes32("auctioneer"), auctioneerCaller.address, false);
+
+      await vpAssetManager
+        .connect(auctioneerCaller)
+        .collectRewardForUser(owner.address);
+    });
+
+    it("test that all available reward will be claimed", async () => {
+      const EXPECTED_LAST_CLAIMED_EPOCH = 2;
+
+      await vpAssetManager.claimReward(0);
+
+      const userLastClaimedEpochBefore =
+        await vpAssetManager.userLastClaimedEpoch(owner.address);
+      expect(userLastClaimedEpochBefore).to.equal(0);
+
+      await vpAssetManager
+        .connect(auctioneerCaller)
+        .collectRewardForUser(owner.address);
+
+      const userLastClaimedEpochAfter =
+        await vpAssetManager.userLastClaimedEpoch(owner.address);
+      expect(userLastClaimedEpochAfter).to.equal(EXPECTED_LAST_CLAIMED_EPOCH);
+    });
+
+    it("test that that correct amount of tokens were transferred", async () => {
+      const EXPECTED_REWARD_PER_UNIT = rdiv(
+        REWARD_AMOUNT,
+        AMOUNT_TO_MINT.div(100)
+          .add(AMOUNT_TO_MINT.div(50))
+          .add(AMOUNT_TO_MINT.div(70))
+      );
+      const EXPECTED_REWARD_AMOUNT = EXPECTED_REWARD_PER_UNIT.mul(
+        AMOUNT_TO_MINT.div(100)
+      ).div(RAY);
+
+      await vpAssetManager.claimReward(0);
+
+      const userBalanceBefore = await mockVpToken.balanceOf(owner.address);
+      await vpAssetManager
+        .connect(auctioneerCaller)
+        .collectRewardForUser(owner.address);
+
+      const userBalanceAfter = await mockVpToken.balanceOf(owner.address);
+      expect(userBalanceAfter.sub(userBalanceBefore)).to.equal(
+        EXPECTED_REWARD_AMOUNT
+      );
+    });
+  });
+
   describe("changeDataProvider  Unit Test", function () {
     it("fails if providers and pct array length is not the same", async () => {
       const NEW_DATA_PROVIDER = [owner.address, user.address];
@@ -255,7 +359,7 @@ describe("VP AssetManager  Unit Test", function () {
         vpAssetManager
           .connect(gov)
           .changeDataProviders([owner.address], NEW_DATA_PCTS),
-        "Delegatable/changeDataProviders: Length of providers and pct mismatch"
+        "providerAndPctLengthMismatch()"
       );
 
       await vpAssetManager
@@ -270,7 +374,7 @@ describe("VP AssetManager  Unit Test", function () {
         vpAssetManager
           .connect(gov)
           .changeDataProviders(NEW_DATA_PROVIDER, [5000, 4000]),
-        "Delegatable/changeDataProviders: Provided percentages does not add up to 100%"
+        "pctDoesNotAddUpToHundred()"
       );
 
       await vpAssetManager
@@ -331,27 +435,6 @@ describe("VP AssetManager  Unit Test", function () {
       vpAssetManager.connect(user).withdraw(AMOUNT_TO_MINT),
       "ERC20: transfer amount exceeds balance"
     );
-  });
-
-  it("fails if caller is not a whitelisted user", async () => {
-    await registry
-      .connect(gov)
-      .setupAddress(bytes32("notWhitelisted"), user.address, false);
-
-    await mockVpToken.mint(user.address, AMOUNT_TO_MINT);
-    await mockVpToken
-      .connect(user)
-      .approve(vpAssetManager.address, AMOUNT_TO_MINT);
-
-    await assertRevert(
-      vpAssetManager.connect(user).deposit(AMOUNT_TO_MINT),
-      "AccessControl/onlyBy: Caller does not have permission"
-    );
-
-    await registry
-      .connect(gov)
-      .setupAddress(bytes32("whitelisted"), user.address, false);
-    await vpAssetManager.connect(user).deposit(AMOUNT_TO_MINT);
   });
 
   it("test DepositVPAssetManager event is emitted properly", async () => {

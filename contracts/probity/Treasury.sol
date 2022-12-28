@@ -1,37 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
-pragma solidity ^0.8.0;
+pragma solidity 0.8.4;
 
 import "../dependencies/Stateful.sol";
-import "hardhat/console.sol";
-
-interface VaultEngineLike {
-    function addSystemCurrency(address user, uint256 amount) external;
-
-    function removeSystemCurrency(address user, uint256 amount) external;
-
-    function moveSystemCurrency(
-        address from,
-        address to,
-        uint256 amount
-    ) external;
-
-    function reducePbt(address user, uint256 amount) external;
-}
-
-interface TokenLike {
-    function transfer(address recipient, uint256 amount) external returns (bool);
-
-    function transferFrom(
-        address sender,
-        address recipient,
-        uint256 amount
-    ) external returns (bool);
-
-    function mint(address user, uint256 amount) external;
-
-    function burn(address user, uint256 amount) external;
-}
+import "../interfaces/IVaultEngineLike.sol";
+import "../interfaces/ITokenLike.sol";
 
 /**
  * @title Treasury Contract
@@ -42,9 +15,9 @@ contract Treasury is Stateful {
     // State Variables
     /////////////////////////////////////////
 
-    TokenLike public immutable systemCurrency;
-    TokenLike public immutable pbt;
-    VaultEngineLike public immutable vaultEngine;
+    ITokenLike public immutable systemCurrency;
+    ITokenLike public immutable pbt;
+    IVaultEngineLike public immutable vaultEngine;
 
     /////////////////////////////////////////
     // Events
@@ -59,9 +32,9 @@ contract Treasury is Stateful {
     /////////////////////////////////////////
     constructor(
         address registryAddress,
-        TokenLike systemCurrencyAddress,
-        TokenLike pbtAddress,
-        VaultEngineLike vaultEngineAddress
+        ITokenLike systemCurrencyAddress,
+        ITokenLike pbtAddress,
+        IVaultEngineLike vaultEngineAddress
     ) Stateful(registryAddress) {
         systemCurrency = systemCurrencyAddress;
         vaultEngine = vaultEngineAddress;
@@ -76,7 +49,7 @@ contract Treasury is Stateful {
      * @dev exchange ERC20 of the systemCurrency from user to systemCurrency balance in Vault Engine
      * @param amount to exchange
      */
-    function depositSystemCurrency(uint256 amount) external {
+    function depositSystemCurrency(uint256 amount) external onlyWhen("paused", false) {
         vaultEngine.addSystemCurrency(msg.sender, amount * 1e27);
         systemCurrency.burn(msg.sender, amount);
         emit DepositSystemCurrency(msg.sender, amount);
@@ -86,7 +59,7 @@ contract Treasury is Stateful {
      * @dev exchange the systemCurrency balance from Vault to ERC20 version
      * @param amount to exchange
      */
-    function withdrawSystemCurrency(uint256 amount) external {
+    function withdrawSystemCurrency(uint256 amount) external onlyWhen("paused", false) {
         vaultEngine.removeSystemCurrency(msg.sender, amount * 1e27);
         systemCurrency.mint(msg.sender, amount);
         emit WithdrawSystemCurrency(msg.sender, amount);
@@ -97,7 +70,7 @@ contract Treasury is Stateful {
      * @param recipient of the transfer
      * @param amount to transfer
      */
-    function transferSystemCurrency(address recipient, uint256 amount) external {
+    function transferSystemCurrency(address recipient, uint256 amount) external onlyWhen("paused", false) {
         vaultEngine.moveSystemCurrency(msg.sender, recipient, amount * 1e27);
         emit TransferSystemCurrency(msg.sender, recipient, amount);
     }
@@ -106,7 +79,7 @@ contract Treasury is Stateful {
      * @dev withdraw PBT balance from VaultEngine to ERC20 counterpart
      * @param amount to withdraw
      */
-    function withdrawPbt(uint256 amount) external {
+    function withdrawPbt(uint256 amount) external onlyWhen("paused", false) {
         vaultEngine.reducePbt(msg.sender, amount * 1e27);
         pbt.mint(msg.sender, amount);
         emit WithdrawPbt(msg.sender, amount);

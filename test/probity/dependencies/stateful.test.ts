@@ -38,7 +38,7 @@ describe("Stateful Unit Test", function () {
     const stateName = bytes32("test");
     await assertRevert(
       stateful.connect(user).setState(stateName, true),
-      "AccessControl/onlyBy: Caller does not have permission"
+      "callerDoesNotHaveRequiredRole"
     );
 
     let state = await stateful.states(stateName);
@@ -61,35 +61,5 @@ describe("Stateful Unit Test", function () {
 
     expect(parsedEvents[0].args[0]).to.equal(stateName);
     expect(parsedEvents[0].args[1]).to.equal(true);
-  });
-
-  it("test setShutdownState can only be called by shutdown address", async () => {
-    const stateName = bytes32("shutdown");
-    await assertRevert(
-      stateful.setShutdownState(),
-      "AccessControl/onlyBy: Caller does not have permission"
-    );
-
-    await registry.setupAddress(bytes32("shutdown"), owner.address, false);
-
-    let state = await stateful.states(stateName);
-    expect(state).to.equal(false);
-
-    await stateful.setShutdownState();
-
-    state = await stateful.states(stateName);
-    expect(state).to.equal(true);
-  });
-
-  it("tests that shutdownInitiated is emitted correctly", async () => {
-    await registry.setupAddress(bytes32("shutdown"), user.address, false);
-
-    let parsedEvents = await parseEvents(
-      stateful.connect(user).setShutdownState(),
-      "ShutdownInitiated",
-      stateful
-    );
-
-    expect(parsedEvents.length).to.equal(1);
   });
 });

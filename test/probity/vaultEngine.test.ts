@@ -16,7 +16,14 @@ import {
 import { deployTest } from "../../lib/deployer";
 import { ethers } from "hardhat";
 import * as chai from "chai";
-import { ASSET_ID, bytes32, RAD, WAD, RAY } from "../utils/constants";
+import {
+  ASSET_ID,
+  bytes32,
+  RAD,
+  WAD,
+  RAY,
+  ASSET_CATEGORY,
+} from "../utils/constants";
 import { BigNumber } from "ethers";
 import assertRevert from "../utils/assertRevert";
 
@@ -65,6 +72,7 @@ describe("Vault Engine Unit Tests", function () {
     await registry.setupAddress(bytes32("gov"), gov.address, true);
     await registry.setupAddress(bytes32("whitelisted"), user.address, false);
     await registry.setupAddress(bytes32("whitelisted"), owner.address, false);
+    await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR, ASSET_CATEGORY.BOTH);
   });
 
   describe("modifyEquity Unit Tests", function () {
@@ -77,7 +85,6 @@ describe("Vault Engine Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR, 2);
       await vaultEngine
         .connect(gov)
         .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
@@ -103,11 +110,10 @@ describe("Vault Engine Unit Tests", function () {
       await assertRevert(
         vaultEngine.modifyEquity(
           ASSET_ID.FLR,
-
           UNDERLYING_AMOUNT,
           EQUITY_AMOUNT.add(1)
         ),
-        "Vault/modifyEquity: Supply ceiling reached"
+        "assetMaximumAmountReached()"
       );
 
       await vaultEngine.modifyEquity(
@@ -115,6 +121,25 @@ describe("Vault Engine Unit Tests", function () {
 
         UNDERLYING_AMOUNT,
         EQUITY_AMOUNT.sub(1)
+      );
+    });
+
+    it("fails when contract is in paused state", async () => {
+      await vaultEngine.connect(gov).setState(bytes32("paused"), true);
+      await assertRevert(
+        vaultEngine.modifyEquity(
+          ASSET_ID.FLR,
+          UNDERLYING_AMOUNT,
+          EQUITY_AMOUNT
+        ),
+        "stateCheckFailed"
+      );
+
+      await vaultEngine.connect(gov).setState(bytes32("paused"), false);
+      await vaultEngine.modifyEquity(
+        ASSET_ID.FLR,
+        UNDERLYING_AMOUNT,
+        EQUITY_AMOUNT
       );
     });
 
@@ -150,7 +175,7 @@ describe("Vault Engine Unit Tests", function () {
           UNDERLYING_AMOUNT,
           EQUITY_AMOUNT_UNDER_FLOOR
         ),
-        "Vault/modifyEquity: Equity smaller than floor"
+        "vaultSizeMinimumNotReached()"
       );
 
       // Increase equity
@@ -484,7 +509,7 @@ describe("Vault Engine Unit Tests", function () {
           MINIMUM_AMOUNT.sub(1),
           EQUITY_AMOUNT
         ),
-        "Vault/certify: Not enough underlying"
+        "insufficientUnderlyingAsset()"
       );
 
       // Increase equity
@@ -556,7 +581,7 @@ describe("Vault Engine Unit Tests", function () {
       const ASSET_ID = bytes32("new Asset ");
       await assertRevert(
         vaultEngine.connect(user).initAsset(ASSET_ID, 2),
-        "AccessControl/onlyBy: Caller does not have permission"
+        "callerDoesNotHaveRequiredRole"
       );
 
       await registry
@@ -575,7 +600,7 @@ describe("Vault Engine Unit Tests", function () {
         vaultEngine
           .connect(user)
           .addSystemCurrency(user.address, AMOUNT_TO_ADD),
-        "AccessControl/onlyBy: Caller does not have permission"
+        "callerDoesNotHaveRequiredRole"
       );
 
       await registry
@@ -616,7 +641,6 @@ describe("Vault Engine Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR, 2);
       await vaultEngine
         .connect(gov)
         .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
@@ -666,7 +690,6 @@ describe("Vault Engine Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR, 2);
       await vaultEngine
         .connect(gov)
         .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
@@ -705,13 +728,28 @@ describe("Vault Engine Unit Tests", function () {
           UNDERLYING_AMOUNT,
           treasuryBalance.div(RAY).add(1)
         ),
-        "Vault/modifyDebt: Treasury doesn't have enough equity to loan this amount"
+        "insufficientFundInTreasury()"
       );
 
       await vaultEngine.modifyDebt(
         ASSET_ID.FLR,
         COLLATERAL_AMOUNT,
         treasuryBalance.div(RAY)
+      );
+    });
+
+    it("fails when contract is in paused state", async () => {
+      await vaultEngine.connect(gov).setState(bytes32("paused"), true);
+      await assertRevert(
+        vaultEngine.modifyDebt(ASSET_ID.FLR, COLLATERAL_AMOUNT, DEBT_AMOUNT),
+        "stateCheckFailed"
+      );
+
+      await vaultEngine.connect(gov).setState(bytes32("paused"), false);
+      await vaultEngine.modifyDebt(
+        ASSET_ID.FLR,
+        COLLATERAL_AMOUNT,
+        DEBT_AMOUNT
       );
     });
 
@@ -725,7 +763,7 @@ describe("Vault Engine Unit Tests", function () {
           COLLATERAL_AMOUNT,
           DEBT_AMOUNT.add(1)
         ),
-        "Vault/modifyDebt: Debt ceiling reached"
+        "assetMaximumAmountReached()"
       );
 
       await vaultEngine.modifyDebt(
@@ -764,7 +802,7 @@ describe("Vault Engine Unit Tests", function () {
           COLLATERAL_AMOUNT,
           DEBT_AMOUNT_UNDER_FLOOR
         ),
-        "Vault/modifyDebt: Debt smaller than floor"
+        "vaultSizeMinimumNotReached()"
       );
 
       await vaultEngine.modifyDebt(
@@ -956,7 +994,7 @@ describe("Vault Engine Unit Tests", function () {
           MINIMUM_AMOUNT.sub(1),
           DEBT_AMOUNT
         ),
-        "Vault/certify: Not enough collateral"
+        "insufficientCollateralAsset()"
       );
 
       await vaultEngine.modifyDebt(ASSET_ID.FLR, MINIMUM_AMOUNT, DEBT_AMOUNT);
@@ -1055,7 +1093,6 @@ describe("Vault Engine Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR, 2);
       await vaultEngine
         .connect(gov)
         .updateCeiling(ASSET_ID.FLR, RAD.mul(10000000));
@@ -1096,6 +1133,17 @@ describe("Vault Engine Unit Tests", function () {
           EQUITY_TO_RAISE,
           BigNumber.from(0)
         );
+    });
+
+    it("fails when contract is in paused state", async () => {
+      await vaultEngine.connect(gov).setState(bytes32("paused"), true);
+      await assertRevert(
+        vaultEngine.collectInterest(ASSET_ID.FLR),
+        "stateCheckFailed"
+      );
+
+      await vaultEngine.connect(gov).setState(bytes32("paused"), false);
+      await vaultEngine.collectInterest(ASSET_ID.FLR);
     });
 
     it("increases the PBT balance", async () => {
@@ -1160,7 +1208,6 @@ describe("Vault Engine Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR, 2);
       await vaultEngine
         .connect(gov)
         .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
@@ -1191,10 +1238,11 @@ describe("Vault Engine Unit Tests", function () {
         .setupAddress(bytes32("liquidator"), user.address, true);
     });
 
-    it("reduces initial equity", async () => {
+    it("reduces initial equity and lendingPool Supply", async () => {
       const AMOUNT_TO_LIQUIDATE = EQUITY_AMOUNT.div(2); // 1000 FLR
-      const before = (await vaultEngine.vaults(ASSET_ID.FLR, owner.address))
-        .initialEquity;
+      const before = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
+      const initialEquityBefore = before.initialEquity;
+      const lendingPoolSupplyBefore = await vaultEngine.lendingPoolSupply();
 
       await vaultEngine
         .connect(user)
@@ -1208,10 +1256,16 @@ describe("Vault Engine Unit Tests", function () {
           BigNumber.from("0").sub(EQUITY_AMOUNT.mul(RAY))
         );
 
-      const after = (await vaultEngine.vaults(ASSET_ID.FLR, owner.address))
-        .initialEquity;
+      const after = await vaultEngine.vaults(ASSET_ID.FLR, owner.address);
+      const initialEquityAfter = after.initialEquity;
+      const lendingPoolSupplyAfter = await vaultEngine.lendingPoolSupply();
 
-      expect(after.sub(before).abs()).to.equal(EQUITY_AMOUNT.mul(RAY));
+      expect(initialEquityAfter.sub(initialEquityBefore).abs()).to.equal(
+        EQUITY_AMOUNT.mul(RAY)
+      );
+      expect(
+        lendingPoolSupplyAfter.sub(lendingPoolSupplyBefore).abs()
+      ).to.equal(EQUITY_AMOUNT.mul(RAY));
     });
 
     it("tests that lendingPoolEquity is lowered properly", async () => {
@@ -1246,7 +1300,6 @@ describe("Vault Engine Unit Tests", function () {
         to: user.address,
         value: ethers.utils.parseEther("1"),
       });
-      await vaultEngine.connect(gov).initAsset(ASSET_ID.FLR, 2);
       await vaultEngine
         .connect(gov)
         .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
@@ -1288,7 +1341,7 @@ describe("Vault Engine Unit Tests", function () {
           equityRateIncrease,
           BigNumber.from(0)
         ),
-        "AccessControl/onlyBy: Caller does not have permission"
+        "callerDoesNotHaveRequiredRole"
       );
       await vaultEngine
         .connect(user)
@@ -1358,7 +1411,7 @@ describe("Vault Engine Unit Tests", function () {
             equityRateIncrease,
             BigNumber.from(0)
           ),
-        "VaultEngine/updateAccumulators: The equity rate increase is larger than the debt rate increase"
+        "equityCreatedCanNotBeGreaterThanDebtCreated()"
       );
 
       equityRateIncrease = BigNumber.from("125509667994754929166541");
@@ -1385,7 +1438,7 @@ describe("Vault Engine Unit Tests", function () {
             equityRateIncrease,
             protocolRateIncrease
           ),
-        "VaultEngine/updateAccumulators: The equity rate increase is larger than the debt rate increase"
+        "equityCreatedCanNotBeGreaterThanDebtCreated()"
       );
 
       protocolRateIncrease = BigNumber.from(0);

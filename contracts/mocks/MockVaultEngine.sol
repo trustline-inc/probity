@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-pragma solidity ^0.8.0;
+pragma solidity 0.8.4;
 
 contract MockVaultEngine {
     struct Vault {
@@ -10,6 +10,7 @@ contract MockVaultEngine {
         uint256 normDebt; // Normalized debt balance
         uint256 normEquity; // Normalized equity balance
         uint256 initialEquity; // Tracks the amount of equity (less interest)
+        uint256 debtPrincipal;
     }
 
     struct Asset {
@@ -28,6 +29,7 @@ contract MockVaultEngine {
         address reservePool;
         int256 collateralAmount;
         int256 debtAmount;
+        int256 principalAmount;
     }
 
     struct LiquidateEquityPositionCall {
@@ -53,7 +55,7 @@ contract MockVaultEngine {
     mapping(address => uint256) public pbt;
     mapping(address => uint256) public systemDebt;
 
-    uint256 private constant RAY = 10**27;
+    uint256 private constant RAY = 10 ** 27;
     uint256 public debtAccumulator = RAY; // Cumulative debt rate
     uint256 public equityAccumulator = RAY; // Cumulative equity rate
     uint256 public protocolFeeRates;
@@ -62,6 +64,7 @@ contract MockVaultEngine {
     uint256 public lendingPoolDebt;
     uint256 public lendingPoolEquity;
     uint256 public totalSystemCurrency;
+    address public reservePool;
     LiquidateDebtPositionCall public lastLiquidateDebtPositionCall;
     LiquidateEquityPositionCall public lastLiquidateEquityPositionCall;
 
@@ -73,11 +76,7 @@ contract MockVaultEngine {
         systemCurrency[user] -= amount;
     }
 
-    function moveSystemCurrency(
-        address from,
-        address to,
-        uint256 amount
-    ) external {
+    function moveSystemCurrency(address from, address to, uint256 amount) external {
         systemCurrency[from] -= amount;
         systemCurrency[to] += amount;
     }
@@ -144,7 +143,7 @@ contract MockVaultEngine {
     }
 
     function updateAccumulators(
-        address reservePool,
+        address reservePool_,
         uint256 debtAccumulatorIncrease,
         uint256 equityAccumulatorIncrease,
         uint256 protocolFeeRates_
@@ -152,13 +151,10 @@ contract MockVaultEngine {
         debtAccumulator += debtAccumulatorIncrease;
         equityAccumulator += equityAccumulatorIncrease;
         protocolFeeRates = protocolFeeRates_;
+        reservePool = reservePool_;
     }
 
-    function updateNormValues(
-        bytes32 assetId,
-        uint256 normDebt,
-        uint256 normEquity
-    ) external {
+    function updateNormValues(bytes32 assetId, uint256 normDebt, uint256 normEquity) external {
         assets[assetId].normDebt = normDebt;
         assets[assetId].normEquity = normEquity;
     }
@@ -182,10 +178,6 @@ contract MockVaultEngine {
         vault.initialEquity = initialEquity;
     }
 
-    function setShutdownState() external {
-        states[bytes32("shutdown")] = true;
-    }
-
     function settle(uint256 amount) external {
         systemCurrency[msg.sender] -= amount;
         systemDebt[msg.sender] -= amount;
@@ -201,17 +193,19 @@ contract MockVaultEngine {
         bytes32 assetId,
         address user,
         address auctioneer,
-        address reservePool,
+        address reservePool_,
         int256 collateralAmount,
-        int256 debtAmount
+        int256 debtAmount,
+        int256 principalAmount
     ) external {
         lastLiquidateDebtPositionCall = LiquidateDebtPositionCall(
             assetId,
             user,
             auctioneer,
-            reservePool,
+            reservePool_,
             collateralAmount,
-            debtAmount
+            debtAmount,
+            principalAmount
         );
     }
 
@@ -235,12 +229,7 @@ contract MockVaultEngine {
         );
     }
 
-    function moveAsset(
-        bytes32 assetId,
-        address from,
-        address to,
-        uint256 amount
-    ) external {
+    function moveAsset(bytes32 assetId, address from, address to, uint256 amount) external {
         vaults[assetId][from].standbyAmount -= amount;
         vaults[assetId][to].standbyAmount += amount;
     }

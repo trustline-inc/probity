@@ -1,11 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity ^0.8.0;
+pragma solidity 0.8.4;
 
-interface IRegistry {
-    function checkIfProbitySystem(address addr) external returns (bool);
-
-    function checkRole(bytes32 name, address addr) external returns (bool);
-}
+import "../interfaces/IRegistryLike.sol";
 
 /**
  * @title AccessControl contract
@@ -15,18 +11,25 @@ contract AccessControl {
     ///////////////////////////////////
     // State Variables
     ///////////////////////////////////
-    IRegistry public registry; // registry contract
+    IRegistryLike public registry; // registry contract
+
+    ///////////////////////////////////
+    // Errors
+    ///////////////////////////////////
+
+    error callerDoesNotHaveRequiredRole(bytes32 roleName);
+    error callerIsNotFromProbitySystem();
 
     ///////////////////////////////////
     // Modifiers
     ///////////////////////////////////
 
     /**
-     * @dev check if the caller has been registered with name in the registry
-     * @param name in the registry
+     * @dev check if the caller has been registered with a specific role in the registry
+     * @param name role name in the registry
      */
     modifier onlyBy(bytes32 name) {
-        require(registry.checkRole(name, msg.sender), "AccessControl/onlyBy: Caller does not have permission");
+        if (!registry.checkRole(name, msg.sender)) revert callerDoesNotHaveRequiredRole(name);
         _;
     }
 
@@ -34,10 +37,7 @@ contract AccessControl {
      * @dev check if the caller is from one of the Probity system's contract
      */
     modifier onlyByProbity() {
-        require(
-            registry.checkIfProbitySystem(msg.sender),
-            "AccessControl/onlyByProbity: Caller must be from Probity system contract"
-        );
+        if (!registry.checkIfProbitySystem(msg.sender)) revert callerIsNotFromProbitySystem();
         _;
     }
 
@@ -45,7 +45,7 @@ contract AccessControl {
     // Constructor
     ///////////////////////////////////
     constructor(address registryAddress) {
-        registry = IRegistry(registryAddress);
+        registry = IRegistryLike(registryAddress);
     }
 
     ///////////////////////////////////
@@ -53,9 +53,9 @@ contract AccessControl {
     ///////////////////////////////////
 
     /**
-     * @dev check if the caller is from one of the Probity system's contract
+     * @dev set the new registry address, used to replace registry module
      */
-    function setRegistryAddress(IRegistry newRegistryAddress) external onlyBy("gov") {
+    function setRegistryAddress(IRegistryLike newRegistryAddress) external onlyBy("gov") {
         registry = newRegistryAddress;
     }
 }

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-pragma solidity ^0.8.0;
+pragma solidity 0.8.4;
 
 import "./AccessControl.sol";
 
@@ -23,10 +23,10 @@ contract Stateful is AccessControl {
     /**
      * @dev check if the contract is in a particular state
      * @param name of the state
-     * @param set whether of not the state is true
+     * @param expectedState the expected state
      */
-    modifier onlyWhen(bytes32 name, bool set) {
-        require(states[name] == set, "Stateful/onlyWhen: State check failed");
+    modifier onlyWhen(bytes32 name, bool expectedState) {
+        if (states[name] != expectedState) revert stateCheckFailed(name, states[name]);
         _;
     }
 
@@ -34,7 +34,12 @@ contract Stateful is AccessControl {
     // Events
     ///////////////////////////////////
     event LogStateChange(bytes32 name, bool newState);
-    event ShutdownInitiated();
+
+    ///////////////////////////////////
+    // Errors
+    ///////////////////////////////////
+
+    error stateCheckFailed(bytes32 name, bool currentState);
 
     ///////////////////////////////////
     // Constructor
@@ -54,13 +59,5 @@ contract Stateful is AccessControl {
     function setState(bytes32 name, bool set) external onlyBy("gov") {
         states[name] = set;
         emit LogStateChange(name, set);
-    }
-
-    /**
-     * @dev set shutdown state to true, can only be called by shutdown module
-     */
-    function setShutdownState() external onlyBy("shutdown") {
-        states[bytes32("shutdown")] = true;
-        emit ShutdownInitiated();
     }
 }

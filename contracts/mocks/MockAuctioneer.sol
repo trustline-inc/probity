@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-pragma solidity ^0.8.0;
+pragma solidity 0.8.4;
 
 contract MockAuctioneer {
     struct LastAuctionCall {
@@ -14,6 +14,7 @@ contract MockAuctioneer {
         uint256 debtSize;
         address owner;
         address beneficiary;
+        address vpAssetManager;
         bool sellAllLot;
     }
 
@@ -31,6 +32,7 @@ contract MockAuctioneer {
         uint256 debtSize,
         address owner,
         address beneficiary,
+        address vpAssetManager,
         bool sellAllLot
     ) external {
         lastStartAuctionCall.assetId = assetId;
@@ -39,5 +41,6 @@ contract MockAuctioneer {
         lastStartAuctionCall.owner = owner;
         lastStartAuctionCall.beneficiary = beneficiary;
         lastStartAuctionCall.sellAllLot = sellAllLot;
+        lastStartAuctionCall.vpAssetManager = vpAssetManager;
     }
 }

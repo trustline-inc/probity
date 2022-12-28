@@ -1,10 +1,11 @@
 /**
- * Script that perpetually calls Teller.updateAccumulator()
+ * Script that issues USD
  */
 import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-web3";
 import { artifacts, ethers } from "hardhat";
 import { Contract } from "ethers";
+import config from "../hardhat.config";
 import { RAD } from "../test/utils/constants";
 
 const account = "0x11EeB875AAc42eEe7CB37668360206B0056F6eEd";
@@ -15,7 +16,7 @@ const wallet = new ethers.Wallet(
 const amount = RAD.mul(1_000_000);
 
 (async () => {
-  let [owner] = await ethers.getSigners();
+  const [gov]: SignerWithAddress[] = await ethers.getSigners();
   const VaultEngineIssuerABI = await artifacts.readArtifact(
     "VaultEngineIssuer"
   );
@@ -23,24 +24,26 @@ const amount = RAD.mul(1_000_000);
   const vaultEngine = new Contract(
     process.env.VAULT_ENGINE!,
     VaultEngineIssuerABI.abi,
-    owner
+    gov
   );
   const treasury = new Contract(process.env.TREASURY!, TreasuryABI.abi, owner);
   const UsdABI = await artifacts.readArtifact("USD");
   const usd = new Contract(process.env.USD!, UsdABI.abi, owner);
 
   console.log("Issuing USD...", {
-    account,
-    amount: amount.toString(),
+    to: wallet.address,
+    amount: amount.div(RAD).toString(),
+    from: gov.address,
     vaultEngine: vaultEngine.address,
   });
 
   try {
     // Use callStatic to check for errors
-    await vaultEngine.callStatic.modifySupply(account, amount, {
+    await vaultEngine.callStatic.modifySupply(wallet.address, amount, {
       gasLimit: 400000,
     });
-    let tx = await vaultEngine.modifySupply(account, amount, {
+    console.log("Tx: vaultEngine.modifySupply");
+    let tx = await vaultEngine.modifySupply(wallet.address, amount, {
       gasLimit: 400000,
     });
     console.log(tx);
@@ -54,6 +57,32 @@ const amount = RAD.mul(1_000_000);
     console.log(tx);
     result = await tx.wait();
     console.log(result);
+
+    // Fund beneficiary wallet 1 ETH to pay for withdraw tx fee
+    console.log("Tx: gov.sendTransaction");
+    tx = await gov.sendTransaction({
+      to: wallet.address,
+      value: ethers.BigNumber.from("1000000000000000000"),
+    });
+    console.log(tx);
+    result = await tx.wait();
+    console.log(result);
+
+    console.log("Tx: treasury.withdrawSystemCurrency");
+    tx = await treasury
+      .connect(
+        wallet.connect(new ethers.providers.JsonRpcProvider(hre.network.url))
+      )
+      .withdrawSystemCurrency(ethers.utils.parseUnits(String(1_000_000), 18), {
+        gasLimit: 400000,
+      });
+    console.log(tx);
+    result = await tx.wait();
+    console.log(result);
+
+    if (beneficiary) {
+      usd.connect(wallet).transfer(beneficiary, amount.div(RAD).toString());
+    }
   } catch (error) {
     console.log(error);
   }

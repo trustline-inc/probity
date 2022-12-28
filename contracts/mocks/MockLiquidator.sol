@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-pragma solidity ^0.8.0;
+pragma solidity 0.8.4;
 
 contract MockLiquidator {
     struct Asset {
@@ -12,7 +12,7 @@ contract MockLiquidator {
     /////////////////////////////////////////
     // State Variables
     /////////////////////////////////////////
-    uint256 private constant RAY = 10**27;
+    uint256 private constant RAY = 10 ** 27;
 
     mapping(bytes32 => Asset) public assets;
     mapping(bytes32 => bool) public states;
@@ -20,10 +20,6 @@ contract MockLiquidator {
 
     function setAssetType(bytes32 assetId, address auctioneer) external {
         assets[assetId].auctioneer = auctioneer;
-    }
-
-    function setShutdownState() external {
-        states["shutdown"] = true;
     }
 
     function reduceAuctionDebt(uint256 amount) external {

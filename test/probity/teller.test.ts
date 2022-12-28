@@ -69,7 +69,7 @@ describe("Teller Unit Tests", function () {
       const NEW_RESERVE_POOL_ADDRESS = owner.address;
       await assertRevert(
         teller.connect(user).setReservePoolAddress(NEW_RESERVE_POOL_ADDRESS),
-        "AccessControl/onlyBy: Caller does not have permission"
+        "callerDoesNotHaveRequiredRole"
       );
       await registry.setupAddress(bytes32("gov"), user.address, true);
       await teller
@@ -107,7 +107,7 @@ describe("Teller Unit Tests", function () {
       const PROTOCOL_FEE_TO_SET = WAD.div(10);
       await assertRevert(
         teller.connect(user).setProtocolFee(PROTOCOL_FEE_TO_SET),
-        "AccessControl/onlyBy: Caller does not have permission"
+        "callerDoesNotHaveRequiredRole"
       );
       await registry.setupAddress(bytes32("gov"), user.address, true);
       await teller.connect(user).setProtocolFee(PROTOCOL_FEE_TO_SET);
@@ -140,10 +140,19 @@ describe("Teller Unit Tests", function () {
       await vaultEngine.setLendingPoolSupply(0);
       await assertRevert(
         teller.updateAccumulators(),
-        "Teller/updateAccumulators: Lending pool supply cannot be zero"
+        "lendingPoolSupplyCanNotBeZero()"
       );
       await vaultEngine.setLendingPoolSupply(EQUITY_TO_SET);
 
+      await teller.updateAccumulators();
+    });
+
+    it("fails when contract is in paused state", async () => {
+      await vaultEngine.setLendingPoolSupply(EQUITY_TO_SET);
+      await teller.setState(bytes32("paused"), true);
+      await assertRevert(teller.updateAccumulators(), "stateCheckFailed");
+
+      await teller.setState(bytes32("paused"), false);
       await teller.updateAccumulators();
     });
 

@@ -63,7 +63,7 @@ describe("ReservePool Unit Tests", function () {
     it("fails if caller is not 'gov'", async () => {
       await assertRevert(
         reservePool.connect(user).updateDebtThreshold(NEW_THRESHOLD),
-        "AccessControl/onlyBy: Caller does not have permission"
+        "callerDoesNotHaveRequiredRole"
       );
       await reservePool.updateDebtThreshold(NEW_THRESHOLD);
     });
@@ -83,7 +83,7 @@ describe("ReservePool Unit Tests", function () {
     it("fails if caller is not 'liquidator'", async () => {
       await assertRevert(
         reservePool.connect(user).addAuctionDebt(AUCTION_DEBT_TO_ADD),
-        "AccessControl/onlyBy: Caller does not have permission"
+        "callerDoesNotHaveRequiredRole"
       );
       await registry.setupAddress(bytes32("liquidator"), user.address, true);
       await reservePool.connect(user).addAuctionDebt(AUCTION_DEBT_TO_ADD);
@@ -110,7 +110,7 @@ describe("ReservePool Unit Tests", function () {
     it("fails if caller is not 'liquidator'", async () => {
       await assertRevert(
         reservePool.connect(user).reduceAuctionDebt(AUCTION_DEBT_TO_REDUCE),
-        "AccessControl/onlyBy: Caller does not have permission"
+        "callerDoesNotHaveRequiredRole"
       );
       await registry.setupAddress(bytes32("liquidator"), user.address, true);
       await reservePool.connect(user).reduceAuctionDebt(AUCTION_DEBT_TO_REDUCE);
@@ -144,7 +144,7 @@ describe("ReservePool Unit Tests", function () {
     it("fails if caller is not by Probity", async () => {
       await assertRevert(
         reservePool.connect(user).settle(AMOUNT_TO_SETTLE),
-        "AccessControl/onlyByProbity: Caller must be from Probity system contract"
+        "callerIsNotFromProbitySystem()"
       );
       await registry.setupAddress(bytes32("liquidator"), user.address, true);
       await reservePool.connect(user).settle(AMOUNT_TO_SETTLE);
@@ -153,7 +153,7 @@ describe("ReservePool Unit Tests", function () {
     it("fails if amountToSettle is more than systemDebt", async () => {
       await assertRevert(
         reservePool.connect(liquidator).settle(UNBACKED_DEBT_TO_SET.add(1)),
-        "ReservePool/settle: Settlement amount is more than the debt"
+        "settlementAmountMustBeLowerThanDebt()"
       );
       await vaultEngine
         .connect(liquidator)
@@ -164,7 +164,7 @@ describe("ReservePool Unit Tests", function () {
     it("fails if Systemcurrency balance is less than amountToSettle", async () => {
       await assertRevert(
         reservePool.connect(liquidator).settle(AMOUNT_TO_SETTLE.add(1)),
-        "ReservePool/settle: Not enough balance to settle"
+        "insufficientBalance()"
       );
       await reservePool.connect(liquidator).settle(AMOUNT_TO_SETTLE);
     });
@@ -182,7 +182,7 @@ describe("ReservePool Unit Tests", function () {
     it("fails if caller is not by Probity", async () => {
       await assertRevert(
         reservePool.connect(user).increaseSystemDebt(AMOUNT_TO_INCREASE),
-        "AccessControl/onlyByProbity: Caller must be from Probity system contract"
+        "callerIsNotFromProbitySystem()"
       );
       await registry.setupAddress(bytes32("liquidator"), user.address, true);
       await reservePool.connect(user).increaseSystemDebt(AMOUNT_TO_INCREASE);
@@ -211,7 +211,7 @@ describe("ReservePool Unit Tests", function () {
         reservePool
           .connect(user)
           .sendSystemCurrency(owner.address, AMOUNT_TO_SEND),
-        "AccessControl/onlyBy: Caller does not have permission"
+        "callerDoesNotHaveRequiredRole"
       );
       await registry.setupAddress(bytes32("gov"), user.address, true);
       await reservePool
@@ -243,7 +243,7 @@ describe("ReservePool Unit Tests", function () {
     it("fails if caller is not by reservePool", async () => {
       await assertRevert(
         reservePool.connect(user).startBondSale(),
-        "AccessControl/onlyByProbity: Caller must be from Probity system contract"
+        "callerIsNotFromProbitySystem()"
       );
       await registry.setupAddress(bytes32("gov"), user.address, true);
       await reservePool.connect(user).startBondSale();
@@ -256,7 +256,7 @@ describe("ReservePool Unit Tests", function () {
 
       await assertRevert(
         reservePool.connect(liquidator).startBondSale(),
-        "ReservePool/startBondSale: Debt threshold is not yet crossed"
+        "debtStillUnderThreshold()"
       );
       await vaultEngine
         .connect(liquidator)
@@ -271,7 +271,7 @@ describe("ReservePool Unit Tests", function () {
 
       await assertRevert(
         reservePool.connect(liquidator).startBondSale(),
-        "ReservePool/startBondSale: SystemCurrency balance is still positive"
+        "systemCurrencyBalanceMustBeZero()"
       );
       await vaultEngine
         .connect(liquidator)

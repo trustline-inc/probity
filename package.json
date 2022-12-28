@@ -1,7 +1,7 @@
 {
-  "name": "@trustline-inc/probity",
-  "version": "1.0.0-alpha29",
-  "license": "MIT",
+  "name": "@trustline/probity",
+  "version": "1.0.0-beta2",
+  "license": "Apache-2.0",
   "description": "Probity smart contracts",
   "scripts": {
     "node": "npx hardhat node",
@@ -21,6 +21,7 @@
     "pauseProbity": "DELAY=20000 npx hardhat run ./scripts/pauseProbity.ts --network",
     "unpauseProbity": "DELAY=20000 npx hardhat run scripts/unpauseProbity.ts --network",
     "whitelistAddress": "npx hardhat run ./scripts/whitelistAddress.ts --network",
+    "createLiquidableVaults": "npx hardhat run ./scripts/createLiquidatableVaults.ts --network",
     "deploy:dev": "npx hardhat run ./scripts/deploy.ts --network",
     "deploy:prod": "DEPLOYMENT_DELAY=20000 npx hardhat run ./scripts/deploy.ts --network",
     "deployAsset": "npx hardhat run ./scripts/deployNewAsset.ts --network",
@@ -36,11 +37,12 @@
   "contributors": [
     {
       "name": "Matthew Rosendin",
-      "email": "matt@trustline.co"
+      "email": "mrosendin@linqto.com",
+      "url": "https://mrosendin.github.io"
     },
     {
       "name": "Shine Lee",
-      "email": "shine@trustline.co"
+      "email": "aungshine@gmail.com"
     }
   ],
   "files": [
@@ -49,20 +51,22 @@
   "repository": {
     "url": "https://github.com/trustline-inc/probity.git"
   },
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
-  },
+  "bugs": "https://github.com/trustline-inc/probity/issues",
+  "homepage": "https://github.com/trustline-inc/probity",
   "devDependencies": {
     "@gnosis.pm/safe-core-sdk": "^2.0.0",
     "@gnosis.pm/safe-ethers-lib": "^1.0.0",
     "@nomiclabs/hardhat-ethers": "^2.2.0",
     "@nomiclabs/hardhat-waffle": "^2.0.3",
     "@nomiclabs/hardhat-web3": "^2.0.0",
+    "@openzeppelin/contracts": "^4.8.0",
     "@typechain/ethers-v5": "^8.0.0",
     "@typechain/hardhat": "^3.0.0",
     "@types/chai": "^4.2.15",
     "@types/mocha": "^8.2.1",
     "@types/node": "^14.14.41",
+    "@uniswap/v2-core": "^1.0.1",
+    "@uniswap/v2-periphery": "^1.1.0-beta.0",
     "axios": "^0.24.0",
     "bignumber.js": "^9.0.1",
     "chai": "^4.3.0",
@@ -72,6 +76,7 @@
     "ethereum-waffle": "^3.3.0",
     "ethers": "^5.0.31",
     "hardhat": "^2.11.2",
+    "hardhat-contract-sizer": "^2.6.1",
     "hardhat-ethernal": "^2.1.0",
     "husky": "^4.3.8",
     "prettier": "^2.2.1",
@@ -92,6 +97,6 @@
     }
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^4.5.0"
+    "ethereumjs-wallet": "^1.0.2"
   }
 }

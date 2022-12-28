@@ -1,15 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
-pragma solidity ^0.8.0;
+pragma solidity 0.8.4;
 
-interface FtsoLike {
-    function getCurrentPrice() external returns (uint256 _price, uint256 _timestamp);
-}
+import "../interfaces/IFtsoLike.sol";
 
 contract MockPriceFeed {
     struct Asset {
         uint256 liquidationRatio;
-        FtsoLike ftso;
+        IFtsoLike ftso;
         uint256 price;
     }
 
@@ -24,9 +22,5 @@ contract MockPriceFeed {
 
     function setPrice(bytes32 assetId, uint256 newPrice) external {
         assets[assetId].price = newPrice;
-    }
-
-    function setShutdownState() external {
-        states[bytes32("shutdown")] = true;
     }
 }

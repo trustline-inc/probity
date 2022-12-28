@@ -1,23 +1,19 @@
 // SPDX-License-Identifier: Apache-2.0
 
-pragma solidity ^0.8.0;
+pragma solidity 0.8.4;
 
 import "../../dependencies/Stateful.sol";
+import "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "../../interfaces/IVaultEngineLike.sol";
 
-interface VaultEngineLike {
-    function modifyStandbyAmount(
-        bytes32 assetId,
-        address user,
-        int256 amount
-    ) external;
-}
-
-contract NativeAssetManager is Stateful {
+contract NativeAssetManager is Stateful, ReentrancyGuard {
     /////////////////////////////////////////
     // State Variables
     /////////////////////////////////////////
     bytes32 public immutable assetId;
-    VaultEngineLike public immutable vaultEngine;
+    IVaultEngineLike public immutable vaultEngine;
 
     /////////////////////////////////////////
     // Events
@@ -27,13 +23,15 @@ contract NativeAssetManager is Stateful {
     event WithdrawNativeCrypto(address indexed user, uint256 amount);
 
     /////////////////////////////////////////
+    // Errors
+    /////////////////////////////////////////
+
+    error transferFailed();
+
+    /////////////////////////////////////////
     // Constructor
     /////////////////////////////////////////
-    constructor(
-        address registryAddress,
-        bytes32 id,
-        VaultEngineLike vaultEngineAddress
-    ) Stateful(registryAddress) {
+    constructor(address registryAddress, bytes32 id, IVaultEngineLike vaultEngineAddress) Stateful(registryAddress) {
         assetId = id;
         vaultEngine = vaultEngineAddress;
     }
@@ -41,14 +39,14 @@ contract NativeAssetManager is Stateful {
     /////////////////////////////////////////
     // External Functions
     /////////////////////////////////////////
-    function deposit() external payable onlyWhen("paused", false) onlyBy("whitelisted") {
-        vaultEngine.modifyStandbyAmount(assetId, msg.sender, int256(msg.value));
+    function deposit() external payable onlyWhen("paused", false) {
+        vaultEngine.modifyStandbyAmount(assetId, msg.sender, SafeCast.toInt256(msg.value));
         emit DepositNativeCrypto(msg.sender, msg.value);
     }
 
-    function withdraw(uint256 amount) external onlyWhen("paused", false) {
-        vaultEngine.modifyStandbyAmount(assetId, msg.sender, -int256(amount));
-        require(payable(msg.sender).send(amount), "NativeAssetManager/withdraw: fail to send FLR");
+    function withdraw(uint256 amount) external onlyWhen("paused", false) nonReentrant {
+        vaultEngine.modifyStandbyAmount(assetId, msg.sender, -SafeCast.toInt256(amount));
+        Address.sendValue(payable(msg.sender), amount);
         emit WithdrawNativeCrypto(msg.sender, amount);
     }
 }

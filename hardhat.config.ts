@@ -1,11 +1,28 @@
 require("dotenv").config();
 import "hardhat-ethernal";
+import "hardhat-contract-sizer";
 import "solidity-coverage";
 import "@typechain/hardhat";
 import "@nomiclabs/hardhat-ethers";
 import "@nomiclabs/hardhat-web3";
 import "@nomiclabs/hardhat-waffle";
 import { HardhatUserConfig } from "hardhat/config";
+import Wallet from "ethereumjs-wallet";
+import fs from "fs";
+
+// Default private key (use an encrypted keystore file instead)
+let privateKey =
+  "e8eb815fca4f7febe74b9cfb026c640ac6d607b0c6fd65df40b7584e285f19b3";
+
+if (process.env.KEYSTORE_FILE) {
+  privateKey = Wallet.fromV3(
+    fs.readFileSync(process.env.KEYSTORE_FILE).toString(),
+    process.env.KEYSTORE_PASSWORD,
+    true
+  )
+    .getPrivateKey()
+    .toString("hex");
+}
 
 // See https://hardhat.org/hardhat-runner/docs/config#available-config-options
 const config: HardhatUserConfig = {
@@ -14,9 +31,10 @@ const config: HardhatUserConfig = {
     workspace: "Probity",
     email: process.env.ETHERNAL_EMAIL,
     password: process.env.ETHERNAL_PASSWORD,
-    disabled: process.env.NODE_ENV === "test",
+    disabled: true,
     uploadAst: true,
   },
+  // See https://hardhat.org/hardhat-network/docs/reference#supported-fields
   networks: {
     localhost: {
       chainId: 31337,
@@ -24,11 +42,12 @@ const config: HardhatUserConfig = {
       allowUnlimitedContractSize: true,
       gas: 12000000,
       blockGasLimit: 0x1fffffffffffff,
-      accounts: [
-        "2f1c0faaa822d71c3f581f92a6db4bd599b38a3a85dbcde6256bf929e5c7a45e",
-      ],
+      accounts: {
+        mnemonic:
+          "refuse inherit state window exercise carpet circle empty scan exclude talk cargo",
+        accountsBalance: "100000000000000000000000000",
+      },
     },
-    // See https://hardhat.org/hardhat-network/docs/reference#supported-fields
     hardhat: {
       chainId: 31337,
       allowUnlimitedContractSize: true,
@@ -42,33 +61,23 @@ const config: HardhatUserConfig = {
     },
     flare_local: {
       url: "http://127.0.0.1:9650/ext/bc/C/rpc",
-      accounts: [
-        // TODO: Read this from encrypted keystore file
-        "e8eb815fca4f7febe74b9cfb026c640ac6d607b0c6fd65df40b7584e285f19b3",
-      ],
-      chainId: 4294967295,
-    },
-    flare_internal: {
-      url: "https://coston.trustline.co/ext/bc/C/rpc",
-      accounts: [
-        "44b8de040dec19cf810efe64919b481e05e2ba643efe003223662f1626b114f0",
-        "d77b743a0b9170c230e4a4be446b8605aa45f1d00da3d8cd5e5f778c287e1f22",
-      ],
+      accounts: [privateKey],
       chainId: 4294967295,
     },
     coston: {
       url: "https://coston-api.flare.network/ext/bc/C/rpc",
-      accounts: [
-        "e8eb815fca4f7febe74b9cfb026c640ac6d607b0c6fd65df40b7584e285f19b3",
-      ],
+      accounts: [privateKey],
       chainId: 16,
+    },
+    coston2: {
+      url: "https://coston2-api.flare.network/ext/bc/C/rpc",
+      accounts: [privateKey],
+      chainId: 114,
     },
     songbird: {
       url: "https://songbird.towolabs.com/rpc",
       chainId: 19,
-      accounts: {
-        mnemonic: "",
-      },
+      accounts: [privateKey],
     },
   },
   solidity: "0.8.4",

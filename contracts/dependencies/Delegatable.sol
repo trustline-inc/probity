@@ -1,50 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity ^0.8.0;
+pragma solidity 0.8.4;
 
 import "./Stateful.sol";
 import "./Math.sol";
-
-interface FtsoRewardManagerLike {
-    function claimRewardFromDataProviders(
-        address payable _recipient,
-        uint256[] memory _rewardEpochs,
-        address[] memory _dataProviders
-    ) external returns (uint256 _rewardAmount);
-
-    function getEpochsWithClaimableRewards() external view returns (uint256 _startEpochId, uint256 _endEpochId);
-}
-
-interface FtsoManagerLike {
-    function getCurrentRewardEpoch() external view returns (uint256);
-}
-
-interface VPTokenManagerLike {
-    function transfer(address recipient, uint256 amount) external returns (bool);
-
-    function transferFrom(
-        address sender,
-        address recipient,
-        uint256 amount
-    ) external returns (bool);
-
-    function delegate(address _to, uint256 _bips) external;
-}
-
-interface VaultEngineLike {
-    function vaults(bytes32 assetId, address user)
-        external
-        returns (
-            uint256 standbyAmount,
-            uint256 underlying,
-            uint256 collateral
-        );
-
-    function modifyStandbyAmount(
-        bytes32 assetId,
-        address user,
-        int256 amount
-    ) external;
-}
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import "../interfaces/IVaultEngineLike.sol";
+import "../interfaces/IVPTokenManagerLike.sol";
+import "../interfaces/IFtsoRewardManagerLike.sol";
+import "../interfaces/IFtsoManagerLike.sol";
 
 /**
  * @title Delegatable Contract
@@ -58,10 +22,10 @@ contract Delegatable is Stateful {
     uint256 private constant HUNDRED_PERCENT = 10000;
     uint256 private constant RAY = 1e27;
 
-    FtsoManagerLike public immutable ftsoManager;
-    FtsoRewardManagerLike public immutable ftsoRewardManager;
-    VaultEngineLike public immutable vaultEngine;
-    VPTokenManagerLike public immutable token;
+    IFtsoManagerLike public immutable ftsoManager;
+    IFtsoRewardManagerLike public immutable ftsoRewardManager;
+    IVaultEngineLike public immutable vaultEngine;
+    IVPTokenManagerLike public immutable token;
     bytes32 public immutable assetId;
 
     address[] public dataProviders; // List of data providers to delegate voting power
@@ -70,8 +34,16 @@ contract Delegatable is Stateful {
     mapping(uint256 => int256) public totalDepositsForEpoch;
     mapping(uint256 => uint256) public rewardPerUnitForEpoch; // Reward multiplier for each epoch
     mapping(address => uint256) public userLastClaimedEpoch; // user's last claimed Epoch
-    mapping(address => uint256) public recentTotalDeposit; // user's total recent deposit since last claimed epoch
-    mapping(address => mapping(uint256 => uint256)) public recentDeposits; // user's recent deposit during each epoch
+    mapping(address => int256) public recentTotalDeposit; // user's total recent deposit since last claimed epoch
+    mapping(address => mapping(uint256 => int256)) public recentDeposits; // user's recent deposit during each epoch
+
+    ///////////////////////////////////
+    // Errors
+    ///////////////////////////////////
+
+    error noEpochToClaim();
+    error providerAndPctLengthMismatch();
+    error pctDoesNotAddUpToHundred();
 
     ///////////////////////////////////
     // Constructor
@@ -79,10 +51,10 @@ contract Delegatable is Stateful {
     constructor(
         address registryAddress,
         bytes32 collateralId,
-        FtsoManagerLike ftsoManagerAddress,
-        FtsoRewardManagerLike rewardManagerAddress,
-        VPTokenManagerLike tokenAddress,
-        VaultEngineLike vaultEngineAddress
+        IFtsoManagerLike ftsoManagerAddress,
+        IFtsoRewardManagerLike rewardManagerAddress,
+        IVPTokenManagerLike tokenAddress,
+        IVaultEngineLike vaultEngineAddress
     ) Stateful(registryAddress) {
         assetId = collateralId;
         ftsoManager = ftsoManagerAddress;
@@ -141,7 +113,7 @@ contract Delegatable is Stateful {
                 );
             } else {
                 // at epoch 0, totalDepositsForEpoch should not be negative
-                totalBalanceAtEpoch[epochId] = uint256(totalDepositsForEpoch[epochId]);
+                totalBalanceAtEpoch[epochId] = SafeCast.toUint256(totalDepositsForEpoch[epochId]);
             }
 
             // reward would be zero if totalBalanceAtEpoch is zero
@@ -159,38 +131,26 @@ contract Delegatable is Stateful {
      * @param epochToEnd stop at this epoch instead of the lastClaimedEpoch, leave zero to process up until
      *        lastClaimedEpoch
      */
-    function userCollectReward(uint256 epochToEnd) external {
-        require(
-            lastClaimedEpoch > userLastClaimedEpoch[msg.sender],
-            "Delegatable/userCollectReward: No new epoch to claim"
-        );
 
-        (uint256 underlying, uint256 collateral, uint256 standbyAmount) = vaultEngine.vaults(assetId, msg.sender);
-        uint256 currentBalance = standbyAmount + underlying + collateral;
-        uint256 rewardBalance = 0;
+    function userCollectReward(uint256 epochToEnd) external onlyWhen("paused", false) {
+        if (lastClaimedEpoch <= userLastClaimedEpoch[msg.sender]) revert noEpochToClaim();
 
-        uint256 lastEpoch = lastClaimedEpoch;
+        _userCollectReward(epochToEnd, msg.sender);
+    }
 
-        if (epochToEnd != 0 && epochToEnd < lastClaimedEpoch) {
-            lastEpoch = epochToEnd;
+    /**
+     * @dev allow auctioneer to collect reward on behalf of users based on their locked up token value,
+     *      use epochToEnd parameter if there are too many epochs to process
+     * @param user address of the user's reward to collect
+     */
+    function collectRewardForUser(address user) external onlyBy("auctioneer") {
+        if (lastClaimedEpoch <= userLastClaimedEpoch[user]) {
+            // no reward to collect, simply return without throwing error
+            return;
         }
 
-        for (uint256 epochId = userLastClaimedEpoch[msg.sender]; epochId <= lastEpoch; epochId++) {
-            uint256 rewardableBalance = 0;
-
-            if (recentTotalDeposit[msg.sender] < currentBalance) {
-                rewardableBalance = currentBalance - recentTotalDeposit[msg.sender];
-            }
-
-            recentTotalDeposit[msg.sender] -= recentDeposits[msg.sender][epochId];
-            rewardBalance += (rewardPerUnitForEpoch[epochId] * rewardableBalance) / RAY;
-
-            delete recentDeposits[msg.sender][epochId];
-        }
-
-        userLastClaimedEpoch[msg.sender] = lastEpoch;
-
-        token.transfer(msg.sender, rewardBalance);
+        // pass in zero to collect all collectable epoch
+        _userCollectReward(0, user);
     }
 
     /**
@@ -200,10 +160,8 @@ contract Delegatable is Stateful {
      *             The pct must add up to 100% (10000)
      */
     function changeDataProviders(address[] memory providers, uint256[] memory pcts) external onlyBy("gov") {
-        require(
-            providers.length == pcts.length,
-            "Delegatable/changeDataProviders: Length of providers and pct mismatch"
-        );
+        if (providers.length != pcts.length) revert providerAndPctLengthMismatch();
+
         uint256 totalPct = 0;
 
         for (uint256 index = 0; index < providers.length; index++) {
@@ -211,11 +169,41 @@ contract Delegatable is Stateful {
             totalPct += pcts[index];
         }
 
-        require(
-            totalPct == HUNDRED_PERCENT,
-            "Delegatable/changeDataProviders: Provided percentages does not add up to 100%"
-        );
+        if (totalPct != HUNDRED_PERCENT) revert pctDoesNotAddUpToHundred();
 
         dataProviders = providers;
+    }
+
+    ///////////////////////////////////
+    // Internal Functions
+    ///////////////////////////////////
+
+    function _userCollectReward(uint256 epochToEnd, address user) internal {
+        (uint256 underlying, uint256 collateral, uint256 standbyAmount, , , , ) = vaultEngine.vaults(assetId, user);
+        uint256 currentBalance = standbyAmount + underlying + collateral;
+        uint256 rewardBalance = 0;
+
+        uint256 lastEpoch = lastClaimedEpoch;
+
+        if (epochToEnd != 0 && epochToEnd < lastClaimedEpoch) {
+            lastEpoch = epochToEnd;
+        }
+
+        for (uint256 epochId = userLastClaimedEpoch[user]; epochId <= lastEpoch; epochId++) {
+            uint256 rewardableBalance = 0;
+
+            if (recentTotalDeposit[user] < SafeCast.toInt256(currentBalance)) {
+                rewardableBalance = Math._sub(currentBalance, recentTotalDeposit[user]);
+            }
+
+            recentTotalDeposit[user] -= recentDeposits[user][epochId];
+            rewardBalance += (rewardPerUnitForEpoch[epochId] * rewardableBalance) / RAY;
+
+            delete recentDeposits[user][epochId];
+        }
+
+        userLastClaimedEpoch[user] = lastEpoch;
+
+        SafeERC20.safeTransfer(IERC20(address(token)), user, rewardBalance);
     }
 }
