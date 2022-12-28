@@ -99,6 +99,7 @@ const NATIVE_ASSETS: { [key: string]: string } = {
   coston2: "C2FLR",
   songbird: "SGB",
   flare: "FLR",
+  xrp_ledger: "XRP",
 };
 
 const NATIVE_ASSET = NATIVE_ASSETS[network.name];
@@ -1873,7 +1874,8 @@ const deployProbity = async (vaultEngineType?: string) => {
   if (
     network.name === "flare_local" ||
     network.name === "coston" ||
-    network.name === "localhost"
+    network.name === "localhost" ||
+    network.name === "xrp_ledger"
   ) {
     vaultType = "vaultEngineIssuer";
     await deployVaultEngineIssuer();

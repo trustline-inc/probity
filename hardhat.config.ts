@@ -81,7 +81,7 @@ const config: HardhatUserConfig = {
       accounts: [privateKey],
     },
     xrp_ledger: {
-      url: "http://rpc.evm-sidechain.xrpl.org",
+      url: "https://rpc-evm-sidechain.xrpl.org",
       chainId: 1440001,
       accounts: [privateKey],
     },
