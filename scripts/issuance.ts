@@ -8,10 +8,10 @@ import { Contract } from "ethers";
 import config from "../hardhat.config";
 import { RAD } from "../test/utils/constants";
 
-const account = "0x11EeB875AAc42eEe7CB37668360206B0056F6eEd";
-const wallet = new ethers.Wallet(
-  "a59bc90d864e28891df18f0cf49b2a1a53944467307c10d0650676f7a1394eec",
-  new ethers.providers.JsonRpcProvider(hre.network.url)
+const beneficiary = "";
+const wallet = new ethers.Wallet.fromMnemonic(
+  config.networks.localhost?.accounts.mnemonic,
+  "m/44'/60'/0'/0/1"
 );
 const amount = RAD.mul(1_000_000);
 

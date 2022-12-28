@@ -5,6 +5,7 @@ import "@nomiclabs/hardhat-web3";
 import * as hre from "hardhat";
 import { artifacts, ethers, web3 } from "hardhat";
 import { getNativeToken } from "../lib/utils";
+import { ADDRESS_ZERO } from "../test/utils/constants";
 
 const nativeToken: string = getNativeToken();
 const networkName = hre.network.name;
