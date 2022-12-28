@@ -41,7 +41,7 @@ contract VaultEngine is Stateful, Eventful, IVaultEngineLike {
     /////////////////////////////////////////
     // Data Variables
     /////////////////////////////////////////
-    uint256 private constant RAY = 10**27;
+    uint256 private constant RAY = 10 ** 27;
 
     address public treasury;
     uint256 public override debtAccumulator; // Cumulative debt rate [RAY]
@@ -133,16 +133,10 @@ contract VaultEngine is Stateful, Eventful, IVaultEngineLike {
      * @param assetId the asset ID
      * @param account the vault owner's address
      */
-    function balanceOf(bytes32 assetId, address account)
-        external
-        view
-        returns (
-            uint256 underlying,
-            uint256 collateral,
-            uint256 debt,
-            uint256 equity
-        )
-    {
+    function balanceOf(
+        bytes32 assetId,
+        address account
+    ) external view returns (uint256 underlying, uint256 collateral, uint256 debt, uint256 equity) {
         Vault storage vault = vaults[assetId][account];
         Asset storage asset = assets[assetId];
 
@@ -160,11 +154,7 @@ contract VaultEngine is Stateful, Eventful, IVaultEngineLike {
      * @param account The address of the vault owner
      * @param amount The amount of asset to modify
      */
-    function modifyStandbyAmount(
-        bytes32 assetId,
-        address account,
-        int256 amount
-    ) external override onlyByProbity {
+    function modifyStandbyAmount(bytes32 assetId, address account, int256 amount) external override onlyByProbity {
         vaults[assetId][account].standbyAmount = Math._add(vaults[assetId][account].standbyAmount, amount);
     }
 
@@ -175,12 +165,7 @@ contract VaultEngine is Stateful, Eventful, IVaultEngineLike {
      * @param to The address of the beneficiary vault owner
      * @param amount The amount of asset to move
      */
-    function moveAsset(
-        bytes32 assetId,
-        address from,
-        address to,
-        uint256 amount
-    ) external override onlyByProbity {
+    function moveAsset(bytes32 assetId, address from, address to, uint256 amount) external override onlyByProbity {
         vaults[assetId][from].standbyAmount -= amount;
         vaults[assetId][to].standbyAmount += amount;
     }
@@ -191,11 +176,7 @@ contract VaultEngine is Stateful, Eventful, IVaultEngineLike {
      * @param to The address of the beneficiary vault owner
      * @param amount The amount of systemCurrency to move
      */
-    function moveSystemCurrency(
-        address from,
-        address to,
-        uint256 amount
-    ) external override onlyByProbity {
+    function moveSystemCurrency(address from, address to, uint256 amount) external override onlyByProbity {
         systemCurrency[from] -= amount;
         systemCurrency[to] += amount;
     }
@@ -511,11 +492,7 @@ contract VaultEngine is Stateful, Eventful, IVaultEngineLike {
         emit EquityModified(msg.sender, underlyingAmount, equityCreated);
     }
 
-    function _modifyDebt(
-        bytes32 assetId,
-        int256 collAmount,
-        int256 debtAmount
-    ) internal onlyIfInitialized(assetId) {
+    function _modifyDebt(bytes32 assetId, int256 collAmount, int256 debtAmount) internal onlyIfInitialized(assetId) {
         if (treasury == address(0)) revert treasuryAddressNotSet();
         if (assets[assetId].category == Category.UNDERLYING) revert assetNotAllowedAsCollateral();
 

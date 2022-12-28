@@ -33,22 +33,14 @@ contract PBT is ERC20, Stateful {
     /**
      * @dev disable approve function of Pbt token
      */
-    function _approve(
-        address,
-        address,
-        uint256
-    ) internal pure override {
+    function _approve(address, address, uint256) internal pure override {
         revert("Approve is disabled for PBT token");
     }
 
     /**
      * @dev disable transfer of Pbt Token
      */
-    function _transfer(
-        address,
-        address,
-        uint256
-    ) internal pure override {
+    function _transfer(address, address, uint256) internal pure override {
         revert("Transfer is disabled for PBT token");
     }
 }

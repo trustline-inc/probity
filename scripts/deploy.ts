@@ -41,7 +41,7 @@ async function main() {
   let fileOutput = "";
   let { contracts } = deployment;
 
-  if (!contracts.length) {
+  if (!Object.keys(contracts).length) {
     console.log("No contracts were deployed.");
     process.exit();
   }

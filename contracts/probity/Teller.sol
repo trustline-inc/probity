@@ -17,8 +17,8 @@ contract Teller is Stateful, Eventful {
     /////////////////////////////////////////
     // State Variables
     /////////////////////////////////////////
-    uint256 private constant WAD = 10**18;
-    uint256 private constant RAY = 10**27;
+    uint256 private constant WAD = 10 ** 18;
+    uint256 private constant RAY = 10 ** 27;
     // Set max APR to 100%
     uint256 public constant MAX_APR = WAD * 2 * 1e9;
 
@@ -102,9 +102,9 @@ contract Teller is Stateful, Eventful {
             apr = MAX_APR;
         } else {
             uint256 oneMinusUtilization = RAY - (utilization * 1e9);
-            uint256 oneDividedByOneMinusUtilization = Math._rdiv(10**27 * 0.01, oneMinusUtilization);
+            uint256 oneDividedByOneMinusUtilization = Math._rdiv(10 ** 27 * 0.01, oneMinusUtilization);
 
-            uint256 round = 0.0025 * 10**27;
+            uint256 round = 0.0025 * 10 ** 27;
             apr = oneDividedByOneMinusUtilization + RAY;
             apr = ((apr + round - 1) / round) * round;
 

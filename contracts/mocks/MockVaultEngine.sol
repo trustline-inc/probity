@@ -55,7 +55,7 @@ contract MockVaultEngine {
     mapping(address => uint256) public pbt;
     mapping(address => uint256) public systemDebt;
 
-    uint256 private constant RAY = 10**27;
+    uint256 private constant RAY = 10 ** 27;
     uint256 public debtAccumulator = RAY; // Cumulative debt rate
     uint256 public equityAccumulator = RAY; // Cumulative equity rate
     uint256 public protocolFeeRates;
@@ -76,11 +76,7 @@ contract MockVaultEngine {
         systemCurrency[user] -= amount;
     }
 
-    function moveSystemCurrency(
-        address from,
-        address to,
-        uint256 amount
-    ) external {
+    function moveSystemCurrency(address from, address to, uint256 amount) external {
         systemCurrency[from] -= amount;
         systemCurrency[to] += amount;
     }
@@ -158,11 +154,7 @@ contract MockVaultEngine {
         reservePool = reservePool_;
     }
 
-    function updateNormValues(
-        bytes32 assetId,
-        uint256 normDebt,
-        uint256 normEquity
-    ) external {
+    function updateNormValues(bytes32 assetId, uint256 normDebt, uint256 normEquity) external {
         assets[assetId].normDebt = normDebt;
         assets[assetId].normEquity = normEquity;
     }
@@ -237,12 +229,7 @@ contract MockVaultEngine {
         );
     }
 
-    function moveAsset(
-        bytes32 assetId,
-        address from,
-        address to,
-        uint256 amount
-    ) external {
+    function moveAsset(bytes32 assetId, address from, address to, uint256 amount) external {
         vaults[assetId][from].standbyAmount -= amount;
         vaults[assetId][to].standbyAmount += amount;
     }

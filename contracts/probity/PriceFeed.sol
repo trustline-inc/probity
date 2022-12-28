@@ -65,11 +65,7 @@ contract PriceFeed is Stateful, Eventful, IPriceFeedLike {
      * @param liquidationRatio liquidationRatio for the asset
      * @param ftso the ftso address for the asset
      */
-    function initAsset(
-        bytes32 assetId,
-        uint256 liquidationRatio,
-        IFtsoLike ftso
-    ) external onlyBy("gov") {
+    function initAsset(bytes32 assetId, uint256 liquidationRatio, IFtsoLike ftso) external onlyBy("gov") {
         if (address(assets[assetId].ftso) != address(0)) revert assetAlreadyInitialized();
 
         assets[assetId].liquidationRatio = liquidationRatio;

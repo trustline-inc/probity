@@ -11,6 +11,7 @@ import Wallet from "ethereumjs-wallet";
 import fs from "fs";
 
 // Default private key (use an encrypted keystore file instead)
+// The corresponding public key is 0x70dE4961F5A55906ED9699D3e455B5181BCae305
 let privateKey =
   "e8eb815fca4f7febe74b9cfb026c640ac6d607b0c6fd65df40b7584e285f19b3";
 
@@ -77,6 +78,11 @@ const config: HardhatUserConfig = {
     songbird: {
       url: "https://songbird.towolabs.com/rpc",
       chainId: 19,
+      accounts: [privateKey],
+    },
+    xrp_ledger: {
+      url: "https://rpc-evm-sidechain.xrpl.org",
+      chainId: 1440001,
       accounts: [privateKey],
     },
   },

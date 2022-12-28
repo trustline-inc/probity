@@ -18,11 +18,7 @@ contract MockErc20AssetManager is Stateful {
 
     error transferFailed();
 
-    constructor(
-        address registryAddress,
-        bytes32 id,
-        ITokenLike asset
-    ) Stateful(registryAddress) {
+    constructor(address registryAddress, bytes32 id, ITokenLike asset) Stateful(registryAddress) {
         assetId = id;
         token = asset;
     }

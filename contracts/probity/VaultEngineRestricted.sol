@@ -16,7 +16,7 @@ contract VaultEngineRestricted is VaultEngine {
     /////////////////////////////////////////
     // Data Variables
     /////////////////////////////////////////
-    uint256 private constant RAY = 10**27;
+    uint256 private constant RAY = 10 ** 27;
 
     /////////////////////////////////////////
     // Constructor

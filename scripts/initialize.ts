@@ -19,7 +19,7 @@ const NATIVE_ASSETS: { [key: string]: string } = {
 };
 
 const ERC20_ASSETS = {
-  FXRP: web3.utils.keccak256("FXRP"),
+  LQO: web3.utils.keccak256("LQO"),
   USD: web3.utils.keccak256("USD"),
   XAU: web3.utils.keccak256("XAU"),
 };
@@ -35,8 +35,8 @@ ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 const init = async () => {
   // Wallets
   const [gov]: SignerWithAddress[] = await ethers.getSigners();
-  const TRUSTLINE_INC = "0x11EeB875AAc42eEe7CB37668360206B0056F6eEd";
-  const allowlist = [TRUSTLINE_INC];
+  const LINQTO = "0x6310B7E8bDFD25EFbeDfB17987Ba69D9191a45bD";
+  const allowlist = [LINQTO];
 
   // ABIs
   const RegistryABI = await artifacts.readArtifact("Registry");
@@ -93,8 +93,8 @@ const init = async () => {
     }
 
     // Initialize the native token in VaultEngine
-    console.log(`Initializing native token collateral: ${nativeToken}`);
-    let category = 1; // collateral category code
+    console.log(`Initializing native token: ${nativeToken}`);
+    let category = 3; // both category code
     let tx = await vaultEngine
       .connect(gov)
       .initAsset(NATIVE_ASSETS[nativeToken], category, { gasLimit: 400000 });
@@ -104,7 +104,7 @@ const init = async () => {
     // Initialize erc20Token in VaultEngine
     const erc20Token = "USD";
     console.log(`Initializing ${erc20Token} token`);
-    category = 0; // underlying category code
+    category = 3; // both category code
     tx = await vaultEngine
       .connect(gov)
       .initAsset(ERC20_ASSETS[erc20Token], category, { gasLimit: 400000 });

@@ -32,8 +32,8 @@ contract Liquidator is Stateful, Eventful, ILiquidatorLike {
     /////////////////////////////////////////
     // State Variables
     /////////////////////////////////////////
-    uint256 private constant RAY = 10**27;
-    uint256 private constant WAD = 10**18;
+    uint256 private constant RAY = 10 ** 27;
+    uint256 private constant WAD = 10 ** 18;
 
     IVaultEngineLike public immutable vaultEngine;
     IReservePoolLike public immutable reserve;
@@ -97,11 +97,7 @@ contract Liquidator is Stateful, Eventful, ILiquidatorLike {
      * @param debtPenalty The new debt position penalty
      * @param equityPenalty The new equity position penalty
      */
-    function updatePenalties(
-        bytes32 assetId,
-        uint256 debtPenalty,
-        uint256 equityPenalty
-    ) external onlyBy("gov") {
+    function updatePenalties(bytes32 assetId, uint256 debtPenalty, uint256 equityPenalty) external onlyBy("gov") {
         if (debtPenalty < WAD / 1000 || equityPenalty < WAD / 1000) revert valueProvidedIsBelowLowerBounds();
         if (debtPenalty > WAD * 10 || equityPenalty > WAD) revert valueProvidedIsAboveUpperBounds();
         emit LogVarUpdate("liquidator", assetId, "debtPenaltyFee", assets[assetId].debtPenaltyFee, debtPenalty);

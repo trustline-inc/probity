@@ -38,19 +38,14 @@ interface IVaultEngineLike {
 
     function lendingPoolSupply() external returns (uint256);
 
-    function moveSystemCurrency(
-        address from,
-        address to,
-        uint256 amount
-    ) external;
+    function moveSystemCurrency(address from, address to, uint256 amount) external;
 
-    function modifyStandbyAmount(
-        bytes32 collateral,
-        address user,
-        int256 amount
-    ) external;
+    function modifyStandbyAmount(bytes32 collateral, address user, int256 amount) external;
 
-    function vaults(bytes32 assetId, address user)
+    function vaults(
+        bytes32 assetId,
+        address user
+    )
         external
         returns (
             uint256 standbyAmount,
@@ -69,12 +64,7 @@ interface IVaultEngineLike {
         uint256 protocolFeeRates
     ) external;
 
-    function moveAsset(
-        bytes32 collateral,
-        address from,
-        address to,
-        uint256 amount
-    ) external;
+    function moveAsset(bytes32 collateral, address from, address to, uint256 amount) external;
 
     function liquidateDebtPosition(
         bytes32 assetId,
@@ -96,7 +86,9 @@ interface IVaultEngineLike {
         int256 initialEquityAmount
     ) external;
 
-    function assets(bytes32 assetId)
+    function assets(
+        bytes32 assetId
+    )
         external
         returns (
             uint256 adjustedPrice,

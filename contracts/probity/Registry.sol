@@ -61,11 +61,7 @@ contract Registry {
      * @param roleName of the address to be added
      * @param addr the vault owner's address
      */
-    function setupAddress(
-        bytes32 roleName,
-        address addr,
-        bool isProbitySystem
-    ) external onlyByGov {
+    function setupAddress(bytes32 roleName, address addr, bool isProbitySystem) external onlyByGov {
         addressToRole[addr].name = roleName;
         addressToRole[addr].isProbitySystem = isProbitySystem;
         emit ContractAdded(roleName, addr, isProbitySystem);

@@ -13,7 +13,7 @@ contract LinearDecrease is IPriceCalcLike {
     /////////////////////////////////////////
     // State Variables
     /////////////////////////////////////////
-    uint256 private constant RAY = 10**27;
+    uint256 private constant RAY = 10 ** 27;
 
     uint256 public timeToZero = 2 days;
 
@@ -26,12 +26,10 @@ contract LinearDecrease is IPriceCalcLike {
      * @param startingPrice to be used in calculation
      * @param timeElapsed in seconds
      */
-    function price(uint256 startingPrice, uint256 timeElapsed)
-        external
-        view
-        override
-        returns (uint256 calculatedPrice)
-    {
+    function price(
+        uint256 startingPrice,
+        uint256 timeElapsed
+    ) external view override returns (uint256 calculatedPrice) {
         if (timeElapsed >= timeToZero) return 0;
         return Math._rmul(startingPrice, Math._mul(timeToZero - timeElapsed, RAY) / timeToZero);
     }

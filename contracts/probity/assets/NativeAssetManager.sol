@@ -31,11 +31,7 @@ contract NativeAssetManager is Stateful, ReentrancyGuard {
     /////////////////////////////////////////
     // Constructor
     /////////////////////////////////////////
-    constructor(
-        address registryAddress,
-        bytes32 id,
-        IVaultEngineLike vaultEngineAddress
-    ) Stateful(registryAddress) {
+    constructor(address registryAddress, bytes32 id, IVaultEngineLike vaultEngineAddress) Stateful(registryAddress) {
         assetId = id;
         vaultEngine = vaultEngineAddress;
     }
