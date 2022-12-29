@@ -34,9 +34,10 @@ const amount = RAD.mul(1_000_000);
     VaultEngineIssuerABI.abi,
     gov
   );
-  const treasury = new Contract(process.env.TREASURY!, TreasuryABI.abi, issuer);
+
+  const treasury = new Contract(process.env.TREASURY!, TreasuryABI.abi, owner);
   const UsdABI = await artifacts.readArtifact("USD");
-  const usd = new Contract(process.env.USD!, UsdABI.abi, gov);
+  const usd = new Contract(process.env.USD!, UsdABI.abi, owner);
 
   console.log("Issuing USD...", {
     to: issuer.address,
@@ -57,6 +58,14 @@ const amount = RAD.mul(1_000_000);
     });
     console.log(tx);
     let result = await tx.wait();
+    console.log(result);
+    tx = await treasury
+      .connect(wallet)
+      .withdrawSystemCurrency(ethers.utils.parseUnits(String(1_000_000), 18), {
+        gasLimit: 400000,
+      });
+    console.log(tx);
+    result = await tx.wait();
     console.log(result);
 
     // Check issuer balance
