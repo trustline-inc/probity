@@ -27,9 +27,9 @@ async function main() {
 
   const param = {
     registry: registry.address,
-    vaultEngine: process.env.VAULT_ENGINE,
     symbol: symbol,
     erc20: erc20,
+    vaultEngine: process.env.VAULT_ENGINE,
   };
 
   //@ts-ignore
@@ -54,12 +54,9 @@ async function main() {
       if (typeof contract!["USD"] !== "undefined") {
         contractAddress = contract!["USD"].address;
         contractDisplayName = "USD";
-      } else if (typeof contract!["FXRP"] !== "undefined") {
-        contractAddress = contract!["FXRP"].address;
-        contractDisplayName = "FXRP";
-      } else if (typeof contract!["UPXAU"] !== "undefined") {
-        contractAddress = contract!["UPXAU"].address;
-        contractDisplayName = "UPXAU";
+      } else if (typeof contract!["LQO"] !== "undefined") {
+        contractAddress = contract!["LQO"].address;
+        contractDisplayName = "LQO";
       }
       if (contractDisplayName === "ERC20") continue; // skip empty ERC20
     }
@@ -69,12 +66,9 @@ async function main() {
       if (typeof contract!["USD_MANAGER"] !== "undefined") {
         contractAddress = contract!["USD_MANAGER"].address;
         contractDisplayName = "USD_MANAGER";
-      } else if (typeof contract!["FXRP_MANAGER"] !== "undefined") {
-        contractAddress = contract!["FXRP_MANAGER"].address;
-        contractDisplayName = "FXRP_MANAGER";
-      } else if (typeof contract!["UPXAU_MANAGER"] !== "undefined") {
-        contractAddress = contract!["UPXAU_MANAGER"].address;
-        contractDisplayName = "UPXAU_MANAGER";
+      } else if (typeof contract!["LQO_MANAGER"] !== "undefined") {
+        contractAddress = contract!["LQO_MANAGER"].address;
+        contractDisplayName = "LQO_MANAGER";
       }
       if (contractDisplayName === "ERC20_ASSET_MANAGER") continue; // skip empty ERC20_ASSET_MANAGER
     }

@@ -9,6 +9,10 @@ const output = `{
     address: "${process.env.USD}",
     abi: UsdABI.abi
   },
+  LQO: {
+    address: "${process.env.LQO}",
+    abi: LqoABI.abi
+  },
   AUCTIONEER: {
     address: "${process.env.AUCTIONEER}",
     abi: AuctioneerABI.abi

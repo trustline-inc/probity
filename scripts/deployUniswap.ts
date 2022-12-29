@@ -20,6 +20,7 @@ async function main() {
     owner
   ).deploy(factory.address, process.env.USD);
 
+  // TODO: Ensure that ERC20 is deployed and the envvar is set (in this case, LQO)
   const result = await factory.createPair(process.env.USD, process.env.LQO);
   console.log("Uniswap contracts deployed!");
   console.table({

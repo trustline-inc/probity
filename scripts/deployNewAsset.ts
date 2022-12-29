@@ -1,12 +1,9 @@
 /**
- * Deploy New Asset script
- * This will deploy new asset manager contract and initialize them in relevant contracts
- * Usage:
- *  All Settings and necessary Info should be set through env variables
- *
+ * This script deploys a new asset manager contract and initialize the asset in the system
+ * Usage: Configure environment variables before running.
  *
  *  Required Variables:
- *    contract addresses:
+ *    Contract Addresses:
  *      - REGISTRY
  *      - VAULT_ENGINE
  *      - PRICE_FEED
@@ -28,14 +25,22 @@
  */
 
 import "@nomiclabs/hardhat-ethers";
-import { probity, mock, parseExistingContracts } from "../lib/deployer";
+import {
+  probity,
+  mock,
+  parseExistingContracts,
+  contracts,
+} from "../lib/deployer";
 import { ethers, web3 } from "hardhat";
+import { ADDRESS_ZERO } from "../test/utils/constants";
 
+// Only log errors
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
+/**
+ * @function main
+ */
 async function main() {
-  let contracts: any;
-
   const contractsToCheck = [
     "REGISTRY",
     "VAULT_ENGINE",
@@ -46,11 +51,9 @@ async function main() {
 
   await checkContractAddresses(contractsToCheck);
   await checkSettings();
-  contracts = await parseExistingContracts();
+  contracts = await parseExistingContracts(contracts);
 
-  const assetId = web3.utils.keccak256(process.env.ASSET_NAME!);
-
-  // deploy the new assetManager Contracts
+  // deploy the new asset manager contract(s)
   console.info("Deploying Asset Manager");
   switch (process.env.ASSET_TYPE) {
     case "Native":
@@ -67,12 +70,13 @@ async function main() {
       if (contracts.ftso) var temp = contracts.ftso;
 
       // we need erc20 address
-      contracts = await probity.deployErc20AssetManager({
+      const params = {
         registry: process.env.REGISTRY,
-        symbol: assetId,
+        symbol: process.env.ASSET_NAME,
         vaultEngine: process.env.VAULT_ENGINE,
-        erc20: process.env.USD,
-      });
+        erc20: process.env.ERC20,
+      };
+      contracts = await probity.deployErc20AssetManager(params);
       contracts.ftso = temp;
       break;
     case "VPToken":
@@ -99,39 +103,41 @@ async function main() {
   }
 
   let ftso;
+
   // deploy FTSO - if needed
   if (process.env.DEPLOY_FTSO === "true") {
-    console.info("Deploying Mock FTSO");
-    const deployed = await mock.deployMockFtso();
-    ftso = deployed!.ftso?.address;
+    console.info(`Deploying Mock FTSO for ${process.env.ASSET_NAME}`);
+    const deployed = await mock.deployMockFtso(process.env.ASSET_NAME);
+
+    ftso = deployed!.ftso[process.env.ASSET_NAME]?.address;
   } else {
     console.info("Skipping Deploying FTSO");
-    ftso = contracts.ftso.address;
+    ftso = contracts.ftso[process.env.ASSET_NAME]?.address;
   }
 
   // deploy Auctioneer
   console.info("Deploying Auctioneer");
   await probity.deployAuctioneer();
 
-  const category = 0; // category for underlying assets is 0
+  // ASSET_NAME is the asset symbol
+  const assetId = web3.utils.keccak256(process.env.ASSET_NAME!);
+
+  const category = 3; // category for both assets is 3
   await execute(
     contracts.vaultEngine.initAsset(assetId, category, { gasLimit: 300000 }),
     "Initializing Asset on VaultEngine"
   );
 
+  // Change param `ADDRESS_ZERO` if the asset has a VPAssetManager address
   await execute(
-    contracts.teller.initAsset(
+    contracts.liquidator.initAsset(
       assetId,
-      ethers.utils.parseEther(process.env.PROTOCOL_FEE!),
-      { gasLimit: 300000 }
+      contracts.auctioneer.address,
+      ADDRESS_ZERO,
+      {
+        gasLimit: 300000,
+      }
     ),
-    "Initializing Asset on teller"
-  );
-
-  await execute(
-    contracts.liquidator.initAsset(assetId, contracts.auctioneer.address, {
-      gasLimit: 300000,
-    }),
     "Initializing Asset on liquidator"
   );
 
@@ -151,8 +157,13 @@ async function main() {
   );
 }
 
+/**
+ * @function checkContractAddresses
+ * @param contractNames
+ */
 async function checkContractAddresses(contractNames) {
   console.info("Checking if necessary contract addresses are present");
+  console.log(contractNames);
   for (let contractName of contractNames) {
     if (process.env[contractName] === undefined) {
       logErrorAndExit(
@@ -162,12 +173,21 @@ async function checkContractAddresses(contractNames) {
   }
 }
 
+/**
+ * @function execute
+ * @param promise
+ * @param message
+ */
 async function execute(promise, message) {
   console.info(message);
   await promise;
   await checkDelay();
 }
 
+/**
+ * @function checkDelay
+ * @returns
+ */
 async function checkDelay() {
   if (process.env.DELAY === undefined) return;
   const delayTime = parseInt(process.env.DELAY);
@@ -175,6 +195,9 @@ async function checkDelay() {
   return new Promise((resolve) => setTimeout(resolve, delayTime));
 }
 
+/**
+ * @function checkSettings
+ */
 async function checkSettings() {
   console.info("Checking if all necessary settings are present");
   const SUPPORTED_ASSET_TYPES = ["Native", "VPToken", "ERC20"];
@@ -193,7 +216,7 @@ async function checkSettings() {
   }
 
   // ASSET_TYPE
-  if (!SUPPORTED_ASSET_TYPES.includes(process.env.ASSET_TYPE!)) {
+  if (!SUPPORTED_ASSET_TYPES?.includes(process.env.ASSET_TYPE!)) {
     logErrorAndExit(
       `Please provide a supported ASSET_TYPE (Native, VPToken, ERC20)`
     );
@@ -205,6 +228,10 @@ async function checkSettings() {
   }
 }
 
+/**
+ * @function logErrorAndExit
+ * @param message
+ */
 function logErrorAndExit(message) {
   console.error(message);
   process.exit(1);

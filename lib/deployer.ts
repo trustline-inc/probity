@@ -84,6 +84,7 @@ import {
   VaultEngineLimited__factory,
   ERC20,
   ERC20__factory,
+  LQO,
 } from "../typechain";
 import { ADDRESS_ZERO } from "../test/utils/constants";
 
@@ -113,7 +114,13 @@ interface ContractDict {
   bondIssuer?: BondIssuer;
   delegatable?: Delegatable;
   usd?: USD;
-  ftso?: MockFtso;
+  ftso?:
+    | {
+        XRP?: undefined | MockFtso;
+        USD?: undefined | MockFtso;
+        LQO?: undefined | MockFtso;
+      }
+    | { [key: string]: undefined | MockFtso };
   registry?: Registry;
   pbt?: PBT;
   vaultEngine?:
@@ -125,21 +132,19 @@ interface ContractDict {
   vaultEngineLimited?: VaultEngineLimited;
   vaultEngineRestricted?: VaultEngineRestricted;
   nativeAssetManager?: NativeAssetManager;
-  usdManager?: ERC20AssetManager;
   erc20AssetManager?:
     | {
         USD_MANAGER?: undefined | ERC20AssetManager;
-        FXRP_MANAGER?: undefined | ERC20AssetManager;
-        UPXAU_MANAGER?: undefined | ERC20AssetManager;
+        LQO_MANAGER?: undefined | ERC20AssetManager;
       }
     | { [key: string]: undefined | ERC20AssetManager };
   erc20?:
     | {
         USD?: ERC20;
-        FXRP?: ERC20;
-        UPXAU?: ERC20;
+        LQO?: ERC20;
       }
     | { [key: string]: ERC20 };
+  usdManager?: ERC20AssetManager;
   ftsoManager?: MockFtsoManager;
   ftsoRewardManager?: MockFtsoRewardManager;
   teller?: Teller;
@@ -204,11 +209,15 @@ const artifactNameMap: { [key: string]: any } = {
   mockVPAssetManager: "MockVPAssetManager",
 };
 
-const contracts: ContractDict = {
+export const contracts: ContractDict = {
   usd: undefined,
   bondIssuer: undefined,
   delegatable: undefined,
-  ftso: undefined,
+  ftso: {
+    XRP: undefined,
+    USD: undefined,
+    LQO: undefined,
+  },
   registry: undefined,
   pbt: undefined,
   vaultEngine: undefined,
@@ -217,15 +226,14 @@ const contracts: ContractDict = {
   vaultEngineRestricted: undefined,
   nativeAssetManager: undefined,
   usdManager: undefined,
+  lqoManager: undefined,
   erc20AssetManager: {
     USD: undefined,
-    FXRP: undefined,
-    UPXAU: undefined,
+    LQO: undefined,
   },
   erc20: {
     USD: undefined,
-    FXRP: undefined,
-    UPXAU: undefined,
+    LQO: undefined,
   },
   ftsoManager: undefined,
   ftsoRewardManager: undefined,
@@ -298,20 +306,44 @@ const bytes32 = (string: string) => ethers.utils.formatBytes32String(string);
  * @function parseExistingContracts
  * Uses the dotenv file to read addresses of existing contracts
  */
-const parseExistingContracts = async () => {
+const parseExistingContracts = async (_contracts? = contracts) => {
   const signers = await getSigners();
 
-  for (let [contractName, contract] of Object.entries(contracts)) {
-    const contractDisplayName: string = contractName
-      .split(/(?=[A-Z])/)
-      .join("_")
-      .toUpperCase();
-    if (!!process.env[contractDisplayName]) {
-      contracts[contractName] = new ethers.Contract(
-        process.env[contractDisplayName]!,
-        (await artifacts.readArtifact(artifactNameMap[contractName])).abi,
-        signers.owner
-      );
+  // contractKey is camelCase and contract is a contract address string or object
+  for (let [contractKey, contract] of Object.entries(_contracts)) {
+    // Parse contract group
+    if (["erc20", "erc20AssetManager", "ftso"].includes(contractKey)) {
+      Object.keys(contract).forEach(async (key) => {
+        // Convert camelCase string to UPPER_SNAKE_CASE
+        const contractDisplayName: string = key
+          .split(/(?=[A-Z])/)
+          .join("_")
+          .toUpperCase();
+
+        // Save the ethers Contract object to in-memory data structure too
+        if (!!process.env[contractDisplayName]) {
+          _contracts[contractKey] = new ethers.Contract(
+            process.env[contractDisplayName]!,
+            (await artifacts.readArtifact(artifactNameMap[contractKey])).abi,
+            signers.owner
+          );
+        }
+      });
+    } else {
+      // TODO: Refactor duplicate code
+      // Convert contract name string in UPPER_SNAKE_CASE
+      const contractDisplayName: string = contractKey
+        .split(/(?=[A-Z])/)
+        .join("_")
+        .toUpperCase();
+      // Save the ethers Contract object to in-memory data structure too
+      if (!!process.env[contractDisplayName]) {
+        contracts[contractKey] = new ethers.Contract(
+          process.env[contractDisplayName]!,
+          (await artifacts.readArtifact(artifactNameMap[contractKey])).abi,
+          signers.owner
+        );
+      }
     }
   }
 
@@ -759,8 +791,8 @@ const deployVPAssetManager = async (param?: {
 };
 
 const deployErc20Token = async (param?: { symbol: string; name: string }) => {
-  const symbol = param?.symbol || "FXRP";
-  const name = param?.name || "Flare XRP";
+  const symbol = param?.symbol || "LQO";
+  const name = param?.name || "LQO";
 
   if (
     contracts[symbol.toLowerCase()] !== undefined &&
@@ -1538,9 +1570,11 @@ const deployMockPriceCalc = async () => {
   return contracts;
 };
 
-const deployMockFtso = async () => {
-  if (contracts.ftso !== undefined && process.env.NODE_ENV !== "test") {
-    console.info("Mock ftso contract has already been deployed, skipping");
+const deployMockFtso = async (symbol?: string = "USD") => {
+  if (contracts.ftso[symbol] !== undefined && process.env.NODE_ENV !== "test") {
+    console.info(
+      `${symbol} mock ftso contract has already been deployed, skipping`
+    );
     return;
   }
 
@@ -1549,18 +1583,18 @@ const deployMockFtso = async () => {
     "MockFtso",
     signers.owner
   )) as MockFtso__factory;
-  contracts.ftso = await ftsoFactory.deploy();
-  await contracts.ftso.deployed();
+  contracts.ftso[symbol] = await ftsoFactory.deploy();
+  await contracts.ftso[symbol].deployed();
   if (process.env.NODE_ENV !== "test") {
     console.info("mockFtso deployed ✓");
     await hre.ethernal.push({
       name: "MockFtso",
-      address: contracts.ftso?.address,
+      address: contracts.ftso[symbol]?.address,
     });
   }
   await contracts.registry?.setupAddress(
     bytes32("ftso"),
-    contracts.ftso.address,
+    contracts.ftso[symbol].address,
     true
   );
   await checkDeploymentDelay();
@@ -1850,7 +1884,7 @@ const deployMocks = async () => {
   await deployMockErc20Token();
   await deployMockErc20AssetManager();
   await deployMockVPToken();
-  await deployMockFtso();
+  await deployMockFtso("USD");
   await deployMockFtsoManager();
   await deployMockFtsoRewardManager();
   await deployMockPriceFeed();
