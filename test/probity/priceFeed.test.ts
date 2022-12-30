@@ -38,7 +38,8 @@ let ftso: MockFtso;
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
 
 describe("PriceFeed Unit Tests", function () {
-  const ASSET_ID = bytes32("asset name");
+  const ASSET_CODE = "XRP";
+  const ASSET_ID = bytes32(ASSET_CODE);
   const DEFAULT_LIQUIDATION_RATIO = WAD.mul(15).div(10);
   const CONTRACT_NAME = bytes32("priceFeed");
 
@@ -58,12 +59,20 @@ describe("PriceFeed Unit Tests", function () {
       await assertRevert(
         priceFeed
           .connect(user)
-          .initAsset(ASSET_ID, DEFAULT_LIQUIDATION_RATIO, ftso.address),
+          .initAsset(
+            ASSET_ID,
+            DEFAULT_LIQUIDATION_RATIO,
+            ftso[ASSET_CODE].address
+          ),
         "callerDoesNotHaveRequiredRole"
       );
       await priceFeed
         .connect(gov)
-        .initAsset(ASSET_ID, DEFAULT_LIQUIDATION_RATIO, ftso.address);
+        .initAsset(
+          ASSET_ID,
+          DEFAULT_LIQUIDATION_RATIO,
+          ftso[ASSET_CODE].address
+        );
     });
 
     it("fails if the asset has already been initialized", async () => {
@@ -72,17 +81,21 @@ describe("PriceFeed Unit Tests", function () {
       await priceFeed.initAsset(
         ASSET_ID,
         DEFAULT_LIQUIDATION_RATIO,
-        ftso.address
+        ftso[ASSET_CODE].address
       );
       await assertRevert(
-        priceFeed.initAsset(ASSET_ID, DEFAULT_LIQUIDATION_RATIO, ftso.address),
+        priceFeed.initAsset(
+          ASSET_ID,
+          DEFAULT_LIQUIDATION_RATIO,
+          ftso[ASSET_CODE].address
+        ),
         "assetAlreadyInitialized()"
       );
 
       await priceFeed.initAsset(
         DIFF_ASSET_ID,
         DEFAULT_LIQUIDATION_RATIO,
-        ftso.address
+        ftso[ASSET_CODE].address
       );
     });
 
@@ -94,12 +107,12 @@ describe("PriceFeed Unit Tests", function () {
       await priceFeed.initAsset(
         ASSET_ID,
         DEFAULT_LIQUIDATION_RATIO,
-        ftso.address
+        ftso[ASSET_CODE].address
       );
 
       const assetAfter = await priceFeed.assets(ASSET_ID);
       expect(assetAfter.liquidationRatio).to.equal(DEFAULT_LIQUIDATION_RATIO);
-      expect(assetAfter.ftso).to.equal(ftso.address);
+      expect(assetAfter.ftso).to.equal(ftso[ASSET_CODE].address);
     });
   });
 
@@ -109,7 +122,7 @@ describe("PriceFeed Unit Tests", function () {
       await priceFeed.initAsset(
         ASSET_ID,
         DEFAULT_LIQUIDATION_RATIO,
-        ftso.address
+        ftso[ASSET_CODE].address
       );
     });
 
@@ -128,13 +141,13 @@ describe("PriceFeed Unit Tests", function () {
     it("tests that all the variables are properly updated ", async () => {
       const assetBefore = await priceFeed.assets(ASSET_ID);
       expect(assetBefore.liquidationRatio).to.equal(DEFAULT_LIQUIDATION_RATIO);
-      expect(assetBefore.ftso).to.equal(ftso.address);
+      expect(assetBefore.ftso).to.equal(ftso[ASSET_CODE].address);
 
       await priceFeed.updateLiquidationRatio(ASSET_ID, NEW_LIQUIDATION_RATIO);
 
       const assetAfter = await priceFeed.assets(ASSET_ID);
       expect(assetAfter.liquidationRatio).to.equal(NEW_LIQUIDATION_RATIO);
-      expect(assetAfter.ftso).to.equal(ftso.address);
+      expect(assetAfter.ftso).to.equal(ftso[ASSET_CODE].address);
     });
 
     it("tests that LogVarUpdate is emitted correctly", async () => {
@@ -160,7 +173,7 @@ describe("PriceFeed Unit Tests", function () {
       await priceFeed.initAsset(
         ASSET_ID,
         DEFAULT_LIQUIDATION_RATIO,
-        ftso.address
+        ftso[ASSET_CODE].address
       );
     });
 
@@ -179,7 +192,7 @@ describe("PriceFeed Unit Tests", function () {
 
       const assetBefore = await priceFeed.assets(ASSET_ID);
       expect(assetBefore.liquidationRatio).to.equal(DEFAULT_LIQUIDATION_RATIO);
-      expect(assetBefore.ftso).to.equal(ftso.address);
+      expect(assetBefore.ftso).to.equal(ftso[ASSET_CODE].address);
 
       await priceFeed.updateFtso(ASSET_ID, NEW_FTSO_ADDRESS);
 
@@ -203,7 +216,7 @@ describe("PriceFeed Unit Tests", function () {
       expect(events[0].args.contractName).to.equal(CONTRACT_NAME);
       expect(events[0].args.assetId).to.equal(ASSET_ID);
       expect(events[0].args.variable).to.equal(VARIABLE_NAME);
-      expect(events[0].args.oldValue).to.equal(ftso.address);
+      expect(events[0].args.oldValue).to.equal(ftso[ASSET_CODE].address);
       expect(events[0].args.newValue).to.equal(NEW_FTSO_ADDRESS);
     });
   });
@@ -214,9 +227,9 @@ describe("PriceFeed Unit Tests", function () {
       await priceFeed.initAsset(
         ASSET_ID,
         DEFAULT_LIQUIDATION_RATIO,
-        ftso.address
+        ftso[ASSET_CODE].address
       );
-      await ftso.setCurrentPrice(CURRENT_PRICE_TO_SET);
+      await ftso[ASSET_CODE].setCurrentPrice(CURRENT_PRICE_TO_SET);
     });
 
     it("tests that get price returned in correct precision", async () => {
@@ -243,7 +256,7 @@ describe("PriceFeed Unit Tests", function () {
       });
       priceFeed = res.priceFeed!;
 
-      await ftso.setCurrentPrice(CURRENT_PRICE_TO_SET);
+      await ftso[ASSET_CODE].setCurrentPrice(CURRENT_PRICE_TO_SET);
     });
 
     it("fails if asset has not been initialized", async () => {
@@ -254,7 +267,7 @@ describe("PriceFeed Unit Tests", function () {
       await priceFeed.initAsset(
         ASSET_ID,
         DEFAULT_LIQUIDATION_RATIO,
-        ftso.address
+        ftso[ASSET_CODE].address
       );
       await priceFeed.updateAdjustedPrice(ASSET_ID);
     });
@@ -263,7 +276,7 @@ describe("PriceFeed Unit Tests", function () {
       await priceFeed.initAsset(
         ASSET_ID,
         DEFAULT_LIQUIDATION_RATIO,
-        ftso.address
+        ftso[ASSET_CODE].address
       );
 
       await priceFeed.setState(bytes32("paused"), true);
@@ -286,7 +299,7 @@ describe("PriceFeed Unit Tests", function () {
       await priceFeed.initAsset(
         ASSET_ID,
         DEFAULT_LIQUIDATION_RATIO,
-        ftso.address
+        ftso[ASSET_CODE].address
       );
 
       const assetBefore = await vaultEngine.assets(ASSET_ID);

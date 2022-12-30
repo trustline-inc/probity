@@ -193,7 +193,7 @@ const fundUser = async (contracts, user: SignerWithAddress, amount) => {
 };
 
 const setNewAssetPrice = async (contracts, price) => {
-  await contracts.ftso.setCurrentPrice(price);
+  await contracts.ftso["XRP"].setCurrentPrice(price);
   await contracts.priceFeed.updateAdjustedPrice(ethAssetId);
 };
 

@@ -189,7 +189,7 @@ describe("Probity happy flow", function () {
       .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
     await priceFeed
       .connect(gov)
-      .initAsset(ASSET_ID.FLR, WAD.mul(15).div(10), ftso.address);
+      .initAsset(ASSET_ID.FLR, WAD.mul(15).div(10), ftso["FLR"].address);
     await priceFeed.updateAdjustedPrice(ASSET_ID.FLR);
 
     // Get balance before minting
@@ -255,7 +255,7 @@ describe("Probity happy flow", function () {
       .updateCeiling(ASSET_ID.FLR, RAD.mul(10_000_000));
     await priceFeed
       .connect(gov)
-      .initAsset(ASSET_ID.FLR, WAD.mul(15).div(10), ftso.address);
+      .initAsset(ASSET_ID.FLR, WAD.mul(15).div(10), ftso["FLR"].address);
     await priceFeed.updateAdjustedPrice(ASSET_ID.FLR);
 
     // Increase equity
@@ -377,7 +377,7 @@ describe("Probity happy flow", function () {
 
     await priceFeed
       .connect(gov)
-      .initAsset(ASSET_ID.FLR, WAD.mul(15).div(10), ftso.address);
+      .initAsset(ASSET_ID.FLR, WAD.mul(15).div(10), ftso["FLR"].address);
     await priceFeed.updateAdjustedPrice(ASSET_ID.FLR);
 
     // Get balances before increasing equity
@@ -435,7 +435,7 @@ describe("Probity happy flow", function () {
 
     await priceFeed
       .connect(gov)
-      .initAsset(ASSET_ID.FLR, WAD.mul(15).div(10), ftso.address);
+      .initAsset(ASSET_ID.FLR, WAD.mul(15).div(10), ftso["FLR"].address);
     await priceFeed.updateAdjustedPrice(ASSET_ID.FLR);
 
     let [adjustedPrice] = await vaultEngine.assets(ASSET_ID.FLR);
@@ -457,7 +457,7 @@ describe("Probity happy flow", function () {
 
     await priceFeed
       .connect(gov)
-      .initAsset(ASSET_ID.FLR, WAD.mul(15).div(10), ftso.address);
+      .initAsset(ASSET_ID.FLR, WAD.mul(15).div(10), ftso["FLR"].address);
     await priceFeed.updateAdjustedPrice(ASSET_ID.FLR);
 
     // update protocol Fee
@@ -524,7 +524,9 @@ describe("Probity happy flow", function () {
     await liquidator
       .connect(gov)
       .initAsset(ASSET_ID.FLR, auctioneer.address, ADDRESS_ZERO);
-    await priceFeed.connect(gov).initAsset(ASSET_ID.FLR, WAD, ftso.address);
+    await priceFeed
+      .connect(gov)
+      .initAsset(ASSET_ID.FLR, WAD, ftso["FLR"].address);
     await priceFeed.updateAdjustedPrice(ASSET_ID.FLR);
 
     // Increase equity
@@ -578,7 +580,9 @@ describe("Probity happy flow", function () {
     await liquidator
       .connect(gov)
       .initAsset(ASSET_ID.FLR, auctioneer.address, ADDRESS_ZERO);
-    await priceFeed.connect(gov).initAsset(ASSET_ID.FLR, WAD, ftso.address);
+    await priceFeed
+      .connect(gov)
+      .initAsset(ASSET_ID.FLR, WAD, ftso["FLR"].address);
     await priceFeed.updateAdjustedPrice(ASSET_ID.FLR);
 
     // Increase equity
@@ -675,7 +679,9 @@ describe("Probity happy flow", function () {
     await liquidator
       .connect(gov)
       .initAsset(ASSET_ID.FLR, auctioneer.address, ADDRESS_ZERO);
-    await priceFeed.connect(gov).initAsset(ASSET_ID.FLR, WAD, ftso.address);
+    await priceFeed
+      .connect(gov)
+      .initAsset(ASSET_ID.FLR, WAD, ftso["FLR"].address);
     await priceFeed.updateAdjustedPrice(ASSET_ID.FLR);
 
     // Increase equity
@@ -765,7 +771,9 @@ describe("Probity happy flow", function () {
     await liquidator
       .connect(gov)
       .initAsset(ASSET_ID.FLR, auctioneer.address, ADDRESS_ZERO);
-    await priceFeed.connect(gov).initAsset(ASSET_ID.FLR, WAD, ftso.address);
+    await priceFeed
+      .connect(gov)
+      .initAsset(ASSET_ID.FLR, WAD, ftso["FLR"].address);
     await priceFeed.updateAdjustedPrice(ASSET_ID.FLR);
 
     // Increase equity

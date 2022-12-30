@@ -1116,7 +1116,11 @@ const deployPriceFeed = async (param?: {
   await contracts.priceFeed.deployed();
   if (process.env.NODE_ENV !== "test") {
     console.info("priceFeed deployed ✓");
-    console.info({ registry, vaultEngine });
+    console.info({
+      address: contracts.priceFeed?.address,
+      registry,
+      vaultEngine,
+    });
     await hre.ethernal.push({
       name: "PriceFeed",
       address: contracts.priceFeed?.address,
@@ -1884,7 +1888,8 @@ const deployMocks = async () => {
   await deployMockErc20Token();
   await deployMockErc20AssetManager();
   await deployMockVPToken();
-  await deployMockFtso("USD");
+  await deployMockFtso("XRP");
+  await deployMockFtso("FLR");
   await deployMockFtsoManager();
   await deployMockFtsoRewardManager();
   await deployMockPriceFeed();

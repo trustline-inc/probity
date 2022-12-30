@@ -45,7 +45,7 @@ function sleep(ms: number) {
         ethers.utils.parseUnits(response.data.USD.toString(), 5)
       );
       console.log("New price:", String(ethers.utils.formatUnits(newPrice, 5)));
-      let tx = await ftso.setCurrentPrice(newPrice, {
+      let tx = await ftso[nativeToken].setCurrentPrice(newPrice, {
         gasPrice: web3.utils.toWei("225", "Gwei"),
         gasLimit: 300000,
       });
