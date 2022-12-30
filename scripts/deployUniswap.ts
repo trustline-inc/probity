@@ -9,6 +9,14 @@ import Router from "@uniswap/v2-periphery/build/UniswapV2Router02.json";
 async function main() {
   const [owner]: SignerWithAddress[] = await ethers.getSigners();
 
+  // The base asset trades with all other assets
+  const baseAsset = process.env.USD;
+
+  if (!baseAsset) {
+    console.error("Please set a base asset");
+    process.exit(1);
+  }
+
   const factory = await new ethers.ContractFactory(
     Factory.interface,
     Factory.bytecode,
@@ -18,10 +26,19 @@ async function main() {
     Router.abi,
     Router.bytecode,
     owner
-  ).deploy(factory.address, process.env.USD);
+  ).deploy(factory.address, baseAsset);
 
-  // TODO: Ensure that ERC20 is deployed and the envvar is set (in this case, LQO)
-  const result = await factory.createPair(process.env.USD, process.env.LQO);
+  // TODO: Ensure that ERC20s are deployed and envvars are set
+  const assetA = process.env.USD;
+  const assetB = process.env.LQO;
+
+  if (!assetA || !assetB) {
+    console.log("Please set asset pair");
+    console.log(`Values for (A, B) are: (${assetA}, ${assetB})`);
+    process.exit(1);
+  }
+
+  const result = await factory.createPair(assetA, assetB);
   console.log("Uniswap contracts deployed!");
   console.table({
     factory: factory.address,
