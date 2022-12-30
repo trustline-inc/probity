@@ -2,26 +2,17 @@
  * This script deploys a new asset manager contract and initialize the asset in the system
  * Usage: Configure environment variables before running.
  *
- *  Required Variables:
- *    Contract Addresses:
- *      - REGISTRY
- *      - VAULT_ENGINE
- *      - PRICE_FEED
- *      - TELLER
- *      - LIQUIDATOR
- *      - FTSO (if DEPLOY_FTSO=false)
- *      - ERC20 (if ASSET_TYPE=ERC20)
- *      - FTSO_MANAGER (if ASSET_TYPE=VPToken)
- *      - FTSO_REWARD_MANAGER (if ASSET_TYPE=VPToken)
- *      - VP_TOKEN (if ASSET_TYPE=VPToken)
- *    Settings:
- *      - ASSET_NAME (String)
- *      - ASSET_TYPE (Native, VPToken, ERC20)
- *      - DEPLOY_FTSO (boolean)
- *      - LIQUIDATION_RATIO (float, 1.5 = 150%)
- *      - PROTOCOL_FEE (float, 0.01 = 1%)
- *      - DEPLOYMENT_DELAY (int) : Adds delay between deployment of contracts
- *      - DELAY (int) : Adds delay between contract calls
+ * Required environment variables:
+ *   - REGISTRY
+ *   - VAULT_ENGINE
+ *   - PRICE_FEED
+ *   - TELLER
+ *   - LIQUIDATOR
+ *   - FTSO (if DEPLOY_FTSO=false)
+ *   - ERC20 (if ASSET_TYPE=ERC20)
+ *   - FTSO_MANAGER (if ASSET_TYPE=VPToken)
+ *   - FTSO_REWARD_MANAGER (if ASSET_TYPE=VPToken)
+ *   - VP_TOKEN (if ASSET_TYPE=VPToken)
  */
 
 import "@nomiclabs/hardhat-ethers";
@@ -36,6 +27,16 @@ import { ADDRESS_ZERO } from "../test/utils/constants";
 
 // Only log errors
 ethers.utils.Logger.setLogLevel(ethers.utils.Logger.levels.ERROR);
+
+// Configuration
+const ASSET_ADDRESS = "0xedf9ED79889896D90f7C76b9FCaB6970fBc5626b";
+const ASSET_NAME = "LQO";
+const ASSET_TYPE = "ERC20";
+const DEPLOY_FTSO = true;
+const LIQUIDATION_RATIO = 3;
+const PROTOCOL_FEE = 0.05;
+const DEPLOYMENT_DELAY = 0;
+const DELAY = 0;
 
 /**
  * @function main
@@ -55,7 +56,7 @@ async function main() {
 
   // deploy the new asset manager contract(s)
   console.info("Deploying Asset Manager");
-  switch (process.env.ASSET_TYPE) {
+  switch (ASSET_TYPE) {
     case "Native":
       contracts = await probity.deployNativeAssetManager({
         registry: process.env.REGISTRY,
@@ -64,7 +65,8 @@ async function main() {
       });
       break;
     case "ERC20":
-      await checkContractAddresses(["ERC20"]);
+      if (!ASSET_ADDRESS)
+        logErrorAndExit(`Please set the ASSET_ADDRESS variable in the script`);
 
       // TODO: fix deployErc20AssetManager erasing ftso address
       if (contracts.ftso) var temp = contracts.ftso;
@@ -72,9 +74,9 @@ async function main() {
       // we need erc20 address
       const params = {
         registry: process.env.REGISTRY,
-        symbol: process.env.ASSET_NAME,
         vaultEngine: process.env.VAULT_ENGINE,
-        erc20: process.env.ERC20,
+        symbol: ASSET_NAME,
+        erc20: ASSET_ADDRESS,
       };
       contracts = await probity.deployErc20AssetManager(params);
       contracts.ftso = temp;
@@ -104,15 +106,15 @@ async function main() {
 
   let ftso;
 
-  // deploy FTSO - if needed
-  if (process.env.DEPLOY_FTSO === "true") {
-    console.info(`Deploying Mock FTSO for ${process.env.ASSET_NAME}`);
-    const deployed = await mock.deployMockFtso(process.env.ASSET_NAME);
+  // deploy FTSO if needed
+  if (DEPLOY_FTSO) {
+    console.info(`Deploying Mock FTSO for ${ASSET_NAME}`);
+    const deployed = await mock.deployMockFtso(ASSET_NAME);
 
-    ftso = deployed!.ftso[process.env.ASSET_NAME]?.address;
+    ftso = deployed!.ftso[ASSET_NAME]?.address;
   } else {
-    console.info("Skipping Deploying FTSO");
-    ftso = contracts.ftso[process.env.ASSET_NAME]?.address;
+    console.info("Skipping FTSO deployment");
+    ftso = contracts.ftso[ASSET_NAME]?.address;
   }
 
   // deploy Auctioneer
@@ -120,12 +122,12 @@ async function main() {
   await probity.deployAuctioneer();
 
   // ASSET_NAME is the asset symbol
-  const assetId = web3.utils.keccak256(process.env.ASSET_NAME!);
+  const assetId = web3.utils.keccak256(ASSET_NAME!);
 
   const category = 3; // category for both assets is 3
   await execute(
     contracts.vaultEngine.initAsset(assetId, category, { gasLimit: 300000 }),
-    "Initializing Asset on VaultEngine"
+    "Initializing asset on VaultEngine"
   );
 
   // Change param `ADDRESS_ZERO` if the asset has a VPAssetManager address
@@ -138,22 +140,22 @@ async function main() {
         gasLimit: 300000,
       }
     ),
-    "Initializing Asset on liquidator"
+    "Initializing asset on Liquidator"
   );
 
   await execute(
     contracts.priceFeed.initAsset(
       assetId,
-      ethers.utils.parseEther(process.env.LIQUIDATION_RATIO!),
+      ethers.utils.parseEther(String(LIQUIDATION_RATIO)),
       ftso,
       { gasLimit: 300000 }
     ),
-    "Initializing Asset on priceFeed"
+    "Initializing asset on PriceFeed"
   );
 
   await execute(
     contracts.priceFeed.updateAdjustedPrice(assetId, { gasLimit: 300000 }),
-    "Updating Adjusted Price on priceFeed"
+    "Updating adjusted price on PriceFeed"
   );
 }
 
@@ -163,11 +165,10 @@ async function main() {
  */
 async function checkContractAddresses(contractNames) {
   console.info("Checking if necessary contract addresses are present");
-  console.log(contractNames);
   for (let contractName of contractNames) {
     if (process.env[contractName] === undefined) {
       logErrorAndExit(
-        `Missing contract Address for ${contractName}, please set it in env variable`
+        `Missing contract address for ${contractName}, please set it in env variable`
       );
     }
   }
@@ -189,8 +190,8 @@ async function execute(promise, message) {
  * @returns
  */
 async function checkDelay() {
-  if (process.env.DELAY === undefined) return;
-  const delayTime = parseInt(process.env.DELAY);
+  if (DELAY === undefined) return;
+  const delayTime = parseInt(DELAY);
   console.log(`sleeping for ${delayTime} ms`);
   return new Promise((resolve) => setTimeout(resolve, delayTime));
 }
@@ -201,29 +202,16 @@ async function checkDelay() {
 async function checkSettings() {
   console.info("Checking if all necessary settings are present");
   const SUPPORTED_ASSET_TYPES = ["Native", "VPToken", "ERC20"];
-  const settingsToCheck = [
-    "ASSET_NAME",
-    "ASSET_TYPE",
-    "DEPLOY_FTSO",
-    "LIQUIDATION_RATIO",
-    "PROTOCOL_FEE",
-  ];
-
-  for (let setting of settingsToCheck) {
-    if (process.env[setting] === undefined) {
-      logErrorAndExit(`Missing Setting for ${setting}`);
-    }
-  }
 
   // ASSET_TYPE
-  if (!SUPPORTED_ASSET_TYPES?.includes(process.env.ASSET_TYPE!)) {
+  if (!SUPPORTED_ASSET_TYPES?.includes(ASSET_TYPE!)) {
     logErrorAndExit(
       `Please provide a supported ASSET_TYPE (Native, VPToken, ERC20)`
     );
   }
 
   // DEPLOY_FTSO
-  if (process.env.DEPLOY_FTSO === "false" && process.env.FTSO === undefined) {
+  if (!DEPLOY_FTSO && process.env[`${ASSET_NAME}_FTSO`] === undefined) {
     logErrorAndExit(`FTSO address is needed when DEPLOY_FTSO=false`);
   }
 }

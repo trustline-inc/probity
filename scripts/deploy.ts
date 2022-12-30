@@ -66,29 +66,38 @@ async function main() {
       if (typeof contract!["USD"] !== "undefined") {
         contractAddress = contract!["USD"].address;
         contractDisplayName = "USD";
-      } else if (typeof contract!["FXRP"] !== "undefined") {
-        contractAddress = contract!["FXRP"].address;
-        contractDisplayName = "FXRP";
-      } else if (typeof contract!["UPXAU"] !== "undefined") {
-        contractAddress = contract!["UPXAU"].address;
-        contractDisplayName = "UPXAU";
+      } else if (typeof contract!["XRP"] !== "undefined") {
+        contractAddress = contract!["XRP"].address;
+        contractDisplayName = "XRP";
+      } else if (typeof contract!["LQO"] !== "undefined") {
+        contractAddress = contract!["LQO"].address;
+        contractDisplayName = "LQO";
       }
       if (contractDisplayName === "ERC20") continue; // skip empty ERC20
     }
 
     if (contractName === "erc20AssetManager") {
       const contract = contracts[contractName];
-      if (typeof contract!["USD_MANAGER"] !== "undefined") {
-        contractAddress = contract!["USD_MANAGER"].address;
+      if (typeof contract!["USD"] !== "undefined") {
+        contractAddress = contract!["USD"].address;
         contractDisplayName = "USD_MANAGER";
-      } else if (typeof contract!["FXRP_MANAGER"] !== "undefined") {
-        contractAddress = contract!["FXRP_MANAGER"].address;
-        contractDisplayName = "FXRP_MANAGER";
-      } else if (typeof contract!["UPXAU_MANAGER"] !== "undefined") {
-        contractAddress = contract!["UPXAU_MANAGER"].address;
-        contractDisplayName = "UPXAU_MANAGER";
+      } else if (typeof contract!["LQO"] !== "undefined") {
+        contractAddress = contract!["LQO"].address;
+        contractDisplayName = "LQO_MANAGER";
       }
       if (contractDisplayName === "ERC20_ASSET_MANAGER") continue; // skip empty ERC20_ASSET_MANAGER
+    }
+
+    if (contractName === "ftso") {
+      const contract = contracts[contractName];
+      if (typeof contract!["XRP"] !== "undefined") {
+        contractAddress = contract!["XRP"].address;
+        contractDisplayName = "XRP_FTSO";
+      } else if (typeof contract!["LQO"] !== "undefined") {
+        contractAddress = contract!["LQO"].address;
+        contractDisplayName = "LQO_FTSO";
+      }
+      if (contractDisplayName === "FTSO") continue; // skip empty FTSO
     }
 
     table.push({

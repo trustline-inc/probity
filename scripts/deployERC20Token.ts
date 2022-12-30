@@ -20,6 +20,5 @@ import { LQO, LQO__factory } from "../typechain";
   const lqo = await lqoFactory.deploy(process.env.REGISTRY);
 
   // Log contract info
-  console.log(lqo.address);
-  console.log(lqo.deployTransaction);
+  console.log(`Address: ${lqo.address}`);
 })();

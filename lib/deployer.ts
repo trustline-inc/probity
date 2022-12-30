@@ -214,8 +214,9 @@ export const contracts: ContractDict = {
   bondIssuer: undefined,
   delegatable: undefined,
   ftso: {
+    SGB: undefined,
+    FLR: undefined,
     XRP: undefined,
-    USD: undefined,
     LQO: undefined,
   },
   registry: undefined,
@@ -311,7 +312,7 @@ const parseExistingContracts = async (_contracts? = contracts) => {
 
   // contractKey is camelCase and contract is a contract address string or object
   for (let [contractKey, contract] of Object.entries(_contracts)) {
-    // Parse contract group
+    // Parse contract groups
     if (["erc20", "erc20AssetManager", "ftso"].includes(contractKey)) {
       Object.keys(contract).forEach(async (key) => {
         // Convert camelCase string to UPPER_SNAKE_CASE
@@ -832,7 +833,7 @@ const deployErc20AssetManager = async (param?: {
   const symbol = param?.symbol || "FXRP";
 
   if (
-    contracts.erc20AssetManager[`${symbol}_MANAGER`] !== undefined &&
+    contracts.erc20AssetManager[symbol] !== undefined &&
     process.env.NODE_ENV !== "test"
   ) {
     console.info(
@@ -858,18 +859,17 @@ const deployErc20AssetManager = async (param?: {
     "ERC20AssetManager",
     signers.owner
   )) as ERC20AssetManager__factory;
-  contracts.erc20AssetManager[`${symbol}_MANAGER`] =
-    await erc20AssetManagerFactory.deploy(
-      registry!,
-      web3.utils.keccak256(symbol),
-      erc20,
-      vaultEngine!
-    );
-  await contracts.erc20AssetManager[`${symbol}_MANAGER`].deployed();
+  contracts.erc20AssetManager[symbol] = await erc20AssetManagerFactory.deploy(
+    registry!,
+    web3.utils.keccak256(symbol),
+    erc20,
+    vaultEngine!
+  );
+  await contracts.erc20AssetManager[symbol].deployed();
   if (process.env.NODE_ENV !== "test") {
     console.info(`erc20AssetManager[${symbol.toLowerCase()}] deployed ✓`);
     console.info({
-      address: contracts.erc20AssetManager[`${symbol}_MANAGER`].address,
+      address: contracts.erc20AssetManager[symbol].address,
       params: {
         registry,
         symbol,
@@ -879,13 +879,13 @@ const deployErc20AssetManager = async (param?: {
     });
     await hre.ethernal.push({
       name: "ERC20AssetManager",
-      address: contracts.erc20AssetManager[`${symbol}_MANAGER`].address,
+      address: contracts.erc20AssetManager[symbol].address,
     });
   }
 
   await contracts.registry?.setupAddress(
     bytes32("assetManager"),
-    contracts.erc20AssetManager[`${symbol}_MANAGER`].address,
+    contracts.erc20AssetManager[symbol].address,
     true
   );
 
@@ -1590,7 +1590,12 @@ const deployMockFtso = async (symbol?: string = "USD") => {
   contracts.ftso[symbol] = await ftsoFactory.deploy();
   await contracts.ftso[symbol].deployed();
   if (process.env.NODE_ENV !== "test") {
-    console.info("mockFtso deployed ✓");
+    console.info("mockFtso deployed ✓", {
+      address: contracts.ftso[symbol]?.address,
+      params: {
+        symbol,
+      },
+    });
     await hre.ethernal.push({
       name: "MockFtso",
       address: contracts.ftso[symbol]?.address,

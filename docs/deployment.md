@@ -28,6 +28,8 @@ NATIVE_TOKEN=<symbol> npm run deploy:<dev|prod> <network>
 
 Since the exchange feature currently uses code from Uniswap, the deployment steps are slightly different. Edit the values in `./scripts/deployUniswap.ts` then run the command below to deploy the exchange contracts.
 
+> Tip: Deploy a new asset with the `deployErc20Token` and `deployNewAsset` scripts if needed
+
 ```
 yarn run deployUniswap <network>
 ```
