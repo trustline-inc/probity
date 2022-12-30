@@ -200,23 +200,6 @@ const init = async () => {
         .toString()} liq. ratio`
     );
 
-    // Initialize erc20 token price feed
-    liqRatio = WAD.mul(100).div(100); // must be < 100%
-    args = [
-      ERC20_ASSETS[erc20Token],
-      liqRatio,
-      process.env.FTSO,
-      { gasLimit: 300000 },
-    ];
-    await priceFeed.connect(gov).callStatic.initAsset(...args);
-    tx = await priceFeed.connect(gov).initAsset(...args);
-    await tx.wait();
-    console.log(
-      `PriceFeed: ${erc20Token} price initialized with ${ethers.utils
-        .formatEther(liqRatio)
-        .toString()} liq. ratio`
-    );
-
     // Fetch native token price
     tx = await priceFeed
       .connect(gov)
@@ -224,12 +207,31 @@ const init = async () => {
     await tx.wait();
     console.log(`PriceFeed: ${nativeToken} price updated`);
 
-    // Fetch ERC20 token price
-    tx = await priceFeed
-      .connect(gov)
-      .updateAdjustedPrice(ERC20_ASSETS[erc20Token], { gasLimit: 300000 });
-    await tx.wait();
-    console.log(`PriceFeed: ${erc20Token} price updated`);
+    if (erc20Token !== "USD") {
+      // Initialize erc20 token price feed
+      liqRatio = WAD.mul(100).div(100); // must be < 100%
+      args = [
+        ERC20_ASSETS[erc20Token],
+        liqRatio,
+        process.env[`${erc20Token}_FTSO`],
+        { gasLimit: 300000 },
+      ];
+      await priceFeed.connect(gov).callStatic.initAsset(...args);
+      tx = await priceFeed.connect(gov).initAsset(...args);
+      await tx.wait();
+      console.log(
+        `PriceFeed: ${erc20Token} price initialized with ${ethers.utils
+          .formatEther(liqRatio)
+          .toString()} liq. ratio`
+      );
+
+      // Fetch ERC20 token price
+      tx = await priceFeed
+        .connect(gov)
+        .updateAdjustedPrice(ERC20_ASSETS[erc20Token], { gasLimit: 300000 });
+      await tx.wait();
+      console.log(`PriceFeed: ${erc20Token} price updated`);
+    }
   } catch (error) {
     console.log(error);
   }
