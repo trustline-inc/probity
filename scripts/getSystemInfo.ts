@@ -30,6 +30,14 @@ const output = `{
     address: "${process.env.USD_MANAGER}",
     abi: Erc20AssetManagerABI.abi
   },
+  LQO_MANAGER: {
+    address: "${process.env.LQO_MANAGER}",
+    abi: Erc20AssetManagerABI.abi
+  },
+  LQO_FTSO: {
+    address: "${process.env.LQO_FTSO}",
+    abi: Erc20AssetManagerABI.abi
+  },
   PRICE_FEED: {
     address: "${process.env.PRICE_FEED}",
     abi: PriceFeedABI.abi
