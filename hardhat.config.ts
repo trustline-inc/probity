@@ -80,6 +80,11 @@ const config: HardhatUserConfig = {
       chainId: 19,
       accounts: [privateKey],
     },
+    flare: {
+      url: "https://flare-api.flare.network/ext/C/rpc",
+      chainId: 14,
+      accounts: [privateKey],
+    },
     xrp_ledger: {
       url: "https://rpc-evm-sidechain.xrpl.org",
       chainId: 1440001,
