@@ -81,7 +81,24 @@ See the [administration guide](./docs/administration.md) for details.
 
 ### Songbird Network
 
-Songbird contract addresses will be listed here. The Songbird network's native token is `SGB`.
+| Contract        | Address                                                                                                                                  |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Registry        | [0x72b96dF84644e9F5bC91228C52cA24D74aC04558](https://songbird-explorer.flare.network/address/0x72b96dF84644e9F5bC91228C52cA24D74aC04558) |
+| Vault Engine    | [0x776C09f1640175f509c743C451Bb513ee13fF67A](https://songbird-explorer.flare.network/address/0x776C09f1640175f509c743C451Bb513ee13fF67A) |
+| USD             | [0xc6e7DF5E7b4f2A278906862b61205850344D4e7d](https://songbird-explorer.flare.network/address/0xc6e7DF5E7b4f2A278906862b61205850344D4e7d) |
+| PBT             | [0x7f2cF5bC5065BCaDF7713d11de41D9e0523D574e](https://songbird-explorer.flare.network/address/0x7f2cF5bC5065BCaDF7713d11de41D9e0523D574e) |
+| Bond Issuer     | [0xe40eF80bF629d0DcbE731651397043afd1753355](https://songbird-explorer.flare.network/address/0xe40eF80bF629d0DcbE731651397043afd1753355) |
+| Teller          | [0x1c86117F477D4C84e5954A85f3F1c787b67f1a31](https://songbird-explorer.flare.network/address/0x1c86117F477D4C84e5954A85f3F1c787b67f1a31) |
+| Treasury        | [0x60b1d01AC1036906Eca859e6b55ca1bf9cAB92EF](https://songbird-explorer.flare.network/address/0x60b1d01AC1036906Eca859e6b55ca1bf9cAB92EF) |
+| Price Feed      | [0x0EdF1C1BaE930B74f80371128239Ab5f584aADF1](https://songbird-explorer.flare.network/address/0x0EdF1C1BaE930B74f80371128239Ab5f584aADF1) |
+| Auctioneer      | [0xa09dAB87b5dD723458d76ceC090E9224c80Be3a7](https://songbird-explorer.flare.network/address/0xa09dAB87b5dD723458d76ceC090E9224c80Be3a7) |
+| Linear Decrease | [0xe442c0E9C8BeA6E96a2E2d8Fa29bD86c91aB487a](https://songbird-explorer.flare.network/address/0xe442c0E9C8BeA6E96a2E2d8Fa29bD86c91aB487a) |
+| Liquidator      | [0xAb935B158336723448C676071B28717c2B135ffd](https://songbird-explorer.flare.network/address/0xAb935B158336723448C676071B28717c2B135ffd) |
+| Reserve Pool    | [0xe2F72317D5F14Cc6d4b23019088768D456697fd6](https://songbird-explorer.flare.network/address/0xe2F72317D5F14Cc6d4b23019088768D456697fd6) |
+| Low APR         | [0xFfA93AdFc1A8afda8214Dae9b00fA37d67786754](https://songbird-explorer.flare.network/address/0xFfA93AdFc1A8afda8214Dae9b00fA37d67786754) |
+| High APR        | [0x4a23d4367Fc048B26ab9A14c33533EaF99b8b170](https://songbird-explorer.flare.network/address/0x4a23d4367Fc048B26ab9A14c33533EaF99b8b170) |
+| SGB Manager     | [0x1aDF9d1AF441d4489ea2C6b9a7e944B1A59b0e98](https://songbird-explorer.flare.network/address/0x1aDF9d1AF441d4489ea2C6b9a7e944B1A59b0e98) |
+| USD Manager     | [0xE1F322df0660470d1f8af66412FE631700a5eC95](https://songbird-explorer.flare.network/address/0xE1F322df0660470d1f8af66412FE631700a5eC95) |
 
 ### Flare Network
 
