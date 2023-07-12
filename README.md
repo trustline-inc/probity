@@ -102,7 +102,24 @@ See the [administration guide](./docs/administration.md) for details.
 
 ### Flare Network
 
-Flare contract addresses will be listed here. The Flare network's native token is `FLR`.
+| Contract        | Address                                                                                                                         |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Registry        | [0xbF8A3CA285C7ccbACbC0c8666348f432060794Aa](https://explorer.flare.network/address/0xbF8A3CA285C7ccbACbC0c8666348f432060794Aa) |
+| Vault Engine    | [0x29e42438a60EC8F5aacC51f826a0BB07F32507bb](https://explorer.flare.network/address/0x29e42438a60EC8F5aacC51f826a0BB07F32507bb) |
+| USD             | [0x2De05d67bf2D03045684a48Ba269A09c51F53A6f](https://explorer.flare.network/address/0x2De05d67bf2D03045684a48Ba269A09c51F53A6f) |
+| PBT             | [0x2d552d09c96A4c3d57924A636038CcceC2DF2c5e](https://explorer.flare.network/address/0x2d552d09c96A4c3d57924A636038CcceC2DF2c5e) |
+| Bond Issuer     | [0x046508cc0be05F30741EABea5790bf4deFC6a079](https://explorer.flare.network/address/0x046508cc0be05F30741EABea5790bf4deFC6a079) |
+| Teller          | [0xDBB461218eD84D712c2d57519c6672eF5F1529E9](https://explorer.flare.network/address/0xDBB461218eD84D712c2d57519c6672eF5F1529E9) |
+| Treasury        | [0xF8b3093D277E5C8315CEFdB774d48d8665c28Bb8](https://explorer.flare.network/address/0xF8b3093D277E5C8315CEFdB774d48d8665c28Bb8) |
+| Price Feed      | [0x6F1D557192f959339AfDF798F5Dba16c73C2A863](https://explorer.flare.network/address/0x6F1D557192f959339AfDF798F5Dba16c73C2A863) |
+| Auctioneer      | [0xa09dAB87b5dD723458d76ceC090E9224c80Be3a7](https://explorer.flare.network/address/0xa09dAB87b5dD723458d76ceC090E9224c80Be3a7) |
+| Linear Decrease | [0x166D6398fc2219268Fd049F3F6898841B86f0970](https://explorer.flare.network/address/0x166D6398fc2219268Fd049F3F6898841B86f0970) |
+| Liquidator      | [0xAb935B158336723448C676071B28717c2B135ffd](https://explorer.flare.network/address/0xAb935B158336723448C676071B28717c2B135ffd) |
+| Reserve Pool    | [0x6E4e94D9f9D36F1C4C9695fDA80cc9B5Ba16A3c5](https://explorer.flare.network/address/0x6E4e94D9f9D36F1C4C9695fDA80cc9B5Ba16A3c5) |
+| Low APR         | [0x52031a7B712C412D546670Fa0A4140d4Dda91641](https://explorer.flare.network/address/0x52031a7B712C412D546670Fa0A4140d4Dda91641) |
+| High APR        | [0x559409c4cE34efaDb000D00Ded0a7F9302a17f9C](https://explorer.flare.network/address/0x559409c4cE34efaDb000D00Ded0a7F9302a17f9C) |
+| FLR Manager     | [0x3de0107eF69a5164B0e79daE9793B7C08f877aDb](https://explorer.flare.network/address/0x3de0107eF69a5164B0e79daE9793B7C08f877aDb) |
+| USD Manager     | [0x2De05d67bf2D03045684a48Ba269A09c51F53A6f](https://explorer.flare.network/address/0x2De05d67bf2D03045684a48Ba269A09c51F53A6f) |
 
 ## License
 
