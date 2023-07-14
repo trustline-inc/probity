@@ -1872,6 +1872,8 @@ const deployProbity = async (vaultEngineType?: string) => {
   // Deploy VaultEngine based on network
   let vaultType = "vaultEngine";
   if (
+    network.name === "songbird" ||
+    network.name === "flare" ||
     network.name === "flare_local" ||
     network.name === "coston" ||
     network.name === "localhost" ||
@@ -1976,14 +1978,14 @@ const deployProd = async () => {
     await deployAuctioneer();
 
     // Get vault type
-    let vaultType = "vaultEngine";
-    if (network.name === "flare_local") {
-      vaultType = "vaultEngineIssuer";
-    } else if (network.name === "coston") {
-      vaultType = "vaultEngineIssuer";
-    } else if (network.name === "songbird") {
-      vaultType = "vaultEngineLimited";
-    }
+    let vaultType = "vaultEngineIssuer";
+    // if (network.name === "flare") {
+    //   vaultType = "vaultEngineIssuer";
+    // } else if (network.name === "coston") {
+    //   vaultType = "vaultEngineIssuer";
+    // } else if (network.name === "songbird") {
+    //   vaultType = "vaultEngineIssuer";
+    // }
 
     await deployErc20AssetManager({
       registry: contracts?.registry?.address,

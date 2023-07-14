@@ -1,6 +1,6 @@
 {
   "name": "@trustline/probity",
-  "version": "1.0.0-beta3",
+  "version": "1.0.0",
   "license": "Apache-2.0",
   "description": "Probity smart contracts",
   "scripts": {

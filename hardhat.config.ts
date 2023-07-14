@@ -76,7 +76,7 @@ const config: HardhatUserConfig = {
       chainId: 114,
     },
     songbird: {
-      url: "https://songbird.towolabs.com/rpc",
+      url: "https://songbird-api.flare.network/ext/C/rpc",
       chainId: 19,
       accounts: [privateKey],
     },
