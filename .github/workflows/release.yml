@@ -30,7 +30,10 @@ jobs:
         with:
           name: probity-abi-artifacts
           path: artifacts
-      # Publish to NPM
+      - name: Setup .npmrc file to publish to npm
+        run: echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > ~/.npmrc
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Publish to npm
         run: npm publish --registry=https://registry.npmjs.org/ --access public
         env:
