@@ -31,6 +31,7 @@ jobs:
           name: probity-abi-artifacts
           path: artifacts
       # Publish to NPM
-      - run: npm publish
+      - name: Publish to npm
+        run: npm publish --registry=https://registry.npmjs.org/ --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
